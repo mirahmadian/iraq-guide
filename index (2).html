@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>راهنمای کاروان | عراق</title>
+  <meta name="description" content="راهنمای دیجیتال مدیران کاروان در عراق – ستادها، درمانگاه‌ها، شماره‌های تماس">
+  <meta name="theme-color" content="#070B18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="کاروان عراق">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg:           #070B18;
+      --surface:      #0D1225;
+      --card:         #131829;
+      --card2:        #192034;
+      --gold:         #C9A835;
+      --gold-l:       #E8C94A;
+      --gold-dim:     rgba(201,168,53,0.12);
+      --gold-dim2:    rgba(201,168,53,0.06);
+      --emerald:      #1A7A4E;
+      --emerald-l:    #22A066;
+      --ruby:         #B83232;
+      --ruby-l:       #E74C3C;
+      --blue-l:       #5A9CF5;
+      --green-wa:     #25D366;
+      --text:         #EDE8DA;
+      --muted:        #7A8099;
+      --dim:          #414660;
+      --border:       rgba(201,168,53,0.10);
+      --border-s:     rgba(201,168,53,0.22);
+      --shadow:       0 6px 28px rgba(0,0,0,0.5);
+      --r:            16px;
+      --r-sm:         10px;
+      --font:         'Vazirmatn', sans-serif;
+    }
+    [data-theme="light"] {
+      --bg:       #F2EDE0;
+      --surface:  #E8E0CE;
+      --card:     #FFFFFF;
+      --card2:    #F7F3EA;
+      --gold:     #9A6E10;
+      --gold-l:   #B88820;
+      --gold-dim: rgba(154,110,16,0.10);
+      --gold-dim2:rgba(154,110,16,0.05);
+      --emerald-l:#1A8050;
+      --text:     #181420;
+      --muted:    #4A4A60;
+      --dim:      #9090AA;
+      --border:   rgba(100,80,20,0.14);
+      --border-s: rgba(100,80,20,0.28);
+      --shadow:   0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:var(--font);
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    /* ── Islamic geometric pattern ── */
+    body::before{
+      content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background-image:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(201%2C168%2C53%2C0.07)' stroke-width='0.8'%3E%3Cpolygon points='50%2C8 59%2C35 88%2C35 65%2C53 74%2C80 50%2C62 26%2C80 35%2C53 12%2C35 41%2C35'/%3E%3Ccircle cx='50' cy='50' r='22'/%3E%3C/g%3E%3C/svg%3E");
+      background-size:100px 100px;
+    }
+    body::after{
+      content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 5%,rgba(201,168,53,0.07) 0%,transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 95%,rgba(26,122,78,0.06) 0%,transparent 60%);
+    }
+
+    .app-wrapper{
+      position:relative;z-index:1;
+      max-width:480px;margin:0 auto;
+      min-height:100vh;display:flex;flex-direction:column;
+    }
+
+    /* ════ HEADER ════ */
+    .header{
+      position:sticky;top:0;z-index:100;
+      padding:14px 14px 6px;
+      background:linear-gradient(180deg,var(--bg) 75%,transparent);
+      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    }
+    .header-inner{
+      display:flex;align-items:center;justify-content:space-between;
+      background:var(--surface);border:1px solid var(--border-s);
+      border-radius:var(--r);padding:11px 14px;
+      box-shadow:var(--shadow);
+    }
+    .header-brand{display:flex;align-items:center;gap:10px}
+    .brand-icon{
+      width:42px;height:42px;border-radius:12px;
+      background:linear-gradient(135deg,var(--gold) 0%,var(--gold-l) 100%);
+      display:flex;align-items:center;justify-content:center;font-size:22px;
+      box-shadow:0 2px 12px rgba(201,168,53,0.35);flex-shrink:0;
+    }
+    .brand-text h1{font-size:14px;font-weight:800;color:var(--text);line-height:1.2}
+    .brand-text p{font-size:10.5px;color:var(--muted);font-weight:400;margin-top:1px}
+    .header-actions{display:flex;gap:7px}
+    .icon-btn{
+      width:36px;height:36px;border:1px solid var(--border);
+      border-radius:9px;background:var(--card);color:var(--muted);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      font-size:15px;transition:all .2s;
+    }
+    .icon-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+
+    /* ════ INSTALL BANNER ════ */
+    .install-banner{
+      display:none;margin:0 14px 8px;
+      background:linear-gradient(135deg,rgba(201,168,53,0.13),rgba(201,168,53,0.06));
+      border:1px solid var(--border-s);border-radius:var(--r-sm);
+      padding:11px 13px;align-items:center;gap:11px;
+    }
+    .install-banner.show{display:flex}
+    .install-text{flex:1;font-size:11.5px;color:var(--muted);line-height:1.55}
+    .install-text strong{display:block;font-size:12.5px;color:var(--gold);margin-bottom:2px}
+    .install-btn{
+      padding:8px 14px;background:var(--gold);color:#1A1200;
+      border:none;border-radius:8px;font-family:var(--font);
+      font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;
+      transition:background .2s;
+    }
+    .install-btn:hover{background:var(--gold-l)}
+
+    /* ════ EMERGENCY ════ */
+    .emergency{
+      margin:0 14px 8px;
+      background:linear-gradient(135deg,rgba(183,50,50,0.13),rgba(183,50,50,0.07));
+      border:1px solid rgba(183,50,50,0.28);border-radius:var(--r-sm);overflow:hidden;
+    }
+    .emergency-head{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:11px 14px;cursor:pointer;user-select:none;
+    }
+    .emergency-label{
+      display:flex;align-items:center;gap:8px;
+      font-size:12.5px;font-weight:700;color:var(--ruby-l);
+    }
+    .e-pulse{
+      width:8px;height:8px;background:var(--ruby-l);border-radius:50%;
+      animation:epulse 1.6s infinite;
+    }
+    @keyframes epulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+    .emergency-arrow{color:var(--ruby-l);font-size:11px;transition:transform .3s}
+    .emergency.open .emergency-arrow{transform:rotate(180deg)}
+    .emergency-body{display:none;padding:0 14px 13px}
+    .emergency.open .emergency-body{display:block}
+    .e-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .e-item{
+      background:rgba(183,50,50,0.09);border:1px solid rgba(183,50,50,0.18);
+      border-radius:8px;padding:10px;text-align:center;
+    }
+    .e-label{font-size:10px;color:rgba(231,76,60,.75);margin-bottom:3px}
+    .e-num{font-size:20px;font-weight:900;color:var(--ruby-l);letter-spacing:1px}
+
+    /* ════ TABS ════ */
+    .tabs-wrap{
+      padding:0 14px;margin-bottom:10px;
+      position:sticky;top:76px;z-index:90;
+    }
+    .tabs{
+      display:flex;gap:5px;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r);padding:5px;
+      box-shadow:var(--shadow);
+    }
+    .tab{
+      flex:1;padding:9px 4px;border:none;border-radius:9px;
+      background:transparent;color:var(--muted);
+      font-family:var(--font);font-size:11.5px;font-weight:600;
+      cursor:pointer;transition:all .22s;display:flex;flex-direction:column;
+      align-items:center;gap:2px;line-height:1.2;
+    }
+    .tab-icon{font-size:17px}
+    .tab.active{
+      background:linear-gradient(135deg,var(--gold),var(--gold-l));
+      color:#1A1000;box-shadow:0 2px 14px rgba(201,168,53,0.32);
+    }
+
+    /* ════ CONTENT ════ */
+    .content{flex:1;padding:0 14px 110px}
+    .city-sec{display:none}
+    .city-sec.active{display:block;animation:fadeUp .28s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    /* City hero */
+    .city-hero{
+      margin-bottom:14px;padding:18px 16px;
+      background:linear-gradient(135deg,var(--surface),var(--card2));
+      border:1px solid var(--border-s);border-radius:var(--r);
+      text-align:center;position:relative;overflow:hidden;
+    }
+    .city-hero::before{
+      content:'';position:absolute;top:-40px;right:-40px;
+      width:130px;height:130px;border-radius:50%;
+      background:radial-gradient(circle,rgba(201,168,53,0.12),transparent 70%);
+    }
+    .city-hero::after{
+      content:'';position:absolute;bottom:-40px;left:-40px;
+      width:100px;height:100px;border-radius:50%;
+      background:radial-gradient(circle,rgba(26,122,78,0.08),transparent 70%);
+    }
+    .hero-name{font-size:24px;font-weight:900;color:var(--gold);margin-bottom:3px;position:relative;z-index:1}
+    .hero-arabic{font-size:12px;color:var(--muted);font-weight:400;position:relative;z-index:1;line-height:1.6}
+
+    /* Section card */
+    .sec-card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);margin-bottom:14px;overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .sec-head{
+      display:flex;align-items:center;gap:10px;padding:13px 15px;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(135deg,var(--card),var(--card2));
+    }
+    .sec-ico{
+      width:38px;height:38px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+    }
+    .ico-hq{background:linear-gradient(135deg,rgba(201,168,53,.18),rgba(201,168,53,.08))}
+    .ico-clinic{background:linear-gradient(135deg,rgba(26,122,78,.18),rgba(26,122,78,.08))}
+    .ico-ins{background:linear-gradient(135deg,rgba(90,156,245,.18),rgba(90,156,245,.08))}
+    .sec-info{flex:1}
+    .sec-info h3{font-size:13.5px;font-weight:700;color:var(--text)}
+    .badge{
+      font-size:10px;padding:2px 9px;border-radius:6px;font-weight:600;
+      border:1px solid;flex-shrink:0;
+    }
+    .badge-gold{background:var(--gold-dim);color:var(--gold);border-color:var(--border-s)}
+    .badge-green{background:rgba(26,122,78,.13);color:var(--emerald-l);border-color:rgba(26,122,78,.28)}
+    .badge-blue{background:rgba(90,156,245,.12);color:var(--blue-l);border-color:rgba(90,156,245,.28)}
+
+    /* Address */
+    .addr-row{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:11px 15px;border-bottom:1px solid var(--border);
+    }
+    .addr-ico{
+      width:28px;height:28px;border-radius:7px;background:var(--gold-dim);
+      display:flex;align-items:center;justify-content:center;font-size:13px;
+      flex-shrink:0;margin-top:1px;
+    }
+    .addr-body{}
+    .addr-lbl{font-size:10px;color:var(--dim);font-weight:500;margin-bottom:3px}
+    .addr-txt{font-size:12.5px;color:var(--muted);line-height:1.75}
+
+    /* Map buttons */
+    .map-row{
+      display:flex;gap:7px;padding:9px 15px;border-bottom:1px solid var(--border);
+    }
+    .map-btn{
+      flex:1;padding:9px 6px;border-radius:9px;border:1px solid;
+      background:transparent;font-family:var(--font);font-size:11px;font-weight:600;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      gap:5px;text-decoration:none;transition:all .18s;
+    }
+    .map-g{border-color:rgba(90,156,245,.28);color:var(--blue-l);background:rgba(90,156,245,.06)}
+    .map-g:hover{background:rgba(90,156,245,.14);border-color:rgba(90,156,245,.5)}
+    .map-n{border-color:var(--border-s);color:var(--gold);background:var(--gold-dim2)}
+    .map-n:hover{background:var(--gold-dim);border-color:var(--gold)}
+
+    /* Contacts */
+    .contacts{}
+    .c-item{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 15px;border-bottom:1px solid var(--border);
+      transition:background .15s;
+    }
+    .c-item:last-child{border-bottom:none}
+    .c-item:hover{background:var(--card2)}
+    .c-avatar{
+      width:36px;height:36px;border-radius:10px;
+      background:var(--gold-dim2);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+    }
+    .c-info{flex:1;min-width:0}
+    .c-role{font-size:10.5px;color:var(--dim);font-weight:500;margin-bottom:2px}
+    .c-name{font-size:11.5px;color:var(--muted);margin-top:1px}
+    .c-phone{font-size:14.5px;font-weight:700;color:var(--text);direction:ltr;text-align:right;letter-spacing:.5px}
+    .c-acts{display:flex;gap:5px;flex-shrink:0}
+    .act{
+      width:33px;height:33px;border-radius:8px;border:1px solid;
+      background:transparent;cursor:pointer;display:flex;align-items:center;
+      justify-content:center;text-decoration:none;transition:all .18s;font-size:15px;
+    }
+    .act-call{border-color:rgba(34,160,102,.3);color:var(--emerald-l)}
+    .act-call:hover{background:rgba(34,160,102,.15);border-color:var(--emerald-l)}
+    .act-wa{border-color:rgba(37,211,102,.28);color:var(--green-wa)}
+    .act-wa:hover{background:rgba(37,211,102,.1);border-color:var(--green-wa)}
+    .act-cp{border-color:var(--border);color:var(--muted)}
+    .act-cp:hover,.act-cp.done{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+
+    /* No contacts placeholder */
+    .no-c{
+      padding:14px 15px;font-size:11px;color:var(--dim);
+      text-align:center;font-style:italic;border-top:1px solid var(--border);
+    }
+
+    /* ════ BOTTOM BAR ════ */
+    .bot-bar{
+      position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+      width:100%;max-width:480px;z-index:100;
+      padding:10px 14px max(12px,env(safe-area-inset-bottom)) 14px;
+      background:linear-gradient(0,var(--bg) 65%,transparent);
+    }
+    .bot-inner{display:flex;gap:8px}
+    .bot-btn{
+      flex:1;padding:13px;border-radius:var(--r-sm);border:1px solid var(--border);
+      background:var(--card);font-family:var(--font);font-size:12.5px;font-weight:600;
+      color:var(--muted);cursor:pointer;display:flex;align-items:center;
+      justify-content:center;gap:6px;transition:all .2s;box-shadow:var(--shadow);
+    }
+    .bot-btn:hover,.bot-btn:active{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+    .bot-btn.prime{
+      background:linear-gradient(135deg,var(--gold),var(--gold-l));
+      color:#160F00;border-color:transparent;font-weight:800;
+      box-shadow:0 3px 16px rgba(201,168,53,0.3);
+    }
+    .bot-btn.prime:hover{box-shadow:0 4px 20px rgba(201,168,53,0.45)}
+
+    /* ════ MODAL ════ */
+    .overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.72);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      z-index:200;display:none;align-items:flex-end;justify-content:center;
+    }
+    .overlay.open{display:flex}
+    .modal{
+      background:var(--surface);border:1px solid var(--border-s);
+      border-radius:22px 22px 0 0;width:100%;max-width:480px;
+      padding:20px 22px max(22px,env(safe-area-inset-bottom)) 22px;
+      animation:slideUp .3s ease;
+    }
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{
+      width:38px;height:4px;background:var(--border-s);border-radius:2px;margin:0 auto 18px;
+    }
+    .modal-title{font-size:16px;font-weight:800;color:var(--text);text-align:center;margin-bottom:18px}
+    .qr-wrap{
+      display:flex;justify-content:center;padding:16px;
+      background:#fff;border-radius:14px;margin-bottom:12px;
+    }
+    .qr-url{
+      text-align:center;font-size:10.5px;color:var(--muted);direction:ltr;
+      word-break:break-all;margin-bottom:16px;
+    }
+    .modal-close{
+      width:100%;padding:13px;border-radius:11px;border:1px solid var(--border);
+      background:var(--card);color:var(--muted);font-family:var(--font);
+      font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+    }
+    .modal-close:hover{border-color:var(--gold);color:var(--gold)}
+
+    /* ════ TOAST ════ */
+    .toast{
+      position:fixed;bottom:95px;left:50%;
+      transform:translateX(-50%) translateY(16px);
+      background:var(--card);border:1px solid var(--border-s);
+      border-radius:100px;padding:9px 20px;
+      font-size:12.5px;font-weight:700;color:var(--gold);
+      box-shadow:var(--shadow);opacity:0;transition:all .3s;
+      z-index:300;white-space:nowrap;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* scrollbar */
+    ::-webkit-scrollbar{width:3px}
+    ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:3px}
+
+    /* Divider label */
+    .divider-lbl{
+      padding:10px 15px 5px;font-size:10px;color:var(--dim);font-weight:600;
+      letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="brand-icon">🕌</div>
+        <div class="brand-text">
+          <h1>راهنمای کاروان عراق</h1>
+          <p>ستادها، درمانگاه‌ها و شماره‌های تماس</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" title="تغییر تم">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── INSTALL BANNER ── -->
+  <div class="install-banner" id="installBanner">
+    <span style="font-size:20px">📲</span>
+    <div class="install-text">
+      <strong>نصب روی گوشی</strong>
+      بدون اینترنت هم کار می‌کند
+    </div>
+    <button class="install-btn" id="installBtn">نصب</button>
+  </div>
+
+  <!-- ── EMERGENCY ── -->
+  <div class="emergency" id="emergency">
+    <div class="emergency-head" onclick="toggleEmergency()">
+      <div class="emergency-label">
+        <div class="e-pulse"></div>
+        🚨 اورژانس و شماره‌های بحران
+      </div>
+      <span class="emergency-arrow" id="eArrow">▼</span>
+    </div>
+    <div class="emergency-body" id="eBody">
+      <div class="e-grid">
+        <div class="e-item">
+          <div class="e-label">پلیس عراق</div>
+          <div class="e-num">104</div>
+        </div>
+        <div class="e-item">
+          <div class="e-label">اورژانس</div>
+          <div class="e-num">115</div>
+        </div>
+        <div class="e-item">
+          <div class="e-label">آتش‌نشانی</div>
+          <div class="e-num">115</div>
+        </div>
+        <div class="e-item">
+          <div class="e-label">اورژانس اجتماعی</div>
+          <div class="e-num">123</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABS ── -->
+  <div class="tabs-wrap">
+    <div class="tabs">
+      <button class="tab active" id="tab-najaf"     onclick="switchTab('najaf')">
+        <span class="tab-icon">🕌</span>نجف اشرف
+      </button>
+      <button class="tab"        id="tab-karbala"   onclick="switchTab('karbala')">
+        <span class="tab-icon">🕌</span>کربلا
+      </button>
+      <button class="tab"        id="tab-kadhimiya" onclick="switchTab('kadhimiya')">
+        <span class="tab-icon">🕌</span>کاظمین
+      </button>
+    </div>
+  </div>
+
+  <!-- ── CONTENT ── -->
+  <div class="content">
+
+    <!-- ═══ NAJAF ═══ -->
+    <div class="city-sec active" id="sec-najaf">
+      <div class="city-hero">
+        <div class="hero-name">نجف اشرف</div>
+        <div class="hero-arabic">النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)</div>
+      </div>
+
+      <!-- HQ -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-hq">🏢</div>
+          <div class="sec-info"><h3>ستاد نجف اشرف</h3></div>
+          <span class="badge badge-gold">ستاد</span>
+        </div>
+        <div class="addr-row">
+          <div class="addr-ico">📍</div>
+          <div class="addr-body">
+            <div class="addr-lbl">آدرس ستاد</div>
+            <div class="addr-txt">شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر</div>
+          </div>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/33_b_rKR_AAW8r" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/cVP62jZRwFm2q5hB6" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <div class="divider-lbl">شماره‌های تماس</div>
+        <div class="contacts">
+          <div class="c-item">
+            <div class="c-avatar">👤</div>
+            <div class="c-info">
+              <div class="c-role">رئیس ستاد نجف</div>
+              <div class="c-phone">07855435901</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647855435901" class="act act-call" title="تماس">📞</a>
+              <a href="https://wa.me/9647855435901" target="_blank" class="act act-wa" title="واتساپ">💬</a>
+              <button class="act act-cp" onclick="copyNum('07855435901',this)" title="کپی">📋</button>
+            </div>
+          </div>
+          <div class="c-item">
+            <div class="c-avatar">🛡️</div>
+            <div class="c-info">
+              <div class="c-role">مسئول حراست ستاد نجف</div>
+              <div class="c-phone">07848327903</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647848327903" class="act act-call" title="تماس">📞</a>
+              <a href="https://wa.me/9647848327903" target="_blank" class="act act-wa" title="واتساپ">💬</a>
+              <button class="act act-cp" onclick="copyNum('07848327903',this)" title="کپی">📋</button>
+            </div>
+          </div>
+          <div class="c-item">
+            <div class="c-avatar">🔍</div>
+            <div class="c-info">
+              <div class="c-role">مسئول بازرسی ستاد نجف</div>
+              <div class="c-phone">07842799305</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647842799305" class="act act-call" title="تماس">📞</a>
+              <a href="https://wa.me/9647842799305" target="_blank" class="act act-wa" title="واتساپ">💬</a>
+              <button class="act act-cp" onclick="copyNum('07842799305',this)" title="کپی">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLINIC -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-clinic">🏥</div>
+          <div class="sec-info"><h3>درمانگاه نجف</h3></div>
+          <span class="badge badge-green">درمانگاه</span>
+        </div>
+        <div class="addr-row">
+          <div class="addr-ico">📍</div>
+          <div class="addr-body">
+            <div class="addr-lbl">آدرس درمانگاه</div>
+            <div class="addr-txt">شارع السور – هتل نباء – درمانگاه نباء</div>
+          </div>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/65_b_s1ROAAlS4" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/SCwr7nx79vDDu9TXA" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
+      </div>
+    </div>
+
+    <!-- ═══ KARBALA ═══ -->
+    <div class="city-sec" id="sec-karbala">
+      <div class="city-hero">
+        <div class="hero-name">کربلای معلا</div>
+        <div class="hero-arabic">كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)</div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-hq">🏢</div>
+          <div class="sec-info"><h3>ستاد کربلا</h3></div>
+          <span class="badge badge-gold">ستاد</span>
+        </div>
+        <div class="addr-row">
+          <div class="addr-ico">📍</div>
+          <div class="addr-body">
+            <div class="addr-lbl">آدرس ستاد</div>
+            <div class="addr-txt">شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم</div>
+          </div>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/c4_bZlfl0A2eSO" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/pkLJ3suCqp82P8PaA" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <div class="divider-lbl">شماره‌های تماس</div>
+        <div class="contacts">
+          <div class="c-item">
+            <div class="c-avatar">👤</div>
+            <div class="c-info">
+              <div class="c-role">رئیس ستاد کربلا</div>
+              <div class="c-phone">07842510402</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647842510402" class="act act-call">📞</a>
+              <a href="https://wa.me/9647842510402" target="_blank" class="act act-wa">💬</a>
+              <button class="act act-cp" onclick="copyNum('07842510402',this)">📋</button>
+            </div>
+          </div>
+          <div class="c-item">
+            <div class="c-avatar">🛡️</div>
+            <div class="c-info">
+              <div class="c-role">مسئول حراست ستاد کربلا</div>
+              <div class="c-phone">07733104123</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647733104123" class="act act-call">📞</a>
+              <a href="https://wa.me/9647733104123" target="_blank" class="act act-wa">💬</a>
+              <button class="act act-cp" onclick="copyNum('07733104123',this)">📋</button>
+            </div>
+          </div>
+          <div class="c-item">
+            <div class="c-avatar">🔍</div>
+            <div class="c-info">
+              <div class="c-role">مسئول بازرسی ستاد کربلا</div>
+              <div class="c-phone">07873332030</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647873332030" class="act act-call">📞</a>
+              <a href="https://wa.me/9647873332030" target="_blank" class="act act-wa">💬</a>
+              <button class="act act-cp" onclick="copyNum('07873332030',this)">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-clinic">🏥</div>
+          <div class="sec-info"><h3>درمانگاه کربلا</h3></div>
+          <span class="badge badge-green">درمانگاه</span>
+        </div>
+        <div class="addr-row">
+          <div class="addr-ico">📍</div>
+          <div class="addr-body">
+            <div class="addr-lbl">آدرس درمانگاه</div>
+            <div class="addr-txt">شارع العباس (باب قبله حضرت عباس) – بعد از خیابان جمهوری – کوچه روبروی وزارت مخابرات – جنب هتل برج الکرمل – ساختمان حضرت فاطمه الزهرا (س)</div>
+          </div>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/4f_bZyZDYASwLL" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/RiPVKsojhM6Y7NfL7" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
+      </div>
+    </div>
+
+    <!-- ═══ KADHIMIYA ═══ -->
+    <div class="city-sec" id="sec-kadhimiya">
+      <div class="city-hero">
+        <div class="hero-name">کاظمین</div>
+        <div class="hero-arabic">الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)</div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-hq">🏢</div>
+          <div class="sec-info"><h3>ستاد کاظمین</h3></div>
+          <span class="badge badge-gold">ستاد</span>
+        </div>
+        <div class="addr-row">
+          <div class="addr-ico">📍</div>
+          <div class="addr-body">
+            <div class="addr-lbl">آدرس ستاد</div>
+            <div class="addr-txt">شارع باب المراد – هتل جمیره</div>
+          </div>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/c3_bS-LAYACueZ" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/BMoX9nV6TtcJxikD9" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <p class="no-c">شماره تماس ستاد به زودی اضافه می‌شود</p>
+      </div>
+
+      <!-- INSURANCE -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-ins">📋</div>
+          <div class="sec-info"><h3>نماینده بیمه معلم</h3></div>
+          <span class="badge badge-blue">بیمه</span>
+        </div>
+        <div class="contacts">
+          <div class="c-item">
+            <div class="c-avatar">🧑‍💼</div>
+            <div class="c-info">
+              <div class="c-role">نماینده بیمه معلم</div>
+              <div class="c-phone">07755488001</div>
+              <div class="c-name">آقای مجتبی ناصری</div>
+            </div>
+            <div class="c-acts">
+              <a href="tel:+9647755488001" class="act act-call">📞</a>
+              <a href="https://wa.me/9647755488001" target="_blank" class="act act-wa">💬</a>
+              <button class="act act-cp" onclick="copyNum('07755488001',this)">📋</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- ── BOTTOM BAR ── -->
+  <div class="bot-bar">
+    <div class="bot-inner">
+      <button class="bot-btn" onclick="showQR()">📱 QR کد</button>
+      <button class="bot-btn prime" onclick="shareApp()">🔗 اشتراک‌گذاری</button>
+    </div>
+  </div>
+
+</div><!-- /app-wrapper -->
+
+<!-- ── QR MODAL ── -->
+<div class="overlay" id="qrOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📱 QR کد برنامه</div>
+    <div class="qr-wrap"><div id="qrcode"></div></div>
+    <p class="qr-url" id="qrUrl"></p>
+    <button class="modal-close" onclick="closeQR()">بستن</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Theme ── */
+let dark = true;
+document.getElementById('themeBtn').addEventListener('click', () => {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? '' : 'light');
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
+});
+
+/* ── Tabs ── */
+function switchTab(city) {
+  document.querySelectorAll('.city-sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + city).classList.add('active');
+  document.getElementById('tab-' + city).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Emergency ── */
+function toggleEmergency() {
+  const el = document.getElementById('emergency');
+  el.classList.toggle('open');
+}
+
+/* ── Copy ── */
+function copyNum(num, btn) {
+  navigator.clipboard.writeText(num).then(() => {
+    btn.textContent = '✅';
+    btn.classList.add('done');
+    showToast('شماره کپی شد ✅');
+    setTimeout(() => { btn.textContent = '📋'; btn.classList.remove('done'); }, 2200);
+  }).catch(() => showToast('خطا در کپی'));
+}
+
+/* ── Toast ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ── QR ── */
+let qrDone = false;
+function showQR() {
+  const url = window.location.href.split('?')[0].split('#')[0];
+  document.getElementById('qrUrl').textContent = url;
+  if (!qrDone) {
+    new QRCode(document.getElementById('qrcode'), {
+      text: url, width: 200, height: 200,
+      colorDark: '#0A0E1C', colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrDone = true;
+  }
+  document.getElementById('qrOverlay').classList.add('open');
+}
+function closeQR() {
+  document.getElementById('qrOverlay').classList.remove('open');
+}
+document.getElementById('qrOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeQR();
+});
+
+/* ── Share ── */
+function shareApp() {
+  const url = window.location.href.split('?')[0].split('#')[0];
+  const data = {
+    title: 'راهنمای کاروان عراق',
+    text: 'اطلاعات تماس ستادها و درمانگاه‌های ایرانی در عراق',
+    url
+  };
+  if (navigator.share) {
+    navigator.share(data).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('لینک کپی شد 🔗'));
+  }
+}
+
+/* ── PWA Install ── */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+  if (outcome === 'accepted') showToast('برنامه نصب شد ✅');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  showToast('نصب با موفقیت انجام شد ✅');
+});
+
+/* ── Service Worker ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
