@@ -102,11 +102,9 @@
       box-shadow:var(--shadow);
     }
     .header-brand{display:flex;align-items:center;gap:10px}
-    .brand-icon{
-      width:42px;height:42px;border-radius:12px;
-      background:linear-gradient(135deg,var(--gold) 0%,var(--gold-l) 100%);
-      display:flex;align-items:center;justify-content:center;font-size:22px;
-      box-shadow:0 2px 12px rgba(46,125,94,0.35);flex-shrink:0;
+    .theme-toggle{
+      width:48px;height:48px;border-radius:12px;font-size:20px;
+      background:var(--card);flex-shrink:0;
     }
     .brand-text h1{font-size:14px;font-weight:800;color:var(--text);line-height:1.2}
     .brand-text p{font-size:10.5px;color:var(--muted);font-weight:400;margin-top:1px}
@@ -448,29 +446,13 @@
   <header class="header">
     <div class="header-inner">
       <div class="header-brand">
-        <div class="brand-icon">
-          <svg viewBox="0 0 30 28" xmlns="http://www.w3.org/2000/svg" width="28" height="26">
-            <rect x="1"  y="13" width="5"  height="13" rx="2.5" fill="#FFFFFF"/>
-            <ellipse cx="3.5"  cy="12" rx="3.5" ry="2.2" fill="#FFFFFF"/>
-            <rect x="2.5" y="5" width="2" height="8" rx="1" fill="#FFFFFF"/>
-            <rect x="24" y="13" width="5"  height="13" rx="2.5" fill="#FFFFFF"/>
-            <ellipse cx="26.5" cy="12" rx="3.5" ry="2.2" fill="#FFFFFF"/>
-            <rect x="25.5" y="5" width="2" height="8" rx="1" fill="#FFFFFF"/>
-            <ellipse cx="15" cy="15" rx="10" ry="13" fill="#FFFFFF"/>
-            <rect x="5"  y="15" width="20" height="4.5" rx="2" fill="#FFFFFF"/>
-            <rect x="13.5" y="1.5" width="3" height="7" rx="1.5" fill="#FFFFFF"/>
-            <path d="M15 1 A4 4 0 0 1 20 5 A3 3 0 0 0 15 1Z" fill="#FFFFFF"/>
-            <rect x="4" y="19.5" width="22" height="7.5" rx="3" fill="#FFFFFF"/>
-            <path d="M11 27 L11 22.5 Q15 18.5 19 22.5 L19 27Z" fill="#2E7D5E" opacity="0.22"/>
-          </svg>
-        </div>
+        <button class="icon-btn theme-toggle" id="themeBtn" title="تغییر تم" aria-label="فعال کردن حالت تیره">🌙</button>
         <div class="brand-text">
           <h1>راهنمای کاروان عراق</h1>
           <p>ستادها، درمانگاه‌ها و شماره‌های تماس</p>
         </div>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" id="themeBtn" title="تغییر تم" aria-label="فعال کردن حالت تیره">🌙</button>
         <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت">
       </div>
     </div>
