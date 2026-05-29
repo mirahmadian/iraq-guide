@@ -1,4 +1,4 @@
-const CACHE = 'iraq-guide-v2';
+const CACHE = 'iraq-guide-v3';
 const ASSETS = [
   './',
   './index.html',

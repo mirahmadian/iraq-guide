@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>راهنمای کاروان | عراق</title>
   <meta name="description" content="راهنمای دیجیتال مدیران کاروان در عراق – ستادها، درمانگاه‌ها، شماره‌های تماس">
-  <meta name="theme-color" content="#0D2E1F">
+  <meta name="theme-color" content="#F0F7F2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="کاروان عراق">
@@ -393,7 +393,9 @@
     .hajj-logo{
       width:48px;height:48px;border-radius:12px;object-fit:contain;
       background:transparent;padding:6px;flex-shrink:0;
+      filter:brightness(0) invert(1);
     }
+    [data-theme="light"] .hajj-logo{filter:none}
 
     /* ════ GLOBAL INSURANCE CARD ════ */
     .global-ins{
@@ -468,8 +470,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" id="themeBtn" title="تغییر تم">🌙</button>
-        <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت" style="filter: brightness(0) invert(1);">
+        <button class="icon-btn" id="themeBtn" title="تغییر تم" aria-label="فعال کردن حالت تیره">🌙</button>
+        <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت">
       </div>
     </div>
   </header>
@@ -831,12 +833,16 @@
 
 <script>
 /* ── Theme ── */
-let dark = true;
-document.getElementById('themeBtn').addEventListener('click', () => {
-  dark = !dark;
-  document.documentElement.setAttribute('data-theme', dark ? '' : 'light');
-  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
-});
+const themeBtn = document.getElementById('themeBtn');
+let dark = document.documentElement.dataset.theme !== 'light';
+function applyTheme(isDark) {
+  dark = isDark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  themeBtn.textContent = dark ? '☀️' : '🌙';
+  themeBtn.setAttribute('aria-label', dark ? 'فعال کردن حالت روشن' : 'فعال کردن حالت تیره');
+}
+applyTheme(dark);
+themeBtn.addEventListener('click', () => applyTheme(!dark));
 
 /* ── Tabs ── */
 function switchTab(city) {
