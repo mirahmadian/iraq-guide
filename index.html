@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>راهنمای کاروان | عراق</title>
   <meta name="description" content="راهنمای دیجیتال مدیران کاروان در عراق – ستادها، درمانگاه‌ها، شماره‌های تماس">
-  <meta name="theme-color" content="#0D2E1F">
+  <meta name="theme-color" content="#E2F0E6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="کاروان عراق">
@@ -69,7 +69,6 @@
       overflow-x:hidden;
     }
 
-    /* ── Islamic geometric pattern (اصلاح شده با رنگ سبز) ── */
     body::before{
       content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       background-image:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(46,125,94,0.08)' stroke-width='0.8'%3E%3Cpolygon points='50%2C8 59%2C35 88%2C35 65%2C53 74%2C80 50%2C62 26%2C80 35%2C53 12%2C35 41%2C35'/%3E%3Ccircle cx='50' cy='50' r='22'/%3E%3C/g%3E%3C/svg%3E");
@@ -88,7 +87,6 @@
       min-height:100vh;display:flex;flex-direction:column;
     }
 
-    /* ════ HEADER ════ */
     .header{
       position:sticky;top:0;z-index:100;
       padding:14px 14px 6px;
@@ -119,7 +117,6 @@
     }
     .icon-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
 
-    /* ════ INSTALL BANNER ════ */
     .install-banner{
       display:none;margin:0 14px 8px;
       background:linear-gradient(135deg,rgba(46,125,94,0.13),rgba(46,125,94,0.06));
@@ -137,7 +134,6 @@
     }
     .install-btn:hover{background:var(--gold-l)}
 
-    /* ════ EMERGENCY ════ */
     .emergency{
       margin:0 14px 8px;
       background:linear-gradient(135deg,rgba(183,50,50,0.13),rgba(183,50,50,0.07));
@@ -168,7 +164,6 @@
     .e-label{font-size:10px;color:rgba(231,76,60,.75);margin-bottom:3px}
     .e-num{font-size:20px;font-weight:900;color:var(--ruby-l);letter-spacing:1px}
 
-    /* ════ TABS ════ */
     .tabs-wrap{
       padding:0 14px;margin-bottom:10px;
       position:sticky;top:76px;z-index:90;
@@ -192,13 +187,11 @@
       color:#FFFFFF;box-shadow:0 2px 14px rgba(46,125,94,0.32);
     }
 
-    /* ════ CONTENT ════ */
     .content{flex:1;padding:0 14px 110px}
     .city-sec{display:none}
     .city-sec.active{display:block;animation:fadeUp .28s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-    /* City hero */
     .city-hero{
       margin-bottom:14px;padding:18px 16px;
       background:linear-gradient(135deg,var(--surface),var(--card2));
@@ -218,7 +211,6 @@
     .hero-name{font-size:24px;font-weight:900;color:var(--gold);margin-bottom:3px;position:relative;z-index:1}
     .hero-arabic{font-size:12px;color:var(--muted);font-weight:400;position:relative;z-index:1;line-height:1.6}
 
-    /* Section card */
     .sec-card{
       background:var(--card);border:1px solid var(--border);
       border-radius:var(--r);margin-bottom:14px;overflow:hidden;
@@ -246,7 +238,6 @@
     .badge-green{background:rgba(46,125,94,.13);color:var(--emerald-l);border-color:rgba(46,125,94,.28)}
     .badge-blue{background:rgba(90,156,245,.12);color:var(--blue-l);border-color:rgba(90,156,245,.28)}
 
-    /* Address */
     .addr-row{
       display:flex;align-items:flex-start;gap:10px;
       padding:11px 15px;border-bottom:1px solid var(--border);
@@ -256,11 +247,9 @@
       display:flex;align-items:center;justify-content:center;font-size:13px;
       flex-shrink:0;margin-top:1px;
     }
-    .addr-body{}
     .addr-lbl{font-size:10px;color:var(--dim);font-weight:500;margin-bottom:3px}
     .addr-txt{font-size:12.5px;color:var(--muted);line-height:1.75}
 
-    /* Map buttons */
     .map-row{
       display:flex;gap:7px;padding:9px 15px;border-bottom:1px solid var(--border);
     }
@@ -275,8 +264,6 @@
     .map-n{border-color:var(--border-s);color:var(--gold);background:var(--gold-dim2)}
     .map-n:hover{background:var(--gold-dim);border-color:var(--gold)}
 
-    /* Contacts */
-    .contacts{}
     .c-item{
       display:flex;align-items:center;gap:10px;
       padding:10px 15px;border-bottom:1px solid var(--border);
@@ -306,13 +293,11 @@
     .act-cp{border-color:var(--border);color:var(--muted)}
     .act-cp:hover,.act-cp.done{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
 
-    /* No contacts placeholder */
     .no-c{
       padding:14px 15px;font-size:11px;color:var(--dim);
       text-align:center;font-style:italic;border-top:1px solid var(--border);
     }
 
-    /* ════ BOTTOM BAR ════ */
     .bot-bar{
       position:fixed;bottom:0;left:50%;transform:translateX(-50%);
       width:100%;max-width:480px;z-index:100;
@@ -334,7 +319,6 @@
     }
     .bot-btn.prime:hover{box-shadow:0 4px 20px rgba(46,125,94,0.45)}
 
-    /* ════ MODAL ════ */
     .overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.72);
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
@@ -367,7 +351,6 @@
     }
     .modal-close:hover{border-color:var(--gold);color:var(--gold)}
 
-    /* ════ TOAST ════ */
     .toast{
       position:fixed;bottom:95px;left:50%;
       transform:translateX(-50%) translateY(16px);
@@ -379,23 +362,19 @@
     }
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* scrollbar */
     ::-webkit-scrollbar{width:3px}
     ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:3px}
 
-    /* Divider label */
     .divider-lbl{
       padding:10px 15px 5px;font-size:10px;color:var(--dim);font-weight:600;
       letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--border);
     }
 
-    /* Hajj logo */
     .hajj-logo{
       width:48px;height:48px;border-radius:12px;object-fit:contain;
       background:transparent;padding:6px;flex-shrink:0;
     }
 
-    /* ════ GLOBAL INSURANCE CARD ════ */
     .global-ins{
       margin:0 14px 10px;
       background:linear-gradient(135deg,rgba(90,156,245,0.10),rgba(90,156,245,0.05));
@@ -421,11 +400,9 @@
     .gin-phone{font-size:14px;font-weight:700;color:var(--text);direction:ltr;text-align:right;letter-spacing:.5px}
     .gin-acts{display:flex;gap:5px;flex-shrink:0}
 
-    /* Consulate */
     .ico-consulate{background:linear-gradient(135deg,rgba(184,50,50,.18),rgba(184,50,50,.08))}
     .badge-ruby{background:rgba(184,50,50,.13);color:#F08080;border-color:rgba(184,50,50,.28)}
 
-    /* ════ FOOTER ════ */
     .footer{
       margin:20px 14px 130px;
       background:var(--card);border:1px solid var(--border);
@@ -442,23 +419,22 @@
 <body>
 <div class="app-wrapper">
 
-  <!-- ── HEADER ── -->
   <header class="header">
     <div class="header-inner">
       <div class="header-brand">
         <div class="brand-icon">
           <svg viewBox="0 0 30 28" xmlns="http://www.w3.org/2000/svg" width="28" height="26">
-            <rect x="1"  y="13" width="5"  height="13" rx="2.5" fill="#FFFFFF"/>
-            <ellipse cx="3.5"  cy="12" rx="3.5" ry="2.2" fill="#FFFFFF"/>
-            <rect x="2.5" y="5" width="2" height="8" rx="1" fill="#FFFFFF"/>
-            <rect x="24" y="13" width="5"  height="13" rx="2.5" fill="#FFFFFF"/>
-            <ellipse cx="26.5" cy="12" rx="3.5" ry="2.2" fill="#FFFFFF"/>
-            <rect x="25.5" y="5" width="2" height="8" rx="1" fill="#FFFFFF"/>
-            <ellipse cx="15" cy="15" rx="10" ry="13" fill="#FFFFFF"/>
-            <rect x="5"  y="15" width="20" height="4.5" rx="2" fill="#FFFFFF"/>
-            <rect x="13.5" y="1.5" width="3" height="7" rx="1.5" fill="#FFFFFF"/>
-            <path d="M15 1 A4 4 0 0 1 20 5 A3 3 0 0 0 15 1Z" fill="#FFFFFF"/>
-            <rect x="4" y="19.5" width="22" height="7.5" rx="3" fill="#FFFFFF"/>
+            <rect x="1" y="13" width="5" height="13" rx="2.5" fill="#C9A835"/>
+            <ellipse cx="3.5" cy="12" rx="3.5" ry="2.2" fill="#C9A835"/>
+            <rect x="2.5" y="5" width="2" height="8" rx="1" fill="#C9A835"/>
+            <rect x="24" y="13" width="5" height="13" rx="2.5" fill="#C9A835"/>
+            <ellipse cx="26.5" cy="12" rx="3.5" ry="2.2" fill="#C9A835"/>
+            <rect x="25.5" y="5" width="2" height="8" rx="1" fill="#C9A835"/>
+            <ellipse cx="15" cy="15" rx="10" ry="13" fill="#C9A835"/>
+            <rect x="5" y="15" width="20" height="4.5" rx="2" fill="#C9A835"/>
+            <rect x="13.5" y="1.5" width="3" height="7" rx="1.5" fill="#C9A835"/>
+            <path d="M15 1 A4 4 0 0 1 20 5 A3 3 0 0 0 15 1Z" fill="#C9A835"/>
+            <rect x="4" y="19.5" width="22" height="7.5" rx="3" fill="#C9A835"/>
             <path d="M11 27 L11 22.5 Q15 18.5 19 22.5 L19 27Z" fill="#2E7D5E" opacity="0.22"/>
           </svg>
         </div>
@@ -474,7 +450,6 @@
     </div>
   </header>
 
-  <!-- ── INSTALL BANNER ── -->
   <div class="install-banner" id="installBanner">
     <span style="font-size:20px">📲</span>
     <div class="install-text">
@@ -484,7 +459,6 @@
     <button class="install-btn" id="installBtn">نصب</button>
   </div>
 
-  <!-- ── EMERGENCY ── -->
   <div class="emergency" id="emergency">
     <div class="emergency-head" onclick="toggleEmergency()">
       <div class="emergency-label">
@@ -492,451 +466,4 @@
         🚨 اورژانس و شماره‌های بحران
       </div>
       <span class="emergency-arrow" id="eArrow">▼</span>
-    </div>
-    <div class="emergency-body" id="eBody">
-      <div class="e-grid">
-        <div class="e-item">
-          <div class="e-label">پلیس عراق</div>
-          <div class="e-num">104</div>
-        </div>
-        <div class="e-item">
-          <div class="e-label">اورژانس</div>
-          <div class="e-num">115</div>
-        </div>
-        <div class="e-item">
-          <div class="e-label">آتش‌نشانی</div>
-          <div class="e-num">115</div>
-        </div>
-        <div class="e-item">
-          <div class="e-label">اورژانس اجتماعی</div>
-          <div class="e-num">123</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── GLOBAL INSURANCE (همه شهرها) ── -->
-  <div class="global-ins">
-    <div class="global-ins-head">
-      <div class="global-ins-ico">📋</div>
-      <div class="global-ins-title">نماینده بیمه معلم – تمام شهرها</div>
-      <span class="global-badge">مشترک</span>
-    </div>
-    <div class="global-ins-body">
-      <div class="gin-row">
-        <div class="gin-avatar">🧑‍💼</div>
-        <div class="gin-info">
-          <div class="gin-role">نماینده بیمه معلم (نجف · کربلا · کاظمین)</div>
-          <div class="gin-phone">07755488001</div>
-          <div class="gin-name">آقای مجتبی ناصری</div>
-        </div>
-        <div class="gin-acts">
-          <a href="tel:+9647755488001" class="act act-call">📞</a>
-          <a href="https://wa.me/9647755488001" target="_blank" class="act act-wa">💬</a>
-          <button class="act act-cp" onclick="copyNum('07755488001',this)">📋</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TABS ── -->
-  <div class="tabs-wrap">
-    <div class="tabs">
-      <button class="tab active" id="tab-najaf"     onclick="switchTab('najaf')">
-        <span class="tab-icon">🕌</span>نجف اشرف
-      </button>
-      <button class="tab"        id="tab-karbala"   onclick="switchTab('karbala')">
-        <span class="tab-icon">🕌</span>کربلا
-      </button>
-      <button class="tab"        id="tab-kadhimiya" onclick="switchTab('kadhimiya')">
-        <span class="tab-icon">🕌</span>کاظمین
-      </button>
-    </div>
-  </div>
-
-  <!-- ── CONTENT ── -->
-  <div class="content">
-
-    <!-- ═══ NAJAF ═══ -->
-    <div class="city-sec active" id="sec-najaf">
-      <div class="city-hero">
-        <div class="hero-name">نجف اشرف</div>
-        <div class="hero-arabic">النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)</div>
-      </div>
-
-      <!-- HQ -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-hq">🏢</div>
-          <div class="sec-info"><h3>ستاد نجف اشرف</h3></div>
-          <span class="badge badge-gold">ستاد</span>
-        </div>
-        <div class="addr-row">
-          <div class="addr-ico">📍</div>
-          <div class="addr-body">
-            <div class="addr-lbl">آدرس ستاد</div>
-            <div class="addr-txt">شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر</div>
-          </div>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/33_b_rKR_AAW8r" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/cVP62jZRwFm2q5hB6" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <div class="divider-lbl">شماره‌های تماس</div>
-        <div class="contacts">
-          <div class="c-item">
-            <div class="c-avatar">👤</div>
-            <div class="c-info">
-              <div class="c-role">رئیس ستاد نجف</div>
-              <div class="c-phone">07855435901</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647855435901" class="act act-call" title="تماس">📞</a>
-              <a href="https://wa.me/9647855435901" target="_blank" class="act act-wa" title="واتساپ">💬</a>
-              <button class="act act-cp" onclick="copyNum('07855435901',this)" title="کپی">📋</button>
-            </div>
-          </div>
-          <div class="c-item">
-            <div class="c-avatar">🛡️</div>
-            <div class="c-info">
-              <div class="c-role">مسئول حراست ستاد نجف</div>
-              <div class="c-phone">07848327903</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647848327903" class="act act-call" title="تماس">📞</a>
-              <a href="https://wa.me/9647848327903" target="_blank" class="act act-wa" title="واتساپ">💬</a>
-              <button class="act act-cp" onclick="copyNum('07848327903',this)" title="کپی">📋</button>
-            </div>
-          </div>
-          <div class="c-item">
-            <div class="c-avatar">🔍</div>
-            <div class="c-info">
-              <div class="c-role">مسئول بازرسی ستاد نجف</div>
-              <div class="c-phone">07842799305</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647842799305" class="act act-call" title="تماس">📞</a>
-              <a href="https://wa.me/9647842799305" target="_blank" class="act act-wa" title="واتساپ">💬</a>
-              <button class="act act-cp" onclick="copyNum('07842799305',this)" title="کپی">📋</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CLINIC -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-clinic">🏥</div>
-          <div class="sec-info"><h3>درمانگاه نجف</h3></div>
-          <span class="badge badge-green">درمانگاه</span>
-        </div>
-        <div class="addr-row">
-          <div class="addr-ico">📍</div>
-          <div class="addr-body">
-            <div class="addr-lbl">آدرس درمانگاه</div>
-            <div class="addr-txt">شارع السور – هتل نباء – درمانگاه نباء</div>
-          </div>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/65_b_s1ROAAlS4" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/SCwr7nx79vDDu9TXA" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
-      </div>
-
-      <!-- CONSULATE NAJAF -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-consulate">🏛️</div>
-          <div class="sec-info"><h3>کنسولگری ایران – نجف</h3></div>
-          <span class="badge badge-ruby">کنسولگری</span>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/_b_r6eVAAW4d" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/xu5bijuJ6LD82fB37" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <p class="no-c">شماره تماس به زودی اضافه می‌شود</p>
-      </div>
-    </div>
-
-    <!-- ═══ KARBALA ═══ -->
-    <div class="city-sec" id="sec-karbala">
-      <div class="city-hero">
-        <div class="hero-name">کربلای معلا</div>
-        <div class="hero-arabic">كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)</div>
-      </div>
-
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-hq">🏢</div>
-          <div class="sec-info"><h3>ستاد کربلا</h3></div>
-          <span class="badge badge-gold">ستاد</span>
-        </div>
-        <div class="addr-row">
-          <div class="addr-ico">📍</div>
-          <div class="addr-body">
-            <div class="addr-lbl">آدرس ستاد</div>
-            <div class="addr-txt">شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم</div>
-          </div>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/c4_bZlfl0A2eSO" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/pkLJ3suCqp82P8PaA" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <div class="divider-lbl">شماره‌های تماس</div>
-        <div class="contacts">
-          <div class="c-item">
-            <div class="c-avatar">👤</div>
-            <div class="c-info">
-              <div class="c-role">رئیس ستاد کربلا</div>
-              <div class="c-phone">07842510402</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647842510402" class="act act-call">📞</a>
-              <a href="https://wa.me/9647842510402" target="_blank" class="act act-wa">💬</a>
-              <button class="act act-cp" onclick="copyNum('07842510402',this)">📋</button>
-            </div>
-          </div>
-          <div class="c-item">
-            <div class="c-avatar">🛡️</div>
-            <div class="c-info">
-              <div class="c-role">مسئول حراست ستاد کربلا</div>
-              <div class="c-phone">07733104123</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647733104123" class="act act-call">📞</a>
-              <a href="https://wa.me/9647733104123" target="_blank" class="act act-wa">💬</a>
-              <button class="act act-cp" onclick="copyNum('07733104123',this)">📋</button>
-            </div>
-          </div>
-          <div class="c-item">
-            <div class="c-avatar">🔍</div>
-            <div class="c-info">
-              <div class="c-role">مسئول بازرسی ستاد کربلا</div>
-              <div class="c-phone">07873332030</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647873332030" class="act act-call">📞</a>
-              <a href="https://wa.me/9647873332030" target="_blank" class="act act-wa">💬</a>
-              <button class="act act-cp" onclick="copyNum('07873332030',this)">📋</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-clinic">🏥</div>
-          <div class="sec-info"><h3>درمانگاه کربلا</h3></div>
-          <span class="badge badge-green">درمانگاه</span>
-        </div>
-        <div class="addr-row">
-          <div class="addr-ico">📍</div>
-          <div class="addr-body">
-            <div class="addr-lbl">آدرس درمانگاه</div>
-            <div class="addr-txt">شارع العباس (باب قبله حضرت عباس) – بعد از خیابان جمهوری – کوچه روبروی وزارت مخابرات – جنب هتل برج الکرمل – ساختمان حضرت فاطمه الزهرا (س)</div>
-          </div>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/4f_bZyZDYASwLL" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/RiPVKsojhM6Y7NfL7" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
-      </div>
-
-      <!-- CONSULATE KARBALA -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-consulate">🏛️</div>
-          <div class="sec-info"><h3>کنسولگری ایران – کربلا</h3></div>
-          <span class="badge badge-ruby">کنسولگری</span>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/df_bZTEHNASrOv" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/zbi79t88G28wRK3G7" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <p class="no-c">شماره تماس به زودی اضافه می‌شود</p>
-      </div>
-    </div>
-
-    <!-- ═══ KADHIMIYA ═══ -->
-    <div class="city-sec" id="sec-kadhimiya">
-      <div class="city-hero">
-        <div class="hero-name">کاظمین</div>
-        <div class="hero-arabic">الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)</div>
-      </div>
-
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-hq">🏢</div>
-          <div class="sec-info"><h3>ستاد کاظمین</h3></div>
-          <span class="badge badge-gold">ستاد</span>
-        </div>
-        <div class="addr-row">
-          <div class="addr-ico">📍</div>
-          <div class="addr-body">
-            <div class="addr-lbl">آدرس ستاد</div>
-            <div class="addr-txt">شارع باب المراد – هتل جمیره</div>
-          </div>
-        </div>
-        <div class="map-row">
-          <a href="https://nshn.ir/c3_bS-LAYACueZ" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
-          <a href="https://maps.app.goo.gl/BMoX9nV6TtcJxikD9" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
-        </div>
-        <p class="no-c">شماره تماس ستاد به زودی اضافه می‌شود</p>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-
-  <!-- ── FOOTER ── -->
-  <div class="footer">
-    <div class="footer-bismillah">✦ بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيم ✦</div>
-    <div class="footer-salawat">
-      <strong>هزینه استفاده از این برنامه</strong>
-      صلواتی نثار روح پاک شهدا، درگذشتگان<br>
-      و همه امامان شهید علیهم‌السلام 🌹
-    </div>
-    <div class="footer-divider"></div>
-    <div class="footer-dev">
-      طراحی و برنامه‌نویسی: <strong>محمد میراحمدیان</strong><br>
-      اگر این برنامه برایتان مفید بود،<br>
-      <strong>پدرم را هم در دعایتان یاد کنید 🤲</strong>
-    </div>
-  </div>
-
-  <!-- ── BOTTOM BAR ── -->
-  <div class="bot-bar">
-    <div class="bot-inner">
-      <button class="bot-btn" onclick="showQR()">📱 QR کد</button>
-      <button class="bot-btn prime" onclick="shareApp()">🔗 اشتراک‌گذاری</button>
-    </div>
-  </div>
-
-</div><!-- /app-wrapper -->
-
-<!-- ── QR MODAL ── -->
-<div class="overlay" id="qrOverlay">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">📱 QR کد برنامه</div>
-    <div class="qr-wrap"><div id="qrcode"></div></div>
-    <p class="qr-url" id="qrUrl"></p>
-    <button class="modal-close" onclick="closeQR()">بستن</button>
-  </div>
-</div>
-
-<!-- ── TOAST ── -->
-<div class="toast" id="toast"></div>
-
-<script>
-/* ── Theme ── */
-let dark = true;
-document.getElementById('themeBtn').addEventListener('click', () => {
-  dark = !dark;
-  document.documentElement.setAttribute('data-theme', dark ? '' : 'light');
-  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
-});
-
-/* ── Tabs ── */
-function switchTab(city) {
-  document.querySelectorAll('.city-sec').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('sec-' + city).classList.add('active');
-  document.getElementById('tab-' + city).classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-/* ── Emergency ── */
-function toggleEmergency() {
-  const el = document.getElementById('emergency');
-  el.classList.toggle('open');
-}
-
-/* ── Copy ── */
-function copyNum(num, btn) {
-  navigator.clipboard.writeText(num).then(() => {
-    btn.textContent = '✅';
-    btn.classList.add('done');
-    showToast('شماره کپی شد ✅');
-    setTimeout(() => { btn.textContent = '📋'; btn.classList.remove('done'); }, 2200);
-  }).catch(() => showToast('خطا در کپی'));
-}
-
-/* ── Toast ── */
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 2400);
-}
-
-/* ── QR ── */
-let qrDone = false;
-function showQR() {
-  const url = window.location.href.split('?')[0].split('#')[0];
-  document.getElementById('qrUrl').textContent = url;
-  if (!qrDone) {
-    new QRCode(document.getElementById('qrcode'), {
-      text: url, width: 200, height: 200,
-      colorDark: '#0A0E1C', colorLight: '#FFFFFF',
-      correctLevel: QRCode.CorrectLevel.H
-    });
-    qrDone = true;
-  }
-  document.getElementById('qrOverlay').classList.add('open');
-}
-function closeQR() {
-  document.getElementById('qrOverlay').classList.remove('open');
-}
-document.getElementById('qrOverlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeQR();
-});
-
-/* ── Share ── */
-function shareApp() {
-  const url = window.location.href.split('?')[0].split('#')[0];
-  const data = {
-    title: 'راهنمای کاروان عراق',
-    text: 'اطلاعات تماس ستادها و درمانگاه‌های ایرانی در عراق',
-    url
-  };
-  if (navigator.share) {
-    navigator.share(data).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(url).then(() => showToast('لینک کپی شد 🔗'));
-  }
-}
-
-/* ── PWA Install ── */
-let deferredPrompt;
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  if (isStandalone) return;
-  deferredPrompt = e;
-  document.getElementById('installBanner').classList.add('show');
-});
-document.getElementById('installBtn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  document.getElementById('installBanner').classList.remove('show');
-  if (outcome === 'accepted') showToast('برنامه نصب شد ✅');
-});
-window.addEventListener('appinstalled', () => {
-  document.getElementById('installBanner').classList.remove('show');
-  showToast('نصب با موفقیت انجام شد ✅');
-});
-
-/* ── Service Worker ── */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-</script>
-</body>
-</html>
+   
