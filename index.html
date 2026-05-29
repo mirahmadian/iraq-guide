@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="کاروان عراق">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="app-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -388,6 +388,54 @@
       padding:10px 15px 5px;font-size:10px;color:var(--dim);font-weight:600;
       letter-spacing:.5px;text-transform:uppercase;border-top:1px solid var(--border);
     }
+
+    /* Hajj logo */
+    .hajj-logo{height:42px;width:42px;border-radius:10px;object-fit:contain;
+      background:#fff;padding:4px;flex-shrink:0;
+      box-shadow:0 2px 10px rgba(0,0,0,0.3);}
+
+    /* ════ GLOBAL INSURANCE CARD ════ */
+    .global-ins{
+      margin:0 14px 10px;
+      background:linear-gradient(135deg,rgba(90,156,245,0.10),rgba(90,156,245,0.05));
+      border:1px solid rgba(90,156,245,0.25);border-radius:var(--r-sm);overflow:hidden;
+    }
+    .global-ins-head{
+      display:flex;align-items:center;gap:9px;padding:10px 13px;
+      border-bottom:1px solid rgba(90,156,245,0.15);
+    }
+    .global-ins-ico{width:32px;height:32px;border-radius:8px;background:rgba(90,156,245,0.14);
+      display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+    .global-ins-title{font-size:12px;font-weight:700;color:var(--blue-l);flex:1}
+    .global-badge{font-size:9.5px;padding:2px 8px;border-radius:5px;font-weight:600;
+      background:rgba(90,156,245,0.12);color:var(--blue-l);border:1px solid rgba(90,156,245,0.28);}
+    .global-ins-body{padding:9px 13px}
+    .gin-row{display:flex;align-items:center;gap:10px}
+    .gin-avatar{width:34px;height:34px;border-radius:9px;background:rgba(90,156,245,0.10);
+      border:1px solid rgba(90,156,245,0.2);display:flex;align-items:center;justify-content:center;
+      font-size:15px;flex-shrink:0;}
+    .gin-info{flex:1;min-width:0}
+    .gin-role{font-size:10px;color:var(--dim);margin-bottom:2px}
+    .gin-name{font-size:11px;color:var(--muted)}
+    .gin-phone{font-size:14px;font-weight:700;color:var(--text);direction:ltr;text-align:right;letter-spacing:.5px}
+    .gin-acts{display:flex;gap:5px;flex-shrink:0}
+
+    /* Consulate */
+    .ico-consulate{background:linear-gradient(135deg,rgba(184,50,50,.18),rgba(184,50,50,.08))}
+    .badge-ruby{background:rgba(184,50,50,.13);color:#F08080;border-color:rgba(184,50,50,.28)}
+
+    /* ════ FOOTER ════ */
+    .footer{
+      margin:20px 14px 130px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);padding:18px 16px;text-align:center;
+    }
+    .footer-bismillah{font-size:15px;color:var(--gold);font-weight:700;margin-bottom:10px;letter-spacing:.5px;}
+    .footer-salawat{font-size:12px;color:var(--muted);line-height:2;margin-bottom:12px;}
+    .footer-salawat strong{color:var(--gold-l);display:block;font-size:13px;margin-bottom:4px}
+    .footer-divider{height:1px;background:var(--border);margin:12px 0;}
+    .footer-dev{font-size:11px;color:var(--dim);line-height:1.9;}
+    .footer-dev strong{color:var(--gold);font-weight:700}
   </style>
 </head>
 <body>
@@ -397,7 +445,22 @@
   <header class="header">
     <div class="header-inner">
       <div class="header-brand">
-        <div class="brand-icon">🕌</div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 30 28" xmlns="http://www.w3.org/2000/svg" width="28" height="26">
+            <rect x="1"  y="13" width="5"  height="13" rx="2.5" fill="#160F00"/>
+            <ellipse cx="3.5"  cy="12" rx="3.5" ry="2.2" fill="#160F00"/>
+            <rect x="2.5" y="5" width="2" height="8" rx="1" fill="#160F00"/>
+            <rect x="24" y="13" width="5"  height="13" rx="2.5" fill="#160F00"/>
+            <ellipse cx="26.5" cy="12" rx="3.5" ry="2.2" fill="#160F00"/>
+            <rect x="25.5" y="5" width="2" height="8" rx="1" fill="#160F00"/>
+            <ellipse cx="15" cy="15" rx="10" ry="13" fill="#160F00"/>
+            <rect x="5"  y="15" width="20" height="4.5" rx="2" fill="#160F00"/>
+            <rect x="13.5" y="1.5" width="3" height="7" rx="1.5" fill="#160F00"/>
+            <path d="M15 1 A4 4 0 0 1 20 5 A3 3 0 0 0 15 1Z" fill="#160F00"/>
+            <rect x="4" y="19.5" width="22" height="7.5" rx="3" fill="#160F00"/>
+            <path d="M11 27 L11 22.5 Q15 18.5 19 22.5 L19 27Z" fill="#C9A835" opacity="0.22"/>
+          </svg>
+        </div>
         <div class="brand-text">
           <h1>راهنمای کاروان عراق</h1>
           <p>ستادها، درمانگاه‌ها و شماره‌های تماس</p>
@@ -405,6 +468,7 @@
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="themeBtn" title="تغییر تم">🌙</button>
+        <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت">
       </div>
     </div>
   </header>
@@ -445,6 +509,30 @@
         <div class="e-item">
           <div class="e-label">اورژانس اجتماعی</div>
           <div class="e-num">123</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GLOBAL INSURANCE (همه شهرها) ── -->
+  <div class="global-ins">
+    <div class="global-ins-head">
+      <div class="global-ins-ico">📋</div>
+      <div class="global-ins-title">نماینده بیمه معلم – تمام شهرها</div>
+      <span class="global-badge">مشترک</span>
+    </div>
+    <div class="global-ins-body">
+      <div class="gin-row">
+        <div class="gin-avatar">🧑‍💼</div>
+        <div class="gin-info">
+          <div class="gin-role">نماینده بیمه معلم (نجف · کربلا · کاظمین)</div>
+          <div class="gin-phone">07755488001</div>
+          <div class="gin-name">آقای مجتبی ناصری</div>
+        </div>
+        <div class="gin-acts">
+          <a href="tel:+9647755488001" class="act act-call">📞</a>
+          <a href="https://wa.me/9647755488001" target="_blank" class="act act-wa">💬</a>
+          <button class="act act-cp" onclick="copyNum('07755488001',this)">📋</button>
         </div>
       </div>
     </div>
@@ -554,6 +642,20 @@
         </div>
         <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
       </div>
+
+      <!-- CONSULATE NAJAF -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-consulate">🏛️</div>
+          <div class="sec-info"><h3>کنسولگری ایران – نجف</h3></div>
+          <span class="badge badge-ruby">کنسولگری</span>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/_b_r6eVAAW4d" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/xu5bijuJ6LD82fB37" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <p class="no-c">شماره تماس به زودی اضافه می‌شود</p>
+      </div>
     </div>
 
     <!-- ═══ KARBALA ═══ -->
@@ -640,6 +742,20 @@
         </div>
         <p class="no-c">شماره تماس درمانگاه به زودی اضافه می‌شود</p>
       </div>
+
+      <!-- CONSULATE KARBALA -->
+      <div class="sec-card">
+        <div class="sec-head">
+          <div class="sec-ico ico-consulate">🏛️</div>
+          <div class="sec-info"><h3>کنسولگری ایران – کربلا</h3></div>
+          <span class="badge badge-ruby">کنسولگری</span>
+        </div>
+        <div class="map-row">
+          <a href="https://nshn.ir/df_bZTEHNASrOv" target="_blank" class="map-btn map-n">🗺️ نقشه نشان</a>
+          <a href="https://maps.app.goo.gl/zbi79t88G28wRK3G7" target="_blank" class="map-btn map-g">🌍 گوگل مپ</a>
+        </div>
+        <p class="no-c">شماره تماس به زودی اضافه می‌شود</p>
+      </div>
     </div>
 
     <!-- ═══ KADHIMIYA ═══ -->
@@ -668,33 +784,25 @@
         </div>
         <p class="no-c">شماره تماس ستاد به زودی اضافه می‌شود</p>
       </div>
-
-      <!-- INSURANCE -->
-      <div class="sec-card">
-        <div class="sec-head">
-          <div class="sec-ico ico-ins">📋</div>
-          <div class="sec-info"><h3>نماینده بیمه معلم</h3></div>
-          <span class="badge badge-blue">بیمه</span>
-        </div>
-        <div class="contacts">
-          <div class="c-item">
-            <div class="c-avatar">🧑‍💼</div>
-            <div class="c-info">
-              <div class="c-role">نماینده بیمه معلم</div>
-              <div class="c-phone">07755488001</div>
-              <div class="c-name">آقای مجتبی ناصری</div>
-            </div>
-            <div class="c-acts">
-              <a href="tel:+9647755488001" class="act act-call">📞</a>
-              <a href="https://wa.me/9647755488001" target="_blank" class="act act-wa">💬</a>
-              <button class="act act-cp" onclick="copyNum('07755488001',this)">📋</button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
   </div><!-- /content -->
+
+  <!-- ── FOOTER ── -->
+  <div class="footer">
+    <div class="footer-bismillah">✦ بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيم ✦</div>
+    <div class="footer-salawat">
+      <strong>هزینه استفاده از این برنامه</strong>
+      صلواتی نثار روح پاک شهدا، درگذشتگان<br>
+      و همه امامان شهید علیهم‌السلام 🌹
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-dev">
+      طراحی و برنامه‌نویسی: <strong>محمد میراحمدیان</strong><br>
+      اگر این برنامه برایتان مفید بود،<br>
+      <strong>پدرم را هم در دعایتان یاد کنید 🤲</strong>
+    </div>
+  </div>
 
   <!-- ── BOTTOM BAR ── -->
   <div class="bot-bar">
@@ -802,8 +910,11 @@ function shareApp() {
 
 /* ── PWA Install ── */
 let deferredPrompt;
+// اگر برنامه قبلاً نصب شده و در حالت standalone اجرا می‌شود، بنر نمایش داده نشود
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
+  if (isStandalone) return; // قبلاً نصب شده
   deferredPrompt = e;
   document.getElementById('installBanner').classList.add('show');
 });
