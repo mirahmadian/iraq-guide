@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>پنل مدیریت | راهنمای کاروان عراق</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <!-- اضافه کردن استایل‌های تقویم شمسی -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
   <style>
     :root {
       --gold: #2E7D5E; --gold-l: #3A9B74;
@@ -71,27 +69,134 @@
     .date-wrapper {
       position: relative;
       display: inline-block;
+      width: 100%;
     }
     .input-date { 
-      width: 160px; 
+      width: 200px; 
       font-family: var(--font); 
       font-size: 14px;
       cursor: pointer;
       background-color: var(--bg);
-      transition: all 0.2s ease;
-    }
-    .input-date:hover {
-      border-color: var(--gold);
-      background-color: #fff;
+      padding-left: 35px;
     }
     .calendar-icon {
       position: absolute;
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      pointer-events: none;
+      cursor: pointer;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+
+    /* استایل تقویم شمسی ساده */
+    .calendar-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .calendar-modal.show {
+      display: flex;
+    }
+    .calendar-container {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      width: 320px;
+      direction: rtl;
+      font-family: var(--font);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--gold);
+    }
+    .calendar-header button {
+      background: var(--gold);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .calendar-header button:hover {
+      background: var(--gold-l);
+    }
+    .current-date {
       font-size: 16px;
-      opacity: 0.6;
+      font-weight: bold;
+      color: var(--text);
+    }
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: var(--gold);
+      font-size: 12px;
+    }
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .calendar-day {
+      text-align: center;
+      padding: 8px 0;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .calendar-day:hover {
+      background: var(--gold);
+      color: white;
+    }
+    .calendar-day.selected {
+      background: var(--gold);
+      color: white;
+    }
+    .calendar-day.empty {
+      cursor: default;
+      opacity: 0.3;
+    }
+    .calendar-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .calendar-actions button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .btn-today {
+      background: var(--gold);
+      color: white;
+    }
+    .btn-close {
+      background: #eee;
+      color: var(--text);
     }
 
     .contact-entry {
@@ -147,20 +252,6 @@
       opacity:0; transition:all .3s; z-index:999; white-space:nowrap;
     }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
-    
-    /* استایل تقویم شمسی */
-    .persian-datepicker {
-      font-family: var(--font);
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-    .persian-datepicker .picker-header {
-      background: var(--gold);
-      border-radius: 12px 12px 0 0;
-    }
-    .persian-datepicker .picker-weekdays {
-      background: rgba(46,125,94,0.1);
-    }
   </style>
 </head>
 <body>
@@ -191,10 +282,29 @@
       <div class="field-label">تاریخ امروز را انتخاب کنید (شمسی)</div>
       <div class="date-wrapper">
         <input type="text" class="input-date" id="lastUpdate" placeholder="۱۴۰۳/۰۳/۱۵" readonly>
-        <span class="calendar-icon">📅</span>
+        <span class="calendar-icon" onclick="showCalendar()">📅</span>
       </div>
       <div style="font-size: 11px; color: var(--dim); margin-top: 8px;">
-        💡 برای انتخاب تاریخ، روی فیلد کلیک کنید
+        💡 برای انتخاب تاریخ، روی آیکون تقویم 📅 کلیک کنید
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal تقویم -->
+  <div id="calendarModal" class="calendar-modal">
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button id="prevMonthBtn">›</button>
+        <span id="currentMonthYear" class="current-date"></span>
+        <button id="nextMonthBtn">‹</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+      </div>
+      <div id="calendarDays" class="calendar-days"></div>
+      <div class="calendar-actions">
+        <button class="btn-today" onclick="goToToday()">امروز</button>
+        <button class="btn-close" onclick="closeCalendar()">بستن</button>
       </div>
     </div>
   </div>
@@ -262,77 +372,239 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- اضافه کردن کتابخانه‌های مورد نیاز تقویم شمسی -->
-<script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 <script src="data.js"></script>
 <script>
-// متغییر برای نگهداری شیء تقویم
-let datepicker = null;
-
-// دریافت تاریخ امروز شمسی
-function getTodayPersianDate() {
-  const today = new persianDate();
-  return today.format('YYYY/MM/DD');
-}
-
-// مقداردهی اولیه تقویم
-function initCalendar() {
-  const todayPersian = getTodayPersianDate();
-  const dateInput = document.getElementById('lastUpdate');
-  
-  // تنظیم مقدار اولیه از فایل data.js یا تاریخ امروز
-  if (CARAVAN_DATA && CARAVAN_DATA.lastUpdate) {
-    dateInput.value = CARAVAN_DATA.lastUpdate;
-  } else {
-    dateInput.value = todayPersian;
-  }
-  
-  // راه‌اندازی تقویم
-  datepicker = new PersianDatepicker(document.getElementById('lastUpdate'), {
-    format: 'YYYY/MM/DD',
-    autoClose: true,
-    onlySelectOnDate: true,
-    onSelect: function(unix, formatted) {
-      dateInput.value = formatted;
-      showToast('تاریخ انتخاب شد: ' + formatted);
-    },
-    initialValue: true,
-    initialValueType: 'gregorian',
-    calendar: {
-      persian: {
-        locale: 'fa',
-        showHint: true,
-        showMonthHelp: true,
-        showWeekend: true
-      }
-    },
-    navigator: {
-      text: {
-        btnNextText: '›',
-        btnPrevText: '‹'
-      }
-    },
-    toolbox: {
-      todayButton: {
-        text: 'امروز',
-        onClick: function() {
-          const today = getTodayPersianDate();
-          dateInput.value = today;
-          if (datepicker && datepicker.setDate) {
-            datepicker.setDate(today);
-          }
-        }
-      },
-      submitButton: {
-        text: 'تایید',
-        onClick: function() {
-          datepicker.hide();
-        }
-      }
-    }
+// تبدیل اعداد انگلیسی به فارسی
+function toPersianNumber(num) {
+  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+  return num.toString().replace(/[0-9]/g, function(d) {
+    return persianDigits[parseInt(d)];
   });
 }
+
+// محاسبه تاریخ شمسی
+function getPersianDate(gy, gm, gd) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const day = today.getDate();
+  
+  // آرایه ماه‌های شمسی
+  const persianMonths = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  
+  // تبدیل تاریخ میلادی به شمسی (الگوریتم ساده)
+  const gDaysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let gy2 = gm > 2 ? gy + 1 : gy;
+  let days = 0;
+  for (let i = 1; i < gm; i++) {
+    days += gDaysInMonth[i-1];
+    if (i === 2 && ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0)) days++;
+  }
+  days += gd;
+  
+  let py = gy2 - 621;
+  let pDays = days - 79;
+  if (pDays < 0) {
+    py--;
+    pDays += 366;
+  }
+  let pm = 0;
+  const pDaysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  while (pDays > pDaysInMonth[pm]) {
+    pDays -= pDaysInMonth[pm];
+    pm++;
+  }
+  const pd = pDays;
+  
+  return {
+    year: py,
+    month: pm + 1,
+    day: pd,
+    monthName: persianMonths[pm]
+  };
+}
+
+// تبدیل تاریخ شمسی به رشته
+function formatPersianDate(pDate) {
+  return `${toPersianNumber(pDate.year)}/${toPersianNumber(pDate.month)}/${toPersianNumber(pDate.day)}`;
+}
+
+// دریافت تاریخ امروز شمسی
+function getTodayPersian() {
+  const today = new Date();
+  const pDate = getPersianDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  return formatPersianDate(pDate);
+}
+
+// متغیرهای تقویم
+let currentYear = 1403;
+let currentMonth = 1; // فروردین
+let selectedYear = 1403;
+let selectedMonth = 1;
+let selectedDay = 15;
+let calendarDateInput = null;
+
+// نمایش تقویم
+function showCalendar() {
+  const modal = document.getElementById('calendarModal');
+  const todayPersian = getTodayPersian().split('/');
+  currentYear = parseInt(todayPersian[0]);
+  currentMonth = parseInt(todayPersian[1]);
+  
+  const currentDate = document.getElementById('lastUpdate').value;
+  if (currentDate && currentDate !== '') {
+    const parts = currentDate.split('/');
+    if (parts.length === 3) {
+      selectedYear = parseInt(parts[0]);
+      selectedMonth = parseInt(parts[1]);
+      selectedDay = parseInt(parts[2]);
+    } else {
+      selectedYear = parseInt(todayPersian[0]);
+      selectedMonth = parseInt(todayPersian[1]);
+      selectedDay = parseInt(todayPersian[2]);
+    }
+  } else {
+    selectedYear = parseInt(todayPersian[0]);
+    selectedMonth = parseInt(todayPersian[1]);
+    selectedDay = parseInt(todayPersian[2]);
+  }
+  
+  currentYear = selectedYear;
+  currentMonth = selectedMonth;
+  
+  renderCalendar();
+  modal.classList.add('show');
+}
+
+// بستن تقویم
+function closeCalendar() {
+  document.getElementById('calendarModal').classList.remove('show');
+}
+
+// رفتن به امروز
+function goToToday() {
+  const todayPersian = getTodayPersian().split('/');
+  currentYear = parseInt(todayPersian[0]);
+  currentMonth = parseInt(todayPersian[1]);
+  selectedYear = currentYear;
+  selectedMonth = currentMonth;
+  selectedDay = parseInt(todayPersian[2]);
+  renderCalendar();
+  selectDate(selectedYear, selectedMonth, selectedDay);
+}
+
+// انتخاب تاریخ
+function selectDate(year, month, day) {
+  selectedYear = year;
+  selectedMonth = month;
+  selectedDay = day;
+  const formattedDate = `${toPersianNumber(year)}/${toPersianNumber(month)}/${toPersianNumber(day)}`;
+  document.getElementById('lastUpdate').value = formattedDate;
+  closeCalendar();
+  showToast(`تاریخ انتخاب شد: ${formattedDate}`);
+}
+
+// رندر تقویم
+function renderCalendar() {
+  const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  document.getElementById('currentMonthYear').innerHTML = `${monthNames[currentMonth-1]} ${toPersianNumber(currentYear)}`;
+  
+  // روز اول ماه (0 = شنبه)
+  let firstDayOfMonth = getDayOfWeek(currentYear, currentMonth, 1);
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  
+  const calendarDays = document.getElementById('calendarDays');
+  calendarDays.innerHTML = '';
+  
+  // روزهای خالی ابتدای ماه
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    const emptyDiv = document.createElement('div');
+    emptyDiv.classList.add('calendar-day', 'empty');
+    calendarDays.appendChild(emptyDiv);
+  }
+  
+  // روزهای ماه
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayDiv = document.createElement('div');
+    dayDiv.classList.add('calendar-day');
+    dayDiv.textContent = toPersianNumber(day);
+    if (selectedYear === currentYear && selectedMonth === currentMonth && selectedDay === day) {
+      dayDiv.classList.add('selected');
+    }
+    dayDiv.onclick = (function(y, m, d) {
+      return function() { selectDate(y, m, d); };
+    })(currentYear, currentMonth, day);
+    calendarDays.appendChild(dayDiv);
+  }
+}
+
+// گرفتن روز هفته (0 = شنبه)
+function getDayOfWeek(year, month, day) {
+  const gDate = persianToGregorian(year, month, day);
+  return gDate.getDay();
+}
+
+// تبدیل شمسی به میلادی
+function persianToGregorian(py, pm, pd) {
+  const pDaysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  let pDays = 0;
+  for (let i = 0; i < pm - 1; i++) {
+    pDays += pDaysInMonth[i];
+  }
+  pDays += pd;
+  
+  let gy = py + 621;
+  let gDays = pDays + 79;
+  const gDaysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  
+  if ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0) {
+    gDaysInMonth[1] = 29;
+  }
+  
+  let gm = 0;
+  while (gDays > gDaysInMonth[gm]) {
+    gDays -= gDaysInMonth[gm];
+    gm++;
+  }
+  const gd = gDays;
+  
+  return new Date(gy, gm, gd);
+}
+
+// تعداد روزهای ماه شمسی
+function getDaysInMonth(year, month) {
+  if (month <= 6) return 31;
+  if (month <= 11) return 30;
+  return 29; // اسفند
+}
+
+// کنترل‌های تقویم
+document.getElementById('prevMonthBtn').onclick = function() {
+  if (currentMonth === 1) {
+    currentMonth = 12;
+    currentYear--;
+  } else {
+    currentMonth--;
+  }
+  renderCalendar();
+};
+
+document.getElementById('nextMonthBtn').onclick = function() {
+  if (currentMonth === 12) {
+    currentMonth = 1;
+    currentYear++;
+  } else {
+    currentMonth++;
+  }
+  renderCalendar();
+};
+
+// کلیک خارج از تقویم برای بستن
+document.getElementById('calendarModal').onclick = function(e) {
+  if (e.target === this) {
+    closeCalendar();
+  }
+};
 
 // State: map of section key → array of {role, name, phone, countryCode}
 const state = {};
@@ -355,10 +627,14 @@ function getInitialContacts(key) {
 }
 
 function init() {
-  // راه‌اندازی تقویم
-  initCalendar();
+  // تنظیم تاریخ پیش‌فرض
+  const dateInput = document.getElementById('lastUpdate');
+  if (CARAVAN_DATA && CARAVAN_DATA.lastUpdate) {
+    dateInput.value = CARAVAN_DATA.lastUpdate;
+  } else {
+    dateInput.value = getTodayPersian();
+  }
   
-  // بارگذاری مخاطبین
   SECTIONS.forEach(key => {
     state[key] = getInitialContacts(key).map(c => ({ ...c }));
     renderSection(key);
