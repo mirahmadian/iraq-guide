@@ -1,578 +1,1717 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پنل مدیریت | ورود</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --gold: #2E7D5E; --gold-l: #3A9B74;
-      --bg: #F0F7F2; --card: #FFFFFF;
-      --text: #0A2A1A; --muted: #3A6B52; --dim: #6B9B7F;
-      --border: rgba(46,125,94,0.20); --border-s: rgba(46,125,94,0.35);
-      --red: #E74C3C; --red-bg: rgba(231,76,60,0.08);
-      --font: 'Vazirmatn', sans-serif;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+<!-- saved from url=(0050)https://188-121-118-223.nip.io/admin_download.html -->
+<html lang="fa" dir="rtl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-    /* فرم لاگین */
-    .login-overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background: var(--bg); z-index:2000;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .login-box {
-      background: var(--card); padding: 30px; border-radius: 24px;
-      text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      width: 300px;
-    }
-    .login-box h2 { color: var(--gold); margin-bottom: 20px; }
-    .login-box input {
-      width: 100%; padding: 12px; margin-bottom: 15px;
-      border: 1px solid var(--border); border-radius: 12px;
-      font-family: var(--font);
-    }
-    .login-box button {
-      background: var(--gold); color: white; border: none;
-      padding: 10px 20px; border-radius: 12px; cursor: pointer;
-      width: 100%; font-family: var(--font); font-weight: bold;
-    }
-    .error { color: var(--red); margin-top: 10px; font-size: 12px; }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل مدیریت - ارزیابی عتبات</title>
+<script src="./پنل مدیریت - ارزیابی عتبات_files/chart.umd.min.js.download"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700;900&display=swap');
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --sidebar: #1e293b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', Tahoma, sans-serif; }
+body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
 
-    /* محتوای اصلی - مخفی در ابتدا */
-    .main-content { display: none; }
+/* ===== LOGIN ===== */
+#login-screen {
+  position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
+}
+.login-box {
+  background: white; border-radius: 24px; padding: 45px 35px;
+  width: 100%; max-width: 400px; text-align: center;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+}
+.login-box .logo { font-size: 3rem; margin-bottom: 10px; }
+.login-box h2 { color: var(--primary-dark); margin-bottom: 5px; }
+.login-box p { color: var(--muted); font-size: 0.88rem; margin-bottom: 28px; }
+.inp {
+  width: 100%; padding: 14px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 1rem; text-align: center;
+  margin-bottom: 14px; font-family: inherit;
+}
+.inp:focus { outline: none; border-color: var(--primary); }
+.btn-login {
+  width: 100%; padding: 15px; background: linear-gradient(135deg, #0d9488, #065f46);
+  color: white; border: none; border-radius: 12px; font-size: 1rem;
+  font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.err { background: #fef2f2; color: var(--danger); padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; display: none; }
 
-    /* بقیه استایل‌های قبلی */
-    .top-bar {
-      background:var(--card); border-bottom:1px solid var(--border-s);
-      padding:14px 24px; display:flex; align-items:center; gap:14px;
-      position:sticky; top:0; z-index:100;
-    }
-    .top-bar h1 { font-size:16px; font-weight:800; flex:1 }
-    .save-btn {
-      padding:10px 22px; background:var(--gold); color:#fff;
-      border:none; border-radius:10px; font-family:var(--font);
-      font-size:13px; font-weight:700; cursor:pointer;
-    }
-    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
-    .notice {
-      background:rgba(46,125,94,0.08); border:1px solid var(--border-s);
-      border-radius:12px; padding:14px 16px; margin-bottom:20px;
-      font-size:12.5px;
-    }
-    .section-block {
-      background:var(--card); border:1px solid var(--border);
-      border-radius:14px; margin-bottom:16px; overflow:hidden;
-    }
-    .section-block h2 {
-      font-size:13px; font-weight:800; padding:14px 16px;
-      background:rgba(46,125,94,0.05); border-bottom:1px solid var(--border);
-      color:var(--gold);
-    }
-    .field-group { padding:12px 16px; border-bottom:1px solid var(--border); }
-    .field-label { font-size:11px; color:var(--dim); font-weight:600; margin-bottom:6px }
-    input[type="text"], input[type="tel"] {
-      font-family:var(--font); font-size:13px; color:var(--text);
-      background:var(--bg); border:1px solid var(--border-s);
-      border-radius:8px; padding:9px 12px; outline:none;
-    }
-    .date-wrapper {
-      position: relative;
-      display: inline-block;
-      width: 100%;
-      max-width: 220px;
-    }
-    .input-date { 
-      width: 100%;
-      padding-left: 35px;
-      cursor: pointer;
-      background-color: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 35px 9px 12px;
-      font-family: var(--font);
-    }
-    .calendar-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      font-size: 18px;
-      pointer-events: none; /* آیکون فقط نشانه است، کلیک روی باکس اصلی کار کند */
-    }
-    /* به دلیل pointer-events: none روی آیکون، باکس کلیک را می‌گیرد */
-    .input-date {
-      padding-right: 12px;
-      padding-left: 35px;
-    }
-    .contact-entry {
-      display:flex; gap:8px; align-items:center;
-      padding:10px 16px; border-bottom:1px solid var(--border);
-    }
-    .del-btn {
-      width:30px; height:30px; border:1px solid rgba(231,76,60,0.3);
-      border-radius:7px; background:var(--red-bg); color:var(--red);
-      cursor:pointer;
-    }
-    .add-btn {
-      margin:10px 16px 12px; padding:9px 16px;
-      background:rgba(46,125,94,0.08); border:1px dashed var(--border-s);
-      border-radius:8px; font-weight:600; color:var(--gold); cursor:pointer;
-      width:calc(100% - 32px);
-    }
-    .output-wrap {
-      background:#1A2F20; border-radius:12px; padding:16px;
-      margin-top:20px; position:relative;
-    }
-    textarea {
-      width:100%; height:340px; background:#0E2A1C; color:#C8F0DC;
-      border-radius:8px; font-family:monospace; font-size:12px; padding:12px;
-      direction:ltr;
-    }
-    .copy-output-btn {
-      position:absolute; top:14px; left:14px;
-      padding:7px 14px; background:var(--gold); color:#fff;
-      border:none; border-radius:7px; cursor:pointer;
-    }
-    .toast {
-      position:fixed; bottom:24px; left:50%;
-      transform:translateX(-50%) translateY(20px);
-      background:var(--text); color:#fff; border-radius:100px;
-      padding:9px 20px; font-size:12.5px;
-      opacity:0; transition:all .3s; z-index:999;
-    }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    
-    /* تقویم مودال */
-    .calendar-modal {
-      display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.5); z-index:1000;
-      justify-content:center; align-items:center;
-    }
-    .calendar-modal.show { display: flex; }
-    .calendar-container {
-      background:white; border-radius:16px; padding:20px; width:320px;
-      direction:rtl; font-family:var(--font);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .calendar-header {
-      display:flex; justify-content:space-between; margin-bottom:20px;
-      align-items: center;
-    }
-    .calendar-header button {
-      background:var(--gold); color:white; border:none;
-      width:36px; height:36px; border-radius:8px; cursor:pointer;
-      font-size:18px;
-    }
-    .calendar-weekdays {
-      display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
-      margin-bottom:10px; font-weight:bold; color:var(--gold);
-    }
-    .calendar-days {
-      display:grid; grid-template-columns:repeat(7,1fr); gap:5px;
-    }
-    .calendar-day {
-      text-align:center; padding:8px 0; cursor:pointer; border-radius:8px;
-      transition: all 0.2s;
-    }
-    .calendar-day:hover { background:var(--gold); color:white; }
-    .calendar-day.empty { cursor: default; opacity: 0; }
-    .calendar-actions {
-      margin-top:15px; display:flex; gap:10px;
-    }
-    .calendar-actions button {
-      flex:1; padding:8px; border:none; border-radius:8px; cursor:pointer;
-      font-family: var(--font);
-    }
-    .btn-today { background: var(--gold); color: white; }
-    .btn-close { background: #eee; color: var(--text); }
-  </style>
-</head>
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px; background: var(--sidebar); color: white;
+  min-height: 100vh; position: fixed; right: 0; top: 0; z-index: 10;
+  display: flex; flex-direction: column;
+}
+.sidebar-logo { padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-logo h2 { font-size: 1rem; line-height: 1.5; }
+.sidebar-logo p { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; cursor: pointer; color: rgba(255,255,255,0.7);
+  font-size: 0.9rem; transition: all 0.2s; border: none; background: none;
+  width: 100%; text-align: right; font-family: inherit;
+}
+.nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-item.active { background: var(--primary); color: white; }
+.nav-item .icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+.btn-logout-side {
+  width: 100%; padding: 10px; background: rgba(239,68,68,0.2); color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; cursor: pointer;
+  font-size: 0.85rem; font-family: inherit;
+}
+
+/* ===== MAIN ===== */
+.main { margin-right: 240px; flex: 1; padding: 25px; }
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 25px;
+}
+.topbar h1 { font-size: 1.3rem; color: var(--text); }
+.topbar .date { color: var(--muted); font-size: 0.85rem; }
+
+/* ===== TAB CONTENT ===== */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== STAT CARDS ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 25px; }
+.stat-card {
+  background: white; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex; align-items: center; gap: 15px;
+}
+.stat-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+.stat-icon.green { background: #dcfce7; }
+.stat-icon.blue { background: #dbeafe; }
+.stat-icon.orange { background: #ffedd5; }
+.stat-icon.purple { background: #f3e8ff; }
+.stat-info .num { font-size: 1.8rem; font-weight: 900; color: var(--text); line-height: 1; }
+.stat-info .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+/* ===== CHARTS ===== */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 25px; }
+.chart-card {
+  background: white; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.chart-card h3 { font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.chart-wrap { position: relative; height: 220px; }
+
+/* ===== TABLE ===== */
+.table-card {
+  background: white; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;
+}
+.table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.table-header h3 { font-size: 0.95rem; color: var(--primary-dark); }
+.btn-export {
+  padding: 8px 16px; background: var(--primary); color: white;
+  border: none; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+  font-family: inherit; font-weight: 700;
+}
+table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+th { background: #f8fafc; padding: 10px 12px; text-align: right; color: var(--muted); font-weight: 700; border-bottom: 2px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+tr:hover td { background: #fafafa; }
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-gray { background: #f1f5f9; color: var(--muted); }
+
+/* ===== FILTERS ===== */
+.filter-bar {
+  background: white; border-radius: 14px; padding: 15px 20px;
+  margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.filter-bar select, .filter-bar input {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.85rem; font-family: inherit; background: white;
+}
+.filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--primary); }
+.btn-filter { padding: 8px 18px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 0.85rem; }
+
+/* ===== UPLOAD ===== */
+.upload-zone {
+  border: 3px dashed var(--border); border-radius: 16px; padding: 50px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  margin-bottom: 20px; background: white;
+}
+.upload-zone:hover { border-color: var(--primary); background: #f0fdfa; }
+.upload-zone .u-icon { font-size: 3rem; margin-bottom: 12px; }
+.upload-zone h3 { margin-bottom: 6px; }
+.upload-zone p { color: var(--muted); font-size: 0.85rem; }
+.alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 10px; margin-bottom: 15px; font-size: 0.88rem; display: none; }
+.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 12px 16px; border-radius: 10px; margin-bottom: 15px; font-size: 0.88rem; display: none; }
+
+/* ===== DETAIL MODAL ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 20px; padding: 25px; max-width: 700px; width: 100%; max-height: 85vh; overflow-y: auto; }
+.modal h3 { color: var(--primary-dark); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+.modal-item { font-size: 0.85rem; padding: 8px 12px; background: #f8fafc; border-radius: 8px; }
+.modal-item span { color: var(--muted); display: block; font-size: 0.75rem; margin-bottom: 2px; }
+.q-result { padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; border-right: 4px solid var(--border); }
+.q-result.good { border-color: var(--success); background: #f0fdf4; }
+.q-result.bad { border-color: var(--danger); background: #fef2f2; }
+.q-result.mid { border-color: var(--warning); background: #fffbeb; }
+.q-result .q-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; }
+.q-result .q-ans { font-size: 0.78rem; color: var(--muted); }
+.btn-close { padding: 10px 25px; background: var(--border); border: none; border-radius: 10px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+
+/* ===== PROGRESS BAR ===== */
+.prog-bar-wrap { display: flex; align-items: center; gap: 10px; }
+.prog-bar { flex: 1; height: 8px; background: var(--border); border-radius: 10px; overflow: hidden; }
+.prog-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #0d9488, #10b981); }
+.prog-label { font-size: 0.8rem; font-weight: 700; color: var(--primary); min-width: 35px; text-align: left; }
+
+/* ===== USERS ===== */
+.users-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.user-form-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.user-form-card h3 { color: var(--primary-dark); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.form-field { margin-bottom: 14px; }
+.form-field label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.form-inp { width: 100%; padding: 11px 14px; border: 2px solid var(--border); border-radius: 10px; font-size: 0.9rem; font-family: inherit; }
+.form-inp:focus { outline: none; border-color: var(--primary); }
+.role-select { width: 100%; padding: 11px 14px; border: 2px solid var(--border); border-radius: 10px; font-size: 0.9rem; font-family: inherit; background: white; cursor: pointer; }
+.role-select:focus { outline: none; border-color: var(--primary); }
+.btn-form { width: 100%; padding: 12px; background: linear-gradient(135deg, #0d9488, #065f46); color: white; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 5px; }
+.role-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.role-superadmin { background: #fef3c7; color: #92400e; }
+.role-admin { background: #dbeafe; color: #1e40af; }
+.role-viewer { background: #f0fdf4; color: #166534; }
+.msg-ok  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; display: none; }
+.msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; display: none; }
+
+/* ===== ALERTS ===== */
+.alert-card {
+  border-radius: 16px; padding: 18px 20px; margin-bottom: 12px;
+  display: flex; align-items: flex-start; gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-right: 5px solid;
+}
+.alert-card.critical { background: #fff1f2; border-color: #ef4444; }
+.alert-card.warning  { background: #fffbeb; border-color: #f59e0b; }
+.alert-card.info     { background: #eff6ff; border-color: #3b82f6; }
+.alert-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+.alert-body { flex: 1; }
+.alert-body h4 { font-size: 0.95rem; margin-bottom: 4px; }
+.alert-body p  { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+.alert-body .alert-meta { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.alert-meta .tag { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(0,0,0,0.06); }
+.alert-actions { display: flex; gap: 8px; margin-top: 10px; }
+.btn-alert-action { padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; font-family: inherit; font-weight: 700; }
+.btn-alert-send { background: #0d9488; color: white; }
+.btn-alert-detail { background: #f1f5f9; color: var(--text); }
+.alerts-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
+.alert-sum-card { background: white; border-radius: 14px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.alert-sum-card .sum-num { font-size: 2rem; font-weight: 900; line-height: 1; }
+.alert-sum-card .sum-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+.alert-sum-card.red .sum-num { color: #ef4444; }
+.alert-sum-card.orange .sum-num { color: #f59e0b; }
+.alert-sum-card.blue .sum-num { color: #3b82f6; }
+.no-alerts { text-align: center; padding: 60px 20px; color: var(--muted); }
+.no-alerts .big-icon { font-size: 4rem; margin-bottom: 15px; }
+
+/* ===== SETTINGS ===== */
+.settings-section {
+  background: white; border-radius: 16px; padding: 25px;
+  margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.settings-section h3 {
+  color: var(--primary-dark); font-size: 1rem;
+  margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.form-row { margin-bottom: 15px; }
+.form-row label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.form-inp {
+  width: 100%; padding: 11px 14px; border: 2px solid var(--border);
+  border-radius: 10px; font-size: 0.95rem; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.form-inp:focus { outline: none; border-color: var(--primary); }
+.form-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.btn-save {
+  padding: 11px 28px; background: linear-gradient(135deg, #0d9488, #065f46);
+  color: white; border: none; border-radius: 10px; cursor: pointer;
+  font-size: 0.9rem; font-weight: 700; font-family: inherit; margin-top: 5px;
+}
+.btn-danger-outline {
+  padding: 9px 20px; background: white; color: var(--danger);
+  border: 2px solid var(--danger); border-radius: 10px; cursor: pointer;
+  font-size: 0.85rem; font-family: inherit;
+}
+.user-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 15px; border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 8px; background: #f8fafc;
+}
+.user-row .user-info { display: flex; align-items: center; gap: 10px; }
+.user-avatar {
+  width: 38px; height: 38px; border-radius: 10px; background: var(--primary);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1rem;
+}
+.user-name { font-weight: 700; font-size: 0.9rem; }
+.user-role { font-size: 0.75rem; color: var(--muted); }
+.role-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.role-admin { background: #fef3c7; color: #92400e; }
+.role-viewer { background: #dbeafe; color: #1e40af; }
+.pass-wrap { position: relative; display: flex; align-items: center; }
+.pass-wrap .form-inp { padding-left: 42px; flex: 1; }
+.eye-btn {
+  position: absolute; left: 10px; background: none; border: none;
+  cursor: pointer; font-size: 1rem; padding: 4px; color: var(--muted);
+  line-height: 1; opacity: 0.6; transition: opacity 0.2s;
+}
+.eye-btn:hover { opacity: 1; }
+.msg-box { padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-top: 12px; display: none; }
+.msg-ok  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-right: 0; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
+}
+</style>
+<style type="text/css">.rm-draggable-icon[data-v-ec2bf3d2]{position:absolute;right:0;z-index:999999999}.rm-draggable-icon__header[data-v-ec2bf3d2]{width:100%;display:flex;flex-direction:row;justify-content:flex-end;align-items:center;cursor:pointer}.rm-draggable-icon__close-btn[data-v-ec2bf3d2]{width:18px;height:18px;margin:0 0 2px 0}.rm-draggable-icon__main[data-v-ec2bf3d2]{cursor:pointer}.rm-draggable-icon__icon-label[data-v-ec2bf3d2]{display:flex;flex-direction:column;justify-content:center;align-items:center;width:60px;height:60px;border-top-left-radius:20px;border-bottom-left-radius:20px;background-color:#fff;text-align:center;box-shadow:0 2px 6px 1px rgba(0,0,0,.15);color:#0d1216;-moz-user-select:none;-webkit-user-select:none;user-select:none}.rm-draggable-icon__icon-label-active[data-v-ec2bf3d2],.rm-draggable-icon__icon-label[data-v-ec2bf3d2]:hover{width:80px;background-color:#617ee7;color:#fff}.rm-draggable-icon__icon-img[data-v-ec2bf3d2]{width:30px;height:30px;border-radius:15px}.rm-draggable-icon__name[data-v-ec2bf3d2]{font-size:12px;margin-top:2px}</style><style type="text/css">.rm-draggable-icon__tip.is-light[x-placement^=top]{border:1px solid #eaebec!important}.rm-draggable-icon__tip.is-light[x-placement^=top]>.popper__arrow{border-top-color:#eaebec!important}.rm-draggable-icon__icon-container{width:30px;height:30px}.rm-draggable-icon__close-tips{transform-origin:center bottom;z-index:2004;display:block;margin-bottom:12px;position:absolute;top:-42px;min-width:72px;max-width:145px;padding:10px;width:160px;border-radius:4px;background:#fff;border:1px solid #eaebec;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;line-height:14.4px}.rm-draggable-icon__close-tips-zh{width:72px}.rm-draggable-icon__close-tips-en{width:145px}.rm-draggable-icon__close-btn-text{font-size:12px;font-weight:400;color:#000}.rm-draggable-icon__close-btn-arrow{border-width:6px;position:absolute;left:140px;top:35px;bottom:-6px;display:block;width:0;height:0;border-style:solid;border-color:transparent;border-top-color:#eaebec}.rm-draggable-icon__close-btn-arrow-en{left:140px}.rm-draggable-icon__close-btn-arrow-zh{left:74px}.rm-draggable-icon__close-btn-arrow:after{content:" ";border-width:5px;position:absolute;top:-6px;left:-5px;display:block;width:0;height:0;border-color:transparent;border-style:solid;border-top-color:#fff}</style></head>
 <body>
 
-<!-- صفحه لاگین ساده -->
-<div id="loginOverlay" class="login-overlay">
+<!-- LOGIN -->
+<div id="login-screen">
   <div class="login-box">
-    <h2>🔐 پنل مدیریت</h2>
-    <input type="password" id="passwordInput" placeholder="رمز عبور" autofocus>
-    <button onclick="checkPassword()">ورود</button>
-    <div id="loginError" class="error"></div>
+    <div class="logo">⚙️</div>
+    <h2>پنل مدیریت</h2>
+    <p>سامانه ارزیابی خدمات نقل عتبات</p>
+    <div class="err" id="login-err"></div>
+    <input type="password" class="inp" id="pass-inp" placeholder="رمز عبور مدیر">
+    <button class="btn-login" onclick="doLogin()">ورود به داشبورد</button>
   </div>
 </div>
 
-<!-- محتوای اصلی (پنهان تا لاگین موفق) -->
-<div id="mainContent" class="main-content">
-<div class="top-bar">
-  <div><h1>🛠️ پنل مدیریت کاروان</h1></div>
-  <button class="save-btn" onclick="generateOutput()">⬇️ ساخت فایل data.js</button>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h2>🕌 سامانه ارزیابی<br>خدمات نقل عتبات</h2>
+    <p>پنل مدیریت</p>
+  </div>
+  <button class="nav-item active" onclick="showTab(&#39;dashboard&#39;, this)"><span class="icon">📊</span> داشبورد</button>
+  <button class="nav-item" onclick="showTab(&#39;surveys&#39;, this)"><span class="icon">📋</span> ارزیابی‌ها</button>
+  <button class="nav-item" onclick="showTab(&#39;companies&#39;, this)"><span class="icon">🚌</span> شرکت‌های نقل</button>
+  <button class="nav-item" onclick="showTab(&#39;decision&#39;, this)" style="background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(239,68,68,0.1));border-right:3px solid #ef4444;"><span class="icon">⚡</span> مرکز تصمیم</button>
+  <button class="nav-item" onclick="showTab(&#39;alerts&#39;, this)"><span class="icon">🚨</span> هشدارها</button>
+  <button class="nav-item" onclick="showTab(&#39;users&#39;, this)"><span class="icon">👥</span> مدیریت کاربران</button>
+  <button class="nav-item" onclick="showTab(&#39;upload&#39;, this)"><span class="icon">📤</span> آپلود کاروان‌ها</button>
+  <button class="nav-item" onclick="showTab(&#39;settings&#39;, this)"><span class="icon">⚙️</span> تنظیمات</button>
+  <div class="sidebar-footer">
+    <button class="btn-logout-side" onclick="doLogout()">🚪 خروج</button>
+  </div>
 </div>
 
-<div class="wrap">
-  <div class="notice">
-    <strong>📌 راهنمای استفاده</strong><br>
-    ۱. شماره‌ها را در فرم‌ها ویرایش کنید<br>
-    ۲. روی دکمه «ساخت فایل data.js» کلیک کنید<br>
-    ۳. محتوای کادر پایین را کپی کنید<br>
-    ۴. در گیت‌هاب فایل <strong>data.js</strong> را جایگزین کنید
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="page-title">داشبورد</h1>
+    <span class="date" id="today-date"></span>
   </div>
 
-  <!-- فیلد تاریخ با تقویم اصلاح شده -->
-  <div class="section-block">
-    <h2>📅 تاریخ بروزرسانی</h2>
-    <div class="field-group">
-      <div class="field-label">تاریخ امروز را انتخاب کنید (شمسی)</div>
-      <div class="date-wrapper">
-        <input type="text" class="input-date" id="lastUpdate" placeholder="کلیک کنید" readonly onclick="showCalendar()">
-        <span class="calendar-icon">📅</span>
+  <!-- ===== DASHBOARD ===== -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">📋</div>
+        <div class="stat-info"><div class="num" id="s-total">-</div><div class="lbl">کل ارزیابی‌ها</div></div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🏆</div>
+        <div class="stat-info"><div class="num" id="s-avg">-</div><div class="lbl">میانگین رضایت</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🚌</div>
+        <div class="stat-info"><div class="num" id="s-karavans">-</div><div class="lbl">کاروان ثبت‌شده</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">✅</div>
+        <div class="stat-info"><div class="num" id="s-good">-</div><div class="lbl">امتیاز بالای ۸۰٪</div></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📊 توزیع امتیاز رضایت</h3>
+        <div class="chart-wrap"><canvas id="chart-score-dist"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>🚌 عملکرد شرکت‌های نقل</h3>
+        <div class="chart-wrap"><canvas id="chart-companies"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>🗺️ ارزیابی بر اساس استان</h3>
+        <div class="chart-wrap"><canvas id="chart-ostan"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>📉 ضعیف‌ترین سوالات</h3>
+        <div id="weak-questions"></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>آخرین ارزیابی‌ها</h3>
+        <button class="btn-export" onclick="exportExcel()">📊 خروجی اکسل</button>
+      </div>
+      <table>
+        <thead><tr><th>مدیر کاروان</th><th>استان</th><th>شرکت نقل</th><th>باج</th><th>پلاک</th><th>امتیاز</th><th>تاریخ</th><th></th></tr></thead>
+        <tbody id="recent-tbody"></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- بخش‌های مختلف -->
-  <div class="section-block"><h2>📋 بیمه معلم</h2><div id="contacts-insurance"></div><button class="add-btn" onclick="addContact('insurance')">+ افزودن شماره</button></div>
-  <div class="section-block"><h2>🕌 ستاد نجف</h2><div id="contacts-najaf-hq"></div><button class="add-btn" onclick="addContact('najaf-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🕌 ستاد کربلا</h2><div id="contacts-karbala-hq"></div><button class="add-btn" onclick="addContact('karbala-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🕌 ستاد کاظمین</h2><div id="contacts-kadhimiya-hq"></div><button class="add-btn" onclick="addContact('kadhimiya-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏥 درمانگاه نجف</h2><div id="contacts-najaf-clinic"></div><button class="add-btn" onclick="addContact('najaf-clinic')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏥 درمانگاه کربلا</h2><div id="contacts-karbala-clinic"></div><button class="add-btn" onclick="addContact('karbala-clinic')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏛️ کنسولگری نجف</h2><div id="contacts-najaf-consulate"></div><button class="add-btn" onclick="addContact('najaf-consulate')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏛️ کنسولگری کربلا</h2><div id="contacts-karbala-consulate"></div><button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن</button></div>
-
-  <div class="output-wrap" id="outputWrap" style="display:none">
-    <button class="copy-output-btn" onclick="copyOutput()">📋 کپی همه</button>
-    <textarea id="outputArea" readonly></textarea>
+  <!-- ===== SURVEYS ===== -->
+  <div class="tab-content" id="tab-surveys">
+    <div class="filter-bar">
+      <select id="f-ostan"><option value="">همه استان‌ها</option></select>
+      <select id="f-company"><option value="">همه شرکت‌ها</option></select>
+      <input type="text" id="f-from" placeholder="📅 از تاریخ (شمسی)" readonly="" onclick="openDatePicker(&#39;f-from&#39;)" style="cursor:pointer;background:white;">
+      <input type="text" id="f-to" placeholder="📅 تا تاریخ (شمسی)" readonly="" onclick="openDatePicker(&#39;f-to&#39;)" style="cursor:pointer;background:white;">
+      <select id="f-score">
+        <option value="">همه امتیازها</option>
+        <option value="high">بالای ۸۰٪</option>
+        <option value="mid">۵۰ تا ۸۰٪</option>
+        <option value="low">زیر ۵۰٪</option>
+      </select>
+      <button class="btn-filter" onclick="loadSurveys()">اعمال فیلتر</button>
+      <button class="btn-export" onclick="exportExcel()">📊 اکسل</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>مدیر</th><th>موبایل</th><th>استان</th><th>شرکت نقل</th><th>باج</th><th>راننده</th><th>امتیاز</th><th>تاریخ</th><th>جزییات</th><th>حذف</th></tr></thead>
+        <tbody id="surveys-tbody"></tbody>
+      </table>
+    </div>
   </div>
-</div>
-<div class="toast" id="toast"></div>
-</div>
 
-<script src="data.js"></script>
-<script>
-// ---------- رمز عبور ----------
-function checkPassword() {
-  const inputPass = document.getElementById('passwordInput').value;
-  const correctPass = "admin123";  // رمز پیش‌فرض - قابل تغییر
-  if (inputPass === correctPass) {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    init(); // بارگذاری دیتا بعد از لاگین
-  } else {
-    document.getElementById('loginError').innerText = 'رمز اشتباه است.';
-  }
-}
+  <!-- ===== COMPANIES ===== -->
+  <div class="tab-content" id="tab-companies">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>🚌 عملکرد شرکت‌های حمل و نقل</h3>
+      </div>
+      <table>
+        <thead><tr><th>نام شرکت</th><th>تعداد ارزیابی</th><th>میانگین امتیاز</th><th>بهترین</th><th>بدترین</th><th>نمودار</th></tr></thead>
+        <tbody id="companies-tbody"></tbody>
+      </table>
+    </div>
+  </div>
 
-// ---------- توابع کمکی برای تبدیل اعداد ----------
-function toEnglishDigits(str) {
-  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
-  const englishDigits = '0123456789';
-  return str.replace(/[۰-۹]/g, d => englishDigits[persianDigits.indexOf(d)]);
-}
+  <!-- ===== ALERTS ===== -->
+  <div class="tab-content" id="tab-alerts">
+    <div class="alerts-summary">
+      <div class="alert-sum-card red">
+        <div class="sum-num" id="alert-count-critical">-</div>
+        <div class="sum-lbl">🔴 هشدار بحرانی</div>
+      </div>
+      <div class="alert-sum-card orange">
+        <div class="sum-num" id="alert-count-warning">-</div>
+        <div class="sum-lbl">🟠 هشدار متوسط</div>
+      </div>
+      <div class="alert-sum-card blue">
+        <div class="sum-num" id="alert-count-info">-</div>
+        <div class="sum-lbl">🔵 اطلاع‌رسانی</div>
+      </div>
+    </div>
+    <div id="alerts-list"></div>
+  </div>
 
-function toPersianNum(num) {
-  return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)]);
-}
+  <!-- ===== USERS ===== -->
+  <div class="tab-content" id="tab-users">
+    <div class="users-grid">
 
-// ---------- تقویم شمسی (کاملاً اصلاح شده) ----------
-let currentYear, currentMonth;
-let selectedYear, selectedMonth, selectedDay;
-
-function getTodayPersian() {
-  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-    year: 'numeric', month: 'numeric', day: 'numeric'
-  });
-  const parts = formatter.format(new Date()).split('/');
-  return {
-    year: parseInt(parts[0]),
-    month: parseInt(parts[1]),
-    day: parseInt(parts[2])
-  };
-}
-
-function getDaysInMonth(year, month) {
-  if (month <= 6) return 31;
-  if (month <= 11) return 30;
-  // محاسبه کبیسه‌گیری ساده برای اسفند
-  const isLeap = (year % 33 === 1) || (year % 33 === 2) || (year % 33 === 3) || (year % 33 === 29);
-  return isLeap ? 30 : 29;
-}
-
-function getFirstDayOfMonth(year, month) {
-  // ساخت تاریخ میلادی معادل اول ماه شمسی
-  const date = new Date(year, month - 1, 1);
-  const persianStart = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'numeric' }).format(date);
-  // تبدیل "۱" (یکشنبه) تا "۷" (شنبه) به 0-6 که 0 = شنبه
-  let weekday = parseInt(persianStart);
-  return (weekday % 7); // 0=شنبه, 1=یکشنبه, ... 6=جمعه
-}
-
-function renderCalendar() {
-  const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-  document.getElementById('currentMonthYear').innerHTML = `${monthNames[currentMonth-1]} ${toPersianNum(currentYear)}`;
-  
-  const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  
-  const container = document.getElementById('calendarDays');
-  container.innerHTML = '';
-  
-  // روزهای خالی ابتدای ماه
-  for (let i = 0; i < firstDayIndex; i++) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.classList.add('calendar-day', 'empty');
-    container.appendChild(emptyDiv);
-  }
-  
-  // روزهای ماه
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dayDiv = document.createElement('div');
-    dayDiv.classList.add('calendar-day');
-    dayDiv.textContent = toPersianNum(day);
-    if (selectedYear === currentYear && selectedMonth === currentMonth && selectedDay === day) {
-      dayDiv.style.backgroundColor = 'var(--gold)';
-      dayDiv.style.color = 'white';
-    }
-    dayDiv.onclick = (function(y, m, d) {
-      return function() { selectDate(y, m, d); };
-    })(currentYear, currentMonth, day);
-    container.appendChild(dayDiv);
-  }
-}
-
-function showCalendar() {
-  let modal = document.getElementById('calendarModal');
-  if (!modal) {
-    createCalendarModal();
-    modal = document.getElementById('calendarModal');
-  }
-  const today = getTodayPersian();
-  currentYear = today.year;
-  currentMonth = today.month;
-  renderCalendar();
-  modal.classList.add('show');
-}
-
-function createCalendarModal() {
-  const modalHTML = `
-    <div id="calendarModal" class="calendar-modal">
-      <div class="calendar-container">
-        <div class="calendar-header">
-          <button id="prevMonthBtn">›</button>
-          <span id="currentMonthYear"></span>
-          <button id="nextMonthBtn">‹</button>
+      <!-- فرم کاربر جدید -->
+      <div class="user-form-card">
+        <h3>➕ تعریف کاربر جدید</h3>
+        <div class="msg-ok" id="new-user-ok"></div>
+        <div class="msg-err" id="new-user-err"></div>
+        <div class="form-field">
+          <label>نام کاربری</label>
+          <input type="text" class="form-inp" id="new-username" placeholder="مثال: operator1">
         </div>
-        <div class="calendar-weekdays">
-          <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+        <div class="form-field">
+          <label>رمز عبور</label>
+          <input type="password" class="form-inp" id="new-password" placeholder="حداقل ۶ کاراکتر">
         </div>
-        <div id="calendarDays" class="calendar-days"></div>
-        <div class="calendar-actions">
-          <button id="todayBtn" class="btn-today">امروز</button>
-          <button id="closeCalBtn" class="btn-close">بستن</button>
+        <div class="form-field">
+          <label>سطح دسترسی</label>
+          <select class="role-select" id="new-role">
+            <option value="viewer">👁️ مشاهده‌گر — فقط می‌تواند گزارش‌ها را ببیند</option>
+            <option value="admin">⚙️ مدیر — می‌تواند آپلود و مدیریت کند</option>
+            <option value="superadmin">👑 مدیر ارشد — دسترسی کامل</option>
+          </select>
+        </div>
+        <button class="btn-form" onclick="createUser()">ایجاد کاربر</button>
+      </div>
+
+      <!-- تغییر رمز عبور -->
+      <div class="user-form-card">
+        <h3>🔑 تغییر رمز عبور</h3>
+        <div class="msg-ok" id="chpass-ok"></div>
+        <div class="msg-err" id="chpass-err"></div>
+        <div class="form-field">
+          <label>رمز فعلی</label>
+          <input type="password" class="form-inp" id="chpass-old" placeholder="رمز عبور فعلی">
+        </div>
+        <div class="form-field">
+          <label>رمز جدید</label>
+          <input type="password" class="form-inp" id="chpass-new" placeholder="حداقل ۶ کاراکتر">
+        </div>
+        <div class="form-field">
+          <label>تکرار رمز جدید</label>
+          <input type="password" class="form-inp" id="chpass-confirm" placeholder="تکرار رمز جدید">
+        </div>
+        <button class="btn-form" style="background: linear-gradient(135deg, #1e40af, #1e3a8a);" onclick="changePassword()">تغییر رمز عبور</button>
+      </div>
+    </div>
+
+    <!-- لیست کاربران -->
+    <div class="table-card" style="margin-top: 20px;">
+      <div class="table-header">
+        <h3>👥 کاربران سیستم</h3>
+        <button class="btn-export" onclick="loadUsers()">🔄 بروزرسانی</button>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>نام کاربری</th><th>سطح دسترسی</th><th>آخرین ورود</th><th>تاریخ ایجاد</th><th>عملیات</th></tr></thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== UPLOAD ===== -->
+  <div class="tab-content" id="tab-upload">
+    <div class="alert-success" id="upload-ok"></div>
+    <div class="alert-error" id="upload-err"></div>
+    <div class="upload-zone" onclick="document.getElementById(&#39;excel-inp&#39;).click()">
+      <div class="u-icon">📊</div>
+      <h3>فایل اکسل کاروان‌ها را آپلود کنید</h3>
+      <p>فرمت قابل قبول: .xlsx یا .xls — کلیک کنید یا فایل را اینجا بکشید</p>
+      <input type="file" id="excel-inp" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel(this)">
+    </div>
+    <div class="table-card">
+      <div class="table-header"><h3>دسته‌های آپلود شده</h3></div>
+      <table>
+        <thead><tr><th>نام فایل</th><th>تعداد کاروان</th><th>تاریخ آپلود</th><th>عملیات</th></tr></thead>
+        <tbody id="batches-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- ===== SETTINGS ===== -->
+  <div class="tab-content" id="tab-settings">
+
+    <!-- تغییر رمز عبور -->
+    <div class="settings-section">
+      <h3>🔐 تغییر رمز عبور</h3>
+      <div class="form-row">
+        <label>رمز عبور فعلی</label>
+        <div class="pass-wrap">
+          <input type="password" class="form-inp" id="cur-pass" placeholder="رمز عبور فعلی را وارد کنید">
+          <button class="eye-btn" onclick="togglePass(&#39;cur-pass&#39;,this)" tabindex="-1">👁</button>
         </div>
       </div>
-    </div>`;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  
-  document.getElementById('prevMonthBtn').onclick = () => {
-    if (currentMonth === 1) {
-      currentMonth = 12;
-      currentYear--;
-    } else {
-      currentMonth--;
-    }
-    renderCalendar();
-  };
-  
-  document.getElementById('nextMonthBtn').onclick = () => {
-    if (currentMonth === 12) {
-      currentMonth = 1;
-      currentYear++;
-    } else {
-      currentMonth++;
-    }
-    renderCalendar();
-  };
-  
-  document.getElementById('todayBtn').onclick = () => {
-    const today = getTodayPersian();
-    selectDate(today.year, today.month, today.day);
-  };
-  
-  document.getElementById('closeCalBtn').onclick = () => {
-    document.getElementById('calendarModal').classList.remove('show');
-  };
-  
-  document.getElementById('calendarModal').onclick = (e) => {
-    if (e.target === document.getElementById('calendarModal')) {
-      document.getElementById('calendarModal').classList.remove('show');
-    }
-  };
-}
+      <div class="form-row-grid">
+        <div class="form-row">
+          <label>رمز عبور جدید</label>
+          <div class="pass-wrap">
+            <input type="password" class="form-inp" id="new-pass" placeholder="حداقل ۸ کاراکتر">
+            <button class="eye-btn" onclick="togglePass(&#39;new-pass&#39;,this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>تکرار رمز جدید</label>
+          <div class="pass-wrap">
+            <input type="password" class="form-inp" id="new-pass2" placeholder="رمز جدید را تکرار کنید">
+            <button class="eye-btn" onclick="togglePass(&#39;new-pass2&#39;,this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-save" onclick="changePassword()">💾 ذخیره رمز جدید</button>
+      <div class="msg-box msg-ok" id="pass-ok"></div>
+      <div class="msg-box msg-err" id="pass-err"></div>
+    </div>
 
-function selectDate(year, month, day) {
-  selectedYear = year;
-  selectedMonth = month;
-  selectedDay = day;
-  const formattedDate = `${toPersianNum(year)}/${toPersianNum(month)}/${toPersianNum(day)}`;
-  document.getElementById('lastUpdate').value = formattedDate;
-  document.getElementById('calendarModal').classList.remove('show');
-  showToast(`تاریخ انتخاب شد: ${formattedDate}`);
-}
+    <!-- کاربران مدیریت -->
+    <div class="settings-section">
+      <h3>👥 کاربران پنل مدیریت</h3>
+      <div id="users-list" style="margin-bottom:20px;"></div>
 
-function fillDateInput() {
-  const input = document.getElementById('lastUpdate');
-  if (window.CARAVAN_DATA && CARAVAN_DATA.lastUpdate && 
-      CARAVAN_DATA.lastUpdate !== 'undefined/undefined/undefined' &&
-      CARAVAN_DATA.lastUpdate !== 'NaN/NaN/NaN') {
-    input.value = CARAVAN_DATA.lastUpdate;
-    // تنظیم selectedDate بر اساس مقدار موجود
-    const parts = CARAVAN_DATA.lastUpdate.split('/');
-    if (parts.length === 3) {
-      selectedYear = parseInt(toEnglishDigits(parts[0]));
-      selectedMonth = parseInt(toEnglishDigits(parts[1]));
-      selectedDay = parseInt(toEnglishDigits(parts[2]));
-    } else {
-      const today = getTodayPersian();
-      selectedYear = today.year;
-      selectedMonth = today.month;
-      selectedDay = today.day;
-      input.value = `${toPersianNum(selectedYear)}/${toPersianNum(selectedMonth)}/${toPersianNum(selectedDay)}`;
-    }
-  } else {
-    const today = getTodayPersian();
-    selectedYear = today.year;
-    selectedMonth = today.month;
-    selectedDay = today.day;
-    input.value = `${toPersianNum(selectedYear)}/${toPersianNum(selectedMonth)}/${toPersianNum(selectedDay)}`;
+      <h4 style="margin-bottom:14px;color:#475569;font-size:0.9rem;">➕ افزودن کاربر جدید</h4>
+      <div class="form-row-grid">
+        <div class="form-row">
+          <label>نام کاربری</label>
+          <input type="text" class="form-inp" id="new-username" placeholder="مثال: admin2">
+        </div>
+        <div class="form-row">
+          <label>رمز عبور</label>
+          <div class="pass-wrap">
+            <input type="password" class="form-inp" id="new-user-pass" placeholder="حداقل ۶ کاراکتر">
+            <button class="eye-btn" onclick="togglePass(&#39;new-user-pass&#39;,this)" tabindex="-1">👁</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>سطح دسترسی</label>
+        <select class="form-inp" id="new-user-role">
+          <option value="admin">مدیر کامل — دسترسی به همه بخش‌ها</option>
+          <option value="viewer">ناظر — فقط مشاهده گزارش‌ها</option>
+        </select>
+      </div>
+      <button class="btn-save" onclick="addUser()">➕ افزودن کاربر</button>
+      <div class="msg-box msg-ok" id="user-ok"></div>
+      <div class="msg-box msg-err" id="user-err"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">جزییات ارزیابی</h3>
+    <div id="modal-body"></div>
+    <button class="btn-close" onclick="closeModal()">بستن</button>
+  </div>
+</div>
+
+<script>
+let adminPass = '';
+let allSurveys = [];
+
+const qLabels = [
+  'حضور به موقع اتوبوس', 'سوخت‌گیری در مسیر', 'سرمایش/گرمایش',
+  'نظافت', 'صندلی‌ها', 'فاصله صندلی‌ها', 'میکروفون/بلندگو',
+  'یخچال', 'آب معدنی', 'صندوق بار', 'وای‌فای',
+  'برخورد راننده', 'رانندگی ایمن', 'نماز/سرویس بهداشتی',
+  'تجهیزات ایمنی', 'خرابی اتوبوس'
+];
+
+// ===== LOGIN =====
+document.getElementById('pass-inp').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  const pass = document.getElementById('pass-inp').value;
+  try {
+    const r = await fetch('/api/admin/stats', { headers: { 'x-admin-password': pass } });
+    if (!r.ok) throw new Error('رمز نادرست است');
+    const data = await r.json();
+    adminPass = pass;
+    document.getElementById('login-screen').style.display = 'none';
+    initDashboard(data);
+    loadBatches();
+  } catch(e) {
+    const el = document.getElementById('login-err');
+    el.style.display = 'block'; el.textContent = e.message;
   }
 }
 
-// ---------- توابع مدیریت داده‌ها ----------
-const state = {};
-const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
-
-function getInitialContacts(key) {
-  if (!window.CARAVAN_DATA) return [];
-  const d = CARAVAN_DATA;
-  if (key === 'insurance') return d.insurance?.contacts || [];
-  const [city, sec] = key.split('-');
-  const cityObj = d.cities?.find(c => c.id === city);
-  if (!cityObj) return [];
-  const map = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
-  return map[sec]?.contacts || [];
+function doLogout() {
+  adminPass = '';
+  document.getElementById('login-screen').style.display = 'flex';
 }
 
-function init() {
-  fillDateInput();
-  SECTIONS.forEach(key => {
-    state[key] = getInitialContacts(key).map(c => ({ ...c }));
-    renderSection(key);
+// ===== TABS =====
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  const titles = { dashboard:'داشبورد', surveys:'لیست ارزیابی‌ها', companies:'شرکت‌های نقل', upload:'آپلود کاروان‌ها', decision:'⚡ مرکز تصمیم' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+  if (name === 'surveys') loadSurveys();
+  if (name === 'companies') loadCompanies();
+  if (name === 'upload') loadBatches();
+  if (name === 'alerts') loadAlerts();
+  if (name === 'users') loadUsers();
+  if (name === 'settings') loadUsers();
+  if (name === 'decision') loadDecision();
+}
+
+// ===== DASHBOARD =====
+function initDashboard(data) {
+  // تاریخ
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('fa-IR');
+
+  // آمار
+  document.getElementById('s-total').textContent = data.total_surveys || 0;
+  document.getElementById('s-avg').textContent = (data.avg_score || 0) + '%';
+  document.getElementById('s-karavans').textContent = data.total_karavans || 0;
+  const good = (data.recent || []).filter(s => s.score >= 80).length;
+  document.getElementById('s-good').textContent = data.total_surveys > 0 ?
+    Math.round((good / Math.min(data.total_surveys, data.recent?.length||1)) * data.total_surveys) : 0;
+
+  // بارگذاری هشدارها در پس‌زمینه
+  loadAlerts();
+
+  // جدول اخیر
+  renderRecentTable(data.recent || []);
+
+  // نمودارها
+  drawScoreDist(data.recent || []);
+  drawCompanyChart(data.by_sherkat || []);
+  drawOstanChart(data.by_ostan || []);
+  drawWeakQuestions(data.recent || []);
+}
+
+function renderRecentTable(surveys) {
+  const scoreClass = s => s>=80?'badge-green':s>=50?'badge-yellow':'badge-red';
+  document.getElementById('recent-tbody').innerHTML = surveys.slice(0,15).map(s => `
+    <tr>
+      <td>${s.modir_name||'-'}</td>
+      <td>${s.ostan||'-'}</td>
+      <td>${s.bus_company||'-'}</td>
+      <td><span class="badge badge-gray">${s.bus_badge||'-'}</span></td>
+      <td>${s.bus_number||'-'}</td>
+      <td><span class="badge ${scoreClass(s.score)}">${s.score}%</span></td>
+      <td>${(s.submitted_at||'').slice(0,10)}</td>
+      <td><button onclick="showDetail(${s.id})" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.75rem;background:white;">جزییات</button></td>
+      <td><button onclick="deleteSurvey(${s.id})" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-size:0.75rem;">🗑 حذف</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">داده‌ای ثبت نشده</td></tr>';
+}
+
+function drawScoreDist(surveys) {
+  const ctx = document.getElementById('chart-score-dist');
+  if (!ctx) return;
+  const bins = [0,0,0,0]; // <50, 50-70, 70-85, >85
+  surveys.forEach(s => {
+    if (s.score < 50) bins[0]++;
+    else if (s.score < 70) bins[1]++;
+    else if (s.score < 85) bins[2]++;
+    else bins[3]++;
+  });
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['ضعیف (<۵۰%)', 'متوسط (۵۰-۷۰%)', 'خوب (۷۰-۸۵%)', 'عالی (>۸۵%)'],
+      datasets: [{ data: bins, backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#10b981'], borderWidth: 2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:11},padding:8} } } }
   });
 }
 
-function renderSection(key) {
-  const el = document.getElementById('contacts-' + key);
-  if (!el) return;
-  const contacts = state[key];
-  if (!contacts.length) {
-    el.innerHTML = `<div style="padding:12px; color:var(--dim);">شماره‌ای ثبت نشده</div>`;
+function drawCompanyChart(companies) {
+  const ctx = document.getElementById('chart-companies');
+  if (!ctx || !companies.length) return;
+  const top = companies.slice(0,8);
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top.map(c => c.name||'نامشخص'),
+      datasets: [{ label: 'میانگین امتیاز', data: top.map(c => Math.round(c.avg_score||0)),
+        backgroundColor: top.map(c => (c.avg_score||0)>=80?'#10b981':(c.avg_score||0)>=60?'#f59e0b':'#ef4444'),
+        borderRadius: 6 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false} },
+      scales:{ x:{max:100, ticks:{callback:v=>v+'%'} } }
+    }
+  });
+}
+
+function drawOstanChart(ostans) {
+  const ctx = document.getElementById('chart-ostan');
+  if (!ctx || !ostans.length) return;
+  const top = ostans.slice(0,8);
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top.map(o => o.ostan),
+      datasets: [
+        { label: 'تعداد ارزیابی', data: top.map(o => o.count), backgroundColor: '#0d9488', borderRadius:6, yAxisID:'y' },
+        { label: 'میانگین امتیاز', data: top.map(o => Math.round(o.avg_score||0)), backgroundColor: '#6366f1', borderRadius:6, yAxisID:'y1' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{font:{size:10}} } },
+      scales: {
+        y:{ position:'right', title:{display:true,text:'تعداد'} },
+        y1:{ position:'left', max:100, title:{display:true,text:'امتیاز'} }
+      }
+    }
+  });
+}
+
+function drawWeakQuestions(surveys) {
+  if (!surveys.length) return;
+  const qScores = Array(16).fill(0).map(()=>({total:0,count:0}));
+  const weights = {very_good:100,good:80,average:50,poor:20,yes:100,no:0};
+  const goodAnswers = {1:'yes',2:'no',11:'yes',15:'yes',16:'no'};
+
+  surveys.forEach(s => {
+    const ans = typeof s.answers === 'string' ? JSON.parse(s.answers) : (s.answers||{});
+    for (let i=1; i<=16; i++) {
+      const a = ans[i];
+      if (!a || !a.rating) continue;
+      let score;
+      if (goodAnswers[i]) score = a.rating === goodAnswers[i] ? 100 : 40;
+      else score = weights[a.rating] || 0;
+      qScores[i-1].total += score;
+      qScores[i-1].count++;
+    }
+  });
+
+  const avgs = qScores.map((q,i) => ({ label: qLabels[i], avg: q.count>0 ? Math.round(q.total/q.count) : null, idx:i }));
+  const sorted = avgs.filter(q=>q.avg!==null).sort((a,b)=>a.avg-b.avg).slice(0,6);
+
+  document.getElementById('weak-questions').innerHTML = sorted.map(q => `
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px;">
+        <span>${q.label}</span>
+        <span style="font-weight:700;color:${q.avg<50?'#ef4444':q.avg<70?'#f59e0b':'#10b981'}">${q.avg}%</span>
+      </div>
+      <div class="prog-bar-wrap">
+        <div class="prog-bar">
+          <div class="prog-bar-fill" style="width:${q.avg}%;background:${q.avg<50?'#ef4444':q.avg<70?'#f59e0b':'#10b981'}"></div>
+        </div>
+      </div>
+    </div>
+  `).join('') || '<p style="color:var(--muted);text-align:center;padding:20px;">داده کافی ندارد</p>';
+}
+
+// ===== SURVEYS LIST =====
+async function loadSurveys() {
+  const ostan = document.getElementById('f-ostan')?.value || '';
+  const company = document.getElementById('f-company')?.value || '';
+  const from = document.getElementById('f-from')?.value || '';
+  const to = document.getElementById('f-to')?.value || '';
+  const scoreFilter = document.getElementById('f-score')?.value || '';
+
+  const params = new URLSearchParams({ ostan, date_from:from, date_to:to });
+  const r = await fetch('/api/admin/surveys?' + params, { headers: { 'x-admin-password': adminPass } });
+  let surveys = await r.json();
+
+  // فیلتر شرکت و امتیاز
+  if (company) surveys = surveys.filter(s => s.bus_company === company);
+  if (scoreFilter === 'high') surveys = surveys.filter(s => s.score >= 80);
+  if (scoreFilter === 'mid') surveys = surveys.filter(s => s.score >= 50 && s.score < 80);
+  if (scoreFilter === 'low') surveys = surveys.filter(s => s.score < 50);
+
+  allSurveys = surveys;
+  const sc = s => s>=80?'badge-green':s>=50?'badge-yellow':'badge-red';
+  document.getElementById('surveys-tbody').innerHTML = surveys.map(s => `
+    <tr>
+      <td>${s.modir_name||'-'}</td>
+      <td>${s.modir_mobile||'-'}</td>
+      <td>${s.ostan||'-'}</td>
+      <td>${s.bus_company||'-'}</td>
+      <td>${s.bus_badge||'-'}</td>
+      <td>${s.driver_name||'-'}</td>
+      <td><span class="badge ${sc(s.score)}">${s.score}%</span></td>
+      <td>${(s.submitted_at||'').slice(0,10)}</td>
+      <td><button onclick="showDetail(${s.id})" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.75rem;background:white;">جزییات</button></td>
+      <td><button onclick="deleteSurvey(${s.id})" style="padding:4px 10px;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-size:0.75rem;">🗑 حذف</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px;">داده‌ای یافت نشد</td></tr>';
+
+  // پر کردن فیلتر استان‌ها
+  const ostans = [...new Set(surveys.map(s=>s.ostan).filter(Boolean))];
+  const ostanSel = document.getElementById('f-ostan');
+  if (ostanSel.options.length <= 1) {
+    ostans.forEach(o => { const opt=document.createElement('option'); opt.value=o; opt.textContent=o; ostanSel.appendChild(opt); });
+  }
+  // فیلتر شرکت‌ها
+  const companies = [...new Set(surveys.map(s=>s.bus_company).filter(Boolean))];
+  const compSel = document.getElementById('f-company');
+  if (compSel.options.length <= 1) {
+    companies.forEach(c => { const opt=document.createElement('option'); opt.value=c; opt.textContent=c; compSel.appendChild(opt); });
+  }
+}
+
+// ===== COMPANIES =====
+async function loadCompanies() {
+  const r = await fetch('/api/admin/surveys', { headers: { 'x-admin-password': adminPass } });
+  const surveys = await r.json();
+
+  const map = {};
+  surveys.forEach(s => {
+    const c = s.bus_company || 'نامشخص';
+    if (!map[c]) map[c] = { count:0, total:0, max:0, min:100 };
+    map[c].count++;
+    map[c].total += s.score;
+    if (s.score > map[c].max) map[c].max = s.score;
+    if (s.score < map[c].min) map[c].min = s.score;
+  });
+
+  const sc = s => s>=80?'badge-green':s>=50?'badge-yellow':'badge-red';
+  const rows = Object.entries(map).sort((a,b)=>b[1].total/b[1].count - a[1].total/a[1].count);
+  document.getElementById('companies-tbody').innerHTML = rows.map(([name, d]) => {
+    const avg = Math.round(d.total/d.count);
+    return `<tr>
+      <td><strong>${name}</strong></td>
+      <td>${d.count}</td>
+      <td><span class="badge ${sc(avg)}">${avg}%</span></td>
+      <td><span class="badge badge-green">${d.max}%</span></td>
+      <td><span class="badge badge-red">${d.min}%</span></td>
+      <td><div class="prog-bar" style="min-width:100px"><div class="prog-bar-fill" style="width:${avg}%"></div></div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">داده‌ای یافت نشد</td></tr>';
+}
+
+// ===== DETAIL MODAL =====
+async function showDetail(id) {
+  const r = await fetch('/api/admin/surveys', { headers: { 'x-admin-password': adminPass } });
+  const surveys = await r.json();
+  const s = surveys.find(x => x.id === id);
+  if (!s) return;
+
+  const answers = typeof s.answers === 'string' ? JSON.parse(s.answers) : s.answers;
+  const sc = s.score>=80?'badge-green':s.score>=50?'badge-yellow':'badge-red';
+  const ratingLabel = {very_good:'عالی 😍', good:'خوب 😊', average:'متوسط 😐', poor:'ضعیف 😡', yes:'بله ✅', no:'خیر ❌'};
+  const goodFor = {1:'yes',2:'no',11:'yes',15:'yes',16:'no'};
+
+  document.getElementById('modal-title').innerHTML = `جزییات ارزیابی #${id} — <span class="badge ${sc}">${s.score}%</span>`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-grid">
+      <div class="modal-item"><span>مدیر کاروان</span>${s.modir_name||'-'}</div>
+      <div class="modal-item"><span>موبایل</span>${s.modir_mobile||'-'}</div>
+      <div class="modal-item"><span>استان</span>${s.ostan||'-'}</div>
+      <div class="modal-item"><span>مسیر</span>${s.masir||'-'}</div>
+      <div class="modal-item"><span>شرکت نقل</span>${s.bus_company||'-'}</div>
+      <div class="modal-item"><span>باج</span>${s.bus_badge||'-'}</div>
+      <div class="modal-item"><span>پلاک</span>${s.bus_number||'-'}</div>
+      <div class="modal-item"><span>راننده</span>${s.driver_name||'-'}</div>
+      <div class="modal-item"><span>تاریخ ثبت</span>${(s.submitted_at||'').slice(0,16)}</div>
+    </div>
+    <hr style="margin:15px 0;border:none;border-top:1px solid var(--border)">
+    <h4 style="margin-bottom:10px;color:var(--primary-dark);">پاسخ‌های ارزیابی</h4>
+    ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].map(i => {
+      const a = answers[i] || {};
+      if (!a.rating) return '';
+      const isGood = goodFor[i] ? a.rating===goodFor[i] : (a.rating==='very_good'||a.rating==='good');
+      const isMid = a.rating==='average';
+      const cls = isGood?'good':isMid?'mid':'bad';
+      const details = [];
+      if (a.h||a.m) details.push(`تأخیر: ${a.h||0}:${String(a.m||0).padStart(2,'0')}`);
+      if (a.reasons?.length) details.push('علت: ' + a.reasons.join('، '));
+      if (a.comment) details.push('توضیح: ' + a.comment);
+      return `<div class="q-result ${cls}">
+        <div class="q-title">${i}. ${qLabels[i-1]}</div>
+        <div class="q-ans">${ratingLabel[a.rating]||a.rating}${details.length?' — '+details.join(' | '):''}</div>
+      </div>`;
+    }).join('')}
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+// ===== UPLOAD =====
+async function uploadExcel(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const r = await fetch('/api/admin/upload-excel', { method:'POST', headers:{'x-admin-password':adminPass}, body:fd });
+  const data = await r.json();
+  const ok = document.getElementById('upload-ok');
+  const err = document.getElementById('upload-err');
+  if (data.success) {
+    ok.style.display='block'; ok.textContent=`✅ ${data.inserted} کاروان با موفقیت بارگذاری شد`;
+    err.style.display='none';
+  } else {
+    err.style.display='block'; err.textContent='❌ خطا: ' + data.error;
+    ok.style.display='none';
+  }
+  loadBatches();
+}
+
+// ===== ALERTS =====
+// ===== USER MANAGEMENT =====
+async function loadUsers() {
+  const r = await fetch('/api/admin/admins', { headers: { 'x-admin-password': adminPass } });
+  if (!r.ok) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">دسترسی ندارید</td></tr>'; return; }
+  const users = await r.json();
+  const roleLabel = { superadmin: '<span class="role-badge role-superadmin">👑 مدیر ارشد</span>', admin: '<span class="role-badge role-admin">⚙️ مدیر</span>', viewer: '<span class="role-badge role-viewer">👁️ مشاهده‌گر</span>' };
+  document.getElementById('users-tbody').innerHTML = users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td><strong>${u.username}</strong></td>
+      <td>${roleLabel[u.role] || u.role}</td>
+      <td>${u.last_login ? u.last_login.slice(0,16) : 'هرگز'}</td>
+      <td>${(u.created_at||'').slice(0,10)}</td>
+      <td>${u.username !== 'admin' ? `<button onclick="deleteUser(${u.id},'${u.username}')" style="padding:5px 12px;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-size:0.8rem;">حذف</button>` : '<span style="color:var(--muted);font-size:0.8rem;">حذف‌نشدنی</span>'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;">هیچ کاربری یافت نشد</td></tr>';
+}
+
+async function createUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  const role = document.getElementById('new-role').value;
+  const ok = document.getElementById('new-user-ok');
+  const err = document.getElementById('new-user-err');
+  ok.style.display = 'none'; err.style.display = 'none';
+  if (!username || !password) { err.style.display='block'; err.textContent='نام کاربری و رمز عبور اجباری است'; return; }
+  if (password.length < 6) { err.style.display='block'; err.textContent='رمز باید حداقل ۶ کاراکتر باشد'; return; }
+  const r = await fetch('/api/admin/admins', {
+    method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-password': adminPass },
+    body: JSON.stringify({ username, password, role })
+  });
+  const d = await r.json();
+  if (d.success) {
+    ok.style.display='block'; ok.textContent='✅ کاربر «' + username + '» با موفقیت ایجاد شد';
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    loadUsers();
+  } else { err.style.display='block'; err.textContent='❌ ' + d.error; }
+}
+
+async function changePassword() {
+  const oldPass = document.getElementById('chpass-old').value;
+  const newPass = document.getElementById('chpass-new').value;
+  const confirm = document.getElementById('chpass-confirm').value;
+  const ok = document.getElementById('chpass-ok');
+  const err = document.getElementById('chpass-err');
+  ok.style.display='none'; err.style.display='none';
+  if (!oldPass || !newPass) { err.style.display='block'; err.textContent='همه فیلدها را پر کنید'; return; }
+  if (newPass !== confirm) { err.style.display='block'; err.textContent='رمز جدید و تکرار آن یکسان نیستند'; return; }
+  if (newPass.length < 6) { err.style.display='block'; err.textContent='رمز جدید باید حداقل ۶ کاراکتر باشد'; return; }
+
+  // پیدا کردن id کاربر فعلی
+  const usersR = await fetch('/api/admin/admins', { headers: { 'x-admin-password': adminPass } });
+  const users = await usersR.json();
+  const currentUser = users.find(u => u.username === 'admin') || users[0];
+  if (!currentUser) { err.style.display='block'; err.textContent='کاربر شناسایی نشد'; return; }
+
+  const r = await fetch('/api/admin/admins/' + currentUser.id + '/password', {
+    method: 'PUT', headers: { 'Content-Type':'application/json', 'x-admin-password': adminPass },
+    body: JSON.stringify({ old_password: oldPass, new_password: newPass })
+  });
+  const d = await r.json();
+  if (d.success) {
+    ok.style.display='block'; ok.textContent='✅ رمز عبور با موفقیت تغییر کرد. لطفاً دوباره وارد شوید';
+    setTimeout(() => { adminPass = ''; document.getElementById('login-screen').style.display='flex'; }, 2000);
+  } else { err.style.display='block'; err.textContent='❌ ' + d.error; }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm('آیا مطمئنید؟ کاربر «' + username + '» حذف خواهد شد.')) return;
+  const r = await fetch('/api/admin/admins/' + id, { method: 'DELETE', headers: { 'x-admin-password': adminPass } });
+  const d = await r.json();
+  if (d.success) loadUsers();
+  else alert('❌ ' + d.error);
+}
+
+async function loadAlerts() {
+  const r = await fetch('/api/admin/surveys', { headers: { 'x-admin-password': adminPass } });
+  const surveys = await r.json();
+
+  const alerts = [];
+
+  // --- آمار راننده‌ها ---
+  const driverMap = {};
+  surveys.forEach(s => {
+    if (!s.driver_name || !s.driver_name.trim()) return;
+    const ans = typeof s.answers === 'string' ? JSON.parse(s.answers) : s.answers;
+    const key = s.driver_name.trim() + '||' + (s.bus_company||'');
+
+    if (!driverMap[key]) driverMap[key] = {
+      name: s.driver_name,
+      company: s.bus_company||'نامشخص',
+      badge: s.bus_badge||'-',
+      badBehavior: 0, badDriving: 0, total: 0, surveys: []
+    };
+    driverMap[key].total++;
+    driverMap[key].surveys.push(s.id);
+
+    const a12 = ans[12]; // برخورد راننده
+    const a13 = ans[13]; // رانندگی ایمن
+    if (a12 && (a12.rating === 'poor' || a12.rating === 'average')) driverMap[key].badBehavior++;
+    if (a13 && (a13.rating === 'poor' || a13.rating === 'average')) driverMap[key].badDriving++;
+  });
+
+  Object.values(driverMap).forEach(d => {
+    if (d.badBehavior >= 3) {
+      alerts.push({
+        type: 'critical',
+        icon: '😤',
+        title: `بداخلاقی راننده: ${d.name}`,
+        desc: `${d.badBehavior} گزارش بداخلاقی از ${d.total} ارزیابی — شرکت: ${d.company} — باج: ${d.badge}`,
+        tags: ['بداخلاقی', d.company, 'باج: ' + d.badge],
+        driver: d.name,
+        surveyIds: d.surveys
+      });
+    } else if (d.badBehavior >= 2) {
+      alerts.push({
+        type: 'warning',
+        icon: '⚠️',
+        title: `هشدار برخورد راننده: ${d.name}`,
+        desc: `${d.badBehavior} گزارش منفی برخورد — شرکت: ${d.company}`,
+        tags: ['برخورد', d.company],
+        driver: d.name,
+        surveyIds: d.surveys
+      });
+    }
+    if (d.badDriving >= 3) {
+      alerts.push({
+        type: 'critical',
+        icon: '🚨',
+        title: `رانندگی خطرناک: ${d.name}`,
+        desc: `${d.badDriving} گزارش رانندگی خطرناک — شرکت: ${d.company} — باج: ${d.badge}`,
+        tags: ['رانندگی خطرناک', d.company, 'باج: ' + d.badge],
+        driver: d.name,
+        surveyIds: d.surveys
+      });
+    } else if (d.badDriving >= 2) {
+      alerts.push({
+        type: 'warning',
+        icon: '🚗',
+        title: `هشدار رانندگی: ${d.name}`,
+        desc: `${d.badDriving} گزارش رانندگی نامناسب — شرکت: ${d.company}`,
+        tags: ['رانندگی', d.company],
+        driver: d.name,
+        surveyIds: d.surveys
+      });
+    }
+  });
+
+  // --- امتیاز زیر ۵۰ ---
+  const lowScore = surveys.filter(s => s.score < 50);
+  lowScore.forEach(s => {
+    alerts.push({
+      type: 'critical',
+      icon: '📉',
+      title: `امتیاز بحرانی: باج ${s.bus_badge||'-'}`,
+      desc: `امتیاز ${s.score}% — شرکت: ${s.bus_company||'نامشخص'} — راننده: ${s.driver_name||'نامشخص'} — مسیر: ${s.bus_origin||'-'}←${s.bus_dest||'-'}`,
+      tags: ['امتیاز پایین', s.bus_company||'نامشخص'],
+      surveyIds: [s.id]
+    });
+  });
+
+  // --- شرکت‌های ضعیف ---
+  const compMap = {};
+  surveys.forEach(s => {
+    const c = s.bus_company||'نامشخص';
+    if (!compMap[c]) compMap[c] = { total:0, sum:0 };
+    compMap[c].total++;
+    compMap[c].sum += s.score;
+  });
+  Object.entries(compMap).forEach(([name, d]) => {
+    if (d.total >= 3 && (d.sum/d.total) < 50) {
+      alerts.push({
+        type: 'warning',
+        icon: '🚌',
+        title: `عملکرد ضعیف شرکت: ${name}`,
+        desc: `میانگین امتیاز ${Math.round(d.sum/d.total)}% از ${d.total} ارزیابی`,
+        tags: ['شرکت ضعیف', name],
+        surveyIds: []
+      });
+    }
+  });
+
+  // --- مرتب‌سازی: بحرانی اول ---
+  const order = { critical:0, warning:1, info:2 };
+  alerts.sort((a,b) => order[a.type] - order[b.type]);
+
+  // --- آمار ---
+  const nCritical = alerts.filter(a=>a.type==='critical').length;
+  const nWarning  = alerts.filter(a=>a.type==='warning').length;
+  const nInfo     = alerts.filter(a=>a.type==='info').length;
+  document.getElementById('alert-count-critical').textContent = nCritical;
+  document.getElementById('alert-count-warning').textContent  = nWarning;
+  document.getElementById('alert-count-info').textContent     = nInfo;
+
+  // --- نمایش ---
+  const list = document.getElementById('alerts-list');
+  if (!alerts.length) {
+    list.innerHTML = '<div class="no-alerts"><div class="big-icon">✅</div><h3>هیچ هشداری وجود ندارد</h3><p>عملکرد تمام اتوبوس‌ها و رانندگان در حد قابل قبول است</p></div>';
     return;
   }
-  el.innerHTML = contacts.map((c, i) => `
-    <div class="contact-entry">
-      <div style="width:24px; height:24px; background:var(--gold); color:white; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px;">${i+1}</div>
-      <input type="text" style="flex:1; min-width:120px;" value="${escapeHtml(c.role)}" placeholder="نقش" oninput="updateField('${key}',${i},'role',this.value)">
-      <input type="tel" style="width:130px; direction:ltr;" value="${escapeHtml(c.phone)}" placeholder="07..." oninput="updateField('${key}',${i},'phone',this.value)">
-      <input type="text" style="flex:1; min-width:100px;" value="${escapeHtml(c.name||'')}" placeholder="نام" oninput="updateField('${key}',${i},'name',this.value)">
-      <button class="del-btn" onclick="deleteContact('${key}',${i})">🗑</button>
-    </div>`).join('');
-}
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);
-}
+  list.innerHTML = alerts.map((a, i) => `
+    <div class="alert-card ${a.type}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-body">
+        <h4>${a.title}</h4>
+        <p>${a.desc}</p>
+        <div class="alert-meta">
+          ${a.tags.map(t=>`<span class="tag">${t}</span>`).join('')}
+        </div>
+        <div class="alert-actions">
+          <button class="btn-alert-action btn-alert-send" onclick="sendAlertToBale(${i})">📲 ارسال به بله</button>
+          ${a.surveyIds.length ? `<button class="btn-alert-action btn-alert-detail" onclick="showDetail(${a.surveyIds[0]})">جزییات</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
 
-function updateField(key, idx, field, val) {
-  state[key][idx][field] = val;
-}
+  // ذخیره برای ارسال بله
+  window._alerts = alerts;
 
-function addContact(key) {
-  state[key].push({ role: '', name: '', phone: '', countryCode: '964' });
-  renderSection(key);
-}
-
-function deleteContact(key, idx) {
-  if (confirm('حذف شود؟')) {
-    state[key].splice(idx, 1);
-    renderSection(key);
+  // --- بج روی منوی هشدار ---
+  const alertBtn = document.querySelector('.nav-item[onclick*="alerts"]');
+  if (alertBtn && nCritical > 0) {
+    alertBtn.innerHTML = '<span class="icon">🚨</span> هشدارها <span style="background:#ef4444;color:white;border-radius:10px;padding:2px 7px;font-size:0.72rem;margin-right:auto;">' + nCritical + '</span>';
   }
 }
 
-function qq(s) { return JSON.stringify(s || ''); }
+async function sendAlertToBale(idx) {
+  const a = window._alerts[idx];
+  if (!a) return;
+  const msg = `🚨 هشدار سامانه ارزیابی عتبات
 
-function buildContactsJS(key, indent) {
-  const contacts = state[key].filter(c => c.phone && c.phone.trim());
-  if (!contacts.length) return '[]';
-  const lines = contacts.map(c => {
-    const namePart = c.name?.trim() ? `, name: ${qq(c.name.trim())}` : ', name: null';
-    return `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${namePart}, countryCode: "964" }`;
+${a.icon} ${a.title}
+
+${a.desc}
+
+برچسب‌ها: ${a.tags.join(' | ')}`;
+  const r = await fetch('/api/admin/send-alert', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'x-admin-password': adminPass },
+    body: JSON.stringify({ message: msg })
   });
-  return `[\n${lines.join(',\n')}\n${indent}]`;
+  const d = await r.json();
+  if (d.ok) alert('✅ پیام با موفقیت به بله ارسال شد');
+  else alert('❌ خطا در ارسال: ' + (d.error||''));
 }
 
-function generateOutput() {
-  const date = document.getElementById('lastUpdate').value.trim();
-  // ساده‌سازی خروجی برای جلوگیری از خطا
-  const output = `/**
- * داده‌های راهنمای کاروان عراق
- * آخرین بروزرسانی: ${date}
- */
-const CARAVAN_DATA = {
-  lastUpdate: ${qq(date)},
-  insurance: {
-    title: "نماینده بیمه معلم – تمام شهرها",
-    subtitle: "نجف · کربلا · کاظمین",
-    contacts: ${buildContactsJS('insurance','  ')}
-  },
-  cities: [
-    {
-      id: "najaf", name: "نجف اشرف", arabic: "النجف الأشرف", icon: "🕌",
-      hq: { title: "ستاد نجف اشرف", address: "شارع امام صادق (ع)", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-hq','        ')} },
-      clinic: { title: "درمانگاه نجف", address: "شارع السور", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-clinic','        ')} },
-      consulate: { title: "کنسولگری ایران – نجف", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-consulate','        ')} }
-    },
-    {
-      id: "karbala", name: "کربلای معلا", arabic: "كربلاء المقدسة", icon: "🕌",
-      hq: { title: "ستاد کربلا", address: "شارع میثم تمار", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-hq','        ')} },
-      clinic: { title: "درمانگاه کربلا", address: "شارع العباس", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-clinic','        ')} },
-      consulate: { title: "کنسولگری ایران – کربلا", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-consulate','        ')} }
-    },
-    {
-      id: "kadhimiya", name: "کاظمین", arabic: "الكاظمية", icon: "🕌",
-      hq: { title: "ستاد کاظمین", address: "شارع باب المراد", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('kadhimiya-hq','        ')} },
-      clinic: null, consulate: null
+// ===== SETTINGS =====
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function changePassword() {
+  const cur  = document.getElementById('cur-pass').value.trim();
+  const np   = document.getElementById('new-pass').value;
+  const np2  = document.getElementById('new-pass2').value;
+  const ok   = document.getElementById('pass-ok');
+  const err  = document.getElementById('pass-err');
+  ok.style.display = 'none'; err.style.display = 'none';
+
+  if (!cur)  { err.textContent = '❌ رمز عبور فعلی را وارد کنید'; err.style.display='block'; return; }
+  if (!np)   { err.textContent = '❌ رمز جدید را وارد کنید'; err.style.display='block'; return; }
+  if (np.length < 8) { err.textContent = '❌ رمز جدید باید حداقل ۸ کاراکتر باشد'; err.style.display='block'; return; }
+  if (np !== np2)    { err.textContent = '❌ تکرار رمز مطابقت ندارد'; err.style.display='block'; return; }
+
+  try {
+    const r = await fetch('/api/admin/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-password': cur },
+      body: JSON.stringify({ newPassword: np })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      adminPass = np;
+      ok.textContent = '✅ رمز عبور با موفقیت تغییر کرد';
+      ok.style.display = 'block';
+      document.getElementById('cur-pass').value = '';
+      document.getElementById('new-pass').value = '';
+      document.getElementById('new-pass2').value = '';
+    } else {
+      err.textContent = '❌ ' + (d.error || 'رمز فعلی اشتباه است');
+      err.style.display = 'block';
     }
-  ]
-};`;
-  document.getElementById('outputArea').value = output;
-  document.getElementById('outputWrap').style.display = 'block';
-  showToast('فایل آماده شد! متن را کپی کنید');
+  } catch(e) {
+    err.textContent = '❌ خطای شبکه: ' + e.message;
+    err.style.display = 'block';
+  }
 }
 
-function copyOutput() {
-  navigator.clipboard.writeText(document.getElementById('outputArea').value);
-  showToast('کپی شد!');
+async function loadUsers() {
+  const r = await fetch('/api/admin/users', { headers: { 'x-admin-password': adminPass } });
+  const users = await r.json();
+  const roleLabel = { admin: 'مدیر کامل', viewer: 'ناظر' };
+  const roleClass = { admin: 'role-admin', viewer: 'role-viewer' };
+  document.getElementById('users-list').innerHTML = users.map(u => `
+    <div class="user-row">
+      <div class="user-info">
+        <div class="user-avatar">${(u.username||'?')[0].toUpperCase()}</div>
+        <div>
+          <div class="user-name">${u.username}</div>
+          <div class="user-role">${u.username === 'admin' ? 'مدیر اصلی سیستم' : 'کاربر'}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="role-badge ${roleClass[u.role]||'role-viewer'}">${roleLabel[u.role]||u.role}</span>
+        ${u.username !== 'admin' ? `<button class="btn-danger-outline" onclick="deleteUser('${u.username}')">حذف</button>` : ''}
+      </div>
+    </div>
+  `).join('') || '<p style="color:var(--muted);text-align:center;padding:15px;">کاربری تعریف نشده</p>';
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+async function addUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-user-pass').value;
+  const role     = document.getElementById('new-user-role').value;
+  const ok  = document.getElementById('user-ok');
+  const err = document.getElementById('user-err');
+  ok.style.display='none'; err.style.display='none';
+
+  if (!username) { err.textContent='❌ نام کاربری را وارد کنید'; err.style.display='block'; return; }
+  if (password.length < 6) { err.textContent='❌ رمز باید حداقل ۶ کاراکتر باشد'; err.style.display='block'; return; }
+
+  const r = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'x-admin-password': adminPass },
+    body: JSON.stringify({ username, password, role })
+  });
+  const d = await r.json();
+  if (d.ok) {
+    ok.textContent = `✅ کاربر «${username}» با موفقیت اضافه شد`;
+    ok.style.display = 'block';
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-user-pass').value = '';
+    loadUsers();
+  } else {
+    err.textContent = '❌ ' + (d.error||'خطا');
+    err.style.display = 'block';
+  }
+}
+
+async function deleteUser(username) {
+  if (!confirm(`آیا مطمئنید که کاربر «${username}» حذف شود؟`)) return;
+  const r = await fetch('/api/admin/users/' + username, {
+    method: 'DELETE',
+    headers: { 'x-admin-password': adminPass }
+  });
+  const d = await r.json();
+  if (d.ok) loadUsers();
+  else alert('❌ خطا: ' + d.error);
+}
+
+async function loadBatches() {
+  const r = await fetch('/api/admin/batches', { headers:{'x-admin-password':adminPass} });
+  const batches = await r.json();
+  document.getElementById('batches-tbody').innerHTML = batches.map(b => `
+    <tr>
+      <td>${b.filename}</td>
+      <td>${b.count}</td>
+      <td>${(b.uploaded_at||'').slice(0,16)}</td>
+      <td><button onclick="deleteBatch(${b.id})" style="padding:5px 12px;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;cursor:pointer;font-size:0.8rem;">حذف</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">فایلی آپلود نشده</td></tr>';
+}
+
+async function deleteBatch(id) {
+  if (!confirm('آیا مطمئنید؟ تمام کاروان‌های این دسته حذف می‌شوند.')) return;
+  await fetch('/api/admin/batches/'+id, { method:'DELETE', headers:{'x-admin-password':adminPass} });
+  loadBatches();
+}
+
+function exportExcel() {
+  window.open('/api/admin/export', '_blank');
 }
 </script>
-</body>
-</html>
+
+
+<style>
+.cal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.cal-box{background:#fff;border-radius:18px;padding:22px;width:330px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:inherit;direction:rtl;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-header h3{margin:0;font-size:1rem;color:#1e293b;font-weight:700;}
+.cal-nav{background:none;border:1px solid #e2e8f0;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.cal-nav:hover{background:#f1f5f9;}
+.cal-selects{display:flex;gap:6px;margin-bottom:12px;}
+.cal-selects select{flex:1;padding:6px 8px;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:.85rem;color:#334155;}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;}
+.cal-weekday{text-align:center;font-size:.72rem;color:#94a3b8;padding:4px;font-weight:700;}
+.cal-weekday.fri{color:#ef4444;}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-day{text-align:center;padding:8px 2px;border-radius:8px;cursor:pointer;font-size:.88rem;color:#1e293b;border:none;background:none;transition:all .15s;width:100%;}
+.cal-day:hover:not(.empty){background:#e0f2fe;color:#0369a1;}
+.cal-day.today{background:#dbeafe;color:#1d4ed8;font-weight:700;}
+.cal-day.selected{background:#0d9488 !important;color:#fff !important;font-weight:700;}
+.cal-day.holiday{color:#ef4444;font-weight:700;}
+.cal-day.holiday:hover{background:#fee2e2;}
+.cal-day.empty{cursor:default;pointer-events:none;}
+.cal-footer{margin-top:14px;display:flex;gap:8px;}
+.cal-footer button{flex:1;padding:9px;border-radius:10px;border:none;cursor:pointer;font-size:.85rem;font-family:inherit;font-weight:600;transition:.15s;}
+.cal-btn-clear{background:#f1f5f9;color:#64748b;}
+.cal-btn-clear:hover{background:#e2e8f0;}
+.cal-btn-today{background:#0d9488;color:#fff;}
+.cal-btn-today:hover{background:#0f766e;}
+</style>
+
+<div id="cal-overlay" class="cal-overlay" style="display:none;" onclick="if(event.target===this)closeDatePicker()">
+  <div class="cal-box">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calNav(-1)">›</button>
+      <h3 id="cal-title"></h3>
+      <button class="cal-nav" onclick="calNav(1)">‹</button>
+    </div>
+    <div class="cal-selects">
+      <select id="cal-year-sel" onchange="calGoto()"></select>
+      <select id="cal-month-sel" onchange="calGoto()">
+        <option value="1">فروردین</option><option value="2">اردیبهشت</option>
+        <option value="3">خرداد</option><option value="4">تیر</option>
+        <option value="5">مرداد</option><option value="6">شهریور</option>
+        <option value="7">مهر</option><option value="8">آبان</option>
+        <option value="9">آذر</option><option value="10">دی</option>
+        <option value="11">بهمن</option><option value="12">اسفند</option>
+      </select>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-weekday">ش</div><div class="cal-weekday">ی</div>
+      <div class="cal-weekday">د</div><div class="cal-weekday">س</div>
+      <div class="cal-weekday">چ</div><div class="cal-weekday">پ</div>
+      <div class="cal-weekday fri">ج</div>
+    </div>
+    <div class="cal-days" id="cal-days"></div>
+    <div class="cal-footer">
+      <button class="cal-btn-clear" onclick="clearDate()">پاک کردن</button>
+      <button class="cal-btn-today" onclick="goToday()">امروز</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toJalali(gy,gm,gd){const g_d=[0,31,59,90,120,151,181,212,243,273,304,334];let g_y=gy-1600;gm--;gd--;let n=365*g_y+Math.floor((g_y+3)/4)-Math.floor((g_y+99)/100)+Math.floor((g_y+399)/400);for(let i=0;i<gm;i++)n+=g_d[i];if(gm>1&&((g_y%4==0&&g_y%100!=0)||(g_y%400==0)))n++;n+=gd;let jn=n-79;let jnp=Math.floor(jn/12053);jn%=12053;let jy=979+33*jnp+4*Math.floor(jn/1461);jn%=1461;if(jn>=366){jy+=Math.floor((jn-1)/365);jn=(jn-1)%365;}const j_m=[0,31,59,90,120,151,181,212,243,273,304,334];let jm=0;for(;jm<11&&jn>=j_m[jm+1];jm++);let jd=jn-j_m[jm]+1;jm++;return[jy,jm,jd];}
+function toGregorian(jy,jm,jd){jy+=1595;jd--;let n=365*jy+Math.floor(jy/33)*8+Math.floor(((jy%33)+3)/4)+78+jd+(jm<7?(jm-1)*31:Math.floor((jm-7)*30.5+365.25/2)+186);let gy=400*Math.floor(n/146097);n%=146097;if(n>36524){gy+=100*Math.floor(--n/36524);n%=36524;if(n>=365)n++;}gy+=4*Math.floor(n/1461);n%=1461;if(n>365){gy+=Math.floor((n-1)/365);n=(n-1)%365;}let gd=n+1;const gm_d=[0,31,29,31,30,31,30,31,31,30,31,30,31];let gm=0;for(;gm<13&&gd>gm_d[gm];gm++)gd-=gm_d[gm];return[gy,gm,gd];}
+
+const HOLIDAYS={'1/1':1,'1/2':1,'1/3':1,'1/4':1,'1/12':1,'1/13':1,'3/14':1,'3/15':1,'6/31':1,'11/22':1,'12/29':1};
+const jMonths=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+
+function jDaysInMonth(y,m){return m<=6?31:m<=11?30:(y%4===3?30:29);}
+function jDow(jy,jm,jd){const[gy,gm,gd]=toGregorian(jy,jm,jd);return(new Date(gy,gm-1,gd).getDay()+1)%7;}
+function todayJ(){const n=new Date();return toJalali(n.getFullYear(),n.getMonth()+1,n.getDate());}
+const pad=n=>String(n).padStart(2,'0');
+
+let calField=null,calYear=0,calMonth=0;
+
+function openDatePicker(fid){
+  calField=fid;
+  const v=document.getElementById(fid).value;
+  if(v&&v.includes('/')){const p=v.split('/');calYear=+p[0];calMonth=+p[1];}
+  else{[calYear,calMonth]=todayJ();}
+  renderCal();
+  document.getElementById('cal-overlay').style.display='flex';
+}
+function closeDatePicker(){document.getElementById('cal-overlay').style.display='none';}
+function calNav(d){calMonth+=d;if(calMonth>12){calMonth=1;calYear++;}if(calMonth<1){calMonth=12;calYear--;}renderCal();}
+function calGoto(){calYear=+document.getElementById('cal-year-sel').value;calMonth=+document.getElementById('cal-month-sel').value;renderCal();}
+
+function renderCal(){
+  document.getElementById('cal-title').textContent=jMonths[calMonth-1]+' '+calYear;
+  const ySel=document.getElementById('cal-year-sel');
+  ySel.innerHTML='';
+  for(let y=1395;y<=1415;y++){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===calYear)o.selected=true;ySel.appendChild(o);}
+  document.getElementById('cal-month-sel').value=calMonth;
+  const dim=jDaysInMonth(calYear,calMonth),sdow=jDow(calYear,calMonth,1);
+  const[ty,tm,td]=todayJ();
+  const sv=document.getElementById(calField)?.value||'';
+  let sy=0,sm=0,sd=0;
+  if(sv.includes('/')){const p=sv.split('/');sy=+p[0];sm=+p[1];sd=+p[2];}
+  let h='';
+  for(let i=0;i<sdow;i++)h+='<button class="cal-day empty"></button>';
+  for(let d=1;d<=dim;d++){
+    let cls='cal-day';
+    const dow=(sdow+d-1)%7;
+    if(dow===6||HOLIDAYS[calMonth+'/'+d])cls+=' holiday';
+    if(calYear===ty&&calMonth===tm&&d===td)cls+=' today';
+    if(calYear===sy&&calMonth===sm&&d===sd)cls+=' selected';
+    h+=`<button class="${cls}" onclick="selectDay(${d})">${d}</button>`;
+  }
+  document.getElementById('cal-days').innerHTML=h;
+}
+
+function selectDay(d){
+  const v=`${calYear}/${pad(calMonth)}/${pad(d)}`;
+  const el=document.getElementById(calField);
+  el.value=v;
+  const[gy,gm,gd]=toGregorian(calYear,calMonth,d);
+  el.dataset.gregorian=`${gy}-${pad(gm)}-${pad(gd)}`;
+  closeDatePicker();
+}
+function clearDate(){const el=document.getElementById(calField);el.value='';el.dataset.gregorian='';closeDatePicker();}
+function goToday(){const[y,m,d]=todayJ();calYear=y;calMonth=m;renderCal();selectDay(d);}
+
+// override loadSurveys برای ارسال تاریخ میلادی به سرور
+const _loadSurveysOrig=loadSurveys;
+async function loadSurveys(){
+  const fe=document.getElementById('f-from'),te=document.getElementById('f-to');
+  const fv=fe.value,tv=te.value;
+  if(fe.dataset.gregorian)fe.value=fe.dataset.gregorian;
+  if(te.dataset.gregorian)te.value=te.dataset.gregorian;
+  await _loadSurveysOrig();
+  fe.value=fv;te.value=tv;
+}
+
+// حذف ارزیابی
+async function deleteSurvey(id){
+  if(!confirm('آیا مطمئنید؟ این ارزیابی برای همیشه حذف خواهد شد.'))return;
+  const r=await fetch('/api/admin/surveys/'+id,{method:'DELETE',headers:{'x-admin-password':adminPass}});
+  const data=await r.json();
+  if(data.ok){alert('✅ ارزیابی با موفقیت حذف شد');loadSurveys();}
+  else alert('❌ خطا: '+(data.error||'نامشخص'));
+}
+
+// ===== DECISION CENTER =====
+async function loadDecision() {
+  const r = await fetch('/api/admin/surveys', { headers: { 'x-admin-password': adminPass } });
+  const surveys = await r.json();
+  if (!surveys || !surveys.length) {
+    document.getElementById('dec-companies').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;">هنوز ارزیابی‌ای ثبت نشده</div>';
+    return;
+  }
+  // آمار سریع
+  const total = surveys.length;
+  const weak = surveys.filter(s => s.score < 50).length;
+  const mid = surveys.filter(s => s.score >= 50 && s.score < 75).length;
+  const good = surveys.filter(s => s.score >= 75).length;
+  document.getElementById('dec-total').textContent = total;
+  document.getElementById('dec-weak').textContent = weak;
+  document.getElementById('dec-mid').textContent = mid;
+  document.getElementById('dec-good').textContent = good;
+
+  // رتبه‌بندی شرکت‌ها
+  const compMap = {};
+  surveys.forEach(s => {
+    const c = s.bus_company || 'نامشخص';
+    if (!compMap[c]) compMap[c] = { name:c, scores:[], surveys:[], drivers:new Set(), buses:new Set() };
+    compMap[c].scores.push(s.score);
+    compMap[c].surveys.push(s);
+    if (s.driver_name) compMap[c].drivers.add(s.driver_name);
+    if (s.bus_badge) compMap[c].buses.add(s.bus_badge);
+  });
+
+  const companies = Object.values(compMap).map(c => ({
+    ...c,
+    avg: Math.round(c.scores.reduce((a,b)=>a+b,0)/c.scores.length),
+    count: c.scores.length,
+    drivers: [...c.drivers],
+    buses: [...c.buses]
+  })).sort((a,b) => a.avg - b.avg);
+
+  // رتبه‌بندی رانندگان
+  const drvMap = {};
+  surveys.forEach(s => {
+    const d = s.driver_name || 'نامشخص';
+    const c = s.bus_company || '';
+    if (!drvMap[d]) drvMap[d] = { name:d, company:c, scores:[], buses:new Set() };
+    drvMap[d].scores.push(s.score);
+    if (s.bus_badge) drvMap[d].buses.add(s.bus_badge);
+  });
+  const drivers = Object.values(drvMap).map(d => ({
+    ...d,
+    avg: Math.round(d.scores.reduce((a,b)=>a+b,0)/d.scores.length),
+    count: d.scores.length,
+    buses: [...d.buses]
+  })).sort((a,b) => a.avg - b.avg);
+
+  window._decCompanies = companies;
+  window._decDrivers = drivers;
+  renderDecisionCompanies(companies);
+  renderDecisionDrivers(drivers);
+}
+
+function decBadge(score) {
+  if (score < 50) return { cls:'dec-red', label:'🔴 ضعیف', bg:'#fef2f2', border:'#fca5a5', text:'#991b1b' };
+  if (score < 75) return { cls:'dec-yellow', label:'🟡 متوسط', bg:'#fffbeb', border:'#fcd34d', text:'#92400e' };
+  return { cls:'dec-green', label:'🟢 خوب', bg:'#f0fdf4', border:'#86efac', text:'#166534' };
+}
+
+function renderDecisionCompanies(companies) {
+  const filter = document.getElementById('dec-filter')?.value || 'all';
+  let list = companies;
+  if (filter === 'weak') list = companies.filter(c => c.avg < 50);
+  if (filter === 'mid') list = companies.filter(c => c.avg >= 50 && c.avg < 75);
+  if (filter === 'good') list = companies.filter(c => c.avg >= 75);
+
+  document.getElementById('dec-companies').innerHTML = list.map((c, i) => {
+    const b = decBadge(c.avg);
+    const rank = i + 1;
+    const isWeak = c.avg < 50;
+    return `
+    <div class="dec-card" style="border:2px solid ${b.border};background:${b.bg};">
+      <div class="dec-card-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:${b.border};display:flex;align-items:center;justify-content:center;font-weight:900;color:${b.text};font-size:1.1rem;">${rank}</div>
+          <div>
+            <div style="font-weight:700;font-size:1rem;color:${b.text};">${c.name}</div>
+            <div style="font-size:0.8rem;color:var(--muted);">${c.count} ارزیابی · ${c.drivers.length} راننده · ${c.buses.length} اتوبوس</div>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:2rem;font-weight:900;color:${b.text};">${c.avg}%</div>
+          <span style="background:${b.border};color:${b.text};padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${b.label}</span>
+        </div>
+      </div>
+      <div style="margin:10px 0;">
+        <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${c.avg}%;background:${isWeak?'#ef4444':c.avg<75?'#f59e0b':'#10b981'};border-radius:4px;transition:.5s;"></div>
+        </div>
+      </div>
+      <div class="dec-actions">
+        <button onclick="decShowSurveys('${c.name}')" style="flex:1;padding:8px;background:white;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;">📋 ${c.count} ارزیابی</button>
+        <button onclick="decSendWarning('${c.name}','company')" style="flex:1;padding:8px;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;">⚠️ ارسال اخطار</button>
+        <button onclick="decExportCompany('${c.name}')" style="flex:1;padding:8px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;">📊 اکسل</button>
+        ${isWeak ? `<button onclick="decDelete('${c.name}','company')" style="flex:1;padding:8px;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;font-weight:700;">🚫 حذف</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;color:var(--muted);padding:40px;">موردی یافت نشد</div>';
+}
+
+function renderDecisionDrivers(drivers) {
+  const filter = document.getElementById('dec-drv-filter')?.value || 'all';
+  let list = drivers;
+  if (filter === 'weak') list = drivers.filter(d => d.avg < 50);
+  if (filter === 'mid') list = drivers.filter(d => d.avg >= 50 && d.avg < 75);
+  if (filter === 'good') list = drivers.filter(d => d.avg >= 75);
+
+  document.getElementById('dec-drivers').innerHTML = list.slice(0, 30).map((d, i) => {
+    const b = decBadge(d.avg);
+    const isWeak = d.avg < 50;
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1.5px solid ${b.border};background:${b.bg};margin-bottom:10px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${b.border};display:flex;align-items:center;justify-content:center;font-weight:900;color:${b.text};flex-shrink:0;">${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;color:${b.text};">${d.name}</div>
+        <div style="font-size:0.78rem;color:var(--muted);">${d.company} · ${d.count} ارزیابی · باج‌ها: ${d.buses.join('، ')||'-'}</div>
+      </div>
+      <div style="font-size:1.5rem;font-weight:900;color:${b.text};min-width:55px;text-align:center;">${d.avg}%</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="decSendWarning('${d.name}','driver')" title="ارسال اخطار" style="padding:6px 10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;cursor:pointer;font-size:0.85rem;">⚠️</button>
+        ${isWeak ? `<button onclick="decDelete('${d.name}','driver')" title="حذف" style="padding:6px 10px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;cursor:pointer;font-size:0.85rem;">🚫</button>` : ''}
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;color:var(--muted);padding:40px;">موردی یافت نشد</div>';
+}
+
+async function decSendWarning(name, type) {
+  const typeLabel = type === 'company' ? 'شرکت' : 'راننده';
+  if (!confirm(`ارسال اخطار رسمی به ${typeLabel} «${name}» در بله؟`)) return;
+  const msg = `⚠️ اخطار رسمی سامانه ارزیابی عتبات\n\n${typeLabel}: ${name}\nبه اطلاع می‌رسد امتیاز ارزیابی خدمات شما پایین‌تر از حد مجاز است.\nلطفاً در اسرع وقت اقدامات اصلاحی انجام دهید.\n\nمعاونت حمل و نقل`;
+  const r = await fetch('/api/admin/send-alert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPass },
+    body: JSON.stringify({ message: msg })
+  });
+  const d = await r.json();
+  if (d.ok || d.sent) alert(`✅ اخطار به ${typeLabel} «${name}» ارسال شد`);
+  else alert('❌ خطا در ارسال: ' + (d.error || 'نامشخص'));
+}
+
+async function decShowSurveys(company) {
+  document.querySelector(`button[onclick="showTab('surveys', this)"]`)?.click();
+  setTimeout(() => {
+    const sel = document.getElementById('f-company');
+    if (sel) { sel.value = company; loadSurveys(); }
+  }, 300);
+}
+
+function decExportCompany(company) {
+  window.open('/api/admin/export?company=' + encodeURIComponent(company) + '&pass=' + encodeURIComponent(adminPass));
+}
+
+async function decDelete(name, type) {
+  const typeLabel = type === 'company' ? 'شرکت' : 'راننده';
+  if (!confirm(`⛔ حذف ${typeLabel} «${name}» از سیستم؟\nتمام ارزیابی‌های مرتبط حذف خواهند شد.`)) return;
+  const r = await fetch('/api/admin/surveys', { headers: { 'x-admin-password': adminPass } });
+  const surveys = await r.json();
+  const targets = type === 'company'
+    ? surveys.filter(s => s.bus_company === name)
+    : surveys.filter(s => s.driver_name === name);
+  let deleted = 0;
+  for (const s of targets) {
+    const dr = await fetch('/api/admin/surveys/' + s.id, { method: 'DELETE', headers: { 'x-admin-password': adminPass } });
+    const dd = await dr.json();
+    if (dd.ok) deleted++;
+  }
+  alert(`✅ ${deleted} ارزیابی مرتبط با ${typeLabel} «${name}» حذف شد`);
+  loadDecision();
+}
+</script>
+
+<!-- ===== DECISION CENTER TAB ===== -->
+<style>
+#tab-decision { }
+.dec-summary { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px; }
+.dec-sum-card { border-radius:14px;padding:18px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.dec-sum-card .num { font-size:2.2rem;font-weight:900;line-height:1; }
+.dec-sum-card .lbl { font-size:0.8rem;margin-top:4px; }
+.dec-toolbar { display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap; }
+.dec-toolbar select { padding:8px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:0.88rem;background:white; }
+.dec-toolbar h3 { font-size:1rem;color:var(--text);flex:1; }
+.dec-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:30px; }
+.dec-card { border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);transition:.2s; }
+.dec-card:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1); }
+.dec-card-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
+.dec-actions { display:flex;gap:6px;margin-top:12px;flex-wrap:wrap; }
+</style>
+
+<div class="tab-content" id="tab-decision" style="display:none;">
+  <!-- آمار سریع -->
+  <div class="dec-summary">
+    <div class="dec-sum-card" style="background:#f0fdf4;border:2px solid #86efac;">
+      <div class="num" id="dec-total" style="color:#166534;">-</div>
+      <div class="lbl" style="color:#166534;">کل ارزیابی‌ها</div>
+    </div>
+    <div class="dec-sum-card" style="background:#fef2f2;border:2px solid #fca5a5;">
+      <div class="num" id="dec-weak" style="color:#991b1b;">-</div>
+      <div class="lbl" style="color:#991b1b;">🔴 ضعیف (زیر ۵۰٪)</div>
+    </div>
+    <div class="dec-sum-card" style="background:#fffbeb;border:2px solid #fcd34d;">
+      <div class="num" id="dec-mid" style="color:#92400e;">-</div>
+      <div class="lbl" style="color:#92400e;">🟡 متوسط (۵۰-۷۵٪)</div>
+    </div>
+    <div class="dec-sum-card" style="background:#eff6ff;border:2px solid #93c5fd;">
+      <div class="num" id="dec-good" style="color:#1d4ed8;">-</div>
+      <div class="lbl" style="color:#1d4ed8;">🟢 خوب (بالای ۷۵٪)</div>
+    </div>
+  </div>
+
+  <!-- رتبه‌بندی شرکت‌ها -->
+  <div style="background:white;border-radius:16px;padding:20px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+    <div class="dec-toolbar">
+      <h3>🏢 رتبه‌بندی شرکت‌های نقل</h3>
+      <select id="dec-filter" onchange="renderDecisionCompanies(window._decCompanies||[])">
+        <option value="all">همه شرکت‌ها</option>
+        <option value="weak">🔴 فقط ضعیف‌ها</option>
+        <option value="mid">🟡 متوسط‌ها</option>
+        <option value="good">🟢 خوب‌ها</option>
+      </select>
+      <button onclick="loadDecision()" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:0.88rem;">🔄 بروزرسانی</button>
+    </div>
+    <div class="dec-grid" id="dec-companies">
+      <div style="text-align:center;color:var(--muted);padding:40px;grid-column:1/-1;">در حال بارگذاری...</div>
+    </div>
+  </div>
+
+  <!-- رتبه‌بندی رانندگان -->
+  <div style="background:white;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+    <div class="dec-toolbar">
+      <h3>🧑‍✈️ رتبه‌بندی رانندگان</h3>
+      <select id="dec-drv-filter" onchange="renderDecisionDrivers(window._decDrivers||[])">
+        <option value="all">همه رانندگان</option>
+        <option value="weak">🔴 فقط ضعیف‌ها</option>
+        <option value="mid">🟡 متوسط‌ها</option>
+        <option value="good">🟢 خوب‌ها</option>
+      </select>
+    </div>
+    <div id="dec-drivers">
+      <div style="text-align:center;color:var(--muted);padding:40px;">در حال بارگذاری...</div>
+    </div>
+  </div>
+</div>
+
+</body></html>
