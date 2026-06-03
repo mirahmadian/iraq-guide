@@ -3,422 +3,159 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پنل مدیریت | ورود</title>
+  <title>راهنمای کاروان عراق</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --gold: #2E7D5E; --gold-l: #3A9B74;
-      --bg: #F0F7F2; --card: #FFFFFF;
-      --text: #0A2A1A; --muted: #3A6B52; --dim: #6B9B7F;
-      --border: rgba(46,125,94,0.20); --border-s: rgba(46,125,94,0.35);
-      --red: #E74C3C; --red-bg: rgba(231,76,60,0.08);
+      --gold: #2E7D5E;
+      --bg: #F0F7F2;
+      --card: #FFFFFF;
+      --text: #0A2A1A;
       --font: 'Vazirmatn', sans-serif;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
-
-    /* فرم لاگین */
-    .login-overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background: var(--bg); z-index:2000;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .login-box {
-      background: var(--card); padding: 30px; border-radius: 24px;
-      text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-      width: 300px;
-    }
-    .login-box h2 { color: var(--gold); margin-bottom: 20px; }
-    .login-box input {
-      width: 100%; padding: 12px; margin-bottom: 15px;
-      border: 1px solid var(--border); border-radius: 12px;
+    body {
       font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
-    .login-box button {
-      background: var(--gold); color: white; border: none;
-      padding: 10px 20px; border-radius: 12px; cursor: pointer;
-      width: 100%; font-family: var(--font); font-weight: bold;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
     }
-    .error { color: var(--red); margin-top: 10px; font-size: 12px; }
-
-    /* محتوای اصلی - مخفی در ابتدا */
-    .main-content { display: none; }
-
-    /* بقیه استایل‌های قبلی */
-    .top-bar {
-      background:var(--card); border-bottom:1px solid var(--border-s);
-      padding:14px 24px; display:flex; align-items:center; gap:14px;
-      position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    .header {
+      background: var(--gold);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 30px;
     }
-    .top-bar h1 { font-size:16px; font-weight:800; flex:1 }
-    .save-btn {
-      padding:10px 22px; background:var(--gold); color:#fff;
-      border:none; border-radius:10px; font-family:var(--font);
-      font-size:13px; font-weight:700; cursor:pointer;
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
-    .notice {
-      background:rgba(46,125,94,0.08); border:1px solid var(--border-s);
-      border-radius:12px; padding:14px 16px; margin-bottom:20px;
-      font-size:12.5px; color:var(--muted);
-    }
-    .section-block {
-      background:var(--card); border:1px solid var(--border);
-      border-radius:14px; margin-bottom:16px; overflow:hidden;
-    }
-    .section-block h2 {
-      font-size:13px; font-weight:800; padding:14px 16px;
-      background:rgba(46,125,94,0.05); border-bottom:1px solid var(--border);
-      color:var(--gold);
-    }
-    .field-group { padding:12px 16px; border-bottom:1px solid var(--border); }
-    .field-label { font-size:11px; color:var(--dim); font-weight:600; margin-bottom:6px }
-    input[type="text"], input[type="tel"] {
-      font-family:var(--font); font-size:13px; color:var(--text);
-      background:var(--bg); border:1px solid var(--border-s);
-      border-radius:8px; padding:9px 12px; outline:none;
-    }
-    .input-date { 
-      width: 200px; 
-      padding-left: 35px;
-      cursor: pointer;
-    }
-    .date-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-    .calendar-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
+    .card h2 {
+      color: var(--gold);
+      margin-bottom: 15px;
       font-size: 18px;
     }
-    .contact-entry {
-      display:flex; gap:8px; align-items:center;
-      padding:10px 16px; border-bottom:1px solid var(--border);
+    .contact-item {
+      border-bottom: 1px solid #eee;
+      padding: 12px 0;
     }
-    .del-btn {
-      width:30px; height:30px; border:1px solid rgba(231,76,60,0.3);
-      border-radius:7px; background:var(--red-bg); color:var(--red);
-      cursor:pointer;
+    .contact-role {
+      font-weight: bold;
+      color: var(--gold);
     }
-    .add-btn {
-      margin:10px 16px 12px; padding:9px 16px;
-      background:rgba(46,125,94,0.08); border:1px dashed var(--border-s);
-      border-radius:8px; font-weight:600; color:var(--gold); cursor:pointer;
-      width:calc(100% - 32px);
+    .contact-phone {
+      direction: ltr;
+      display: inline-block;
+      margin-right: 10px;
     }
-    .output-wrap {
-      background:#1A2F20; border-radius:12px; padding:16px;
-      margin-top:20px; position:relative;
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #6B9B7F;
+      font-size: 12px;
     }
-    textarea {
-      width:100%; height:340px; background:#0E2A1C; color:#C8F0DC;
-      border-radius:8px; font-family:monospace; font-size:12px; padding:12px;
-      direction:ltr;
-    }
-    .copy-output-btn {
-      position:absolute; top:14px; left:14px;
-      padding:7px 14px; background:var(--gold); color:#fff;
-      border:none; border-radius:7px; cursor:pointer;
-    }
-    .toast {
-      position:fixed; bottom:24px; left:50%;
-      transform:translateX(-50%) translateY(20px);
-      background:var(--text); color:#fff; border-radius:100px;
-      padding:9px 20px; font-size:12.5px;
-      opacity:0; transition:all .3s; z-index:999;
-    }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
-    
-    /* تقویم مودال */
-    .calendar-modal {
-      display: none; position: fixed; top:0; left:0; width:100%; height:100%;
-      background:rgba(0,0,0,0.5); z-index:1000;
-      justify-content:center; align-items:center;
-    }
-    .calendar-modal.show { display: flex; }
-    .calendar-container {
-      background:white; border-radius:16px; padding:20px; width:320px;
-      direction:rtl; font-family:var(--font);
-    }
-    .calendar-header {
-      display:flex; justify-content:space-between; margin-bottom:20px;
-    }
-    .calendar-header button {
-      background:var(--gold); color:white; border:none;
-      width:32px; border-radius:8px; cursor:pointer;
-    }
-    .calendar-weekdays {
-      display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
-      margin-bottom:10px; font-weight:bold; color:var(--gold);
-    }
-    .calendar-days {
-      display:grid; grid-template-columns:repeat(7,1fr); gap:5px;
-    }
-    .calendar-day {
-      text-align:center; padding:8px 0; cursor:pointer; border-radius:8px;
-    }
-    .calendar-day:hover { background:var(--gold); color:white; }
-    .calendar-actions {
-      margin-top:15px; display:flex; gap:10px;
-    }
-    .calendar-actions button {
-      flex:1; padding:8px; border:none; border-radius:8px; cursor:pointer;
+    .update-date {
+      text-align: center;
+      color: #6B9B7F;
+      font-size: 12px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="header">
+      <h1>🕌 راهنمای کاروان عراق</h1>
+      <p>اطلاعات تماس و خدمات زائران</p>
+    </div>
 
-<!-- صفحه لاگین ساده -->
-<div id="loginOverlay" class="login-overlay">
-  <div class="login-box">
-    <h2>🔐 ورود به پنل مدیریت</h2>
-    <input type="password" id="passwordInput" placeholder="رمز عبور" autofocus>
-    <button onclick="checkPassword()">ورود</button>
-    <div id="loginError" class="error"></div>
-  </div>
-</div>
+    <div class="card">
+      <h2>📋 بیمه معلم</h2>
+      <div id="insurance-contacts"></div>
+    </div>
 
-<!-- محتوای اصلی (پنهان تا لاگین موفق) -->
-<div id="mainContent" class="main-content">
-<div class="top-bar">
-  <div><h1>🛠️ پنل مدیریت کاروان</h1></div>
-  <button class="save-btn" onclick="generateOutput()">⬇️ ساخت فایل data.js</button>
-</div>
+    <div class="card">
+      <h2>🕌 ستاد نجف اشرف</h2>
+      <div id="najaf-contacts"></div>
+    </div>
 
-<div class="wrap">
-  <div class="notice">
-    <strong>📌 راهنمای استفاده</strong>
-    ۱. شماره‌ها را در فرم‌ها ویرایش کنید<br>
-    ۲. روی دکمه «ساخت فایل data.js» کلیک کنید<br>
-    ۳. محتوای کادر پایین را کپی کنید<br>
-    ۴. در گیت‌هاب فایل data.js را جایگزین کنید
-  </div>
+    <div class="card">
+      <h2>🕌 ستاد کربلا</h2>
+      <div id="karbala-contacts"></div>
+    </div>
 
-  <!-- فیلد تاریخ با تقویم اصلاح شده -->
-  <div class="section-block">
-    <h2>📅 تاریخ بروزرسانی</h2>
-    <div class="field-group">
-      <div class="field-label">تاریخ امروز را انتخاب کنید (شمسی)</div>
-      <div class="date-wrapper">
-        <input type="text" class="input-date" id="lastUpdate" readonly>
-        <span class="calendar-icon" onclick="showCalendar()">📅</span>
-      </div>
+    <div class="card">
+      <h2>🕌 ستاد کاظمین</h2>
+      <div id="kadhimiya-contacts"></div>
+    </div>
+
+    <div class="update-date" id="update-date"></div>
+    <div class="footer">
+      <p>📞 برای اطلاعات بیشتر با ستادهای مربوطه تماس بگیرید</p>
     </div>
   </div>
 
-  <!-- بخش‌های مختلف (مختصر شده) -->
-  <div class="section-block"><h2>📋 بیمه معلم</h2><div id="contacts-insurance"></div><button class="add-btn" onclick="addContact('insurance')">+ افزودن شماره</button></div>
-  <div class="section-block"><h2>🕌 ستاد نجف</h2><div id="contacts-najaf-hq"></div><button class="add-btn" onclick="addContact('najaf-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🕌 ستاد کربلا</h2><div id="contacts-karbala-hq"></div><button class="add-btn" onclick="addContact('karbala-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🕌 ستاد کاظمین</h2><div id="contacts-kadhimiya-hq"></div><button class="add-btn" onclick="addContact('kadhimiya-hq')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏥 درمانگاه نجف</h2><div id="contacts-najaf-clinic"></div><button class="add-btn" onclick="addContact('najaf-clinic')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏥 درمانگاه کربلا</h2><div id="contacts-karbala-clinic"></div><button class="add-btn" onclick="addContact('karbala-clinic')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏛️ کنسولگری نجف</h2><div id="contacts-najaf-consulate"></div><button class="add-btn" onclick="addContact('najaf-consulate')">+ افزودن</button></div>
-  <div class="section-block"><h2>🏛️ کنسولگری کربلا</h2><div id="contacts-karbala-consulate"></div><button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن</button></div>
+  <script src="data.js"></script>
+  <script>
+    function displayContacts() {
+      if (typeof CARAVAN_DATA !== 'undefined') {
+        // نمایش تاریخ بروزرسانی
+        if (CARAVAN_DATA.lastUpdate) {
+          document.getElementById('update-date').innerHTML = `📅 آخرین بروزرسانی: ${CARAVAN_DATA.lastUpdate}`;
+        }
 
-  <div class="output-wrap" id="outputWrap" style="display:none">
-    <button class="copy-output-btn" onclick="copyOutput()">📋 کپی همه</button>
-    <textarea id="outputArea" readonly></textarea>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
-</div>
+        // نمایش بیمه
+        if (CARAVAN_DATA.insurance && CARAVAN_DATA.insurance.contacts) {
+          displayContactsList('insurance-contacts', CARAVAN_DATA.insurance.contacts);
+        }
 
-<script src="data.js"></script>
-<script>
-// ---------- رمز عبور ----------
-function checkPassword() {
-  const inputPass = document.getElementById('passwordInput').value;
-  // رمز را به دلخواه تغییر دهید (مثلاً admin123)
-  const correctPass = "admin123";
-  if (inputPass === correctPass) {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    init(); // بارگذاری دیتا بعد از لاگین
-  } else {
-    document.getElementById('loginError').innerText = 'رمز اشتباه است.';
-  }
-}
+        // نمایش شهرها
+        if (CARAVAN_DATA.cities) {
+          CARAVAN_DATA.cities.forEach(city => {
+            if (city.hq && city.hq.contacts && city.hq.contacts.length > 0) {
+              displayContactsList(`${city.id}-contacts`, city.hq.contacts, city.name);
+            }
+          });
+        }
+      }
+    }
 
-// ---------- تقویم شمسی بدون NaN (کاملاً اصلاح شده) ----------
-let currentYear = 1403, currentMonth = 1;
-let selectedYear = 1403, selectedMonth = 1, selectedDay = 1;
+    function displayContactsList(elementId, contacts, title) {
+      const container = document.getElementById(elementId);
+      if (!container) return;
+      
+      if (!contacts || contacts.length === 0) {
+        container.innerHTML = '<p style="color: #6B9B7F;">اطلاعاتی ثبت نشده است</p>';
+        return;
+      }
 
-function toPersianNum(num) {
-  return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
-}
+      let html = '';
+      contacts.forEach(contact => {
+        if (contact.phone) {
+          html += `
+            <div class="contact-item">
+              ${contact.role ? `<div class="contact-role">${contact.role}</div>` : ''}
+              ${contact.name ? `<div>👤 ${contact.name}</div>` : ''}
+              <div>📞 <span class="contact-phone">${contact.phone}</span></div>
+            </div>
+          `;
+        }
+      });
+      
+      container.innerHTML = html || '<p style="color: #6B9B7F;">شماره تماسی ثبت نشده است</p>';
+    }
 
-function getTodayPersian() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  // تبدیل ساده (با کتابخانه داخلی مرورگر)
-  const persianDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
-    year: 'numeric', month: 'numeric', day: 'numeric'
-  }).format(d);
-  const parts = persianDate.split('/');
-  return { year: parseInt(parts[0]), month: parseInt(parts[1]), day: parseInt(parts[2]) };
-}
-
-function fillDateInput() {
-  const today = getTodayPersian();
-  const input = document.getElementById('lastUpdate');
-  if (CARAVAN_DATA && CARAVAN_DATA.lastUpdate && CARAVAN_DATA.lastUpdate !== 'undefined/undefined/undefined') {
-    input.value = CARAVAN_DATA.lastUpdate;
-  } else {
-    input.value = `${toPersianNum(today.year)}/${toPersianNum(today.month)}/${toPersianNum(today.day)}`;
-  }
-}
-
-function showCalendar() {
-  const modal = document.getElementById('calendarModal');
-  if (!modal) createCalendarModal();
-  updateCalendarDisplay();
-  document.getElementById('calendarModal').classList.add('show');
-}
-
-function createCalendarModal() {
-  const modalHTML = `
-    <div id="calendarModal" class="calendar-modal">
-      <div class="calendar-container">
-        <div class="calendar-header"><button id="prevMonthBtn">›</button><span id="currentMonthYear"></span><button id="nextMonthBtn">‹</button></div>
-        <div class="calendar-weekdays"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div>
-        <div id="calendarDays" class="calendar-days"></div>
-        <div class="calendar-actions"><button id="todayBtn">امروز</button><button id="closeCalBtn">بستن</button></div>
-      </div>
-    </div>`;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('prevMonthBtn').onclick = () => changeMonth(-1);
-  document.getElementById('nextMonthBtn').onclick = () => changeMonth(1);
-  document.getElementById('todayBtn').onclick = () => selectToday();
-  document.getElementById('closeCalBtn').onclick = () => document.getElementById('calendarModal').classList.remove('show');
-  document.getElementById('calendarModal').onclick = (e) => { if(e.target === document.getElementById('calendarModal')) document.getElementById('calendarModal').classList.remove('show'); };
-}
-
-function changeMonth(delta) {
-  let newMonth = currentMonth + delta;
-  let newYear = currentYear;
-  if (newMonth < 1) { newMonth = 12; newYear--; }
-  if (newMonth > 12) { newMonth = 1; newYear++; }
-  currentYear = newYear; currentMonth = newMonth;
-  updateCalendarDisplay();
-}
-
-function updateCalendarDisplay() {
-  const monthNames = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-  document.getElementById('currentMonthYear').innerHTML = `${monthNames[currentMonth-1]} ${toPersianNum(currentYear)}`;
-  
-  const firstDayIndex = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'numeric' })
-    .format(new Date(currentYear, currentMonth-1, 1)).slice(-1);
-  let start = parseInt(firstDayIndex) - 1; // 0 = شنبه
-  
-  const daysInMonth = (year, month) => {
-    if (month <= 6) return 31;
-    if (month <= 11) return 30;
-    return (year % 33 === 1 || year % 33 === 2 || year % 33 === 3 || year % 33 === 29) ? 30 : 29;
-  };
-  const totalDays = daysInMonth(currentYear, currentMonth);
-  
-  const container = document.getElementById('calendarDays');
-  container.innerHTML = '';
-  for (let i = 0; i < start; i++) { container.appendChild(createEmptyDay()); }
-  for (let d = 1; d <= totalDays; d++) {
-    const dayDiv = createDayDiv(d);
-    container.appendChild(dayDiv);
-  }
-}
-
-function createEmptyDay() { const div = document.createElement('div'); div.classList.add('calendar-day','empty'); div.innerHTML = ' '; return div; }
-function createDayDiv(day) {
-  const div = document.createElement('div');
-  div.classList.add('calendar-day');
-  div.textContent = toPersianNum(day);
-  div.onclick = () => selectDate(currentYear, currentMonth, day);
-  return div;
-}
-
-function selectDate(year, month, day) {
-  selectedYear = year; selectedMonth = month; selectedDay = day;
-  document.getElementById('lastUpdate').value = `${toPersianNum(year)}/${toPersianNum(month)}/${toPersianNum(day)}`;
-  document.getElementById('calendarModal').classList.remove('show');
-  showToast(`تاریخ انتخاب شد: ${toPersianNum(year)}/${toPersianNum(month)}/${toPersianNum(day)}`);
-}
-
-function selectToday() {
-  const today = getTodayPersian();
-  currentYear = today.year; currentMonth = today.month;
-  selectDate(today.year, today.month, today.day);
-}
-
-// ---------- بقیه توابع مدیریت و state (مختصر اما کامل) ----------
-const state = {};
-const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
-
-function getInitialContacts(key) {
-  const d = CARAVAN_DATA;
-  if (!d) return [];
-  if (key === 'insurance') return d.insurance?.contacts || [];
-  const [city, sec] = key.split('-');
-  const cityObj = d.cities?.find(c => c.id === city);
-  if (!cityObj) return [];
-  const map = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
-  return map[sec]?.contacts || [];
-}
-
-function init() {
-  fillDateInput();
-  SECTIONS.forEach(key => {
-    state[key] = getInitialContacts(key).map(c => ({ ...c }));
-    renderSection(key);
-  });
-}
-
-function renderSection(key) {
-  const el = document.getElementById('contacts-' + key);
-  if (!el) return;
-  const contacts = state[key];
-  if (!contacts.length) { el.innerHTML = `<div style="padding:12px">شماره‌ای ثبت نشده</div>`; return; }
-  el.innerHTML = contacts.map((c, i) => `
-    <div class="contact-entry">
-      <div class="num-badge">${i+1}</div>
-      <input type="text" class="input-role" value="${escapeHtml(c.role)}" oninput="updateField('${key}',${i},'role',this.value)">
-      <input type="tel" class="input-phone" value="${escapeHtml(c.phone)}" dir="ltr" oninput="updateField('${key}',${i},'phone',this.value)">
-      <input type="text" class="input-name" value="${escapeHtml(c.name||'')}" oninput="updateField('${key}',${i},'name',this.value)">
-      <button class="del-btn" onclick="deleteContact('${key}',${i})">🗑</button>
-    </div>`).join('');
-}
-
-function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
-function updateField(key, idx, field, val) { state[key][idx][field] = val; }
-function addContact(key) { state[key].push({ role: '', name: '', phone: '', countryCode: '964' }); renderSection(key); }
-function deleteContact(key, idx) { if(confirm('حذف شود؟')) { state[key].splice(idx,1); renderSection(key); } }
-function qq(s) { return JSON.stringify(s || ''); }
-
-function buildContactsJS(key, indent) {
-  const contacts = state[key].filter(c => c.phone.trim());
-  if(!contacts.length) return '[]';
-  const lines = contacts.map(c => `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${c.name?.trim() ? ', name: '+qq(c.name.trim()) : ', name: null'}, countryCode: "964" }`);
-  return `[\n${lines.join(',\n')}\n${indent}]`;
-}
-
-function generateOutput() {
-  const date = document.getElementById('lastUpdate').value.trim();
-  const output = `const CARAVAN_DATA = {\n  lastUpdate: ${qq(date)},\n  insurance: { contacts: ${buildContactsJS('insurance','  ')} },\n  cities: [ /* ... (ساختار کامل) ... */ ]\n};`;
-  document.getElementById('outputArea').value = output;
-  document.getElementById('outputWrap').style.display = 'block';
-  showToast('فایل آماده شد!');
-}
-function copyOutput() { navigator.clipboard.writeText(document.getElementById('outputArea').value); showToast('کپی شد!'); }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
-
-// آماده‌سازی تقویم بعد از لاگین
-window.createCalendarModal = createCalendarModal;
-window.showCalendar = showCalendar;
-</script>
+    displayContacts();
+  </script>
 </body>
 </html>
