@@ -66,7 +66,7 @@
     .input-phone { direction:ltr; text-align:left; width:160px; font-weight:700; letter-spacing:.5px }
     .input-name  { flex:1; min-width:140px }
     .input-role  { flex:1; min-width:200px }
-    .input-date  { width:130px }
+    .input-date  { width:130px; font-family:var(--font); }
 
     .contact-entry {
       display:flex; gap:8px; align-items:center;
@@ -149,7 +149,7 @@
     <h2>📅 تاریخ بروزرسانی</h2>
     <div class="field-group">
       <div class="field-label">تاریخ امروز را وارد کنید (فارسی)</div>
-      <input type="text" class="input-date" id="lastUpdate" placeholder="۱۴۰۳/۰۳/۱۵" value="۱۴۰۳/۰۳/۱۵">
+      <input type="text" class="input-date" id="lastUpdate" placeholder="۱۴۰۳/۰۳/۱۵" value="۱۴۰۳/۰۳/۱۵" oninput="convertToPersianNumbers(this)">
     </div>
   </div>
 
@@ -218,6 +218,27 @@
 
 <script src="data.js"></script>
 <script>
+// تبدیل اعداد انگلیسی به فارسی
+function convertToPersianNumbers(inputElement) {
+  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+  const englishDigits = '0123456789';
+  
+  let value = inputElement.value;
+  let converted = '';
+  
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    const index = englishDigits.indexOf(char);
+    if (index !== -1) {
+      converted += persianDigits[index];
+    } else {
+      converted += char;
+    }
+  }
+  
+  inputElement.value = converted;
+}
+
 // State: map of section key → array of {role, name, phone, countryCode}
 const state = {};
 
@@ -243,7 +264,11 @@ function init() {
     state[key] = getInitialContacts(key).map(c => ({ ...c }));
     renderSection(key);
   });
-  document.getElementById('lastUpdate').value = CARAVAN_DATA.lastUpdate || '';
+  const lastUpdateValue = CARAVAN_DATA.lastUpdate || '';
+  const dateInput = document.getElementById('lastUpdate');
+  if (dateInput) {
+    dateInput.value = lastUpdateValue;
+  }
 }
 
 function renderSection(key) {
@@ -257,14 +282,24 @@ function renderSection(key) {
   el.innerHTML = contacts.map((c, i) => `
     <div class="contact-entry">
       <div class="num-badge">${i+1}</div>
-      <input type="text" class="input-role" value="${c.role}" placeholder="نقش (مثلاً: رئیس ستاد)"
+      <input type="text" class="input-role" value="${escapeHtml(c.role)}" placeholder="نقش (مثلاً: رئیس ستاد)"
              oninput="updateField('${key}',${i},'role',this.value)">
-      <input type="tel" class="input-phone" value="${c.phone}" placeholder="07..."
+      <input type="tel" class="input-phone" value="${escapeHtml(c.phone)}" placeholder="07..."
              dir="ltr" oninput="updateField('${key}',${i},'phone',this.value)">
-      <input type="text" class="input-name" value="${c.name||''}" placeholder="نام (اختیاری)"
+      <input type="text" class="input-name" value="${escapeHtml(c.name||'')}" placeholder="نام (اختیاری)"
              oninput="updateField('${key}',${i},'name',this.value)">
       <button class="del-btn" onclick="deleteContact('${key}',${i})" title="حذف">🗑</button>
     </div>`).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
 }
 
 function updateField(key, idx, field, val) {
