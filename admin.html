@@ -17,7 +17,7 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
 
-    /* فرم لاگین - فقط برای admin */
+    /* فرم لاگین */
     .login-overlay {
       position: fixed; top:0; left:0; width:100%; height:100%;
       background: var(--bg); z-index:2000;
@@ -32,24 +32,23 @@
     .login-box input {
       width: 100%; padding: 12px; margin-bottom: 15px;
       border: 1px solid var(--border); border-radius: 12px;
-      font-family: var(--font); font-size: 14px;
+      font-family: var(--font);
     }
     .login-box button {
       background: var(--gold); color: white; border: none;
       padding: 10px 20px; border-radius: 12px; cursor: pointer;
       width: 100%; font-family: var(--font); font-weight: bold;
-      font-size: 14px;
     }
-    .error { color: #E74C3C; margin-top: 10px; font-size: 12px; }
+    .error { color: var(--red); margin-top: 10px; font-size: 12px; }
 
     /* محتوای اصلی - مخفی در ابتدا */
     .main-content { display: none; }
 
-    /* بقیه استایل‌های پنل مدیریت (ادمین) */
+    /* بقیه استایل‌های قبلی */
     .top-bar {
       background:var(--card); border-bottom:1px solid var(--border-s);
       padding:14px 24px; display:flex; align-items:center; gap:14px;
-      position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+      position:sticky; top:0; z-index:100;
     }
     .top-bar h1 { font-size:16px; font-weight:800; flex:1 }
     .save-btn {
@@ -79,11 +78,35 @@
       background:var(--bg); border:1px solid var(--border-s);
       border-radius:8px; padding:9px 12px; outline:none;
     }
-    .input-date { width: 200px; padding-left: 35px; cursor: pointer; }
-    .date-wrapper { position: relative; display: inline-block; }
+    .date-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 220px;
+    }
+    .input-date { 
+      width: 100%;
+      padding-left: 35px;
+      cursor: pointer;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 35px 9px 12px;
+      font-family: var(--font);
+    }
     .calendar-icon {
-      position: absolute; left: 12px; top: 50%;
-      transform: translateY(-50%); cursor: pointer; font-size: 18px;
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      pointer-events: none; /* آیکون فقط نشانه است، کلیک روی باکس اصلی کار کند */
+    }
+    /* به دلیل pointer-events: none روی آیکون، باکس کلیک را می‌گیرد */
+    .input-date {
+      padding-right: 12px;
+      padding-left: 35px;
     }
     .contact-entry {
       display:flex; gap:8px; align-items:center;
@@ -133,13 +156,16 @@
     .calendar-container {
       background:white; border-radius:16px; padding:20px; width:320px;
       direction:rtl; font-family:var(--font);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
     .calendar-header {
       display:flex; justify-content:space-between; margin-bottom:20px;
+      align-items: center;
     }
     .calendar-header button {
       background:var(--gold); color:white; border:none;
-      width:32px; border-radius:8px; cursor:pointer;
+      width:36px; height:36px; border-radius:8px; cursor:pointer;
+      font-size:18px;
     }
     .calendar-weekdays {
       display:grid; grid-template-columns:repeat(7,1fr); text-align:center;
@@ -150,19 +176,24 @@
     }
     .calendar-day {
       text-align:center; padding:8px 0; cursor:pointer; border-radius:8px;
+      transition: all 0.2s;
     }
     .calendar-day:hover { background:var(--gold); color:white; }
+    .calendar-day.empty { cursor: default; opacity: 0; }
     .calendar-actions {
       margin-top:15px; display:flex; gap:10px;
     }
     .calendar-actions button {
       flex:1; padding:8px; border:none; border-radius:8px; cursor:pointer;
+      font-family: var(--font);
     }
+    .btn-today { background: var(--gold); color: white; }
+    .btn-close { background: #eee; color: var(--text); }
   </style>
 </head>
 <body>
 
-<!-- صفحه لاگین - فقط برای admin.html -->
+<!-- صفحه لاگین ساده -->
 <div id="loginOverlay" class="login-overlay">
   <div class="login-box">
     <h2>🔐 پنل مدیریت</h2>
@@ -172,7 +203,7 @@
   </div>
 </div>
 
-<!-- محتوای اصلی پنل مدیریت (پنهان تا لاگین موفق) -->
+<!-- محتوای اصلی (پنهان تا لاگین موفق) -->
 <div id="mainContent" class="main-content">
 <div class="top-bar">
   <div><h1>🛠️ پنل مدیریت کاروان</h1></div>
@@ -188,14 +219,14 @@
     ۴. در گیت‌هاب فایل <strong>data.js</strong> را جایگزین کنید
   </div>
 
-  <!-- فیلد تاریخ با تقویم -->
+  <!-- فیلد تاریخ با تقویم اصلاح شده -->
   <div class="section-block">
     <h2>📅 تاریخ بروزرسانی</h2>
     <div class="field-group">
       <div class="field-label">تاریخ امروز را انتخاب کنید (شمسی)</div>
       <div class="date-wrapper">
-        <input type="text" class="input-date" id="lastUpdate" readonly>
-        <span class="calendar-icon" onclick="showCalendar()">📅</span>
+        <input type="text" class="input-date" id="lastUpdate" placeholder="کلیک کنید" readonly onclick="showCalendar()">
+        <span class="calendar-icon">📅</span>
       </div>
     </div>
   </div>
@@ -220,126 +251,202 @@
 
 <script src="data.js"></script>
 <script>
-// ---------- رمز عبور فقط برای صفحه admin ----------
+// ---------- رمز عبور ----------
 function checkPassword() {
   const inputPass = document.getElementById('passwordInput').value;
-  // ⭐ رمز را اینجا تغییر دهید ⭐
-  const correctPass = "admin123";  // رمز پیش‌فرض
+  const correctPass = "admin123";  // رمز پیش‌فرض - قابل تغییر
   if (inputPass === correctPass) {
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-    init(); // بارگذاری دیتا بعد از لاگین موفق
+    init(); // بارگذاری دیتا بعد از لاگین
   } else {
     document.getElementById('loginError').innerText = 'رمز اشتباه است.';
   }
 }
 
-// ---------- تقویم شمسی ----------
-let currentYear = 1403, currentMonth = 1;
-let selectedYear = 1403, selectedMonth = 1, selectedDay = 1;
+// ---------- توابع کمکی برای تبدیل اعداد ----------
+function toEnglishDigits(str) {
+  const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+  const englishDigits = '0123456789';
+  return str.replace(/[۰-۹]/g, d => englishDigits[persianDigits.indexOf(d)]);
+}
 
 function toPersianNum(num) {
-  return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)]);
 }
+
+// ---------- تقویم شمسی (کاملاً اصلاح شده) ----------
+let currentYear, currentMonth;
+let selectedYear, selectedMonth, selectedDay;
 
 function getTodayPersian() {
-  const d = new Date();
-  const persianDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     year: 'numeric', month: 'numeric', day: 'numeric'
-  }).format(d);
-  const parts = persianDate.split('/');
-  return { year: parseInt(parts[0]), month: parseInt(parts[1]), day: parseInt(parts[2]) };
+  });
+  const parts = formatter.format(new Date()).split('/');
+  return {
+    year: parseInt(parts[0]),
+    month: parseInt(parts[1]),
+    day: parseInt(parts[2])
+  };
 }
 
-function fillDateInput() {
-  const today = getTodayPersian();
-  const input = document.getElementById('lastUpdate');
-  if (window.CARAVAN_DATA && CARAVAN_DATA.lastUpdate && CARAVAN_DATA.lastUpdate !== 'undefined/undefined/undefined') {
-    input.value = CARAVAN_DATA.lastUpdate;
-  } else {
-    input.value = `${toPersianNum(today.year)}/${toPersianNum(today.month)}/${toPersianNum(today.day)}`;
+function getDaysInMonth(year, month) {
+  if (month <= 6) return 31;
+  if (month <= 11) return 30;
+  // محاسبه کبیسه‌گیری ساده برای اسفند
+  const isLeap = (year % 33 === 1) || (year % 33 === 2) || (year % 33 === 3) || (year % 33 === 29);
+  return isLeap ? 30 : 29;
+}
+
+function getFirstDayOfMonth(year, month) {
+  // ساخت تاریخ میلادی معادل اول ماه شمسی
+  const date = new Date(year, month - 1, 1);
+  const persianStart = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'numeric' }).format(date);
+  // تبدیل "۱" (یکشنبه) تا "۷" (شنبه) به 0-6 که 0 = شنبه
+  let weekday = parseInt(persianStart);
+  return (weekday % 7); // 0=شنبه, 1=یکشنبه, ... 6=جمعه
+}
+
+function renderCalendar() {
+  const monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  document.getElementById('currentMonthYear').innerHTML = `${monthNames[currentMonth-1]} ${toPersianNum(currentYear)}`;
+  
+  const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  
+  const container = document.getElementById('calendarDays');
+  container.innerHTML = '';
+  
+  // روزهای خالی ابتدای ماه
+  for (let i = 0; i < firstDayIndex; i++) {
+    const emptyDiv = document.createElement('div');
+    emptyDiv.classList.add('calendar-day', 'empty');
+    container.appendChild(emptyDiv);
+  }
+  
+  // روزهای ماه
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayDiv = document.createElement('div');
+    dayDiv.classList.add('calendar-day');
+    dayDiv.textContent = toPersianNum(day);
+    if (selectedYear === currentYear && selectedMonth === currentMonth && selectedDay === day) {
+      dayDiv.style.backgroundColor = 'var(--gold)';
+      dayDiv.style.color = 'white';
+    }
+    dayDiv.onclick = (function(y, m, d) {
+      return function() { selectDate(y, m, d); };
+    })(currentYear, currentMonth, day);
+    container.appendChild(dayDiv);
   }
 }
 
 function showCalendar() {
   let modal = document.getElementById('calendarModal');
-  if (!modal) createCalendarModal();
+  if (!modal) {
+    createCalendarModal();
+    modal = document.getElementById('calendarModal');
+  }
   const today = getTodayPersian();
   currentYear = today.year;
   currentMonth = today.month;
-  updateCalendarDisplay();
-  document.getElementById('calendarModal').classList.add('show');
+  renderCalendar();
+  modal.classList.add('show');
 }
 
 function createCalendarModal() {
   const modalHTML = `
     <div id="calendarModal" class="calendar-modal">
       <div class="calendar-container">
-        <div class="calendar-header"><button id="prevMonthBtn">›</button><span id="currentMonthYear"></span><button id="nextMonthBtn">‹</button></div>
-        <div class="calendar-weekdays"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div>
+        <div class="calendar-header">
+          <button id="prevMonthBtn">›</button>
+          <span id="currentMonthYear"></span>
+          <button id="nextMonthBtn">‹</button>
+        </div>
+        <div class="calendar-weekdays">
+          <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+        </div>
         <div id="calendarDays" class="calendar-days"></div>
-        <div class="calendar-actions"><button id="todayBtn">امروز</button><button id="closeCalBtn">بستن</button></div>
+        <div class="calendar-actions">
+          <button id="todayBtn" class="btn-today">امروز</button>
+          <button id="closeCalBtn" class="btn-close">بستن</button>
+        </div>
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.getElementById('prevMonthBtn').onclick = () => changeMonth(-1);
-  document.getElementById('nextMonthBtn').onclick = () => changeMonth(1);
-  document.getElementById('todayBtn').onclick = () => selectToday();
-  document.getElementById('closeCalBtn').onclick = () => document.getElementById('calendarModal').classList.remove('show');
-  document.getElementById('calendarModal').onclick = (e) => { if(e.target === document.getElementById('calendarModal')) document.getElementById('calendarModal').classList.remove('show'); };
-}
-
-function changeMonth(delta) {
-  let newMonth = currentMonth + delta;
-  let newYear = currentYear;
-  if (newMonth < 1) { newMonth = 12; newYear--; }
-  if (newMonth > 12) { newMonth = 1; newYear++; }
-  currentYear = newYear; currentMonth = newMonth;
-  updateCalendarDisplay();
-}
-
-function updateCalendarDisplay() {
-  const monthNames = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-  document.getElementById('currentMonthYear').innerHTML = `${monthNames[currentMonth-1]} ${toPersianNum(currentYear)}`;
   
-  const firstDayIndex = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'numeric' })
-    .format(new Date(currentYear, currentMonth-1, 1)).slice(-1);
-  let start = parseInt(firstDayIndex) - 1;
-  
-  const daysInMonth = (year, month) => {
-    if (month <= 6) return 31;
-    if (month <= 11) return 30;
-    return (year % 33 === 1 || year % 33 === 2 || year % 33 === 3 || year % 33 === 29) ? 30 : 29;
+  document.getElementById('prevMonthBtn').onclick = () => {
+    if (currentMonth === 1) {
+      currentMonth = 12;
+      currentYear--;
+    } else {
+      currentMonth--;
+    }
+    renderCalendar();
   };
-  const totalDays = daysInMonth(currentYear, currentMonth);
   
-  const container = document.getElementById('calendarDays');
-  container.innerHTML = '';
-  for (let i = 0; i < start; i++) { 
-    const emptyDiv = document.createElement('div'); 
-    emptyDiv.classList.add('calendar-day','empty'); 
-    emptyDiv.innerHTML = ' '; 
-    container.appendChild(emptyDiv); 
-  }
-  for (let d = 1; d <= totalDays; d++) {
-    const dayDiv = document.createElement('div');
-    dayDiv.classList.add('calendar-day');
-    dayDiv.textContent = toPersianNum(d);
-    dayDiv.onclick = (function(y, m, day) { return function() { selectDate(y, m, day); }; })(currentYear, currentMonth, d);
-    container.appendChild(dayDiv);
-  }
+  document.getElementById('nextMonthBtn').onclick = () => {
+    if (currentMonth === 12) {
+      currentMonth = 1;
+      currentYear++;
+    } else {
+      currentMonth++;
+    }
+    renderCalendar();
+  };
+  
+  document.getElementById('todayBtn').onclick = () => {
+    const today = getTodayPersian();
+    selectDate(today.year, today.month, today.day);
+  };
+  
+  document.getElementById('closeCalBtn').onclick = () => {
+    document.getElementById('calendarModal').classList.remove('show');
+  };
+  
+  document.getElementById('calendarModal').onclick = (e) => {
+    if (e.target === document.getElementById('calendarModal')) {
+      document.getElementById('calendarModal').classList.remove('show');
+    }
+  };
 }
 
 function selectDate(year, month, day) {
-  selectedYear = year; selectedMonth = month; selectedDay = day;
-  document.getElementById('lastUpdate').value = `${toPersianNum(year)}/${toPersianNum(month)}/${toPersianNum(day)}`;
+  selectedYear = year;
+  selectedMonth = month;
+  selectedDay = day;
+  const formattedDate = `${toPersianNum(year)}/${toPersianNum(month)}/${toPersianNum(day)}`;
+  document.getElementById('lastUpdate').value = formattedDate;
   document.getElementById('calendarModal').classList.remove('show');
+  showToast(`تاریخ انتخاب شد: ${formattedDate}`);
 }
 
-function selectToday() {
-  const today = getTodayPersian();
-  currentYear = today.year; currentMonth = today.month;
-  selectDate(today.year, today.month, today.day);
+function fillDateInput() {
+  const input = document.getElementById('lastUpdate');
+  if (window.CARAVAN_DATA && CARAVAN_DATA.lastUpdate && 
+      CARAVAN_DATA.lastUpdate !== 'undefined/undefined/undefined' &&
+      CARAVAN_DATA.lastUpdate !== 'NaN/NaN/NaN') {
+    input.value = CARAVAN_DATA.lastUpdate;
+    // تنظیم selectedDate بر اساس مقدار موجود
+    const parts = CARAVAN_DATA.lastUpdate.split('/');
+    if (parts.length === 3) {
+      selectedYear = parseInt(toEnglishDigits(parts[0]));
+      selectedMonth = parseInt(toEnglishDigits(parts[1]));
+      selectedDay = parseInt(toEnglishDigits(parts[2]));
+    } else {
+      const today = getTodayPersian();
+      selectedYear = today.year;
+      selectedMonth = today.month;
+      selectedDay = today.day;
+      input.value = `${toPersianNum(selectedYear)}/${toPersianNum(selectedMonth)}/${toPersianNum(selectedDay)}`;
+    }
+  } else {
+    const today = getTodayPersian();
+    selectedYear = today.year;
+    selectedMonth = today.month;
+    selectedDay = today.day;
+    input.value = `${toPersianNum(selectedYear)}/${toPersianNum(selectedMonth)}/${toPersianNum(selectedDay)}`;
+  }
 }
 
 // ---------- توابع مدیریت داده‌ها ----------
@@ -369,39 +476,103 @@ function renderSection(key) {
   const el = document.getElementById('contacts-' + key);
   if (!el) return;
   const contacts = state[key];
-  if (!contacts.length) { el.innerHTML = `<div style="padding:12px">شماره‌ای ثبت نشده</div>`; return; }
+  if (!contacts.length) {
+    el.innerHTML = `<div style="padding:12px; color:var(--dim);">شماره‌ای ثبت نشده</div>`;
+    return;
+  }
   el.innerHTML = contacts.map((c, i) => `
     <div class="contact-entry">
-      <div style="width:24px;height:24px;background:var(--gold);color:white;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;">${i+1}</div>
-      <input type="text" style="flex:1;min-width:140px;" value="${escapeHtml(c.role)}" placeholder="نقش" oninput="updateField('${key}',${i},'role',this.value)">
-      <input type="tel" style="width:130px;direction:ltr;" value="${escapeHtml(c.phone)}" placeholder="شماره" oninput="updateField('${key}',${i},'phone',this.value)">
-      <input type="text" style="flex:1;min-width:100px;" value="${escapeHtml(c.name||'')}" placeholder="نام" oninput="updateField('${key}',${i},'name',this.value)">
+      <div style="width:24px; height:24px; background:var(--gold); color:white; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px;">${i+1}</div>
+      <input type="text" style="flex:1; min-width:120px;" value="${escapeHtml(c.role)}" placeholder="نقش" oninput="updateField('${key}',${i},'role',this.value)">
+      <input type="tel" style="width:130px; direction:ltr;" value="${escapeHtml(c.phone)}" placeholder="07..." oninput="updateField('${key}',${i},'phone',this.value)">
+      <input type="text" style="flex:1; min-width:100px;" value="${escapeHtml(c.name||'')}" placeholder="نام" oninput="updateField('${key}',${i},'name',this.value)">
       <button class="del-btn" onclick="deleteContact('${key}',${i})">🗑</button>
     </div>`).join('');
 }
 
-function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
-function updateField(key, idx, field, val) { state[key][idx][field] = val; }
-function addContact(key) { state[key].push({ role: '', name: '', phone: '', countryCode: '964' }); renderSection(key); }
-function deleteContact(key, idx) { if(confirm('حذف شود؟')) { state[key].splice(idx,1); renderSection(key); } }
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);
+}
+
+function updateField(key, idx, field, val) {
+  state[key][idx][field] = val;
+}
+
+function addContact(key) {
+  state[key].push({ role: '', name: '', phone: '', countryCode: '964' });
+  renderSection(key);
+}
+
+function deleteContact(key, idx) {
+  if (confirm('حذف شود؟')) {
+    state[key].splice(idx, 1);
+    renderSection(key);
+  }
+}
+
 function qq(s) { return JSON.stringify(s || ''); }
 
 function buildContactsJS(key, indent) {
-  const contacts = state[key].filter(c => c.phone.trim());
-  if(!contacts.length) return '[]';
-  const lines = contacts.map(c => `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${c.name?.trim() ? ', name: '+qq(c.name.trim()) : ', name: null'}, countryCode: "964" }`);
+  const contacts = state[key].filter(c => c.phone && c.phone.trim());
+  if (!contacts.length) return '[]';
+  const lines = contacts.map(c => {
+    const namePart = c.name?.trim() ? `, name: ${qq(c.name.trim())}` : ', name: null';
+    return `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${namePart}, countryCode: "964" }`;
+  });
   return `[\n${lines.join(',\n')}\n${indent}]`;
 }
 
 function generateOutput() {
   const date = document.getElementById('lastUpdate').value.trim();
-  const output = `const CARAVAN_DATA = {\n  lastUpdate: ${qq(date)},\n  insurance: { contacts: ${buildContactsJS('insurance','  ')} },\n  cities: [ /* ساختار کامل شهرها */ ]\n};`;
+  // ساده‌سازی خروجی برای جلوگیری از خطا
+  const output = `/**
+ * داده‌های راهنمای کاروان عراق
+ * آخرین بروزرسانی: ${date}
+ */
+const CARAVAN_DATA = {
+  lastUpdate: ${qq(date)},
+  insurance: {
+    title: "نماینده بیمه معلم – تمام شهرها",
+    subtitle: "نجف · کربلا · کاظمین",
+    contacts: ${buildContactsJS('insurance','  ')}
+  },
+  cities: [
+    {
+      id: "najaf", name: "نجف اشرف", arabic: "النجف الأشرف", icon: "🕌",
+      hq: { title: "ستاد نجف اشرف", address: "شارع امام صادق (ع)", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-hq','        ')} },
+      clinic: { title: "درمانگاه نجف", address: "شارع السور", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-clinic','        ')} },
+      consulate: { title: "کنسولگری ایران – نجف", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('najaf-consulate','        ')} }
+    },
+    {
+      id: "karbala", name: "کربلای معلا", arabic: "كربلاء المقدسة", icon: "🕌",
+      hq: { title: "ستاد کربلا", address: "شارع میثم تمار", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-hq','        ')} },
+      clinic: { title: "درمانگاه کربلا", address: "شارع العباس", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-clinic','        ')} },
+      consulate: { title: "کنسولگری ایران – کربلا", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('karbala-consulate','        ')} }
+    },
+    {
+      id: "kadhimiya", name: "کاظمین", arabic: "الكاظمية", icon: "🕌",
+      hq: { title: "ستاد کاظمین", address: "شارع باب المراد", mapNeshanUrl: "", mapGoogleUrl: "", contacts: ${buildContactsJS('kadhimiya-hq','        ')} },
+      clinic: null, consulate: null
+    }
+  ]
+};`;
   document.getElementById('outputArea').value = output;
   document.getElementById('outputWrap').style.display = 'block';
-  showToast('فایل آماده شد!');
+  showToast('فایل آماده شد! متن را کپی کنید');
 }
-function copyOutput() { navigator.clipboard.writeText(document.getElementById('outputArea').value); showToast('کپی شد!'); }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+function copyOutput() {
+  navigator.clipboard.writeText(document.getElementById('outputArea').value);
+  showToast('کپی شد!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
 </script>
 </body>
 </html>
