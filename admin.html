@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>پنل مدیریت | راهنمای کاروان عراق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #2E7D5E; --gold-l: #3A9B74;
+      --bg: #F0F7F2; --card: #FFFFFF;
+      --text: #0A2A1A; --muted: #3A6B52; --dim: #6B9B7F;
+      --border: rgba(46,125,94,0.20); --border-s: rgba(46,125,94,0.35);
+      --red: #E74C3C; --red-bg: rgba(231,76,60,0.08);
+      --font: 'Vazirmatn', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+
+    .top-bar {
+      background:var(--card); border-bottom:1px solid var(--border-s);
+      padding:14px 24px; display:flex; align-items:center; gap:14px;
+      position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    }
+    .top-bar h1 { font-size:16px; font-weight:800; flex:1 }
+    .top-bar p  { font-size:11px; color:var(--dim) }
+    .save-btn {
+      padding:10px 22px; background:var(--gold); color:#fff;
+      border:none; border-radius:10px; font-family:var(--font);
+      font-size:13px; font-weight:700; cursor:pointer; transition:background .2s;
+    }
+    .save-btn:hover { background:var(--gold-l) }
+
+    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
+
+    .notice {
+      background:rgba(46,125,94,0.08); border:1px solid var(--border-s);
+      border-radius:12px; padding:14px 16px; margin-bottom:20px;
+      font-size:12.5px; color:var(--muted); line-height:1.9;
+    }
+    .notice strong { color:var(--gold); display:block; font-size:13px; margin-bottom:4px }
+
+    .section-block {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; margin-bottom:16px; overflow:hidden;
+    }
+    .section-block h2 {
+      font-size:13px; font-weight:800; padding:14px 16px;
+      background:rgba(46,125,94,0.05); border-bottom:1px solid var(--border);
+      color:var(--gold); display:flex; align-items:center; gap:8px;
+    }
+    .section-block h2 span { font-weight:400; color:var(--dim); font-size:11px }
+
+    .field-group { padding:12px 16px; border-bottom:1px solid var(--border); }
+    .field-group:last-child { border-bottom:none; }
+    .field-label { font-size:11px; color:var(--dim); font-weight:600; margin-bottom:6px }
+    .field-row { display:flex; gap:10px; flex-wrap:wrap }
+
+    input[type="text"], input[type="tel"] {
+      font-family:var(--font); font-size:13px; color:var(--text);
+      background:var(--bg); border:1px solid var(--border-s);
+      border-radius:8px; padding:9px 12px; outline:none;
+      transition:border-color .2s;
+    }
+    input:focus { border-color:var(--gold) }
+    .input-phone { direction:ltr; text-align:left; width:160px; font-weight:700; letter-spacing:.5px }
+    .input-name  { flex:1; min-width:140px }
+    .input-role  { flex:1; min-width:200px }
+    .input-date  { width:130px }
+
+    .contact-entry {
+      display:flex; gap:8px; align-items:center;
+      padding:10px 16px; border-bottom:1px solid var(--border);
+      background:rgba(46,125,94,0.02);
+    }
+    .contact-entry:last-child { border-bottom:none }
+    .contact-entry .num-badge {
+      width:24px; height:24px; border-radius:6px;
+      background:var(--gold); color:#fff;
+      font-size:11px; font-weight:700; display:flex; align-items:center;
+      justify-content:center; flex-shrink:0;
+    }
+    .del-btn {
+      width:30px; height:30px; border:1px solid rgba(231,76,60,0.3);
+      border-radius:7px; background:var(--red-bg); color:var(--red);
+      cursor:pointer; font-size:14px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .del-btn:hover { background:rgba(231,76,60,0.2) }
+    .add-btn {
+      margin:10px 16px 12px; padding:9px 16px;
+      background:rgba(46,125,94,0.08); border:1px dashed var(--border-s);
+      border-radius:8px; font-family:var(--font); font-size:12px;
+      font-weight:600; color:var(--gold); cursor:pointer; width:calc(100% - 32px);
+      transition:background .2s;
+    }
+    .add-btn:hover { background:rgba(46,125,94,0.15) }
+
+    .output-wrap {
+      background:#1A2F20; border-radius:12px; padding:16px;
+      margin-top:20px; position:relative;
+    }
+    .output-wrap h3 { font-size:13px; color:#9BBFAE; margin-bottom:10px }
+    textarea {
+      width:100%; height:340px; background:#0E2A1C; color:#C8F0DC;
+      border:1px solid rgba(46,125,94,0.3); border-radius:8px;
+      font-family:monospace; font-size:12px; padding:12px;
+      resize:vertical; outline:none; direction:ltr;
+    }
+    .copy-output-btn {
+      position:absolute; top:14px; left:14px;
+      padding:7px 14px; background:var(--gold); color:#fff;
+      border:none; border-radius:7px; font-family:var(--font);
+      font-size:11px; font-weight:700; cursor:pointer;
+    }
+    .toast {
+      position:fixed; bottom:24px; left:50%;
+      transform:translateX(-50%) translateY(20px);
+      background:var(--text); color:#fff; border-radius:100px;
+      padding:9px 20px; font-size:12.5px; font-weight:700;
+      opacity:0; transition:all .3s; z-index:999; white-space:nowrap;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>🛠️ پنل مدیریت کاروان</h1>
+    <p>ویرایش آسان شماره‌های تماس</p>
+  </div>
+  <button class="save-btn" onclick="generateOutput()">⬇️ ساخت فایل data.js</button>
+</div>
+
+<div class="wrap">
+
+  <div class="notice">
+    <strong>📌 راهنمای استفاده</strong>
+    ۱. شماره‌ها را در فرم‌های زیر ویرایش کنید<br>
+    ۲. روی دکمه «ساخت فایل data.js» کلیک کنید<br>
+    ۳. محتوای کادر پایین را کپی کنید<br>
+    ۴. در گیت‌هاب فایل <strong>data.js</strong> را باز کنید، همه متن آن را پاک کنید و متن کپی‌شده را جایگزین کنید<br>
+    ۵. ذخیره کنید — تمام!
+  </div>
+
+  <!-- UPDATE DATE -->
+  <div class="section-block">
+    <h2>📅 تاریخ بروزرسانی</h2>
+    <div class="field-group">
+      <div class="field-label">تاریخ امروز را وارد کنید (فارسی)</div>
+      <input type="text" class="input-date" id="lastUpdate" placeholder="۱۴۰۳/۰۳/۱۵" value="۱۴۰۳/۰۳/۱۵">
+    </div>
+  </div>
+
+  <!-- INSURANCE -->
+  <div class="section-block" id="block-insurance">
+    <h2>📋 بیمه معلم <span>مشترک همه شهرها</span></h2>
+    <div id="contacts-insurance"></div>
+    <button class="add-btn" onclick="addContact('insurance')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- NAJAF HQ -->
+  <div class="section-block">
+    <h2>🕌 ستاد نجف اشرف</h2>
+    <div id="contacts-najaf-hq"></div>
+    <button class="add-btn" onclick="addContact('najaf-hq')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- KARBALA HQ -->
+  <div class="section-block">
+    <h2>🕌 ستاد کربلا</h2>
+    <div id="contacts-karbala-hq"></div>
+    <button class="add-btn" onclick="addContact('karbala-hq')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- KADHIMIYA HQ -->
+  <div class="section-block">
+    <h2>🕌 ستاد کاظمین</h2>
+    <div id="contacts-kadhimiya-hq"></div>
+    <button class="add-btn" onclick="addContact('kadhimiya-hq')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- CLINICS -->
+  <div class="section-block">
+    <h2>🏥 درمانگاه نجف</h2>
+    <div id="contacts-najaf-clinic"></div>
+    <button class="add-btn" onclick="addContact('najaf-clinic')">+ افزودن شماره جدید</button>
+  </div>
+  <div class="section-block">
+    <h2>🏥 درمانگاه کربلا</h2>
+    <div id="contacts-karbala-clinic"></div>
+    <button class="add-btn" onclick="addContact('karbala-clinic')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- CONSULATES -->
+  <div class="section-block">
+    <h2>🏛️ کنسولگری نجف</h2>
+    <div id="contacts-najaf-consulate"></div>
+    <button class="add-btn" onclick="addContact('najaf-consulate')">+ افزودن شماره جدید</button>
+  </div>
+  <div class="section-block">
+    <h2>🏛️ کنسولگری کربلا</h2>
+    <div id="contacts-karbala-consulate"></div>
+    <button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-wrap" id="outputWrap" style="display:none">
+    <button class="copy-output-btn" onclick="copyOutput()">📋 کپی همه</button>
+    <h3>محتوای فایل data.js — این متن را در گیت‌هاب جایگزین کنید:</h3>
+    <textarea id="outputArea" readonly spellcheck="false"></textarea>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+// State: map of section key → array of {role, name, phone, countryCode}
+const state = {};
+
+const SECTIONS = [
+  'insurance',
+  'najaf-hq', 'karbala-hq', 'kadhimiya-hq',
+  'najaf-clinic', 'karbala-clinic',
+  'najaf-consulate', 'karbala-consulate'
+];
+
+function getInitialContacts(key) {
+  const d = CARAVAN_DATA;
+  if (key === 'insurance') return d.insurance?.contacts || [];
+  const [city, sec] = key.split('-');
+  const cityObj = d.cities.find(c => c.id === city);
+  if (!cityObj) return [];
+  const map = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
+  return map[sec]?.contacts || [];
+}
+
+function init() {
+  SECTIONS.forEach(key => {
+    state[key] = getInitialContacts(key).map(c => ({ ...c }));
+    renderSection(key);
+  });
+  document.getElementById('lastUpdate').value = CARAVAN_DATA.lastUpdate || '';
+}
+
+function renderSection(key) {
+  const el = document.getElementById('contacts-' + key);
+  if (!el) return;
+  const contacts = state[key];
+  if (!contacts.length) {
+    el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--dim);font-style:italic">شماره‌ای ثبت نشده</div>`;
+    return;
+  }
+  el.innerHTML = contacts.map((c, i) => `
+    <div class="contact-entry">
+      <div class="num-badge">${i+1}</div>
+      <input type="text" class="input-role" value="${c.role}" placeholder="نقش (مثلاً: رئیس ستاد)"
+             oninput="updateField('${key}',${i},'role',this.value)">
+      <input type="tel" class="input-phone" value="${c.phone}" placeholder="07..."
+             dir="ltr" oninput="updateField('${key}',${i},'phone',this.value)">
+      <input type="text" class="input-name" value="${c.name||''}" placeholder="نام (اختیاری)"
+             oninput="updateField('${key}',${i},'name',this.value)">
+      <button class="del-btn" onclick="deleteContact('${key}',${i})" title="حذف">🗑</button>
+    </div>`).join('');
+}
+
+function updateField(key, idx, field, val) {
+  state[key][idx][field] = val;
+}
+
+function addContact(key) {
+  state[key].push({ role: '', name: '', phone: '', countryCode: '964' });
+  renderSection(key);
+  const entries = document.querySelectorAll(`#contacts-${key} .contact-entry`);
+  if (entries.length) {
+    const last = entries[entries.length - 1];
+    last.querySelector('input').focus();
+  }
+}
+
+function deleteContact(key, idx) {
+  if (!confirm('این شماره حذف شود؟')) return;
+  state[key].splice(idx, 1);
+  renderSection(key);
+}
+
+function qq(s) { return JSON.stringify(s || ''); }
+
+function buildContactsJS(key, indent) {
+  const contacts = state[key].filter(c => c.phone.trim());
+  if (!contacts.length) return '[]';
+  const lines = contacts.map(c => {
+    const name = c.name?.trim() ? `, name: ${qq(c.name.trim())}` : ', name: null';
+    return `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${name}, countryCode: "964" }`;
+  });
+  return `[\n${lines.join(',\n')}\n${indent}]`;
+}
+
+function generateOutput() {
+  const date = document.getElementById('lastUpdate').value.trim();
+
+  const output = `/**
+ * =====================================================
+ *  فایل داده‌های راهنمای کاروان عراق
+ *  ویرایش: فقط همین فایل را تغییر دهید
+ *  آخرین بروزرسانی: ${date}
+ * =====================================================
+ */
+
+const CARAVAN_DATA = {
+
+  lastUpdate: ${qq(date)},
+
+  insurance: {
+    title: "نماینده بیمه معلم – تمام شهرها",
+    subtitle: "نجف · کربلا · کاظمین",
+    contacts: ${buildContactsJS('insurance','  ')}
+  },
+
+  cities: [
+
+    {
+      id: "najaf",
+      name: "نجف اشرف",
+      arabic: "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
+      icon: "🕌",
+      hq: {
+        title: "ستاد نجف اشرف",
+        address: "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
+        mapNeshanUrl: "https://nshn.ir/33_b_rKR_AAW8r",
+        mapGoogleUrl: "https://maps.app.goo.gl/cVP62jZRwFm2q5hB6",
+        contacts: ${buildContactsJS('najaf-hq','        ')}
+      },
+      clinic: {
+        title: "درمانگاه نجف",
+        address: "شارع السور – هتل نباء – درمانگاه نباء",
+        mapNeshanUrl: "https://nshn.ir/65_b_s1ROAAlS4",
+        mapGoogleUrl: "https://maps.app.goo.gl/SCwr7nx79vDDu9TXA",
+        contacts: ${buildContactsJS('najaf-clinic','        ')}
+      },
+      consulate: {
+        title: "کنسولگری ایران – نجف",
+        mapNeshanUrl: "https://nshn.ir/_b_r6eVAAW4d",
+        mapGoogleUrl: "https://maps.app.goo.gl/xu5bijuJ6LD82fB37",
+        contacts: ${buildContactsJS('najaf-consulate','        ')}
+      }
+    },
+
+    {
+      id: "karbala",
+      name: "کربلای معلا",
+      arabic: "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
+      icon: "🕌",
+      hq: {
+        title: "ستاد کربلا",
+        address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
+        mapNeshanUrl: "https://nshn.ir/c4_bZlfl0A2eSO",
+        mapGoogleUrl: "https://maps.app.goo.gl/pkLJ3suCqp82P8PaA",
+        contacts: ${buildContactsJS('karbala-hq','        ')}
+      },
+      clinic: {
+        title: "درمانگاه کربلا",
+        address: "شارع العباس (باب قبله حضرت عباس) – بعد از خیابان جمهوری – کوچه روبروی وزارت مخابرات – جنب هتل برج الکرمل – ساختمان حضرت فاطمه الزهرا (س)",
+        mapNeshanUrl: "https://nshn.ir/4f_bZyZDYASwLL",
+        mapGoogleUrl: "https://maps.app.goo.gl/RiPVKsojhM6Y7NfL7",
+        contacts: ${buildContactsJS('karbala-clinic','        ')}
+      },
+      consulate: {
+        title: "کنسولگری ایران – کربلا",
+        mapNeshanUrl: "https://nshn.ir/df_bZTEHNASrOv",
+        mapGoogleUrl: "https://maps.app.goo.gl/zbi79t88G28wRK3G7",
+        contacts: ${buildContactsJS('karbala-consulate','        ')}
+      }
+    },
+
+    {
+      id: "kadhimiya",
+      name: "کاظمین",
+      arabic: "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
+      icon: "🕌",
+      hq: {
+        title: "ستاد کاظمین",
+        address: "شارع باب المراد – هتل جمیره",
+        mapNeshanUrl: "https://nshn.ir/c3_bS-LAYACueZ",
+        mapGoogleUrl: "https://maps.app.goo.gl/BMoX9nV6TtcJxikD9",
+        contacts: ${buildContactsJS('kadhimiya-hq','        ')}
+      },
+      clinic: null,
+      consulate: null
+    }
+
+  ]
+};`;
+
+  const wrap = document.getElementById('outputWrap');
+  const area = document.getElementById('outputArea');
+  area.value = output;
+  wrap.style.display = 'block';
+  setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  showToast('فایل آماده شد! متن را کپی کنید ✅');
+}
+
+function copyOutput() {
+  const area = document.getElementById('outputArea');
+  navigator.clipboard.writeText(area.value).then(() => showToast('کپی شد! 📋'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
