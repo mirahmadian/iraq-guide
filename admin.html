@@ -283,104 +283,74 @@ function formatJalali(y, m, d) {
   return `${String(y).padStart(4, '0')}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
 }
 
-// Convert Gregorian to Julian Day Number
-function gregorianToJD(gy, gm, gd) {
-  const a = Math.floor((14 - gm) / 12);
-  const y = gy + 4800 - a;
-  const m = gm + 12 * a - 3;
-  return gd + Math.floor((153 * m + 2) / 5) + 365 * y +
-         Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-}
-
-// Convert Jalali to Julian Day Number (accurate algorithm)
-function jalaliToJD(jy, jm, jd) {
-  const breaks = [-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
-  const bl = breaks.length;
-  let jump, correction, n;
-  let gy = jy + 621;
-  let leapJ = -14;
-  let jp = breaks[0];
-  for (let i = 1; i < bl; i++) {
-    const jb = breaks[i];
-    jump = jb - jp;
-    if (jy < jb) {
-      n = jy - jp;
-      leapJ += Math.floor(jump / 33) * 8 + Math.floor((jump % 33) / 4);
-      let leapG = Math.floor(gy / 4) - Math.floor((Math.floor(gy / 100) + 1) * 3 / 4) - 150;
-      correction = 287 + leapG - leapJ;
-      if ((jump % 33) !== 4 || (jump - n) !== 4) leapJ += Math.floor((n + 1) / 33) * 8 + Math.floor(((n + 1) % 33 + 4) / 4);
-      break;
-    }
-    leapJ += Math.floor(jump / 33) * 8 + Math.floor((jump % 33) / 4);
-    jp = jb;
-  }
-  const march1JD = gregorianToJD(gy, 3, 1);
-  let dayOfYear = (jm - 1) * 30 + Math.min(jm - 1, 6) + jd - 1;
-  return march1JD + correction + dayOfYear;
-}
-
-// Convert Julian Day Number to Jalali
-function jdToJalali(jdn) {
-  const gy = jdToGregorian(jdn);
-  const g = gy.year;
-  const gm = gy.month;
-  const gd = gy.day;
-  return gregorianToJalali(g, gm, gd);
-}
-
-function jdToGregorian(jdn) {
-  jdn = Math.floor(jdn);
-  const a = jdn + 32044;
-  const b = Math.floor((4 * a + 3) / 146097);
-  const c = a - Math.floor(146097 * b / 4);
-  const d2 = Math.floor((4 * c + 3) / 1461);
-  const e = c - Math.floor(1461 * d2 / 4);
-  const m = Math.floor((5 * e + 2) / 153);
-  const gd = e - Math.floor((153 * m + 2) / 5) + 1;
-  const gm = m + 3 - 12 * Math.floor(m / 10);
-  const gy = 100 * b + d2 - 4800 + Math.floor(m / 10);
-  return { year: gy, month: gm, day: gd };
-}
-
+// Gregorian → Jalali
 function gregorianToJalali(gy, gm, gd) {
-  const g_d_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
-  const gMonthDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-  let g_d = g_d_no + gMonthDays[gm - 1] + gd;
-  if (gm > 2 && ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0)) g_d++;
-  const j_d_no = g_d - 79;
-  const j_np = Math.floor(j_d_no / 12053);
-  let rem = j_d_no % 12053;
-  let jy = 979 + 33 * j_np + 4 * Math.floor(rem / 1461);
-  rem = rem % 1461;
-  if (rem >= 366) { jy += Math.floor((rem - 1) / 365); rem = (rem - 1) % 365; }
-  const jMonthDays = [0, 31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
-  let jm = 0, jd = 0;
-  for (let i = 1; i <= 12; i++) {
-    jd = rem - jMonthDays[i];
-    if (jd < 0) { jm = i; jd = rem + 1; break; }
-    rem = jd;
+  var g_y = gy-1600, g_m = gm-1, g_d = gd-1;
+  var g_d_no = 365*g_y + Math.floor((g_y+3)/4) - Math.floor((g_y+99)/100) + Math.floor((g_y+399)/400);
+  var gml = [31,28,31,30,31,30,31,31,30,31,30,31];
+  for (var i=0; i<g_m; i++) g_d_no += gml[i];
+  if (g_m>1 && ((g_y%4==0&&g_y%100!=0)||(g_y%400==0))) g_d_no++;
+  g_d_no += g_d;
+  var j_d_no = g_d_no - 79;
+  var j_np = Math.floor(j_d_no/12053); j_d_no %= 12053;
+  var j_y = 979 + 33*j_np + 4*Math.floor(j_d_no/1461); j_d_no %= 1461;
+  if (j_d_no>=366) { j_y += Math.floor((j_d_no-1)/365); j_d_no = (j_d_no-1)%365; }
+  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
+  for (i=0; i<11&&j_d_no>=jml[i]; i++) j_d_no -= jml[i];
+  return { year: j_y, month: i+1, day: j_d_no+1 };
+}
+
+// Jalali → Gregorian (for day-of-week via JS Date)
+function jalaliToGregorian(jy, jm, jd) {
+  var j_y = jy - 979, j_m = jm - 1, j_d = jd - 1;
+  var j_d_no = 365*j_y + Math.floor(j_y/33)*8 + Math.floor((j_y%33+3)/4);
+  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
+  for (var i=0; i<j_m; i++) j_d_no += jml[i];
+  j_d_no += j_d;
+  var g_d_no = j_d_no + 79;
+  var g_y = Math.floor((g_d_no - Math.floor(g_d_no/146097)%100*97/4 + 65) / 365.25);
+  if (isNaN(g_y)) g_y = 1600;
+  // Simpler approach:
+  var gy = 1600 + Math.floor(j_y/33)*32 + Math.floor(j_y%33*8/33) + Math.floor(j_d_no/365.25);
+  // Use known reference: 1405/3/1 = 2026/5/22
+  // Offset in days from 1405/3/1
+  var ref_jy=1405, ref_jm=3, ref_jd=1;
+  var ref_date = new Date(2026, 4, 22); // May 22, 2026
+  var jml2 = [31,31,31,31,31,31,30,30,30,30,30,29];
+  var diff = 0;
+  // Calculate day number of target and reference within Jalali calendar
+  function jalaliDayNo(y, m, d) {
+    var n = (y - 1) * 365 + Math.floor((y-1)/33)*8 + Math.floor(((y-1)%33+3)/4);
+    for (var k=0; k<m-1; k++) n += jml2[k];
+    return n + d;
   }
-  return { year: jy, month: jm, day: jd };
+  diff = jalaliDayNo(jy,jm,jd) - jalaliDayNo(ref_jy,ref_jm,ref_jd);
+  var result = new Date(ref_date.getTime() + diff*86400000);
+  return result;
+}
+
+function jalaliToJD(jy, jm, jd) {
+  return jalaliToGregorian(jy, jm, jd);
 }
 
 function todayJalali() {
-  const now = new Date();
-  return gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const n = new Date();
+  return gregorianToJalali(n.getFullYear(), n.getMonth()+1, n.getDate());
 }
 
 function isLeapJalali(year) {
-  const t = gregorianToJalali(year + 1, 1, 1);
-  const t0 = gregorianToJalali(year, 1, 1);
-  const jd1 = jalaliToJD(year + 1, 1, 1);
-  const jd0 = jalaliToJD(year, 1, 1);
-  return (jd1 - jd0) === 366;
+  const jDaysInMonth = [31,31,31,31,31,31,30,30,30,30,30,29];
+  return jDaysInMonth[11] === 30;
 }
 
 function getDaysInMonth(year, month) {
   if (month <= 6) return 31;
   if (month <= 11) return 30;
-  return isLeapJalali(year) ? 30 : 29;
+  // leap: years ending in 1,5,9,13,17,22,26,30 of 33-year cycle
+  const rem = ((year - 474) % 33 + 33) % 33;
+  return [1,5,9,13,17,22,26,30].includes(rem) ? 30 : 29;
 }
+
 
 function renderCalendar() {
   const monthEl = document.getElementById('calMonth');
@@ -395,10 +365,10 @@ function renderCalendar() {
     html += `<div class="cal-day">${d}</div>`;
   });
 
-  const firstDay = jalaliToJD(calYear, calMonth, 1);
-  // Day of week: JD % 7: 0=Mon,1=Tue,2=Wed,3=Thu,4=Fri,5=Sat,6=Sun
-  // Persian week starts Saturday → (dow + 2) % 7 gives 0=Sat..6=Fri
-  const firstDayOfWeek = (firstDay % 7 + 2) % 7;
+  // Get day of week for first day of month (0=Sat..6=Fri for Persian calendar)
+  const firstDayDate = jalaliToGregorian(calYear, calMonth, 1);
+  // JS getDay: 0=Sun,1=Mon,...,6=Sat → Persian (0=Sat): (jsDay+1)%7
+  const firstDayOfWeek = (firstDayDate.getDay() + 1) % 7;
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const daysInPrevMonth = getDaysInMonth(calYear, calMonth > 1 ? calMonth - 1 : 12);
