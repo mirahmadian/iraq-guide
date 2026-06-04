@@ -121,6 +121,7 @@
     }
     .cal-date:hover { background:var(--gold-dim); color:var(--gold) }
     .cal-date.active { background:var(--gold); color:#fff; font-weight:700 }
+    .cal-date.today { border:2px solid var(--gold); color:var(--gold); font-weight:700 }
     .cal-date.other { color:var(--dim); opacity:0.5 }
     .cal-close { padding:10px 20px; width:100%; background:var(--gold); color:#fff;
       border:none; border-radius:8px; font-family:var(--font); font-weight:600; cursor:pointer }
@@ -251,7 +252,10 @@
       <button class="cal-nav" onclick="nextMonth()">▶</button>
     </div>
     <div class="cal-grid" id="calGrid"></div>
-    <button class="cal-close" onclick="closeCalendar()">بستن</button>
+    <div style="display:flex;gap:8px;margin-top:0">
+      <button class="cal-close" onclick="goToday()" style="background:var(--bg);color:var(--gold);border:1px solid var(--border-s);flex:1">امروز</button>
+      <button class="cal-close" onclick="closeCalendar()" style="flex:2">بستن</button>
+    </div>
   </div>
 </div>
 
@@ -279,44 +283,97 @@ function formatJalali(y, m, d) {
   return `${String(y).padStart(4, '0')}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
 }
 
-function jalaliToJD(y, m, d) {
-  const epoch = 1948439.5;
-  const shift = (y >= 0) ? 474 : 473;
-  const pyear = 474 + (y % 2820) + Math.floor(y / 2820) * 2820;
-  const month_offset = (m > 7) ? m - 7 : m + 5;
-  return epoch + Math.floor((pyear - 474) * 365.2425) + Math.floor((month_offset - 1) * 30.4) + d - 1;
+// Convert Gregorian to Julian Day Number
+function gregorianToJD(gy, gm, gd) {
+  const a = Math.floor((14 - gm) / 12);
+  const y = gy + 4800 - a;
+  const m = gm + 12 * a - 3;
+  return gd + Math.floor((153 * m + 2) / 5) + 365 * y +
+         Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
 }
 
-function jdToJalali(jd) {
-  jd = Math.floor(jd - 0.5) + 0.5;
-  const epoch = 1948439.5;
-  const cycle = Math.floor((jd - epoch) / 1029983);
-  const rem = (jd - epoch) % 1029983;
-  let pyear = 474;
-  if (rem < 366) {
-    pyear += 0;
-  } else {
-    pyear += Math.floor((rem - 1) / 365.2425) + 1;
+// Convert Jalali to Julian Day Number (accurate algorithm)
+function jalaliToJD(jy, jm, jd) {
+  const breaks = [-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+  const bl = breaks.length;
+  let jump, correction, n;
+  let gy = jy + 621;
+  let leapJ = -14;
+  let jp = breaks[0];
+  for (let i = 1; i < bl; i++) {
+    const jb = breaks[i];
+    jump = jb - jp;
+    if (jy < jb) {
+      n = jy - jp;
+      leapJ += Math.floor(jump / 33) * 8 + Math.floor((jump % 33) / 4);
+      let leapG = Math.floor(gy / 4) - Math.floor((Math.floor(gy / 100) + 1) * 3 / 4) - 150;
+      correction = 287 + leapG - leapJ;
+      if ((jump % 33) !== 4 || (jump - n) !== 4) leapJ += Math.floor((n + 1) / 33) * 8 + Math.floor(((n + 1) % 33 + 4) / 4);
+      break;
+    }
+    leapJ += Math.floor(jump / 33) * 8 + Math.floor((jump % 33) / 4);
+    jp = jb;
   }
-  const year = pyear - 474 - Math.floor(pyear / 2820) * 2820 + Math.floor(pyear / 2820) * 2820;
-  const jy = cycle * 2820 + (pyear > 0 ? pyear : 0);
+  const march1JD = gregorianToJD(gy, 3, 1);
+  let dayOfYear = (jm - 1) * 30 + Math.min(jm - 1, 6) + jd - 1;
+  return march1JD + correction + dayOfYear;
+}
 
-  const jd1 = jalaliToJD(jy, 1, 1);
-  const day_of_year = Math.floor(jd - jd1);
-  let jm, jd_val;
-  if (day_of_year < 186) {
-    jm = Math.floor(day_of_year / 31) + 1;
-    jd_val = (day_of_year % 31) + 1;
-  } else {
-    jm = Math.floor((day_of_year - 186) / 30) + 7;
-    jd_val = ((day_of_year - 186) % 30) + 1;
+// Convert Julian Day Number to Jalali
+function jdToJalali(jdn) {
+  const gy = jdToGregorian(jdn);
+  const g = gy.year;
+  const gm = gy.month;
+  const gd = gy.day;
+  return gregorianToJalali(g, gm, gd);
+}
+
+function jdToGregorian(jdn) {
+  jdn = Math.floor(jdn);
+  const a = jdn + 32044;
+  const b = Math.floor((4 * a + 3) / 146097);
+  const c = a - Math.floor(146097 * b / 4);
+  const d2 = Math.floor((4 * c + 3) / 1461);
+  const e = c - Math.floor(1461 * d2 / 4);
+  const m = Math.floor((5 * e + 2) / 153);
+  const gd = e - Math.floor((153 * m + 2) / 5) + 1;
+  const gm = m + 3 - 12 * Math.floor(m / 10);
+  const gy = 100 * b + d2 - 4800 + Math.floor(m / 10);
+  return { year: gy, month: gm, day: gd };
+}
+
+function gregorianToJalali(gy, gm, gd) {
+  const g_d_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
+  const gMonthDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  let g_d = g_d_no + gMonthDays[gm - 1] + gd;
+  if (gm > 2 && ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0)) g_d++;
+  const j_d_no = g_d - 79;
+  const j_np = Math.floor(j_d_no / 12053);
+  let rem = j_d_no % 12053;
+  let jy = 979 + 33 * j_np + 4 * Math.floor(rem / 1461);
+  rem = rem % 1461;
+  if (rem >= 366) { jy += Math.floor((rem - 1) / 365); rem = (rem - 1) % 365; }
+  const jMonthDays = [0, 31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  let jm = 0, jd = 0;
+  for (let i = 1; i <= 12; i++) {
+    jd = rem - jMonthDays[i];
+    if (jd < 0) { jm = i; jd = rem + 1; break; }
+    rem = jd;
   }
-  return { year: jy, month: jm, day: jd_val };
+  return { year: jy, month: jm, day: jd };
+}
+
+function todayJalali() {
+  const now = new Date();
+  return gregorianToJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
 function isLeapJalali(year) {
-  const a = (year + 1029983) % 128 % 33;
-  return (a % 4 === 1);
+  const t = gregorianToJalali(year + 1, 1, 1);
+  const t0 = gregorianToJalali(year, 1, 1);
+  const jd1 = jalaliToJD(year + 1, 1, 1);
+  const jd0 = jalaliToJD(year, 1, 1);
+  return (jd1 - jd0) === 366;
 }
 
 function getDaysInMonth(year, month) {
@@ -339,8 +396,9 @@ function renderCalendar() {
   });
 
   const firstDay = jalaliToJD(calYear, calMonth, 1);
-  const jd = jdToJalali(firstDay);
-  const firstDayOfWeek = Math.floor((firstDay + 0.5) % 7);
+  // Day of week: JD % 7: 0=Mon,1=Tue,2=Wed,3=Thu,4=Fri,5=Sat,6=Sun
+  // Persian week starts Saturday → (dow + 2) % 7 gives 0=Sat..6=Fri
+  const firstDayOfWeek = (firstDay % 7 + 2) % 7;
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const daysInPrevMonth = getDaysInMonth(calYear, calMonth > 1 ? calMonth - 1 : 12);
@@ -356,9 +414,13 @@ function renderCalendar() {
   const updateInput = document.getElementById('lastUpdate');
   const selected = parseJalali(updateInput.value);
 
+  const today = todayJalali();
   for (let day = 1; day <= daysInMonth; day++) {
     const isActive = selected && selected.year === calYear && selected.month === calMonth && selected.day === day;
-    const cls = isActive ? 'cal-date active' : 'cal-date';
+    const isToday = today.year === calYear && today.month === calMonth && today.day === day;
+    let cls = 'cal-date';
+    if (isActive) cls += ' active';
+    else if (isToday) cls += ' today';
     html += `<div class="${cls}" onclick="selectDate(${calYear},${calMonth},${day})">${day}</div>`;
   }
 
@@ -373,12 +435,24 @@ function renderCalendar() {
 function showCalendar() {
   const updateInput = document.getElementById('lastUpdate');
   const selected = parseJalali(updateInput.value);
-  if (selected) {
+  if (selected && !isNaN(selected.year)) {
     calYear = selected.year;
     calMonth = selected.month;
+  } else {
+    const t = todayJalali();
+    calYear = t.year;
+    calMonth = t.month;
   }
   renderCalendar();
   document.getElementById('calendarModal').classList.add('show');
+}
+
+function goToday() {
+  const t = todayJalali();
+  calYear = t.year;
+  calMonth = t.month;
+  renderCalendar();
+  selectDate(t.year, t.month, t.day);
 }
 
 function closeCalendar() {
