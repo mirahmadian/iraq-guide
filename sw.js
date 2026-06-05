@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v1';
+const CACHE = 'caravan-v2';
 const FILES = [
   './',
   './index.html',
