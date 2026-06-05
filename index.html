@@ -287,6 +287,52 @@
     .ico-hq{background:linear-gradient(135deg,rgba(46,125,94,.18),rgba(46,125,94,.08))}
     .ico-clinic{background:linear-gradient(135deg,rgba(46,125,94,.18),rgba(46,125,94,.08))}
     .ico-consulate{background:linear-gradient(135deg,rgba(184,50,50,.18),rgba(184,50,50,.08))}
+    .ico-hotel{background:linear-gradient(135deg,rgba(180,140,60,.22),rgba(180,140,60,.08))}
+    .badge-hotel{background:rgba(180,140,60,.13);color:#B48C3C;border-color:rgba(180,140,60,.30)}
+    [data-theme="dark"] .badge-hotel{color:#D4AA60}
+
+    /* ── HOTEL CARD ── */
+    .hotel-card-img-btn{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 15px;border-bottom:1px solid var(--border);
+      background:none;border-top:none;border-left:none;border-right:none;
+      width:100%;cursor:pointer;font-family:var(--font);
+      color:var(--muted);font-size:12px;font-weight:600;
+      transition:background .15s;text-align:right;
+    }
+    .hotel-card-img-btn:hover{background:var(--card2);color:var(--gold)}
+    .hotel-card-img-btn span{flex:1}
+
+    /* ── BUSINESS CARD MODAL ── */
+    .card-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.88);
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      z-index:200;display:none;align-items:center;justify-content:center;
+      padding:20px;
+    }
+    .card-overlay.open{display:flex}
+    .card-modal{
+      background:var(--surface);border:1px solid var(--border-s);
+      border-radius:var(--r);width:100%;max-width:440px;
+      padding:18px;animation:fadeUp .25s ease;
+    }
+    .card-modal-header{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+    }
+    .card-modal-title{font-size:14px;font-weight:800;color:var(--text)}
+    .card-modal-close{
+      width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+      background:var(--card);color:var(--muted);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;font-size:14px;
+    }
+    .card-img-wrap{
+      border-radius:10px;overflow:hidden;background:#111;
+      display:flex;align-items:center;justify-content:center;min-height:180px;
+    }
+    .card-img-wrap img{width:100%;height:auto;display:block;border-radius:10px}
+    .card-img-placeholder{
+      padding:30px;text-align:center;color:var(--dim);font-size:12px;line-height:2;
+    }
     .sec-info{flex:1}
     .sec-info h3{font-size:13.5px;font-weight:700;color:var(--text)}
     .badge{font-size:10px;padding:2px 9px;border-radius:6px;font-weight:600;border:1px solid;flex-shrink:0}
@@ -507,6 +553,17 @@
 
 </div><!-- /app-wrapper -->
 
+<!-- BUSINESS CARD MODAL -->
+<div class="card-overlay" id="cardOverlay" role="dialog" aria-modal="true" aria-label="کارت ویزیت هتل">
+  <div class="card-modal">
+    <div class="card-modal-header">
+      <div class="card-modal-title" id="cardModalTitle">کارت ویزیت هتل</div>
+      <button class="card-modal-close" onclick="closeCardModal()" aria-label="بستن">✕</button>
+    </div>
+    <div class="card-img-wrap" id="cardImgWrap"></div>
+  </div>
+</div>
+
 <!-- QR MODAL -->
 <div class="overlay" id="qrOverlay" role="dialog" aria-modal="true" aria-label="QR کد برنامه">
   <div class="modal">
@@ -587,6 +644,66 @@ function contactHTML(c, avatarEmoji = '👤') {
     </div>
   </div>`;
 }
+
+function hotelCard(hotel) {
+  let html = `
+  <div class="sec-card">
+    <div class="sec-head">
+      <div class="sec-ico ico-hotel" aria-hidden="true">🏨</div>
+      <div class="sec-info">
+        <h3>${hotel.name}</h3>
+        <div style="font-size:10.5px;color:var(--dim);margin-top:2px">${hotel.nameEn}</div>
+      </div>
+      <span class="badge badge-hotel">هتل</span>
+    </div>`;
+
+  if (hotel.address) {
+    html += `
+    <div class="addr-row">
+      <div class="addr-ico" aria-hidden="true">📍</div>
+      <div class="addr-body">
+        <div class="addr-lbl">آدرس</div>
+        <div class="addr-txt">${hotel.address}</div>
+      </div>
+    </div>`;
+  }
+
+  html += `
+    <button class="hotel-card-img-btn" onclick="openCardModal('${hotel.id}','${hotel.name.replace(/'/g,"\\'")}','${hotel.cardImage}')"
+            aria-label="مشاهده کارت ویزیت هتل">
+      <span aria-hidden="true">🪪</span>
+      <span>مشاهده کارت ویزیت</span>
+      <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
+    </button>`;
+
+  if (hotel.contacts && hotel.contacts.length > 0) {
+    html += `<div class="divider-lbl" aria-label="شماره‌های تماس">شماره‌های تماس</div>`;
+    html += `<div class="contacts" role="list">`;
+    hotel.contacts.forEach(c => { html += contactHTML(c, '📞'); });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function openCardModal(hotelId, hotelName, imagePath) {
+  document.getElementById('cardModalTitle').textContent = hotelName;
+  const wrap = document.getElementById('cardImgWrap');
+  wrap.innerHTML = `<img src="${imagePath}" alt="کارت ویزیت ${hotelName}"
+    onerror="this.parentElement.innerHTML='<div class=\\'card-img-placeholder\\'>📷<br>تصویر کارت ویزیت<br>هنوز بارگذاری نشده است</div>'">`;
+  document.getElementById('cardOverlay').classList.add('open');
+}
+
+function closeCardModal() {
+  document.getElementById('cardOverlay').classList.remove('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cardOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeCardModal();
+  });
+});
 
 function sectionCard(opts) {
   const {icoClass, icoEmoji, title, badge, badgeClass, address, mapNeshan, mapGoogle, contacts} = opts;
@@ -714,6 +831,13 @@ function render() {
         address: city.clinic.address,
         mapNeshan: city.clinic.mapNeshanUrl, mapGoogle: city.clinic.mapGoogleUrl,
         contacts: city.clinic.contacts
+      });
+    }
+
+    // Hotels
+    if (city.hotels && city.hotels.length > 0) {
+      city.hotels.forEach(hotel => {
+        cityHTML += hotelCard(hotel);
       });
     }
 
@@ -854,6 +978,11 @@ function getAllContacts() {
       if (!city[sec]) return;
       (city[sec].contacts || []).forEach(c => {
         list.push({ ...c, cityName: city.name, sectionTitle: city[sec].title });
+      });
+    });
+    (city.hotels || []).forEach(hotel => {
+      (hotel.contacts || []).forEach(c => {
+        list.push({ ...c, cityName: city.name, sectionTitle: hotel.name });
       });
     });
   });
