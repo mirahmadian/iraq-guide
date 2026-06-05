@@ -23,6 +23,7 @@ const CARAVAN_DATA = {
     {
       id: "najaf",
       name: "نجف اشرف",
+      hotels: [],
       arabic: "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
       icon: "🕌",
       hq: {
@@ -54,6 +55,33 @@ const CARAVAN_DATA = {
     {
       id: "karbala",
       name: "کربلای معلا",
+      hotels: [
+        {
+          id: "borj-raiahen",
+          name: "هتل و رستوران برج الرياحين",
+          nameEn: "Borj Al-Raiahen Hotel & Rest",
+          address: "عراق / کربلا / شارع العلقمی / خلف فندق اطلس",
+          cardImage: "hotels/borj-raiahen.jpg",
+          contacts: [
+            { role: "پذیرش هتل", phone: "07722711154", name: null, countryCode: "964" },
+            { role: "پذیرش هتل", phone: "07707999974", name: null, countryCode: "964" },
+            { role: "پذیرش هتل", phone: "07901969690", name: null, countryCode: "964" }
+          ]
+        },
+        {
+          id: "dar-deyafa",
+          name: "هتل دار الضیافه",
+          nameEn: "Dar al Deyafa – Luxury Hospitality",
+          address: "کربلاء المقدسة / شارع شهداء / شارع حسن زینی / خلف فندق الماس",
+          cardImage: "hotels/dar-deyafa.jpg",
+          contacts: [
+            { role: "پذیرش هتل (عراق)", phone: "07884922445", name: null, countryCode: "964" },
+            { role: "پذیرش هتل (عراق)", phone: "07884922446", name: null, countryCode: "964" },
+            { role: "واتساپ (ایران)", phone: "09018032743", name: null, countryCode: "98" },
+            { role: "واتساپ (ایران)", phone: "09018032750", name: null, countryCode: "98" }
+          ]
+        }
+      ],
       arabic: "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
       icon: "🕌",
       hq: {
@@ -85,6 +113,7 @@ const CARAVAN_DATA = {
     {
       id: "kadhimiya",
       name: "کاظمین",
+      hotels: [],
       arabic: "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       icon: "🕌",
       hq: {
