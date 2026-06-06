@@ -213,6 +213,7 @@
   <!-- NAJAF HQ -->
   <div class="section-block">
     <h2>🕌 ستاد نجف اشرف</h2>
+    <div id="map-urls-najaf-hq"></div>
     <div id="contacts-najaf-hq"></div>
     <button class="add-btn" onclick="addContact('najaf-hq')">+ افزودن شماره جدید</button>
   </div>
@@ -220,6 +221,7 @@
   <!-- KARBALA HQ -->
   <div class="section-block">
     <h2>🕌 ستاد کربلا</h2>
+    <div id="map-urls-karbala-hq"></div>
     <div id="contacts-karbala-hq"></div>
     <button class="add-btn" onclick="addContact('karbala-hq')">+ افزودن شماره جدید</button>
   </div>
@@ -227,6 +229,7 @@
   <!-- KADHIMIYA HQ -->
   <div class="section-block">
     <h2>🕌 ستاد کاظمین</h2>
+    <div id="map-urls-kadhimiya-hq"></div>
     <div id="contacts-kadhimiya-hq"></div>
     <button class="add-btn" onclick="addContact('kadhimiya-hq')">+ افزودن شماره جدید</button>
   </div>
@@ -234,11 +237,13 @@
   <!-- CLINICS -->
   <div class="section-block">
     <h2>🏥 درمانگاه نجف</h2>
+    <div id="map-urls-najaf-clinic"></div>
     <div id="contacts-najaf-clinic"></div>
     <button class="add-btn" onclick="addContact('najaf-clinic')">+ افزودن شماره جدید</button>
   </div>
   <div class="section-block">
     <h2>🏥 درمانگاه کربلا</h2>
+    <div id="map-urls-karbala-clinic"></div>
     <div id="contacts-karbala-clinic"></div>
     <button class="add-btn" onclick="addContact('karbala-clinic')">+ افزودن شماره جدید</button>
   </div>
@@ -246,11 +251,13 @@
   <!-- CONSULATES -->
   <div class="section-block">
     <h2>🏛️ کنسولگری نجف</h2>
+    <div id="map-urls-najaf-consulate"></div>
     <div id="contacts-najaf-consulate"></div>
     <button class="add-btn" onclick="addContact('najaf-consulate')">+ افزودن شماره جدید</button>
   </div>
   <div class="section-block">
     <h2>🏛️ کنسولگری کربلا</h2>
+    <div id="map-urls-karbala-consulate"></div>
     <div id="contacts-karbala-consulate"></div>
     <button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
   </div>
@@ -492,11 +499,19 @@ function nextMonth() {
   renderCalendar();
 }
 
-// State: map of section key → array of {role, name, phone, countryCode}
+// State: contacts per section + map URLs per section
 const state = {};
+const mapState = {}; // key → { neshanUrl, googleUrl }
 
 const SECTIONS = [
   'insurance',
+  'najaf-hq', 'karbala-hq', 'kadhimiya-hq',
+  'najaf-clinic', 'karbala-clinic',
+  'najaf-consulate', 'karbala-consulate'
+];
+
+// sections that have map URLs (not insurance)
+const MAP_SECTIONS = [
   'najaf-hq', 'karbala-hq', 'kadhimiya-hq',
   'najaf-clinic', 'karbala-clinic',
   'najaf-consulate', 'karbala-consulate'
@@ -508,8 +523,20 @@ function getInitialContacts(key) {
   const [city, sec] = key.split('-');
   const cityObj = d.cities.find(c => c.id === city);
   if (!cityObj) return [];
-  const map = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
-  return map[sec]?.contacts || [];
+  const secMap = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
+  return secMap[sec]?.contacts || [];
+}
+
+function getInitialMapUrls(key) {
+  const [city, sec] = key.split('-');
+  const cityObj = CARAVAN_DATA.cities.find(c => c.id === city);
+  if (!cityObj) return { neshanUrl: '', googleUrl: '' };
+  const secMap = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
+  const s = secMap[sec];
+  return {
+    neshanUrl: s?.mapNeshanUrl || '',
+    googleUrl: s?.mapGoogleUrl || ''
+  };
 }
 
 function init() {
@@ -517,10 +544,31 @@ function init() {
     state[key] = getInitialContacts(key).map(c => ({ ...c }));
     renderSection(key);
   });
+  MAP_SECTIONS.forEach(key => {
+    mapState[key] = getInitialMapUrls(key);
+    renderMapFields(key);
+  });
   const lastUpdate = document.getElementById('lastUpdate');
   const dateValue = CARAVAN_DATA.lastUpdate || '';
   lastUpdate.value = dateValue;
   lastUpdate.placeholder = dateValue || '۱۴۰۳/۰۳/۱۵';
+}
+
+function renderMapFields(key) {
+  const el = document.getElementById('map-urls-' + key);
+  if (!el) return;
+  const m = mapState[key];
+  el.innerHTML = `
+    <div class="field-group">
+      <div class="field-label">🗺️ لینک نقشه نشان</div>
+      <input type="text" style="width:100%" placeholder="https://nshn.ir/..." value="${m.neshanUrl}"
+             oninput="mapState['${key}'].neshanUrl=this.value">
+    </div>
+    <div class="field-group">
+      <div class="field-label">🌍 لینک گوگل مپ</div>
+      <input type="text" style="width:100%" placeholder="https://maps.google.com/..." value="${m.googleUrl}"
+             oninput="mapState['${key}'].googleUrl=this.value">
+    </div>`;
 }
 
 function renderSection(key) {
@@ -577,8 +625,8 @@ function getInitialHotels(cityId) {
     nameEn: h.nameEn || '',
     address: h.address || '',
     cardImage: h.cardImage || '',
-    lat: h.lat || '',
-    lng: h.lng || '',
+    mapNeshanUrl: h.mapNeshanUrl || '',
+    mapGoogleUrl: h.mapGoogleUrl || '',
     contacts: (h.contacts || []).map(c => ({ ...c }))
   }));
 }
@@ -613,12 +661,10 @@ function renderHotels(cityId) {
              oninput="updateHotel('${cityId}',${i},'address',this.value)">
       <input type="text" class="input-full" placeholder="مسیر تصویر کارت ویزیت (مثال: hotels/my-hotel.jpg)" value="${h.cardImage}"
              oninput="updateHotel('${cityId}',${i},'cardImage',this.value)">
-      <div style="display:flex;gap:8px;margin-bottom:6px">
-        <input type="text" class="input-coord" placeholder="عرض جغرافیایی lat" value="${h.lat}"
-               oninput="updateHotel('${cityId}',${i},'lat',this.value)" dir="ltr">
-        <input type="text" class="input-coord" placeholder="طول جغرافیایی lng" value="${h.lng}"
-               oninput="updateHotel('${cityId}',${i},'lng',this.value)" dir="ltr">
-      </div>
+      <input type="text" class="input-full" placeholder="🗺️ لینک نقشه نشان (اختیاری)" value="${h.mapNeshanUrl||''}"
+             oninput="updateHotel('${cityId}',${i},'mapNeshanUrl',this.value)" dir="ltr">
+      <input type="text" class="input-full" placeholder="🌍 لینک گوگل مپ (اختیاری)" value="${h.mapGoogleUrl||''}"
+             oninput="updateHotel('${cityId}',${i},'mapGoogleUrl',this.value)" dir="ltr">
       <div class="hotel-phones-wrap">
         <div class="hotel-phones-lbl">📞 شماره‌های تماس</div>
         <div id="hotel-phones-${cityId}-${i}"></div>
@@ -660,7 +706,7 @@ function addHotel(cityId) {
   const idx = hotelState[cityId].length;
   hotelState[cityId].push({
     id: 'hotel-' + cityId + '-' + Date.now(),
-    name: '', nameEn: '', address: '', cardImage: '', lat: '', lng: '', contacts: []
+    name: '', nameEn: '', address: '', cardImage: '', mapNeshanUrl: '', mapGoogleUrl: '', contacts: []
   });
   renderHotels(cityId);
   setTimeout(() => {
@@ -697,15 +743,14 @@ function buildHotelsJS(cityId, indent) {
     const phonesJS = phones.length
       ? `[\n${phones.map(c => `${indent}          { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}, name: null, countryCode: "${c.countryCode||'964'}" }`).join(',\n')}\n${indent}        ]`
       : '[]';
-    const latVal = parseFloat(h.lat) || 'null';
-    const lngVal = parseFloat(h.lng) || 'null';
     return `${indent}  {
 ${indent}    id: ${qq(h.id)},
 ${indent}    name: ${qq(h.name)},
 ${indent}    nameEn: ${qq(h.nameEn)},
 ${indent}    address: ${qq(h.address)},
 ${indent}    cardImage: ${qq(h.cardImage)},
-${indent}    lat: ${latVal}, lng: ${lngVal},
+${indent}    mapNeshanUrl: ${qq(h.mapNeshanUrl)},
+${indent}    mapGoogleUrl: ${qq(h.mapGoogleUrl)},
 ${indent}    contacts: ${phonesJS}
 ${indent}  }`;
   });
@@ -756,21 +801,21 @@ const CARAVAN_DATA = {
       hq: {
         title: "ستاد نجف اشرف",
         address: "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
-        mapNeshanUrl: "https://nshn.ir/33_b_rKR_AAW8r",
-        mapGoogleUrl: "https://maps.app.goo.gl/cVP62jZRwFm2q5hB6",
+        mapNeshanUrl: ${qq(mapState['najaf-hq']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['najaf-hq']?.googleUrl)},
         contacts: ${buildContactsJS('najaf-hq','        ')}
       },
       clinic: {
         title: "درمانگاه نجف",
         address: "شارع السور – هتل نباء – درمانگاه نباء",
-        mapNeshanUrl: "https://nshn.ir/65_b_s1ROAAlS4",
-        mapGoogleUrl: "https://maps.app.goo.gl/SCwr7nx79vDDu9TXA",
+        mapNeshanUrl: ${qq(mapState['najaf-clinic']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['najaf-clinic']?.googleUrl)},
         contacts: ${buildContactsJS('najaf-clinic','        ')}
       },
       consulate: {
         title: "کنسولگری ایران – نجف",
-        mapNeshanUrl: "https://nshn.ir/_b_r6eVAAW4d",
-        mapGoogleUrl: "https://maps.app.goo.gl/xu5bijuJ6LD82fB37",
+        mapNeshanUrl: ${qq(mapState['najaf-consulate']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['najaf-consulate']?.googleUrl)},
         contacts: ${buildContactsJS('najaf-consulate','        ')}
       }
     },
@@ -784,21 +829,21 @@ const CARAVAN_DATA = {
       hq: {
         title: "ستاد کربلا",
         address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
-        mapNeshanUrl: "https://nshn.ir/c4_bZlfl0A2eSO",
-        mapGoogleUrl: "https://maps.app.goo.gl/pkLJ3suCqp82P8PaA",
+        mapNeshanUrl: ${qq(mapState['karbala-hq']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['karbala-hq']?.googleUrl)},
         contacts: ${buildContactsJS('karbala-hq','        ')}
       },
       clinic: {
         title: "درمانگاه کربلا",
         address: "شارع العباس (باب قبله حضرت عباس) – بعد از خیابان جمهوری – کوچه روبروی وزارت مخابرات – جنب هتل برج الکرمل – ساختمان حضرت فاطمه الزهرا (س)",
-        mapNeshanUrl: "https://nshn.ir/4f_bZyZDYASwLL",
-        mapGoogleUrl: "https://maps.app.goo.gl/RiPVKsojhM6Y7NfL7",
+        mapNeshanUrl: ${qq(mapState['karbala-clinic']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['karbala-clinic']?.googleUrl)},
         contacts: ${buildContactsJS('karbala-clinic','        ')}
       },
       consulate: {
         title: "کنسولگری ایران – کربلا",
-        mapNeshanUrl: "https://nshn.ir/df_bZTEHNASrOv",
-        mapGoogleUrl: "https://maps.app.goo.gl/zbi79t88G28wRK3G7",
+        mapNeshanUrl: ${qq(mapState['karbala-consulate']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['karbala-consulate']?.googleUrl)},
         contacts: ${buildContactsJS('karbala-consulate','        ')}
       }
     },
@@ -812,8 +857,8 @@ const CARAVAN_DATA = {
       hq: {
         title: "ستاد کاظمین",
         address: "شارع باب المراد – هتل جمیره",
-        mapNeshanUrl: "https://nshn.ir/c3_bS-LAYACueZ",
-        mapGoogleUrl: "https://maps.app.goo.gl/BMoX9nV6TtcJxikD9",
+        mapNeshanUrl: ${qq(mapState['kadhimiya-hq']?.neshanUrl)},
+        mapGoogleUrl: ${qq(mapState['kadhimiya-hq']?.googleUrl)},
         contacts: ${buildContactsJS('kadhimiya-hq','        ')}
       },
       clinic: null,
