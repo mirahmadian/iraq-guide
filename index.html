@@ -801,12 +801,18 @@ function hotelSelect(cityId, hotelId) {
       <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
     </button>`;
 
-  if (hotel.mapNeshanUrl || hotel.mapGoogleUrl) {
-    html += `<div class="map-row">`;
-    if (hotel.mapNeshanUrl) html += `<a href="${hotel.mapNeshanUrl}" target="_blank" rel="noopener" class="map-btn map-n">🗺️ نقشه نشان</a>`;
-    if (hotel.mapGoogleUrl) html += `<a href="${hotel.mapGoogleUrl}" target="_blank" rel="noopener" class="map-btn map-g">🌍 گوگل مپ</a>`;
-    html += `</div>`;
+  html += `<div class="map-row">`;
+  if (hotel.mapNeshanUrl) {
+    html += `<a href="${hotel.mapNeshanUrl}" target="_blank" rel="noopener" class="map-btn map-n">🗺️ نقشه نشان</a>`;
+  } else {
+    html += `<span class="map-btn map-n" style="opacity:.4;cursor:default">🗺️ نقشه نشان</span>`;
   }
+  if (hotel.mapGoogleUrl) {
+    html += `<a href="${hotel.mapGoogleUrl}" target="_blank" rel="noopener" class="map-btn map-g">🌍 گوگل مپ</a>`;
+  } else {
+    html += `<span class="map-btn map-g" style="opacity:.4;cursor:default">🌍 گوگل مپ</span>`;
+  }
+  html += `</div>`;
 
   if (hotel.contacts && hotel.contacts.length > 0) {
     html += `<div class="divider-lbl">شماره‌های تماس</div><div class="contacts" role="list">`;
