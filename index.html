@@ -390,6 +390,30 @@
     .card-img-placeholder{
       padding:30px;text-align:center;color:var(--dim);font-size:12px;line-height:2;
     }
+
+    /* ── MAP MODAL ── */
+    .map-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.85);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      z-index:200;display:none;align-items:flex-end;justify-content:center;
+    }
+    .map-overlay.open{display:flex}
+    .map-modal{
+      background:var(--surface);border:1px solid var(--border-s);
+      border-radius:22px 22px 0 0;width:100%;max-width:480px;
+      padding:16px 16px max(16px,env(safe-area-inset-bottom));
+      animation:slideUp .3s ease;
+    }
+    .map-modal-header{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+    }
+    .map-modal-title{font-size:14px;font-weight:800;color:var(--text)}
+    .map-modal-close{
+      width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+      background:var(--card);color:var(--muted);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;font-size:14px;
+    }
+    #leafletMap{height:300px;border-radius:12px;overflow:hidden;background:#e0e0e0}
     .sec-info{flex:1}
     .sec-info h3{font-size:13.5px;font-weight:700;color:var(--text)}
     .badge{font-size:10px;padding:2px 9px;border-radius:6px;font-weight:600;border:1px solid;flex-shrink:0}
@@ -610,6 +634,17 @@
 
 </div><!-- /app-wrapper -->
 
+<!-- MAP MODAL -->
+<div class="map-overlay" id="mapOverlay" role="dialog" aria-modal="true" aria-label="موقعیت هتل روی نقشه">
+  <div class="map-modal">
+    <div class="map-modal-header">
+      <div class="map-modal-title" id="mapModalTitle">موقعیت هتل</div>
+      <button class="map-modal-close" onclick="closeMapModal()" aria-label="بستن">✕</button>
+    </div>
+    <div id="leafletMap"></div>
+  </div>
+</div>
+
 <!-- BUSINESS CARD MODAL -->
 <div class="card-overlay" id="cardOverlay" role="dialog" aria-modal="true" aria-label="کارت ویزیت هتل">
   <div class="card-modal">
@@ -790,7 +825,8 @@ function hotelSelect(cityId, hotelId) {
 
   const safeId = hotel.id.replace(/'/g,"\\'");
   const safeName = hotel.name.replace(/'/g,"\\'");
-  const safeImg = hotel.cardImage.replace(/'/g,"\\'");
+  const safeImg = (hotel.cardImage||'').replace(/'/g,"\\'");
+
   html += `
     <button class="hotel-card-img-btn" onclick="openCardModal('${safeId}','${safeName}','${safeImg}')"
             aria-label="مشاهده کارت ویزیت">
@@ -798,6 +834,16 @@ function hotelSelect(cityId, hotelId) {
       <span>مشاهده کارت ویزیت</span>
       <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
     </button>`;
+
+  if (hotel.lat && hotel.lng) {
+    html += `
+    <button class="hotel-card-img-btn" onclick="openMapModal('${safeName}',${hotel.lat},${hotel.lng})"
+            aria-label="نمایش روی نقشه">
+      <span aria-hidden="true">🗺️</span>
+      <span>موقعیت روی نقشه</span>
+      <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
+    </button>`;
+  }
 
   if (hotel.contacts && hotel.contacts.length > 0) {
     html += `<div class="divider-lbl">شماره‌های تماس</div><div class="contacts" role="list">`;
@@ -819,6 +865,48 @@ function hotelClear(cityId) {
   drop.classList.remove('show'); drop.innerHTML = '';
   detail.classList.remove('show'); detail.innerHTML = '';
 }
+
+/* ── MAP ── */
+let _leafletMap = null;
+
+function openMapModal(name, lat, lng) {
+  document.getElementById('mapModalTitle').textContent = name;
+  document.getElementById('mapOverlay').classList.add('open');
+
+  const load = () => {
+    if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+    _leafletMap = L.map('leafletMap', { zoomControl: true }).setView([lat, lng], 17);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(_leafletMap);
+    L.marker([lat, lng]).addTo(_leafletMap)
+      .bindPopup(`<b>${name}</b>`).openPopup();
+  };
+
+  if (window.L) { load(); return; }
+
+  /* بارگذاری Leaflet در اولین استفاده */
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = load;
+  document.head.appendChild(script);
+}
+
+function closeMapModal() {
+  document.getElementById('mapOverlay').classList.remove('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('mapOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeMapModal();
+  });
+});
 
 function openCardModal(hotelId, hotelName, imagePath) {
   document.getElementById('cardModalTitle').textContent = hotelName;
@@ -1258,11 +1346,32 @@ document.addEventListener('touchend', e => {
 }, { passive: true });
 
 /* ══════════════════════════════════════════
-   SERVICE WORKER
+   SERVICE WORKER — auto-update
 ══════════════════════════════════════════ */
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+
+      /* وقتی SW جدیدی نصب شد، فعالش کن */
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+
+      /* وقتی SW عوض شد، صفحه را reload کن */
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) { refreshing = true; window.location.reload(); }
+      });
+
+      /* بررسی دستی آپدیت در هر بار باز شدن */
+      reg.update().catch(() => {});
+    } catch(e) {}
   });
 }
 

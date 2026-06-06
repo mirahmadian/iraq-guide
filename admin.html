@@ -143,6 +143,26 @@
       border:none; border-radius:7px; font-family:var(--font);
       font-size:11px; font-weight:700; cursor:pointer;
     }
+    /* ── HOTEL ADMIN ── */
+    .hotel-entry {
+      padding:12px 16px; border-bottom:1px solid var(--border);
+      background:rgba(180,140,60,0.03);
+    }
+    .hotel-entry:last-child { border-bottom:none }
+    .hotel-entry-header {
+      display:flex; align-items:center; gap:8px; margin-bottom:10px;
+    }
+    .hotel-num { width:24px; height:24px; border-radius:6px; background:#B48C3C;
+      color:#fff; font-size:11px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hotel-entry-title { font-size:12px; font-weight:700; color:var(--text); flex:1 }
+    .input-full { width:100%; margin-bottom:6px }
+    .input-half { width:calc(50% - 4px) }
+    .input-coord { width:120px; direction:ltr }
+    .hotel-phones-wrap { margin-top:8px; border-top:1px solid var(--border); padding-top:8px }
+    .hotel-phones-lbl { font-size:10px; color:var(--dim); font-weight:600; margin-bottom:6px }
+    .hotel-phone-row { display:flex; gap:6px; align-items:center; margin-bottom:5px }
+
     .toast {
       position:fixed; bottom:24px; left:50%;
       transform:translateX(-50%) translateY(20px);
@@ -233,6 +253,23 @@
     <h2>🏛️ کنسولگری کربلا</h2>
     <div id="contacts-karbala-consulate"></div>
     <button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
+  </div>
+
+  <!-- HOTELS -->
+  <div class="section-block">
+    <h2>🏨 هتل‌های نجف اشرف</h2>
+    <div id="hotels-najaf"></div>
+    <button class="add-btn" onclick="addHotel('najaf')">+ افزودن هتل جدید</button>
+  </div>
+  <div class="section-block">
+    <h2>🏨 هتل‌های کربلای معلا</h2>
+    <div id="hotels-karbala"></div>
+    <button class="add-btn" onclick="addHotel('karbala')">+ افزودن هتل جدید</button>
+  </div>
+  <div class="section-block">
+    <h2>🏨 هتل‌های کاظمین</h2>
+    <div id="hotels-kadhimiya"></div>
+    <button class="add-btn" onclick="addHotel('kadhimiya')">+ افزودن هتل جدید</button>
   </div>
 
   <!-- OUTPUT -->
@@ -527,6 +564,154 @@ function deleteContact(key, idx) {
   renderSection(key);
 }
 
+/* ══════════════════════════════════════
+   HOTEL MANAGEMENT
+══════════════════════════════════════ */
+const hotelState = { najaf: [], karbala: [], kadhimiya: [] };
+
+function getInitialHotels(cityId) {
+  const city = CARAVAN_DATA.cities.find(c => c.id === cityId);
+  return (city?.hotels || []).map(h => ({
+    id: h.id,
+    name: h.name || '',
+    nameEn: h.nameEn || '',
+    address: h.address || '',
+    cardImage: h.cardImage || '',
+    lat: h.lat || '',
+    lng: h.lng || '',
+    contacts: (h.contacts || []).map(c => ({ ...c }))
+  }));
+}
+
+function initHotels() {
+  ['najaf','karbala','kadhimiya'].forEach(cityId => {
+    hotelState[cityId] = getInitialHotels(cityId);
+    renderHotels(cityId);
+  });
+}
+
+function renderHotels(cityId) {
+  const el = document.getElementById('hotels-' + cityId);
+  if (!el) return;
+  const hotels = hotelState[cityId];
+  if (!hotels.length) {
+    el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--dim);font-style:italic">هتلی ثبت نشده</div>`;
+    return;
+  }
+  el.innerHTML = hotels.map((h, i) => `
+    <div class="hotel-entry">
+      <div class="hotel-entry-header">
+        <div class="hotel-num">${i+1}</div>
+        <div class="hotel-entry-title">${h.name || 'هتل جدید'}</div>
+        <button class="del-btn" onclick="deleteHotel('${cityId}',${i})" title="حذف هتل">🗑</button>
+      </div>
+      <input type="text" class="input-full" placeholder="نام فارسی هتل *" value="${h.name}"
+             oninput="updateHotel('${cityId}',${i},'name',this.value)">
+      <input type="text" class="input-full" placeholder="نام انگلیسی هتل (nameEn)" value="${h.nameEn}"
+             oninput="updateHotel('${cityId}',${i},'nameEn',this.value)">
+      <input type="text" class="input-full" placeholder="آدرس کامل" value="${h.address}"
+             oninput="updateHotel('${cityId}',${i},'address',this.value)">
+      <input type="text" class="input-full" placeholder="مسیر تصویر کارت ویزیت (مثال: hotels/my-hotel.jpg)" value="${h.cardImage}"
+             oninput="updateHotel('${cityId}',${i},'cardImage',this.value)">
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input type="text" class="input-coord" placeholder="عرض جغرافیایی lat" value="${h.lat}"
+               oninput="updateHotel('${cityId}',${i},'lat',this.value)" dir="ltr">
+        <input type="text" class="input-coord" placeholder="طول جغرافیایی lng" value="${h.lng}"
+               oninput="updateHotel('${cityId}',${i},'lng',this.value)" dir="ltr">
+      </div>
+      <div class="hotel-phones-wrap">
+        <div class="hotel-phones-lbl">📞 شماره‌های تماس</div>
+        <div id="hotel-phones-${cityId}-${i}"></div>
+        <button class="add-btn" style="margin:6px 0 0" onclick="addHotelPhone('${cityId}',${i})">+ افزودن شماره</button>
+      </div>
+    </div>`).join('');
+
+  hotels.forEach((h, i) => renderHotelPhones(cityId, i));
+}
+
+function renderHotelPhones(cityId, hotelIdx) {
+  const el = document.getElementById(`hotel-phones-${cityId}-${hotelIdx}`);
+  if (!el) return;
+  const phones = hotelState[cityId][hotelIdx].contacts;
+  el.innerHTML = phones.map((p, pi) => `
+    <div class="hotel-phone-row">
+      <input type="text" class="input-role" style="flex:1" placeholder="نقش (مثلاً: پذیرش)" value="${p.role}"
+             oninput="updateHotelPhone('${cityId}',${hotelIdx},${pi},'role',this.value)">
+      <input type="tel" class="input-phone" value="${p.phone}" placeholder="07..."
+             dir="ltr" oninput="updateHotelPhone('${cityId}',${hotelIdx},${pi},'phone',this.value)">
+      <select style="border:1px solid var(--border-s);border-radius:8px;padding:9px 8px;font-family:var(--font);font-size:12px;background:var(--bg)"
+              onchange="updateHotelPhone('${cityId}',${hotelIdx},${pi},'countryCode',this.value)">
+        <option value="964" ${p.countryCode==='964'?'selected':''}>🇮🇶 964</option>
+        <option value="98"  ${p.countryCode==='98' ?'selected':''}>🇮🇷 98</option>
+      </select>
+      <button class="del-btn" onclick="deleteHotelPhone('${cityId}',${hotelIdx},${pi})">🗑</button>
+    </div>`).join('') || `<div style="font-size:11px;color:var(--dim);padding:4px 0">شماره‌ای ثبت نشده</div>`;
+}
+
+function updateHotel(cityId, idx, field, val) {
+  hotelState[cityId][idx][field] = val;
+  if (field === 'name') {
+    const titleEl = document.querySelector(`#hotels-${cityId} .hotel-entry:nth-child(${idx+1}) .hotel-entry-title`);
+    if (titleEl) titleEl.textContent = val || 'هتل جدید';
+  }
+}
+
+function addHotel(cityId) {
+  const idx = hotelState[cityId].length;
+  hotelState[cityId].push({
+    id: 'hotel-' + cityId + '-' + Date.now(),
+    name: '', nameEn: '', address: '', cardImage: '', lat: '', lng: '', contacts: []
+  });
+  renderHotels(cityId);
+  setTimeout(() => {
+    const entries = document.querySelectorAll(`#hotels-${cityId} .hotel-entry`);
+    if (entries.length) entries[entries.length-1].querySelector('input')?.focus();
+  }, 50);
+}
+
+function deleteHotel(cityId, idx) {
+  if (!confirm('این هتل حذف شود؟')) return;
+  hotelState[cityId].splice(idx, 1);
+  renderHotels(cityId);
+}
+
+function addHotelPhone(cityId, hotelIdx) {
+  hotelState[cityId][hotelIdx].contacts.push({ role: '', phone: '', countryCode: '964' });
+  renderHotelPhones(cityId, hotelIdx);
+}
+
+function deleteHotelPhone(cityId, hotelIdx, phoneIdx) {
+  hotelState[cityId][hotelIdx].contacts.splice(phoneIdx, 1);
+  renderHotelPhones(cityId, hotelIdx);
+}
+
+function updateHotelPhone(cityId, hotelIdx, phoneIdx, field, val) {
+  hotelState[cityId][hotelIdx].contacts[phoneIdx][field] = val;
+}
+
+function buildHotelsJS(cityId, indent) {
+  const hotels = hotelState[cityId].filter(h => h.name.trim());
+  if (!hotels.length) return '[]';
+  const lines = hotels.map(h => {
+    const phones = h.contacts.filter(c => c.phone.trim());
+    const phonesJS = phones.length
+      ? `[\n${phones.map(c => `${indent}          { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}, name: null, countryCode: "${c.countryCode||'964'}" }`).join(',\n')}\n${indent}        ]`
+      : '[]';
+    const latVal = parseFloat(h.lat) || 'null';
+    const lngVal = parseFloat(h.lng) || 'null';
+    return `${indent}  {
+${indent}    id: ${qq(h.id)},
+${indent}    name: ${qq(h.name)},
+${indent}    nameEn: ${qq(h.nameEn)},
+${indent}    address: ${qq(h.address)},
+${indent}    cardImage: ${qq(h.cardImage)},
+${indent}    lat: ${latVal}, lng: ${lngVal},
+${indent}    contacts: ${phonesJS}
+${indent}  }`;
+  });
+  return `[\n${lines.join(',\n')}\n${indent}]`;
+}
+
 function qq(s) { return JSON.stringify(s || ''); }
 
 function buildContactsJS(key, indent) {
@@ -567,6 +752,7 @@ const CARAVAN_DATA = {
       name: "نجف اشرف",
       arabic: "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
       icon: "🕌",
+      hotels: ${buildHotelsJS('najaf','      ')},
       hq: {
         title: "ستاد نجف اشرف",
         address: "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
@@ -594,6 +780,7 @@ const CARAVAN_DATA = {
       name: "کربلای معلا",
       arabic: "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
       icon: "🕌",
+      hotels: ${buildHotelsJS('karbala','      ')},
       hq: {
         title: "ستاد کربلا",
         address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
@@ -621,6 +808,7 @@ const CARAVAN_DATA = {
       name: "کاظمین",
       arabic: "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       icon: "🕌",
+      hotels: ${buildHotelsJS('kadhimiya','      ')},
       hq: {
         title: "ستاد کاظمین",
         address: "شارع باب المراد – هتل جمیره",
@@ -656,6 +844,7 @@ function showToast(msg) {
   t._tid = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
+initHotels();
 init();
 </script>
 </body>
