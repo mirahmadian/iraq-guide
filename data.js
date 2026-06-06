@@ -62,6 +62,7 @@ const CARAVAN_DATA = {
           nameEn: "Borj Al-Raiahen Hotel & Rest",
           address: "عراق / کربلا / شارع العلقمی / خلف فندق اطلس",
           cardImage: "hotels/borj-raiahen.jpg",
+          lat: 32.6158, lng: 44.0195,
           contacts: [
             { role: "پذیرش هتل", phone: "07722711154", name: null, countryCode: "964" },
             { role: "پذیرش هتل", phone: "07707999974", name: null, countryCode: "964" },
@@ -74,6 +75,7 @@ const CARAVAN_DATA = {
           nameEn: "Dar al Deyafa – Luxury Hospitality",
           address: "کربلاء المقدسة / شارع شهداء / شارع حسن زینی / خلف فندق الماس",
           cardImage: "hotels/dar-deyafa.jpg",
+          lat: 32.6163, lng: 44.0248,
           contacts: [
             { role: "پذیرش هتل (عراق)", phone: "07884922445", name: null, countryCode: "964" },
             { role: "پذیرش هتل (عراق)", phone: "07884922446", name: null, countryCode: "964" },
