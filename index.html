@@ -291,7 +291,64 @@
     .badge-hotel{background:rgba(180,140,60,.13);color:#B48C3C;border-color:rgba(180,140,60,.30)}
     [data-theme="dark"] .badge-hotel{color:#D4AA60}
 
-    /* ── HOTEL CARD ── */
+    /* ── HOTEL SEARCH BOX ── */
+    .hotel-search-wrap{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);margin-bottom:14px;overflow:visible;
+      box-shadow:var(--shadow);position:relative;
+    }
+    .hotel-search-head{
+      display:flex;align-items:center;gap:10px;padding:13px 15px;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(135deg,var(--card),var(--card2));
+      border-radius:var(--r) var(--r) 0 0;
+    }
+    .hotel-search-input-wrap{
+      display:flex;align-items:center;gap:9px;
+      padding:11px 14px;
+    }
+    .hotel-search-ico{font-size:16px;color:var(--dim);flex-shrink:0}
+    .hotel-search-input{
+      flex:1;border:none;background:transparent;
+      font-family:var(--font);font-size:13px;color:var(--text);
+      outline:none;direction:rtl;
+    }
+    .hotel-search-input::placeholder{color:var(--dim)}
+    .hotel-search-clear{
+      background:none;border:none;cursor:pointer;
+      font-size:13px;color:var(--dim);padding:0;display:none;
+    }
+    .hotel-search-clear.show{display:block}
+    .hotel-dropdown{
+      display:none;border-top:1px solid var(--border);
+    }
+    .hotel-dropdown.show{display:block}
+    .hotel-drop-item{
+      display:flex;align-items:center;gap:10px;
+      padding:11px 15px;cursor:pointer;transition:background .15s;
+      border-bottom:1px solid var(--border);
+    }
+    .hotel-drop-item:last-child{border-bottom:none}
+    .hotel-drop-item:hover,.hotel-drop-item:active{background:var(--card2)}
+    .hotel-drop-name{font-size:13px;font-weight:600;color:var(--text)}
+    .hotel-drop-sub{font-size:10.5px;color:var(--dim);margin-top:2px}
+    .hotel-empty{padding:14px;text-align:center;font-size:12px;color:var(--dim);font-style:italic}
+
+    /* ── HOTEL DETAIL (expanded) ── */
+    .hotel-detail{display:none;border-top:1px solid var(--border)}
+    .hotel-detail.show{display:block}
+    .hotel-detail-head{
+      display:flex;align-items:center;gap:10px;
+      padding:12px 15px;border-bottom:1px solid var(--border);
+      background:linear-gradient(135deg,rgba(180,140,60,.08),rgba(180,140,60,.03));
+    }
+    .hotel-detail-back{
+      background:none;border:1px solid var(--border);border-radius:8px;
+      width:30px;height:30px;cursor:pointer;color:var(--muted);
+      display:flex;align-items:center;justify-content:center;font-size:13px;
+      flex-shrink:0;
+    }
+    .hotel-detail-name{flex:1;font-size:13px;font-weight:700;color:var(--text)}
     .hotel-card-img-btn{
       display:flex;align-items:center;gap:8px;
       padding:10px 15px;border-bottom:1px solid var(--border);
@@ -300,7 +357,7 @@
       color:var(--muted);font-size:12px;font-weight:600;
       transition:background .15s;text-align:right;
     }
-    .hotel-card-img-btn:hover{background:var(--card2);color:var(--gold)}
+    .hotel-card-img-btn:hover,.hotel-card-img-btn:active{background:var(--card2);color:var(--gold)}
     .hotel-card-img-btn span{flex:1}
 
     /* ── BUSINESS CARD MODAL ── */
@@ -645,15 +702,78 @@ function contactHTML(c, avatarEmoji = '👤') {
   </div>`;
 }
 
-function hotelCard(hotel) {
-  let html = `
-  <div class="sec-card">
-    <div class="sec-head">
+/* cityId لازم است تا هر شهر سرچ مستقل داشته باشد */
+function hotelSearchSection(cityId, hotels) {
+  return `
+  <div class="hotel-search-wrap" id="hotel-wrap-${cityId}">
+    <div class="hotel-search-head">
       <div class="sec-ico ico-hotel" aria-hidden="true">🏨</div>
-      <div class="sec-info">
-        <h3>${hotel.name}</h3>
-        <div style="font-size:10.5px;color:var(--dim);margin-top:2px">${hotel.nameEn}</div>
-      </div>
+      <div class="sec-info"><h3>جستجوی هتل</h3></div>
+      <span class="badge badge-hotel">هتل</span>
+    </div>
+    <div class="hotel-search-input-wrap">
+      <span class="hotel-search-ico" aria-hidden="true">🔍</span>
+      <input class="hotel-search-input" type="search"
+             placeholder="نام هتل را بنویسید..."
+             oninput="hotelSearch(this,'${cityId}')"
+             autocomplete="off" aria-label="جستجوی هتل">
+      <button class="hotel-search-clear" onclick="hotelClear('${cityId}')" aria-label="پاک کردن">✕</button>
+    </div>
+    <div class="hotel-dropdown" id="hotel-drop-${cityId}"></div>
+    <div class="hotel-detail"  id="hotel-detail-${cityId}"></div>
+  </div>`;
+}
+
+/* داده هتل‌ها را به ازای هر شهر نگه می‌داریم */
+const _hotelData = {};
+
+function hotelSearch(input, cityId) {
+  const q = input.value.trim();
+  const clearBtn = input.parentElement.querySelector('.hotel-search-clear');
+  clearBtn.classList.toggle('show', q.length > 0);
+
+  const drop = document.getElementById('hotel-drop-' + cityId);
+  const detail = document.getElementById('hotel-detail-' + cityId);
+  detail.classList.remove('show');
+  detail.innerHTML = '';
+
+  if (!q) { drop.classList.remove('show'); drop.innerHTML = ''; return; }
+
+  const hotels = _hotelData[cityId] || [];
+  const results = hotels.filter(h =>
+    h.name.includes(q) || h.nameEn.toLowerCase().includes(q.toLowerCase())
+  );
+
+  if (!results.length) {
+    drop.innerHTML = `<div class="hotel-empty">هتلی با این نام پیدا نشد</div>`;
+  } else {
+    drop.innerHTML = results.map(h => `
+      <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id}')">
+        <span style="font-size:20px">🏨</span>
+        <div>
+          <div class="hotel-drop-name">${h.name}</div>
+          <div class="hotel-drop-sub">${h.nameEn}</div>
+        </div>
+      </div>`).join('');
+  }
+  drop.classList.add('show');
+}
+
+function hotelSelect(cityId, hotelId) {
+  const hotel = (_hotelData[cityId] || []).find(h => h.id === hotelId);
+  if (!hotel) return;
+
+  const drop = document.getElementById('hotel-drop-' + cityId);
+  const detail = document.getElementById('hotel-detail-' + cityId);
+  const input = document.querySelector(`#hotel-wrap-${cityId} .hotel-search-input`);
+
+  drop.classList.remove('show');
+  input.value = hotel.name;
+
+  let html = `
+    <div class="hotel-detail-head">
+      <button class="hotel-detail-back" onclick="hotelClear('${cityId}')" aria-label="بازگشت">‹</button>
+      <div class="hotel-detail-name">${hotel.name}</div>
       <span class="badge badge-hotel">هتل</span>
     </div>`;
 
@@ -668,23 +788,36 @@ function hotelCard(hotel) {
     </div>`;
   }
 
+  const safeId = hotel.id.replace(/'/g,"\\'");
+  const safeName = hotel.name.replace(/'/g,"\\'");
+  const safeImg = hotel.cardImage.replace(/'/g,"\\'");
   html += `
-    <button class="hotel-card-img-btn" onclick="openCardModal('${hotel.id}','${hotel.name.replace(/'/g,"\\'")}','${hotel.cardImage}')"
-            aria-label="مشاهده کارت ویزیت هتل">
+    <button class="hotel-card-img-btn" onclick="openCardModal('${safeId}','${safeName}','${safeImg}')"
+            aria-label="مشاهده کارت ویزیت">
       <span aria-hidden="true">🪪</span>
       <span>مشاهده کارت ویزیت</span>
       <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
     </button>`;
 
   if (hotel.contacts && hotel.contacts.length > 0) {
-    html += `<div class="divider-lbl" aria-label="شماره‌های تماس">شماره‌های تماس</div>`;
-    html += `<div class="contacts" role="list">`;
+    html += `<div class="divider-lbl">شماره‌های تماس</div><div class="contacts" role="list">`;
     hotel.contacts.forEach(c => { html += contactHTML(c, '📞'); });
     html += `</div>`;
   }
 
-  html += `</div>`;
-  return html;
+  detail.innerHTML = html;
+  detail.classList.add('show');
+}
+
+function hotelClear(cityId) {
+  const input = document.querySelector(`#hotel-wrap-${cityId} .hotel-search-input`);
+  const clearBtn = document.querySelector(`#hotel-wrap-${cityId} .hotel-search-clear`);
+  const drop = document.getElementById('hotel-drop-' + cityId);
+  const detail = document.getElementById('hotel-detail-' + cityId);
+  if (input) input.value = '';
+  if (clearBtn) clearBtn.classList.remove('show');
+  drop.classList.remove('show'); drop.innerHTML = '';
+  detail.classList.remove('show'); detail.innerHTML = '';
 }
 
 function openCardModal(hotelId, hotelName, imagePath) {
@@ -836,9 +969,8 @@ function render() {
 
     // Hotels
     if (city.hotels && city.hotels.length > 0) {
-      city.hotels.forEach(hotel => {
-        cityHTML += hotelCard(hotel);
-      });
+      _hotelData[city.id] = city.hotels;
+      cityHTML += hotelSearchSection(city.id, city.hotels);
     }
 
     // Consulate
