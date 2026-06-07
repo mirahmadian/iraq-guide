@@ -4,301 +4,505 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>پنل مدیریت | راهنمای کاروان عراق</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --gold: #2E7D5E; --gold-l: #3A9B74;
-      --bg: #F0F7F2; --card: #FFFFFF;
-      --text: #0A2A1A; --muted: #3A6B52; --dim: #6B9B7F;
-      --border: rgba(46,125,94,0.20); --border-s: rgba(46,125,94,0.35);
-      --red: #E74C3C; --red-bg: rgba(231,76,60,0.08);
-      --font: 'Vazirmatn', sans-serif;
+      --gold:#2E7D5E; --gold-l:#3A9B74; --gold-dim:rgba(46,125,94,.10); --gold-dim2:rgba(46,125,94,.05);
+      --bg:#F0F7F2; --surface:#E2F0E6; --card:#FFFFFF; --card2:#F4FBF6;
+      --text:#0A2A1A; --muted:#3A6B52; --dim:#6B9B7F;
+      --border:rgba(46,125,94,.20); --border-s:rgba(46,125,94,.32);
+      --red:#E74C3C; --red-bg:rgba(231,76,60,.08);
+      --blue:rgba(90,156,245,1); --blue-dim:rgba(90,156,245,.10);
+      --font:'Vazirmatn',sans-serif;
+      --r:14px; --r-sm:9px;
+      --shadow:0 2px 12px rgba(0,0,0,.06);
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
 
-    .top-bar {
-      background:var(--card); border-bottom:1px solid var(--border-s);
-      padding:14px 24px; display:flex; align-items:center; gap:14px;
-      position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    /* ── TOP BAR ── */
+    .topbar{
+      position:sticky;top:0;z-index:100;
+      background:var(--card);border-bottom:1px solid var(--border-s);
+      padding:0 20px;display:flex;align-items:center;gap:14px;height:58px;
+      box-shadow:var(--shadow);
     }
-    .top-bar h1 { font-size:16px; font-weight:800; flex:1 }
-    .top-bar p  { font-size:11px; color:var(--dim) }
-    .save-btn {
-      padding:10px 22px; background:var(--gold); color:#fff;
-      border:none; border-radius:10px; font-family:var(--font);
-      font-size:13px; font-weight:700; cursor:pointer; transition:background .2s;
+    .topbar-brand{display:flex;align-items:center;gap:10px;flex:1}
+    .topbar-icon{
+      width:38px;height:38px;border-radius:10px;
+      background:linear-gradient(135deg,var(--gold),var(--gold-l));
+      display:flex;align-items:center;justify-content:center;font-size:19px;
+      box-shadow:0 2px 8px rgba(46,125,94,.3);flex-shrink:0;
     }
-    .save-btn:hover { background:var(--gold-l) }
+    .topbar-title{font-size:14px;font-weight:800;color:var(--text)}
+    .topbar-sub{font-size:10.5px;color:var(--dim);margin-top:1px}
+    .save-btn{
+      padding:9px 20px;background:linear-gradient(135deg,var(--gold),var(--gold-l));
+      color:#fff;border:none;border-radius:9px;font-family:var(--font);
+      font-size:12.5px;font-weight:700;cursor:pointer;
+      box-shadow:0 2px 10px rgba(46,125,94,.3);transition:opacity .2s;white-space:nowrap;
+    }
+    .save-btn:hover{opacity:.88}
 
-    .wrap { max-width:760px; margin:0 auto; padding:24px 20px 80px; }
+    /* ── TABS ── */
+    .tabs-bar{
+      position:sticky;top:58px;z-index:90;background:var(--bg);
+      padding:10px 20px 0;border-bottom:2px solid var(--border);
+      display:flex;gap:4px;overflow-x:auto;
+    }
+    .tabs-bar::-webkit-scrollbar{height:0}
+    .tab-btn{
+      padding:9px 18px;border:none;background:transparent;
+      font-family:var(--font);font-size:12.5px;font-weight:600;
+      color:var(--dim);cursor:pointer;border-radius:9px 9px 0 0;
+      white-space:nowrap;transition:all .18s;position:relative;bottom:-2px;
+      border:1px solid transparent;border-bottom:none;
+    }
+    .tab-btn:hover{color:var(--gold);background:var(--gold-dim)}
+    .tab-btn.active{
+      color:var(--gold);background:var(--card);font-weight:800;
+      border-color:var(--border-s);border-bottom-color:var(--card);
+    }
+    .tab-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:17px;height:17px;border-radius:50%;background:var(--gold);
+      color:#fff;font-size:9px;font-weight:800;margin-right:5px;
+    }
 
-    .notice {
-      background:rgba(46,125,94,0.08); border:1px solid var(--border-s);
-      border-radius:12px; padding:14px 16px; margin-bottom:20px;
-      font-size:12.5px; color:var(--muted); line-height:1.9;
-    }
-    .notice strong { color:var(--gold); display:block; font-size:13px; margin-bottom:4px }
+    /* ── PAGE ── */
+    .page{display:none;padding:20px;max-width:820px;margin:0 auto;padding-bottom:120px}
+    .page.active{display:block}
 
-    .section-block {
-      background:var(--card); border:1px solid var(--border);
-      border-radius:14px; margin-bottom:16px; overflow:hidden;
+    /* ── SECTION CARD ── */
+    .sec-card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);margin-bottom:14px;overflow:hidden;
+      box-shadow:var(--shadow);
     }
-    .section-block h2 {
-      font-size:13px; font-weight:800; padding:14px 16px;
-      background:rgba(46,125,94,0.05); border-bottom:1px solid var(--border);
-      color:var(--gold); display:flex; align-items:center; gap:8px;
+    .sec-card-head{
+      display:flex;align-items:center;gap:10px;
+      padding:13px 16px;cursor:pointer;user-select:none;
+      background:linear-gradient(135deg,var(--card),var(--card2));
+      border-bottom:1px solid var(--border);
     }
-    .section-block h2 span { font-weight:400; color:var(--dim); font-size:11px }
+    .sec-card-head.no-toggle{cursor:default}
+    .sec-head-icon{
+      width:36px;height:36px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+    }
+    .ico-hq{background:rgba(46,125,94,.12)}
+    .ico-clinic{background:rgba(46,125,94,.12)}
+    .ico-consulate{background:rgba(184,50,50,.12)}
+    .ico-hotel{background:rgba(180,140,60,.15)}
+    .ico-ins{background:rgba(90,156,245,.12)}
+    .ico-gen{background:rgba(46,125,94,.12)}
+    .sec-head-info{flex:1}
+    .sec-head-title{font-size:13.5px;font-weight:700;color:var(--text)}
+    .sec-head-sub{font-size:10.5px;color:var(--dim);margin-top:2px}
+    .sec-chevron{font-size:11px;color:var(--dim);transition:transform .25s;flex-shrink:0}
+    .sec-card.open .sec-chevron{transform:rotate(180deg)}
+    .sec-body{display:none;border-top:1px solid var(--border)}
+    .sec-card.open .sec-body{display:block}
 
-    .field-group { padding:12px 16px; border-bottom:1px solid var(--border); }
-    .field-group:last-child { border-bottom:none; }
-    .field-label { font-size:11px; color:var(--dim); font-weight:600; margin-bottom:6px }
-    .field-row { display:flex; gap:10px; flex-wrap:wrap }
+    /* ── FIELD ── */
+    .field{padding:12px 16px;border-bottom:1px solid var(--border)}
+    .field:last-child{border-bottom:none}
+    .field-label{font-size:10.5px;color:var(--dim);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+    input[type="text"],input[type="tel"]{
+      font-family:var(--font);font-size:13px;color:var(--text);
+      background:var(--bg);border:1px solid var(--border-s);
+      border-radius:8px;padding:9px 12px;outline:none;transition:border-color .2s;
+    }
+    input:focus{border-color:var(--gold)}
+    .input-full{width:100%}
+    .input-phone{direction:ltr;text-align:left;width:160px;font-weight:700;letter-spacing:.5px}
+    .input-role{flex:1;min-width:140px}
+    .input-name{width:160px}
 
-    input[type="text"], input[type="tel"] {
-      font-family:var(--font); font-size:13px; color:var(--text);
-      background:var(--bg); border:1px solid var(--border-s);
-      border-radius:8px; padding:9px 12px; outline:none;
-      transition:border-color .2s;
+    /* ── CONTACTS ── */
+    .contact-row{
+      display:flex;gap:7px;align-items:center;
+      padding:9px 16px;border-bottom:1px solid var(--border);
+      background:rgba(46,125,94,.015);
     }
-    input:focus { border-color:var(--gold) }
-    .input-phone { direction:ltr; text-align:left; width:160px; font-weight:700; letter-spacing:.5px }
-    .input-name  { flex:1; min-width:140px }
-    .input-role  { flex:1; min-width:200px }
-    .input-date  { width:130px }
-
-    .contact-entry {
-      display:flex; gap:8px; align-items:center;
-      padding:10px 16px; border-bottom:1px solid var(--border);
-      background:rgba(46,125,94,0.02);
+    .contact-row:last-child{border-bottom:none}
+    .row-num{
+      width:22px;height:22px;border-radius:6px;background:var(--gold);
+      color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;
+      justify-content:center;flex-shrink:0;
     }
-    .contact-entry:last-child { border-bottom:none }
-    .contact-entry .num-badge {
-      width:24px; height:24px; border-radius:6px;
-      background:var(--gold); color:#fff;
-      font-size:11px; font-weight:700; display:flex; align-items:center;
-      justify-content:center; flex-shrink:0;
-    }
-    .del-btn {
-      width:30px; height:30px; border:1px solid rgba(231,76,60,0.3);
-      border-radius:7px; background:var(--red-bg); color:var(--red);
-      cursor:pointer; font-size:14px; flex-shrink:0;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .del-btn:hover { background:rgba(231,76,60,0.2) }
-    .add-btn {
-      margin:10px 16px 12px; padding:9px 16px;
-      background:rgba(46,125,94,0.08); border:1px dashed var(--border-s);
-      border-radius:8px; font-family:var(--font); font-size:12px;
-      font-weight:600; color:var(--gold); cursor:pointer; width:calc(100% - 32px);
+    .empty-msg{padding:12px 16px;font-size:12px;color:var(--dim);font-style:italic}
+    .add-row-btn{
+      margin:10px 16px 12px;padding:9px 16px;
+      background:var(--gold-dim);border:1px dashed var(--border-s);
+      border-radius:8px;font-family:var(--font);font-size:12px;
+      font-weight:600;color:var(--gold);cursor:pointer;width:calc(100% - 32px);
       transition:background .2s;
     }
-    .add-btn:hover { background:rgba(46,125,94,0.15) }
+    .add-row-btn:hover{background:rgba(46,125,94,.15)}
+    .del-btn{
+      width:30px;height:30px;border:1px solid rgba(231,76,60,.3);
+      border-radius:7px;background:var(--red-bg);color:var(--red);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+    }
+    .del-btn:hover{background:rgba(231,76,60,.18)}
 
-    .calendar-modal {
-      display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5);
-      z-index:1000; align-items:center; justify-content:center;
+    /* ── HOTEL ENTRY ── */
+    .hotel-entry{
+      border-bottom:1px solid var(--border);background:rgba(180,140,60,.02);
     }
-    .calendar-modal.show { display:flex }
-    .calendar-box {
-      background:var(--card); border-radius:14px; padding:20px;
-      min-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    .hotel-entry:last-child{border-bottom:none}
+    .hotel-entry-head{
+      display:flex;align-items:center;gap:9px;padding:11px 16px;
+      background:rgba(180,140,60,.05);border-bottom:1px solid var(--border);
     }
-    .cal-header {
-      display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:16px;
+    .hotel-num{
+      width:22px;height:22px;border-radius:6px;background:#B48C3C;
+      color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;
+      justify-content:center;flex-shrink:0;
     }
-    .cal-nav { background:none; border:none; cursor:pointer; font-size:16px; padding:4px 8px }
-    .cal-title { font-size:14px; font-weight:700; color:var(--gold); text-align:center; flex:1 }
-    .cal-grid {
-      display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:16px;
-    }
-    .cal-day { padding:8px; text-align:center; font-size:11px; color:var(--dim); font-weight:600 }
-    .cal-date {
-      padding:8px; text-align:center; font-size:13px; border-radius:6px;
-      background:var(--bg); cursor:pointer; transition:all .15s;
-    }
-    .cal-date:hover { background:var(--gold-dim); color:var(--gold) }
-    .cal-date.active { background:var(--gold); color:#fff; font-weight:700 }
-    .cal-date.today { border:2px solid var(--gold); color:var(--gold); font-weight:700 }
-    .cal-date.other { color:var(--dim); opacity:0.5 }
-    .cal-close { padding:10px 20px; width:100%; background:var(--gold); color:#fff;
-      border:none; border-radius:8px; font-family:var(--font); font-weight:600; cursor:pointer }
+    .hotel-entry-name{flex:1;font-size:12.5px;font-weight:700;color:var(--text)}
+    .hotel-fields{padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--border)}
+    .hotel-phones-section{padding:10px 16px 12px}
+    .hotel-phones-title{font-size:10.5px;color:var(--dim);font-weight:600;margin-bottom:7px}
+    .phone-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 
-    .output-wrap {
-      background:#1A2F20; border-radius:12px; padding:16px;
-      margin-top:20px; position:relative;
+    /* ── OUTPUT ── */
+    .output-card{
+      background:#1A2F20;border-radius:var(--r);padding:18px;margin-top:20px;
+      position:relative;
     }
-    .output-wrap h3 { font-size:13px; color:#9BBFAE; margin-bottom:10px }
-    textarea {
-      width:100%; height:340px; background:#0E2A1C; color:#C8F0DC;
-      border:1px solid rgba(46,125,94,0.3); border-radius:8px;
-      font-family:monospace; font-size:12px; padding:12px;
-      resize:vertical; outline:none; direction:ltr;
+    .output-card h3{font-size:12.5px;color:#9BBFAE;margin-bottom:10px;font-weight:600}
+    textarea{
+      width:100%;height:360px;background:#0E2A1C;color:#C8F0DC;
+      border:1px solid rgba(46,125,94,.3);border-radius:9px;
+      font-family:monospace;font-size:11.5px;padding:12px;
+      resize:vertical;outline:none;direction:ltr;
     }
-    .copy-output-btn {
-      position:absolute; top:14px; left:14px;
-      padding:7px 14px; background:var(--gold); color:#fff;
-      border:none; border-radius:7px; font-family:var(--font);
-      font-size:11px; font-weight:700; cursor:pointer;
+    .copy-btn{
+      position:absolute;top:16px;left:16px;padding:7px 14px;
+      background:var(--gold);color:#fff;border:none;border-radius:7px;
+      font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;
     }
-    /* ── HOTEL ADMIN ── */
-    .hotel-entry {
-      padding:12px 16px; border-bottom:1px solid var(--border);
-      background:rgba(180,140,60,0.03);
-    }
-    .hotel-entry:last-child { border-bottom:none }
-    .hotel-entry-header {
-      display:flex; align-items:center; gap:8px; margin-bottom:10px;
-    }
-    .hotel-num { width:24px; height:24px; border-radius:6px; background:#B48C3C;
-      color:#fff; font-size:11px; font-weight:700;
-      display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .hotel-entry-title { font-size:12px; font-weight:700; color:var(--text); flex:1 }
-    .input-full { width:100%; margin-bottom:6px }
-    .input-half { width:calc(50% - 4px) }
-    .input-coord { width:120px; direction:ltr }
-    .hotel-phones-wrap { margin-top:8px; border-top:1px solid var(--border); padding-top:8px }
-    .hotel-phones-lbl { font-size:10px; color:var(--dim); font-weight:600; margin-bottom:6px }
-    .hotel-phone-row { display:flex; gap:6px; align-items:center; margin-bottom:5px }
 
-    .toast {
-      position:fixed; bottom:24px; left:50%;
-      transform:translateX(-50%) translateY(20px);
-      background:var(--text); color:#fff; border-radius:100px;
-      padding:9px 20px; font-size:12.5px; font-weight:700;
-      opacity:0; transition:all .3s; z-index:999; white-space:nowrap;
+    /* ── CALENDAR MODAL ── */
+    .cal-overlay{
+      display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+      z-index:1000;align-items:center;justify-content:center;
     }
-    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+    .cal-overlay.show{display:flex}
+    .cal-box{
+      background:var(--card);border-radius:var(--r);padding:20px;
+      min-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3);
+    }
+    .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .cal-nav{background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;color:var(--gold)}
+    .cal-title{font-size:14px;font-weight:700;color:var(--gold);text-align:center;flex:1}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px}
+    .cal-day{padding:8px;text-align:center;font-size:10px;color:var(--dim);font-weight:600}
+    .cal-date{padding:8px;text-align:center;font-size:13px;border-radius:6px;background:var(--bg);cursor:pointer;transition:all .15s}
+    .cal-date:hover{background:var(--gold-dim);color:var(--gold)}
+    .cal-date.active{background:var(--gold);color:#fff;font-weight:700}
+    .cal-date.today{border:2px solid var(--gold);color:var(--gold);font-weight:700}
+    .cal-date.other{color:var(--dim);opacity:.5}
+    .cal-footer{display:flex;gap:8px;margin-top:4px}
+    .cal-btn{
+      padding:10px;flex:1;border-radius:8px;border:1px solid var(--border);
+      font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;
+    }
+    .cal-btn.primary{background:var(--gold);color:#fff;border-color:transparent}
+    .cal-btn.secondary{background:var(--bg);color:var(--gold)}
+
+    /* ── TOAST ── */
+    .toast{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+      background:var(--text);color:#fff;border-radius:100px;
+      padding:9px 20px;font-size:12.5px;font-weight:700;
+      opacity:0;transition:all .3s;z-index:999;white-space:nowrap;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ── DATE INPUT ── */
+    .date-input-wrap{display:flex;gap:8px;align-items:center}
+    .date-pick-btn{
+      padding:9px 14px;background:var(--gold-dim);border:1px solid var(--border-s);
+      border-radius:8px;font-family:var(--font);font-size:12px;font-weight:600;
+      color:var(--gold);cursor:pointer;white-space:nowrap;
+    }
+
+    /* ── INFO BOX ── */
+    .info-box{
+      background:var(--gold-dim);border:1px solid var(--border-s);border-radius:var(--r-sm);
+      padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.85;
+    }
+    .info-box strong{color:var(--gold);display:block;font-size:12.5px;font-weight:700;margin-bottom:3px}
+
+    @media(max-width:600px){
+      .contact-row{flex-wrap:wrap}
+      .input-name{width:100%}
+      .input-phone{width:140px}
+    }
   </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <div>
-    <h1>🛠️ پنل مدیریت کاروان</h1>
-    <p>ویرایش آسان شماره‌های تماس</p>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">🛠️</div>
+    <div>
+      <div class="topbar-title">پنل مدیریت کاروان</div>
+      <div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div>
+    </div>
   </div>
   <button class="save-btn" onclick="generateOutput()">⬇️ ساخت فایل data.js</button>
 </div>
 
-<div class="wrap">
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('general',this)">⚙️ عمومی</button>
+  <button class="tab-btn" onclick="switchTab('najaf',this)">🕌 نجف</button>
+  <button class="tab-btn" onclick="switchTab('karbala',this)">🕌 کربلا</button>
+  <button class="tab-btn" onclick="switchTab('kadhimiya',this)">🕌 کاظمین</button>
+</div>
 
-  <div class="notice">
+<!-- ══ TAB: GENERAL ══ -->
+<div class="page active" id="tab-general">
+
+  <div class="info-box">
     <strong>📌 راهنمای استفاده</strong>
-    ۱. شماره‌ها را در فرم‌های زیر ویرایش کنید<br>
-    ۲. روی دکمه «ساخت فایل data.js» کلیک کنید<br>
-    ۳. محتوای کادر پایین را کپی کنید<br>
-    ۴. در گیت‌هاب فایل <strong>data.js</strong> را باز کنید، همه متن آن را پاک کنید و متن کپی‌شده را جایگزین کنید<br>
-    ۵. ذخیره کنید — تمام!
+    ۱. تغییرات را در هر تب وارد کنید &nbsp;·&nbsp;
+    ۲. «ساخت فایل data.js» را بزنید &nbsp;·&nbsp;
+    ۳. متن را کپی کنید &nbsp;·&nbsp;
+    ۴. در GitHub فایل data.js را با متن کپی‌شده جایگزین کنید
   </div>
 
-  <!-- UPDATE DATE -->
-  <div class="section-block">
-    <h2>📅 تاریخ بروزرسانی</h2>
-    <div class="field-group">
-      <div class="field-label">تاریخ امروز را وارد کنید (فارسی)</div>
-      <input type="text" class="input-date" id="lastUpdate" placeholder="۱۴۰۳/۰۳/۱۵" readonly onclick="showCalendar()">
+  <!-- DATE -->
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">📅</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">تاریخ بروزرسانی</div>
+        <div class="sec-head-sub">تاریخ نمایش داده‌شده در برنامه</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block">
+      <div class="field">
+        <div class="field-label">تاریخ شمسی</div>
+        <div class="date-input-wrap">
+          <input type="text" class="input-full" id="lastUpdate" placeholder="۱۴۰۵/۰۳/۱۳" readonly onclick="showCalendar()">
+          <button class="date-pick-btn" onclick="showCalendar()">📅 انتخاب</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- INSURANCE -->
-  <div class="section-block" id="block-insurance">
-    <h2>📋 بیمه معلم <span>مشترک همه شهرها</span></h2>
-    <div id="contacts-insurance"></div>
-    <button class="add-btn" onclick="addContact('insurance')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- NAJAF HQ -->
-  <div class="section-block">
-    <h2>🕌 ستاد نجف اشرف</h2>
-    <div id="map-urls-najaf-hq"></div>
-    <div id="contacts-najaf-hq"></div>
-    <button class="add-btn" onclick="addContact('najaf-hq')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- KARBALA HQ -->
-  <div class="section-block">
-    <h2>🕌 ستاد کربلا</h2>
-    <div id="map-urls-karbala-hq"></div>
-    <div id="contacts-karbala-hq"></div>
-    <button class="add-btn" onclick="addContact('karbala-hq')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- KADHIMIYA HQ -->
-  <div class="section-block">
-    <h2>🕌 ستاد کاظمین</h2>
-    <div id="map-urls-kadhimiya-hq"></div>
-    <div id="contacts-kadhimiya-hq"></div>
-    <button class="add-btn" onclick="addContact('kadhimiya-hq')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- CLINICS -->
-  <div class="section-block">
-    <h2>🏥 درمانگاه نجف</h2>
-    <div id="map-urls-najaf-clinic"></div>
-    <div id="contacts-najaf-clinic"></div>
-    <button class="add-btn" onclick="addContact('najaf-clinic')">+ افزودن شماره جدید</button>
-  </div>
-  <div class="section-block">
-    <h2>🏥 درمانگاه کربلا</h2>
-    <div id="map-urls-karbala-clinic"></div>
-    <div id="contacts-karbala-clinic"></div>
-    <button class="add-btn" onclick="addContact('karbala-clinic')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- CONSULATES -->
-  <div class="section-block">
-    <h2>🏛️ کنسولگری نجف</h2>
-    <div id="map-urls-najaf-consulate"></div>
-    <div id="contacts-najaf-consulate"></div>
-    <button class="add-btn" onclick="addContact('najaf-consulate')">+ افزودن شماره جدید</button>
-  </div>
-  <div class="section-block">
-    <h2>🏛️ کنسولگری کربلا</h2>
-    <div id="map-urls-karbala-consulate"></div>
-    <div id="contacts-karbala-consulate"></div>
-    <button class="add-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
-  </div>
-
-  <!-- HOTELS -->
-  <div class="section-block">
-    <h2>🏨 هتل‌های نجف اشرف</h2>
-    <div id="hotels-najaf"></div>
-    <button class="add-btn" onclick="addHotel('najaf')">+ افزودن هتل جدید</button>
-  </div>
-  <div class="section-block">
-    <h2>🏨 هتل‌های کربلای معلا</h2>
-    <div id="hotels-karbala"></div>
-    <button class="add-btn" onclick="addHotel('karbala')">+ افزودن هتل جدید</button>
-  </div>
-  <div class="section-block">
-    <h2>🏨 هتل‌های کاظمین</h2>
-    <div id="hotels-kadhimiya"></div>
-    <button class="add-btn" onclick="addHotel('kadhimiya')">+ افزودن هتل جدید</button>
+  <div class="sec-card open" id="card-insurance">
+    <div class="sec-card-head" onclick="toggleCard('insurance')">
+      <div class="sec-head-icon ico-ins">📋</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">بیمه معلم</div>
+        <div class="sec-head-sub">مشترک همه شهرها</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="contacts-insurance"></div>
+      <button class="add-row-btn" onclick="addContact('insurance')">+ افزودن شماره جدید</button>
+    </div>
   </div>
 
   <!-- OUTPUT -->
-  <div class="output-wrap" id="outputWrap" style="display:none">
-    <button class="copy-output-btn" onclick="copyOutput()">📋 کپی همه</button>
-    <h3>محتوای فایل data.js — این متن را در گیت‌هاب جایگزین کنید:</h3>
+  <div class="output-card" id="outputWrap" style="display:none">
+    <button class="copy-btn" onclick="copyOutput()">📋 کپی همه</button>
+    <h3>محتوای data.js — این متن را در GitHub جایگزین کنید:</h3>
     <textarea id="outputArea" readonly spellcheck="false"></textarea>
   </div>
 
-</div>
+</div><!-- /tab-general -->
 
-<div class="calendar-modal" id="calendarModal">
-  <div class="calendar-box">
+<!-- ══ TAB: NAJAF ══ -->
+<div class="page" id="tab-najaf">
+  <!-- HQ -->
+  <div class="sec-card open" id="card-najaf-hq">
+    <div class="sec-card-head" onclick="toggleCard('najaf-hq')">
+      <div class="sec-head-icon ico-hq">🏢</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">ستاد نجف اشرف</div>
+        <div class="sec-head-sub">شارع امام صادق (ع)</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-najaf-hq"></div>
+      <div id="contacts-najaf-hq"></div>
+      <button class="add-row-btn" onclick="addContact('najaf-hq')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- CLINIC -->
+  <div class="sec-card" id="card-najaf-clinic">
+    <div class="sec-card-head" onclick="toggleCard('najaf-clinic')">
+      <div class="sec-head-icon ico-clinic">🏥</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">درمانگاه نجف</div>
+        <div class="sec-head-sub">شارع السور – هتل نباء</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-najaf-clinic"></div>
+      <div id="contacts-najaf-clinic"></div>
+      <button class="add-row-btn" onclick="addContact('najaf-clinic')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- CONSULATE -->
+  <div class="sec-card" id="card-najaf-consulate">
+    <div class="sec-card-head" onclick="toggleCard('najaf-consulate')">
+      <div class="sec-head-icon ico-consulate">🏛️</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">کنسولگری ایران – نجف</div>
+        <div class="sec-head-sub">لینک نقشه</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-najaf-consulate"></div>
+      <div id="contacts-najaf-consulate"></div>
+      <button class="add-row-btn" onclick="addContact('najaf-consulate')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- HOTELS -->
+  <div class="sec-card" id="card-hotel-najaf">
+    <div class="sec-card-head" onclick="toggleCard('hotel-najaf')">
+      <div class="sec-head-icon ico-hotel">🏨</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">هتل‌های نجف</div>
+        <div class="sec-head-sub" id="hotel-count-najaf">۰ هتل</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="hotels-najaf"></div>
+      <button class="add-row-btn" onclick="addHotel('najaf')">+ افزودن هتل جدید</button>
+    </div>
+  </div>
+</div><!-- /tab-najaf -->
+
+<!-- ══ TAB: KARBALA ══ -->
+<div class="page" id="tab-karbala">
+  <!-- HQ -->
+  <div class="sec-card open" id="card-karbala-hq">
+    <div class="sec-card-head" onclick="toggleCard('karbala-hq')">
+      <div class="sec-head-icon ico-hq">🏢</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">ستاد کربلا</div>
+        <div class="sec-head-sub">شارع میثم تمار – هتل کربلاالدولی</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-karbala-hq"></div>
+      <div id="contacts-karbala-hq"></div>
+      <button class="add-row-btn" onclick="addContact('karbala-hq')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- CLINIC -->
+  <div class="sec-card" id="card-karbala-clinic">
+    <div class="sec-card-head" onclick="toggleCard('karbala-clinic')">
+      <div class="sec-head-icon ico-clinic">🏥</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">درمانگاه کربلا</div>
+        <div class="sec-head-sub">شارع العباس – جنب هتل برج الکرمل</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-karbala-clinic"></div>
+      <div id="contacts-karbala-clinic"></div>
+      <button class="add-row-btn" onclick="addContact('karbala-clinic')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- CONSULATE -->
+  <div class="sec-card" id="card-karbala-consulate">
+    <div class="sec-card-head" onclick="toggleCard('karbala-consulate')">
+      <div class="sec-head-icon ico-consulate">🏛️</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">کنسولگری ایران – کربلا</div>
+        <div class="sec-head-sub">لینک نقشه</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-karbala-consulate"></div>
+      <div id="contacts-karbala-consulate"></div>
+      <button class="add-row-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- HOTELS -->
+  <div class="sec-card open" id="card-hotel-karbala">
+    <div class="sec-card-head" onclick="toggleCard('hotel-karbala')">
+      <div class="sec-head-icon ico-hotel">🏨</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">هتل‌های کربلا</div>
+        <div class="sec-head-sub" id="hotel-count-karbala">۰ هتل</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="hotels-karbala"></div>
+      <button class="add-row-btn" onclick="addHotel('karbala')">+ افزودن هتل جدید</button>
+    </div>
+  </div>
+</div><!-- /tab-karbala -->
+
+<!-- ══ TAB: KADHIMIYA ══ -->
+<div class="page" id="tab-kadhimiya">
+  <!-- HQ -->
+  <div class="sec-card open" id="card-kadhimiya-hq">
+    <div class="sec-card-head" onclick="toggleCard('kadhimiya-hq')">
+      <div class="sec-head-icon ico-hq">🏢</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">ستاد کاظمین</div>
+        <div class="sec-head-sub">شارع باب المراد – هتل جمیره</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-kadhimiya-hq"></div>
+      <div id="contacts-kadhimiya-hq"></div>
+      <button class="add-row-btn" onclick="addContact('kadhimiya-hq')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+  <!-- HOTELS -->
+  <div class="sec-card" id="card-hotel-kadhimiya">
+    <div class="sec-card-head" onclick="toggleCard('hotel-kadhimiya')">
+      <div class="sec-head-icon ico-hotel">🏨</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">هتل‌های کاظمین</div>
+        <div class="sec-head-sub" id="hotel-count-kadhimiya">۰ هتل</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="hotels-kadhimiya"></div>
+      <button class="add-row-btn" onclick="addHotel('kadhimiya')">+ افزودن هتل جدید</button>
+    </div>
+  </div>
+</div><!-- /tab-kadhimiya -->
+
+<!-- CALENDAR MODAL -->
+<div class="cal-overlay" id="calModal">
+  <div class="cal-box">
     <div class="cal-header">
       <button class="cal-nav" onclick="prevMonth()">◀</button>
       <div class="cal-title"><span id="calMonth">-</span> <span id="calYear">-</span></div>
       <button class="cal-nav" onclick="nextMonth()">▶</button>
     </div>
     <div class="cal-grid" id="calGrid"></div>
-    <div style="display:flex;gap:8px;margin-top:0">
-      <button class="cal-close" onclick="goToday()" style="background:var(--bg);color:var(--gold);border:1px solid var(--border-s);flex:1">امروز</button>
-      <button class="cal-close" onclick="closeCalendar()" style="flex:2">بستن</button>
+    <div class="cal-footer">
+      <button class="cal-btn secondary" onclick="goToday()">امروز</button>
+      <button class="cal-btn primary" onclick="closeCalendar()">بستن</button>
     </div>
   </div>
 </div>
@@ -307,383 +511,235 @@
 
 <script src="data.js"></script>
 <script>
-// Persian Calendar functions
-const MONTH_NAMES = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-                     'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-const DAY_NAMES = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
-
-let calYear = 1403, calMonth = 1;
-
-function parseJalali(str) {
-  if (!str) return null;
-  const parts = str.split('/').map(p => parseInt(p));
-  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-    return { year: parts[0], month: parts[1], day: parts[2] };
-  }
-  return null;
+/* ══════════════════════════════════════════
+   TABS
+══════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
 }
 
-function formatJalali(y, m, d) {
-  return `${String(y).padStart(4, '0')}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+function toggleCard(key) {
+  const card = document.getElementById('card-' + key);
+  if (card) card.classList.toggle('open');
 }
 
-// Gregorian → Jalali
-function gregorianToJalali(gy, gm, gd) {
-  var g_y = gy-1600, g_m = gm-1, g_d = gd-1;
-  var g_d_no = 365*g_y + Math.floor((g_y+3)/4) - Math.floor((g_y+99)/100) + Math.floor((g_y+399)/400);
-  var gml = [31,28,31,30,31,30,31,31,30,31,30,31];
-  for (var i=0; i<g_m; i++) g_d_no += gml[i];
-  if (g_m>1 && ((g_y%4==0&&g_y%100!=0)||(g_y%400==0))) g_d_no++;
-  g_d_no += g_d;
-  var j_d_no = g_d_no - 79;
-  var j_np = Math.floor(j_d_no/12053); j_d_no %= 12053;
-  var j_y = 979 + 33*j_np + 4*Math.floor(j_d_no/1461); j_d_no %= 1461;
-  if (j_d_no>=366) { j_y += Math.floor((j_d_no-1)/365); j_d_no = (j_d_no-1)%365; }
-  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
-  for (i=0; i<11&&j_d_no>=jml[i]; i++) j_d_no -= jml[i];
-  return { year: j_y, month: i+1, day: j_d_no+1 };
-}
+/* ══════════════════════════════════════════
+   PERSIAN CALENDAR
+══════════════════════════════════════════ */
+const MONTH_NAMES = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const DAY_NAMES   = ['ش','ی','د','س','چ','پ','ج'];
+let calYear = 1405, calMonth = 3;
 
-// Jalali → Gregorian (for day-of-week via JS Date)
-function jalaliToGregorian(jy, jm, jd) {
-  var j_y = jy - 979, j_m = jm - 1, j_d = jd - 1;
-  var j_d_no = 365*j_y + Math.floor(j_y/33)*8 + Math.floor((j_y%33+3)/4);
-  var jml = [31,31,31,31,31,31,30,30,30,30,30,29];
-  for (var i=0; i<j_m; i++) j_d_no += jml[i];
-  j_d_no += j_d;
-  var g_d_no = j_d_no + 79;
-  var g_y = Math.floor((g_d_no - Math.floor(g_d_no/146097)%100*97/4 + 65) / 365.25);
-  if (isNaN(g_y)) g_y = 1600;
-  // Simpler approach:
-  var gy = 1600 + Math.floor(j_y/33)*32 + Math.floor(j_y%33*8/33) + Math.floor(j_d_no/365.25);
-  // Use known reference: 1405/3/1 = 2026/5/22
-  // Offset in days from 1405/3/1
-  var ref_jy=1405, ref_jm=3, ref_jd=1;
-  var ref_date = new Date(2026, 4, 22); // May 22, 2026
-  var jml2 = [31,31,31,31,31,31,30,30,30,30,30,29];
-  var diff = 0;
-  // Calculate day number of target and reference within Jalali calendar
-  function jalaliDayNo(y, m, d) {
-    var n = (y - 1) * 365 + Math.floor((y-1)/33)*8 + Math.floor(((y-1)%33+3)/4);
-    for (var k=0; k<m-1; k++) n += jml2[k];
-    return n + d;
-  }
-  diff = jalaliDayNo(jy,jm,jd) - jalaliDayNo(ref_jy,ref_jm,ref_jd);
-  var result = new Date(ref_date.getTime() + diff*86400000);
-  return result;
-}
-
-function jalaliToJD(jy, jm, jd) {
-  return jalaliToGregorian(jy, jm, jd);
-}
-
-function todayJalali() {
-  const n = new Date();
-  return gregorianToJalali(n.getFullYear(), n.getMonth()+1, n.getDate());
-}
-
-function isLeapJalali(year) {
-  const jDaysInMonth = [31,31,31,31,31,31,30,30,30,30,30,29];
-  return jDaysInMonth[11] === 30;
-}
-
-function getDaysInMonth(year, month) {
-  if (month <= 6) return 31;
-  if (month <= 11) return 30;
-  // leap: years ending in 1,5,9,13,17,22,26,30 of 33-year cycle
-  const rem = ((year - 474) % 33 + 33) % 33;
-  return [1,5,9,13,17,22,26,30].includes(rem) ? 30 : 29;
-}
-
-
-function renderCalendar() {
-  const monthEl = document.getElementById('calMonth');
-  const yearEl = document.getElementById('calYear');
-  const gridEl = document.getElementById('calGrid');
-
-  monthEl.textContent = MONTH_NAMES[calMonth - 1];
-  yearEl.textContent = calYear;
-
-  let html = '';
-  DAY_NAMES.forEach(d => {
-    html += `<div class="cal-day">${d}</div>`;
-  });
-
-  // Get day of week for first day of month (0=Sat..6=Fri for Persian calendar)
-  const firstDayDate = jalaliToGregorian(calYear, calMonth, 1);
-  // JS getDay: 0=Sun,1=Mon,...,6=Sat → Persian (0=Sat): (jsDay+1)%7
-  const firstDayOfWeek = (firstDayDate.getDay() + 1) % 7;
-
-  const daysInMonth = getDaysInMonth(calYear, calMonth);
-  const daysInPrevMonth = getDaysInMonth(calYear, calMonth > 1 ? calMonth - 1 : 12);
-
-  const prevMonthDays = firstDayOfWeek;
-  const totalCells = 42;
-
-  for (let i = 0; i < prevMonthDays; i++) {
-    const day = daysInPrevMonth - prevMonthDays + i + 1;
-    html += `<div class="cal-date other">${day}</div>`;
-  }
-
-  const updateInput = document.getElementById('lastUpdate');
-  const selected = parseJalali(updateInput.value);
-
-  const today = todayJalali();
-  for (let day = 1; day <= daysInMonth; day++) {
-    const isActive = selected && selected.year === calYear && selected.month === calMonth && selected.day === day;
-    const isToday = today.year === calYear && today.month === calMonth && today.day === day;
-    let cls = 'cal-date';
-    if (isActive) cls += ' active';
-    else if (isToday) cls += ' today';
-    html += `<div class="${cls}" onclick="selectDate(${calYear},${calMonth},${day})">${day}</div>`;
-  }
-
-  const nextMonthDays = totalCells - prevMonthDays - daysInMonth;
-  for (let day = 1; day <= nextMonthDays; day++) {
-    html += `<div class="cal-date other">${day}</div>`;
-  }
-
-  gridEl.innerHTML = html;
-}
+function gregorianToJalali(gy,gm,gd){var g_y=gy-1600,g_m=gm-1,g_d=gd-1,g_d_no=365*g_y+Math.floor((g_y+3)/4)-Math.floor((g_y+99)/100)+Math.floor((g_y+399)/400),gml=[31,28,31,30,31,30,31,31,30,31,30,31];for(var i=0;i<g_m;i++)g_d_no+=gml[i];if(g_m>1&&((g_y%4==0&&g_y%100!=0)||(g_y%400==0)))g_d_no++;g_d_no+=g_d;var j_d_no=g_d_no-79,j_np=Math.floor(j_d_no/12053);j_d_no%=12053;var j_y=979+33*j_np+4*Math.floor(j_d_no/1461);j_d_no%=1461;if(j_d_no>=366){j_y+=Math.floor((j_d_no-1)/365);j_d_no=(j_d_no-1)%365;}var jml=[31,31,31,31,31,31,30,30,30,30,30,29];for(i=0;i<11&&j_d_no>=jml[i];i++)j_d_no-=jml[i];return{year:j_y,month:i+1,day:j_d_no+1};}
+function jalaliToGregorian(jy,jm,jd){var ref_date=new Date(2026,4,22);function jalaliDayNo(y,m,d){var jml=[31,31,31,31,31,31,30,30,30,30,30,29],n=(y-1)*365+Math.floor((y-1)/33)*8+Math.floor(((y-1)%33+3)/4);for(var k=0;k<m-1;k++)n+=jml[k];return n+d;}var diff=jalaliDayNo(jy,jm,jd)-jalaliDayNo(1405,3,1);return new Date(ref_date.getTime()+diff*86400000);}
+function todayJalali(){var n=new Date();return gregorianToJalali(n.getFullYear(),n.getMonth()+1,n.getDate());}
+function getDaysInMonth(y,m){if(m<=6)return 31;if(m<=11)return 30;var rem=((y-474)%33+33)%33;return[1,5,9,13,17,22,26,30].includes(rem)?30:29;}
+function formatJalali(y,m,d){return`${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`;}
 
 function showCalendar() {
-  const updateInput = document.getElementById('lastUpdate');
-  const selected = parseJalali(updateInput.value);
-  if (selected && !isNaN(selected.year)) {
-    calYear = selected.year;
-    calMonth = selected.month;
-  } else {
-    const t = todayJalali();
-    calYear = t.year;
-    calMonth = t.month;
+  const v = document.getElementById('lastUpdate').value;
+  if (v) { const p=v.split('/'); if(p.length===3){calYear=+p[0];calMonth=+p[1];} }
+  else { const t=todayJalali(); calYear=t.year; calMonth=t.month; }
+  renderCalendar();
+  document.getElementById('calModal').classList.add('show');
+}
+function closeCalendar(){ document.getElementById('calModal').classList.remove('show'); }
+function goToday(){ const t=todayJalali(); calYear=t.year; calMonth=t.month; renderCalendar(); selectDate(t.year,t.month,t.day); }
+function prevMonth(){ if(calMonth===1){calYear--;calMonth=12;}else calMonth--; renderCalendar(); }
+function nextMonth(){ if(calMonth===12){calYear++;calMonth=1;}else calMonth++; renderCalendar(); }
+function selectDate(y,m,d){ document.getElementById('lastUpdate').value=formatJalali(y,m,d); closeCalendar(); }
+
+function renderCalendar() {
+  document.getElementById('calMonth').textContent = MONTH_NAMES[calMonth-1];
+  document.getElementById('calYear').textContent  = calYear;
+  const first = jalaliToGregorian(calYear,calMonth,1);
+  const dow   = (first.getDay()+1)%7;
+  const dim   = getDaysInMonth(calYear,calMonth);
+  const prev  = getDaysInMonth(calYear,calMonth>1?calMonth-1:12);
+  const today = todayJalali();
+  const sel   = document.getElementById('lastUpdate').value;
+  let selY=0,selM=0,selD=0;
+  if(sel){const p=sel.split('/');selY=+p[0];selM=+p[1];selD=+p[2];}
+  let h='';
+  DAY_NAMES.forEach(d=>h+=`<div class="cal-day">${d}</div>`);
+  for(let i=0;i<dow;i++) h+=`<div class="cal-date other">${prev-dow+i+1}</div>`;
+  for(let d=1;d<=dim;d++){
+    const isA=selY===calYear&&selM===calMonth&&selD===d;
+    const isT=today.year===calYear&&today.month===calMonth&&today.day===d;
+    h+=`<div class="cal-date${isA?' active':isT?' today':''}" onclick="selectDate(${calYear},${calMonth},${d})">${d}</div>`;
   }
-  renderCalendar();
-  document.getElementById('calendarModal').classList.add('show');
+  for(let d=1;h.split('cal-date').length-1<49;d++) h+=`<div class="cal-date other">${d}</div>`;
+  document.getElementById('calGrid').innerHTML=h;
 }
 
-function goToday() {
-  const t = todayJalali();
-  calYear = t.year;
-  calMonth = t.month;
-  renderCalendar();
-  selectDate(t.year, t.month, t.day);
-}
-
-function closeCalendar() {
-  document.getElementById('calendarModal').classList.remove('show');
-}
-
-function selectDate(y, m, d) {
-  const formatted = formatJalali(y, m, d);
-  document.getElementById('lastUpdate').value = formatted;
-  closeCalendar();
-}
-
-function prevMonth() {
-  if (calMonth === 1) {
-    calYear--;
-    calMonth = 12;
-  } else {
-    calMonth--;
-  }
-  renderCalendar();
-}
-
-function nextMonth() {
-  if (calMonth === 12) {
-    calYear++;
-    calMonth = 1;
-  } else {
-    calMonth++;
-  }
-  renderCalendar();
-}
-
-// State: contacts per section + map URLs per section
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
 const state = {};
-const mapState = {}; // key → { neshanUrl, googleUrl }
-
-const SECTIONS = [
-  'insurance',
-  'najaf-hq', 'karbala-hq', 'kadhimiya-hq',
-  'najaf-clinic', 'karbala-clinic',
-  'najaf-consulate', 'karbala-consulate'
-];
-
-// sections that have map URLs (not insurance)
-const MAP_SECTIONS = [
-  'najaf-hq', 'karbala-hq', 'kadhimiya-hq',
-  'najaf-clinic', 'karbala-clinic',
-  'najaf-consulate', 'karbala-consulate'
-];
+const mapState = {};
+const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
+const MAP_SECTIONS = ['najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
 
 function getInitialContacts(key) {
-  const d = CARAVAN_DATA;
-  if (key === 'insurance') return d.insurance?.contacts || [];
-  const [city, sec] = key.split('-');
-  const cityObj = d.cities.find(c => c.id === city);
-  if (!cityObj) return [];
-  const secMap = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
-  return secMap[sec]?.contacts || [];
+  if(key==='insurance') return CARAVAN_DATA.insurance?.contacts||[];
+  const [city,sec]=key.split('-');
+  const c=CARAVAN_DATA.cities.find(c=>c.id===city);
+  if(!c) return [];
+  return({hq:c.hq,clinic:c.clinic,consulate:c.consulate})[sec]?.contacts||[];
 }
-
 function getInitialMapUrls(key) {
-  const [city, sec] = key.split('-');
-  const cityObj = CARAVAN_DATA.cities.find(c => c.id === city);
-  if (!cityObj) return { neshanUrl: '', googleUrl: '' };
-  const secMap = { hq: cityObj.hq, clinic: cityObj.clinic, consulate: cityObj.consulate };
-  const s = secMap[sec];
-  return {
-    neshanUrl: s?.mapNeshanUrl || '',
-    googleUrl: s?.mapGoogleUrl || ''
-  };
+  const [city,sec]=key.split('-');
+  const c=CARAVAN_DATA.cities.find(c=>c.id===city);
+  const s=({hq:c?.hq,clinic:c?.clinic,consulate:c?.consulate})[sec];
+  return{neshanUrl:s?.mapNeshanUrl||'',googleUrl:s?.mapGoogleUrl||''};
 }
 
-function init() {
-  SECTIONS.forEach(key => {
-    state[key] = getInitialContacts(key).map(c => ({ ...c }));
-    renderSection(key);
-  });
-  MAP_SECTIONS.forEach(key => {
-    mapState[key] = getInitialMapUrls(key);
-    renderMapFields(key);
-  });
-  const lastUpdate = document.getElementById('lastUpdate');
-  const dateValue = CARAVAN_DATA.lastUpdate || '';
-  lastUpdate.value = dateValue;
-  lastUpdate.placeholder = dateValue || '۱۴۰۳/۰۳/۱۵';
-}
-
+/* ══════════════════════════════════════════
+   RENDER MAP FIELDS
+══════════════════════════════════════════ */
 function renderMapFields(key) {
-  const el = document.getElementById('map-urls-' + key);
-  if (!el) return;
-  const m = mapState[key];
-  el.innerHTML = `
-    <div class="field-group">
+  const el=document.getElementById('map-urls-'+key);
+  if(!el) return;
+  const m=mapState[key];
+  el.innerHTML=`
+    <div class="field">
       <div class="field-label">🗺️ لینک نقشه نشان</div>
-      <input type="text" style="width:100%" placeholder="https://nshn.ir/..." value="${m.neshanUrl}"
-             oninput="mapState['${key}'].neshanUrl=this.value">
+      <input type="text" class="input-full" placeholder="https://nshn.ir/..." value="${escH(m.neshanUrl)}"
+             oninput="mapState['${key}'].neshanUrl=this.value" dir="ltr">
     </div>
-    <div class="field-group">
+    <div class="field">
       <div class="field-label">🌍 لینک گوگل مپ</div>
-      <input type="text" style="width:100%" placeholder="https://maps.google.com/..." value="${m.googleUrl}"
-             oninput="mapState['${key}'].googleUrl=this.value">
+      <input type="text" class="input-full" placeholder="https://maps.google.com/..." value="${escH(m.googleUrl)}"
+             oninput="mapState['${key}'].googleUrl=this.value" dir="ltr">
     </div>`;
 }
 
+/* ══════════════════════════════════════════
+   RENDER CONTACTS
+══════════════════════════════════════════ */
 function renderSection(key) {
-  const el = document.getElementById('contacts-' + key);
-  if (!el) return;
-  const contacts = state[key];
-  if (!contacts.length) {
-    el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--dim);font-style:italic">شماره‌ای ثبت نشده</div>`;
-    return;
-  }
-  el.innerHTML = contacts.map((c, i) => `
-    <div class="contact-entry">
-      <div class="num-badge">${i+1}</div>
-      <input type="text" class="input-role" value="${c.role}" placeholder="نقش (مثلاً: رئیس ستاد)"
+  const el=document.getElementById('contacts-'+key);
+  if(!el) return;
+  const contacts=state[key];
+  if(!contacts.length){el.innerHTML=`<div class="empty-msg">شماره‌ای ثبت نشده</div>`;return;}
+  el.innerHTML=contacts.map((c,i)=>`
+    <div class="contact-row">
+      <div class="row-num">${i+1}</div>
+      <input type="text" class="input-role" value="${escH(c.role)}" placeholder="نقش"
              oninput="updateField('${key}',${i},'role',this.value)">
-      <input type="tel" class="input-phone" value="${c.phone}" placeholder="07..."
+      <input type="tel" class="input-phone" value="${escH(c.phone)}" placeholder="07..."
              dir="ltr" oninput="updateField('${key}',${i},'phone',this.value)">
-      <input type="text" class="input-name" value="${c.name||''}" placeholder="نام (اختیاری)"
+      <input type="text" class="input-name" value="${escH(c.name||'')}" placeholder="نام (اختیاری)"
              oninput="updateField('${key}',${i},'name',this.value)">
-      <button class="del-btn" onclick="deleteContact('${key}',${i})" title="حذف">🗑</button>
+      <button class="del-btn" onclick="deleteContact('${key}',${i})">🗑</button>
     </div>`).join('');
 }
 
-function updateField(key, idx, field, val) {
-  state[key][idx][field] = val;
-}
-
-function addContact(key) {
-  state[key].push({ role: '', name: '', phone: '', countryCode: '964' });
+function updateField(key,idx,field,val){state[key][idx][field]=val;}
+function addContact(key){
+  state[key].push({role:'',name:'',phone:'',countryCode:'964'});
   renderSection(key);
-  const entries = document.querySelectorAll(`#contacts-${key} .contact-entry`);
-  if (entries.length) {
-    const last = entries[entries.length - 1];
-    last.querySelector('input').focus();
-  }
+  const rows=document.querySelectorAll(`#contacts-${key} .contact-row`);
+  if(rows.length) rows[rows.length-1].querySelector('input')?.focus();
+}
+function deleteContact(key,idx){
+  if(!confirm('این شماره حذف شود؟')) return;
+  state[key].splice(idx,1); renderSection(key);
 }
 
-function deleteContact(key, idx) {
-  if (!confirm('این شماره حذف شود؟')) return;
-  state[key].splice(idx, 1);
-  renderSection(key);
-}
+/* ══════════════════════════════════════════
+   HOTELS
+══════════════════════════════════════════ */
+const hotelState={najaf:[],karbala:[],kadhimiya:[]};
 
-/* ══════════════════════════════════════
-   HOTEL MANAGEMENT
-══════════════════════════════════════ */
-const hotelState = { najaf: [], karbala: [], kadhimiya: [] };
-
-function getInitialHotels(cityId) {
-  const city = CARAVAN_DATA.cities.find(c => c.id === cityId);
-  return (city?.hotels || []).map(h => ({
-    id: h.id,
-    name: h.name || '',
-    nameEn: h.nameEn || '',
-    address: h.address || '',
-    cardImage: h.cardImage || '',
-    mapNeshanUrl: h.mapNeshanUrl || '',
-    mapGoogleUrl: h.mapGoogleUrl || '',
-    contacts: (h.contacts || []).map(c => ({ ...c }))
+function getInitialHotels(cityId){
+  const city=CARAVAN_DATA.cities.find(c=>c.id===cityId);
+  return(city?.hotels||[]).map(h=>({
+    id:h.id,name:h.name||'',nameEn:h.nameEn||'',
+    address:h.address||'',cardImage:h.cardImage||'',
+    mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',
+    contacts:(h.contacts||[]).map(c=>({...c}))
   }));
 }
 
-function initHotels() {
-  ['najaf','karbala','kadhimiya'].forEach(cityId => {
-    hotelState[cityId] = getInitialHotels(cityId);
-    renderHotels(cityId);
+function initHotels(){
+  ['najaf','karbala','kadhimiya'].forEach(id=>{
+    hotelState[id]=getInitialHotels(id);
+    renderHotels(id);
   });
 }
 
-function renderHotels(cityId) {
-  const el = document.getElementById('hotels-' + cityId);
-  if (!el) return;
-  const hotels = hotelState[cityId];
-  if (!hotels.length) {
-    el.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--dim);font-style:italic">هتلی ثبت نشده</div>`;
-    return;
-  }
-  el.innerHTML = hotels.map((h, i) => `
-    <div class="hotel-entry">
-      <div class="hotel-entry-header">
-        <div class="hotel-num">${i+1}</div>
-        <div class="hotel-entry-title">${h.name || 'هتل جدید'}</div>
-        <button class="del-btn" onclick="deleteHotel('${cityId}',${i})" title="حذف هتل">🗑</button>
-      </div>
-      <input type="text" class="input-full" placeholder="نام فارسی هتل *" value="${h.name}"
-             oninput="updateHotel('${cityId}',${i},'name',this.value)">
-      <input type="text" class="input-full" placeholder="نام انگلیسی هتل (nameEn)" value="${h.nameEn}"
-             oninput="updateHotel('${cityId}',${i},'nameEn',this.value)">
-      <input type="text" class="input-full" placeholder="آدرس کامل" value="${h.address}"
-             oninput="updateHotel('${cityId}',${i},'address',this.value)">
-      <input type="text" class="input-full" placeholder="مسیر تصویر کارت ویزیت (مثال: hotels/my-hotel.jpg)" value="${h.cardImage}"
-             oninput="updateHotel('${cityId}',${i},'cardImage',this.value)">
-      <input type="text" class="input-full" placeholder="🗺️ لینک نقشه نشان (اختیاری)" value="${h.mapNeshanUrl||''}"
-             oninput="updateHotel('${cityId}',${i},'mapNeshanUrl',this.value)" dir="ltr">
-      <input type="text" class="input-full" placeholder="🌍 لینک گوگل مپ (اختیاری)" value="${h.mapGoogleUrl||''}"
-             oninput="updateHotel('${cityId}',${i},'mapGoogleUrl',this.value)" dir="ltr">
-      <div class="hotel-phones-wrap">
-        <div class="hotel-phones-lbl">📞 شماره‌های تماس</div>
-        <div id="hotel-phones-${cityId}-${i}"></div>
-        <button class="add-btn" style="margin:6px 0 0" onclick="addHotelPhone('${cityId}',${i})">+ افزودن شماره</button>
-      </div>
-    </div>`).join('');
-
-  hotels.forEach((h, i) => renderHotelPhones(cityId, i));
+function updateHotelCount(cityId){
+  const el=document.getElementById('hotel-count-'+cityId);
+  if(el){const n=hotelState[cityId].length;el.textContent=n+' هتل';}
 }
 
-function renderHotelPhones(cityId, hotelIdx) {
-  const el = document.getElementById(`hotel-phones-${cityId}-${hotelIdx}`);
-  if (!el) return;
-  const phones = hotelState[cityId][hotelIdx].contacts;
-  el.innerHTML = phones.map((p, pi) => `
-    <div class="hotel-phone-row">
-      <input type="text" class="input-role" style="flex:1" placeholder="نقش (مثلاً: پذیرش)" value="${p.role}"
+function renderHotels(cityId){
+  const el=document.getElementById('hotels-'+cityId);
+  if(!el) return;
+  const hotels=hotelState[cityId];
+  updateHotelCount(cityId);
+  if(!hotels.length){el.innerHTML=`<div class="empty-msg">هتلی ثبت نشده</div>`;return;}
+  el.innerHTML=hotels.map((h,i)=>`
+    <div class="hotel-entry">
+      <div class="hotel-entry-head">
+        <div class="hotel-num">${i+1}</div>
+        <div class="hotel-entry-name">${escH(h.name)||'هتل جدید'}</div>
+        <button class="del-btn" onclick="deleteHotel('${cityId}',${i})">🗑</button>
+      </div>
+      <div class="hotel-fields">
+        <div>
+          <div class="field-label">نام فارسی *</div>
+          <input type="text" class="input-full" placeholder="نام هتل" value="${escH(h.name)}"
+                 oninput="updateHotel('${cityId}',${i},'name',this.value)">
+        </div>
+        <div>
+          <div class="field-label">نام انگلیسی</div>
+          <input type="text" class="input-full" placeholder="Hotel Name En" value="${escH(h.nameEn)}"
+                 oninput="updateHotel('${cityId}',${i},'nameEn',this.value)" dir="ltr">
+        </div>
+        <div>
+          <div class="field-label">📍 آدرس</div>
+          <input type="text" class="input-full" placeholder="آدرس کامل" value="${escH(h.address)}"
+                 oninput="updateHotel('${cityId}',${i},'address',this.value)">
+        </div>
+        <div>
+          <div class="field-label">🪪 مسیر تصویر کارت ویزیت</div>
+          <input type="text" class="input-full" placeholder="hotels/name.jpg" value="${escH(h.cardImage)}"
+                 oninput="updateHotel('${cityId}',${i},'cardImage',this.value)" dir="ltr">
+        </div>
+        <div>
+          <div class="field-label">🗺️ لینک نشان</div>
+          <input type="text" class="input-full" placeholder="https://nshn.ir/..." value="${escH(h.mapNeshanUrl)}"
+                 oninput="updateHotel('${cityId}',${i},'mapNeshanUrl',this.value)" dir="ltr">
+        </div>
+        <div>
+          <div class="field-label">🌍 لینک گوگل مپ</div>
+          <input type="text" class="input-full" placeholder="https://maps.google.com/..." value="${escH(h.mapGoogleUrl)}"
+                 oninput="updateHotel('${cityId}',${i},'mapGoogleUrl',this.value)" dir="ltr">
+        </div>
+      </div>
+      <div class="hotel-phones-section">
+        <div class="hotel-phones-title">📞 شماره‌های تماس</div>
+        <div id="hotel-phones-${cityId}-${i}"></div>
+        <button class="add-row-btn" style="margin-top:6px" onclick="addHotelPhone('${cityId}',${i})">+ افزودن شماره</button>
+      </div>
+    </div>`).join('');
+  hotels.forEach((_,i)=>renderHotelPhones(cityId,i));
+}
+
+function renderHotelPhones(cityId,hotelIdx){
+  const el=document.getElementById(`hotel-phones-${cityId}-${hotelIdx}`);
+  if(!el) return;
+  const phones=hotelState[cityId][hotelIdx].contacts;
+  el.innerHTML=phones.map((p,pi)=>`
+    <div class="phone-row">
+      <input type="text" class="input-role" style="flex:1" placeholder="نقش" value="${escH(p.role)}"
              oninput="updateHotelPhone('${cityId}',${hotelIdx},${pi},'role',this.value)">
-      <input type="tel" class="input-phone" value="${p.phone}" placeholder="07..."
+      <input type="tel" class="input-phone" value="${escH(p.phone)}" placeholder="07..."
              dir="ltr" oninput="updateHotelPhone('${cityId}',${hotelIdx},${pi},'phone',this.value)">
       <select style="border:1px solid var(--border-s);border-radius:8px;padding:9px 8px;font-family:var(--font);font-size:12px;background:var(--bg)"
               onchange="updateHotelPhone('${cityId}',${hotelIdx},${pi},'countryCode',this.value)">
@@ -691,59 +747,51 @@ function renderHotelPhones(cityId, hotelIdx) {
         <option value="98"  ${p.countryCode==='98' ?'selected':''}>🇮🇷 98</option>
       </select>
       <button class="del-btn" onclick="deleteHotelPhone('${cityId}',${hotelIdx},${pi})">🗑</button>
-    </div>`).join('') || `<div style="font-size:11px;color:var(--dim);padding:4px 0">شماره‌ای ثبت نشده</div>`;
+    </div>`).join('')||`<div class="empty-msg" style="padding:4px 0">شماره‌ای ثبت نشده</div>`;
 }
 
-function updateHotel(cityId, idx, field, val) {
-  hotelState[cityId][idx][field] = val;
-  if (field === 'name') {
-    const titleEl = document.querySelector(`#hotels-${cityId} .hotel-entry:nth-child(${idx+1}) .hotel-entry-title`);
-    if (titleEl) titleEl.textContent = val || 'هتل جدید';
+function updateHotel(cityId,idx,field,val){
+  hotelState[cityId][idx][field]=val;
+  if(field==='name'){
+    const el=document.querySelector(`#hotels-${cityId} .hotel-entry:nth-child(${idx+1}) .hotel-entry-name`);
+    if(el) el.textContent=val||'هتل جدید';
   }
 }
-
-function addHotel(cityId) {
-  const idx = hotelState[cityId].length;
-  hotelState[cityId].push({
-    id: 'hotel-' + cityId + '-' + Date.now(),
-    name: '', nameEn: '', address: '', cardImage: '', mapNeshanUrl: '', mapGoogleUrl: '', contacts: []
-  });
+function addHotel(cityId){
+  hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',address:'',cardImage:'',mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
   renderHotels(cityId);
-  setTimeout(() => {
-    const entries = document.querySelectorAll(`#hotels-${cityId} .hotel-entry`);
-    if (entries.length) entries[entries.length-1].querySelector('input')?.focus();
-  }, 50);
+  setTimeout(()=>{
+    const rows=document.querySelectorAll(`#hotels-${cityId} .hotel-entry`);
+    if(rows.length) rows[rows.length-1].querySelector('input')?.focus();
+  },50);
+}
+function deleteHotel(cityId,idx){
+  if(!confirm('این هتل حذف شود؟')) return;
+  hotelState[cityId].splice(idx,1); renderHotels(cityId);
+}
+function addHotelPhone(cityId,hi){hotelState[cityId][hi].contacts.push({role:'',phone:'',countryCode:'964'});renderHotelPhones(cityId,hi);}
+function deleteHotelPhone(cityId,hi,pi){hotelState[cityId][hi].contacts.splice(pi,1);renderHotelPhones(cityId,hi);}
+function updateHotelPhone(cityId,hi,pi,field,val){hotelState[cityId][hi].contacts[pi][field]=val;}
+
+/* ══════════════════════════════════════════
+   OUTPUT
+══════════════════════════════════════════ */
+function qq(s){return JSON.stringify(s||'');}
+function escH(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function buildContactsJS(key,indent){
+  const c=state[key].filter(c=>c.phone.trim());
+  if(!c.length) return '[]';
+  return`[\n${c.map(c=>`${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}, name: ${c.name?.trim()?qq(c.name.trim()):'null'}, countryCode: "964" }`).join(',\n')}\n${indent}]`;
 }
 
-function deleteHotel(cityId, idx) {
-  if (!confirm('این هتل حذف شود؟')) return;
-  hotelState[cityId].splice(idx, 1);
-  renderHotels(cityId);
-}
-
-function addHotelPhone(cityId, hotelIdx) {
-  hotelState[cityId][hotelIdx].contacts.push({ role: '', phone: '', countryCode: '964' });
-  renderHotelPhones(cityId, hotelIdx);
-}
-
-function deleteHotelPhone(cityId, hotelIdx, phoneIdx) {
-  hotelState[cityId][hotelIdx].contacts.splice(phoneIdx, 1);
-  renderHotelPhones(cityId, hotelIdx);
-}
-
-function updateHotelPhone(cityId, hotelIdx, phoneIdx, field, val) {
-  hotelState[cityId][hotelIdx].contacts[phoneIdx][field] = val;
-}
-
-function buildHotelsJS(cityId, indent) {
-  const hotels = hotelState[cityId].filter(h => h.name.trim());
-  if (!hotels.length) return '[]';
-  const lines = hotels.map(h => {
-    const phones = h.contacts.filter(c => c.phone.trim());
-    const phonesJS = phones.length
-      ? `[\n${phones.map(c => `${indent}          { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}, name: null, countryCode: "${c.countryCode||'964'}" }`).join(',\n')}\n${indent}        ]`
-      : '[]';
-    return `${indent}  {
+function buildHotelsJS(cityId,indent){
+  const hotels=hotelState[cityId].filter(h=>h.name.trim());
+  if(!hotels.length) return '[]';
+  const lines=hotels.map(h=>{
+    const phones=h.contacts.filter(c=>c.phone.trim());
+    const phonesJS=phones.length?`[\n${phones.map(c=>`${indent}          { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}, name: null, countryCode: "${c.countryCode||'964'}" }`).join(',\n')}\n${indent}        ]`:'[]';
+    return`${indent}  {
 ${indent}    id: ${qq(h.id)},
 ${indent}    name: ${qq(h.name)},
 ${indent}    nameEn: ${qq(h.nameEn)},
@@ -754,28 +802,14 @@ ${indent}    mapGoogleUrl: ${qq(h.mapGoogleUrl)},
 ${indent}    contacts: ${phonesJS}
 ${indent}  }`;
   });
-  return `[\n${lines.join(',\n')}\n${indent}]`;
+  return`[\n${lines.join(',\n')}\n${indent}]`;
 }
 
-function qq(s) { return JSON.stringify(s || ''); }
-
-function buildContactsJS(key, indent) {
-  const contacts = state[key].filter(c => c.phone.trim());
-  if (!contacts.length) return '[]';
-  const lines = contacts.map(c => {
-    const name = c.name?.trim() ? `, name: ${qq(c.name.trim())}` : ', name: null';
-    return `${indent}  { role: ${qq(c.role)}, phone: ${qq(c.phone.trim())}${name}, countryCode: "964" }`;
-  });
-  return `[\n${lines.join(',\n')}\n${indent}]`;
-}
-
-function generateOutput() {
-  const date = document.getElementById('lastUpdate').value.trim();
-
-  const output = `/**
+function generateOutput(){
+  const date=document.getElementById('lastUpdate').value.trim();
+  const output=`/**
  * =====================================================
  *  فایل داده‌های راهنمای کاروان عراق
- *  ویرایش: فقط همین فایل را تغییر دهید
  *  آخرین بروزرسانی: ${date}
  * =====================================================
  */
@@ -868,28 +902,48 @@ const CARAVAN_DATA = {
   ]
 };`;
 
-  const wrap = document.getElementById('outputWrap');
-  const area = document.getElementById('outputArea');
-  area.value = output;
-  wrap.style.display = 'block';
-  setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-  showToast('فایل آماده شد! متن را کپی کنید ✅');
+  const wrap=document.getElementById('outputWrap');
+  const area=document.getElementById('outputArea');
+  area.value=output;
+  wrap.style.display='block';
+
+  /* برو به تب عمومی تا output نمایش داده شود */
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-general').classList.add('active');
+  document.querySelector('.tab-btn').classList.add('active');
+
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}),80);
+  showToast('فایل آماده شد — متن را کپی کنید ✅');
 }
 
-function copyOutput() {
-  const area = document.getElementById('outputArea');
-  navigator.clipboard.writeText(area.value).then(() => showToast('کپی شد! 📋'));
+function copyOutput(){
+  navigator.clipboard.writeText(document.getElementById('outputArea').value)
+    .then(()=>showToast('کپی شد! 📋'));
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 2800);
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-initHotels();
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+function init(){
+  SECTIONS.forEach(key=>{
+    state[key]=getInitialContacts(key).map(c=>({...c}));
+    renderSection(key);
+  });
+  MAP_SECTIONS.forEach(key=>{
+    mapState[key]=getInitialMapUrls(key);
+    renderMapFields(key);
+  });
+  document.getElementById('lastUpdate').value = CARAVAN_DATA.lastUpdate||'';
+  initHotels();
+}
+
 init();
 </script>
 </body>
