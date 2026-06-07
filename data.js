@@ -1,7 +1,6 @@
 /**
  * =====================================================
  *  فایل داده‌های راهنمای کاروان عراق
- *  ویرایش: فقط همین فایل را تغییر دهید
  *  آخرین بروزرسانی: 1405/03/13
  * =====================================================
  */
@@ -23,9 +22,9 @@ const CARAVAN_DATA = {
     {
       id: "najaf",
       name: "نجف اشرف",
-      hotels: [],
       arabic: "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
       icon: "🕌",
+      hotels: [],
       hq: {
         title: "ستاد نجف اشرف",
         address: "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
@@ -55,39 +54,9 @@ const CARAVAN_DATA = {
     {
       id: "karbala",
       name: "کربلای معلا",
-      hotels: [
-        {
-          id: "borj-raiahen",
-          name: "هتل و رستوران برج الرياحين",
-          nameEn: "Borj Al-Raiahen Hotel & Rest",
-          address: "عراق / کربلا / شارع العلقمی / خلف فندق اطلس",
-          cardImage: "hotels/borj-raiahen.jpg",
-          mapNeshanUrl: "",
-          mapGoogleUrl: "",
-          contacts: [
-            { role: "پذیرش هتل", phone: "07722711154", name: null, countryCode: "964" },
-            { role: "پذیرش هتل", phone: "07707999974", name: null, countryCode: "964" },
-            { role: "پذیرش هتل", phone: "07901969690", name: null, countryCode: "964" }
-          ]
-        },
-        {
-          id: "dar-deyafa",
-          name: "هتل دار الضیافه",
-          nameEn: "Dar al Deyafa – Luxury Hospitality",
-          address: "کربلاء المقدسة / شارع شهداء / شارع حسن زینی / خلف فندق الماس",
-          cardImage: "hotels/dar-deyafa.jpg",
-          mapNeshanUrl: "",
-          mapGoogleUrl: "",
-          contacts: [
-            { role: "پذیرش هتل (عراق)", phone: "07884922445", name: null, countryCode: "964" },
-            { role: "پذیرش هتل (عراق)", phone: "07884922446", name: null, countryCode: "964" },
-            { role: "واتساپ (ایران)", phone: "09018032743", name: null, countryCode: "98" },
-            { role: "واتساپ (ایران)", phone: "09018032750", name: null, countryCode: "98" }
-          ]
-        }
-      ],
       arabic: "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
       icon: "🕌",
+      hotels: [],
       hq: {
         title: "ستاد کربلا",
         address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
@@ -109,7 +78,7 @@ const CARAVAN_DATA = {
       consulate: {
         title: "کنسولگری ایران – کربلا",
         mapNeshanUrl: "https://nshn.ir/df_bZTEHNASrOv",
-        mapGoogleUrl: "https://maps.app.goo.gl/zbi79t88G28wRK3G7",
+        mapGoogleUrl: "https://www.google.com/maps?q=32.59198773036064, 44.02128092748514",
         contacts: []
       }
     },
@@ -117,9 +86,9 @@ const CARAVAN_DATA = {
     {
       id: "kadhimiya",
       name: "کاظمین",
-      hotels: [],
       arabic: "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       icon: "🕌",
+      hotels: [],
       hq: {
         title: "ستاد کاظمین",
         address: "شارع باب المراد – هتل جمیره",
