@@ -29,7 +29,7 @@ const CARAVAN_DATA = {
         title: "ستاد نجف اشرف",
         address: "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
         mapNeshanUrl: "https://nshn.ir/33_b_rKR_AAW8r",
-        mapGoogleUrl: "google.com/maps?q=31.994793829649662, 44.3121325",
+        mapGoogleUrl: "https://www.google.com/maps?q=31.994793829649662, 44.3121325",
         contacts: [
           { role: "رئیس ستاد نجف", phone: "07855435901", name: null, countryCode: "964" },
           { role: "مسئول حراست ستاد نجف", phone: "07848327903", name: null, countryCode: "964" },
@@ -40,13 +40,13 @@ const CARAVAN_DATA = {
         title: "درمانگاه نجف",
         address: "شارع السور – هتل نباء – درمانگاه نباء",
         mapNeshanUrl: "https://nshn.ir/65_b_s1ROAAlS4",
-        mapGoogleUrl: "google.com/maps?q=31.997154012304026, 44.322958184605156",
+        mapGoogleUrl: "https://www.google.com/maps?q=31.997154012304026, 44.322958184605156",
         contacts: []
       },
       consulate: {
         title: "کنسولگری ایران – نجف",
         mapNeshanUrl: "https://nshn.ir/_b_r6eVAAW4d",
-        mapGoogleUrl: "google.com/maps?q=31.994274730808442, 44.31235262698616",
+        mapGoogleUrl: "https://www.google.com/maps?q=31.994274730808442, 44.31235262698616",
         contacts: []
       }
     },
@@ -61,7 +61,7 @@ const CARAVAN_DATA = {
         title: "ستاد کربلا",
         address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
         mapNeshanUrl: "https://nshn.ir/c4_bZlfl0A2eSO",
-        mapGoogleUrl: "google.com/maps?q=32.62024330221967, 44.04219887116436",
+        mapGoogleUrl: "https://www.google.com/maps?q=32.62024330221967, 44.04219887116436",
         contacts: [
           { role: "رئیس ستاد کربلا", phone: "07842510402", name: null, countryCode: "964" },
           { role: "مسئول حراست ستاد کربلا", phone: "07733104123", name: null, countryCode: "964" },
@@ -72,7 +72,7 @@ const CARAVAN_DATA = {
         title: "درمانگاه کربلا",
         address: "شارع العباس (باب قبله حضرت عباس) – بعد از خیابان جمهوری – کوچه روبروی وزارت مخابرات – جنب هتل برج الکرمل – ساختمان حضرت فاطمه الزهرا (س)",
         mapNeshanUrl: "https://nshn.ir/4f_bZyZDYASwLL",
-        mapGoogleUrl: "google.com/maps?q=32.612229851688035, 44.03564811724431",
+        mapGoogleUrl: "https://www.google.com/maps?q=32.612229851688035, 44.03564811724431",
         contacts: []
       },
       consulate: {
