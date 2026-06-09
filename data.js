@@ -61,7 +61,7 @@ const CARAVAN_DATA = {
         title: "ستاد کربلا",
         address: "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
         mapNeshanUrl: "https://nshn.ir/c4_bZlfl0A2eSO",
-        mapGoogleUrl: "https://www.google.com/maps?q=32.62024330221967, 44.04219887116436",
+        mapGoogleUrl: "https://www.google.com/maps?q=32.62012256744457, 44.04220765408347",
         contacts: [
           { role: "رئیس ستاد کربلا", phone: "07842510402", name: null, countryCode: "964" },
           { role: "مسئول حراست ستاد کربلا", phone: "07733104123", name: null, countryCode: "964" },
