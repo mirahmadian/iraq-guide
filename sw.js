@@ -1,9 +1,18 @@
-const CACHE = 'caravan-v4';
+const CACHE = 'caravan-v5';
 const STATIC = [
-  'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap'
+  './',
+  'index.html',
+  'data.js',
+  'manifest.json',
+  'app-icon.png',
+  'hajj-logo.png',
+  'fonts/fonts.css',
+  'fonts/Vazirmatn-arabic.woff2',
+  'fonts/Vazirmatn-latin.woff2',
+  'fonts/Vazirmatn-latin-ext.woff2'
 ];
 
-/* نصب: فقط فونت‌های خارجی را cache می‌کنیم */
+/* نصب: فایل‌های اصلی و فونت را cache می‌کنیم تا آفلاین هم کار کند */
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
