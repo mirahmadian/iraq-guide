@@ -237,6 +237,23 @@
     }
     .info-box strong{color:var(--gold);display:block;font-size:12.5px;font-weight:700;margin-bottom:3px}
 
+
+    /* ── PUBLISH / LOCK ── */
+    .pub-btn{padding:9px 20px;background:#1B5FA8;color:#fff;border:none;border-radius:9px;font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .pub-btn:disabled{opacity:.6;cursor:wait}
+    .lock-btn{width:36px;height:36px;border:1px solid var(--border-s);border-radius:9px;background:var(--card);cursor:pointer;font-size:15px}
+    .lock-overlay{position:fixed;inset:0;z-index:2000;background:var(--bg);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px}
+    .lock-overlay.show{display:flex}
+    .lock-box{background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:22px;max-width:460px;width:100%;box-shadow:var(--shadow)}
+    .lock-box h2{font-size:16px;font-weight:800;margin-bottom:6px}
+    .lock-box p,.lock-box li{font-size:12px;color:var(--muted);line-height:1.9}
+    .lock-box ol{padding-right:18px;margin:8px 0 12px}
+    .lock-box a{color:var(--gold);font-weight:700}
+    .lock-box .field{padding:6px 0;border:none}
+    .lock-box input{width:100%}
+    .lock-err{color:var(--red);font-size:12px;min-height:18px;margin:6px 0}
+    .lock-link{background:none;border:none;color:var(--dim);font-family:var(--font);font-size:11.5px;cursor:pointer;margin-top:10px;text-decoration:underline}
+    @media(max-width:600px){.save-btn,.pub-btn{padding:9px 10px;font-size:11.5px}}
     @media(max-width:600px){
       .contact-row{flex-wrap:wrap}
       .input-name{width:100%}
@@ -245,6 +262,39 @@
   </style>
 </head>
 <body>
+
+<!-- LOCK / SETUP -->
+<div class="lock-overlay show" id="lockOverlay">
+  <div class="lock-box">
+    <div id="lockLoading"><p>در حال بررسی...</p></div>
+
+    <div id="lockUnlock" style="display:none">
+      <h2>🔐 ورود به پنل مدیریت</h2>
+      <p>رمز مدیریت را وارد کنید.</p>
+      <div class="field"><input type="password" id="unlockPass" placeholder="رمز مدیریت" onkeydown="if(event.key==='Enter')doUnlock()"></div>
+      <div class="lock-err" id="unlockErr"></div>
+      <button class="save-btn" style="width:100%" onclick="doUnlock()">ورود</button>
+      <button class="lock-link" onclick="showSetup()">رمز را فراموش کرده‌ام / می‌خواهم دوباره تنظیم کنم</button>
+    </div>
+
+    <div id="lockSetup" style="display:none">
+      <h2>⚙️ تنظیم اولیه (فقط یک‌بار)</h2>
+      <p>برای اینکه تغییرات مستقیم روی سایت بروند، یک «توکن گیتهاب» لازم است:</p>
+      <ol>
+        <li>این لینک را باز کنید: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">ساخت توکن</a></li>
+        <li>اسم دلخواه بدهید و <b>Expiration</b> را روی بیشترین مدت (یا No expiration) بگذارید.</li>
+        <li>در <b>Repository access</b> گزینه <b>Only select repositories</b> را بزنید و فقط <b>iraq-guide</b> را انتخاب کنید.</li>
+        <li>در <b>Permissions ← Repository permissions</b> مقدار <b>Contents</b> را روی <b>Read and write</b> بگذارید.</li>
+        <li>پایین صفحه <b>Generate token</b> را بزنید و متن توکن را (که با github_pat_ شروع می‌شود) اینجا بچسبانید.</li>
+      </ol>
+      <div class="field"><div class="field-label">توکن گیتهاب</div><input type="password" id="setupToken" dir="ltr" placeholder="github_pat_..."></div>
+      <div class="field"><div class="field-label">یک رمز برای خودتان انتخاب کنید (حداقل ۸ حرف؛ این را به خاطر بسپارید)</div><input type="password" id="setupPass" placeholder="رمز مدیریت"></div>
+      <p>توکن با این رمز رمزنگاری و در مخزن ذخیره می‌شود. بعداً در هر مرورگر یا گوشی فقط با همین رمز وارد می‌شوید و دیگر نیازی به توکن نیست.</p>
+      <div class="lock-err" id="setupErr"></div>
+      <button class="save-btn" style="width:100%" onclick="doSetup()">ذخیره و ورود</button>
+    </div>
+  </div>
+</div>
 
 <!-- TOP BAR -->
 <div class="topbar">
@@ -255,7 +305,9 @@
       <div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div>
     </div>
   </div>
-  <button class="save-btn" onclick="generateOutput()">⬇️ ساخت فایل data.js</button>
+  <button class="save-btn" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
+  <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
+  <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
 </div>
 
 <!-- TABS -->
@@ -805,7 +857,7 @@ ${indent}  }`;
   return`[\n${lines.join(',\n')}\n${indent}]`;
 }
 
-function generateOutput(){
+function buildOutput(){
   const date=document.getElementById('lastUpdate').value.trim();
   const output=`/**
  * =====================================================
@@ -901,7 +953,11 @@ const CARAVAN_DATA = {
 
   ]
 };`;
+  return output;
+}
 
+function generateOutput(){
+  const output=buildOutput();
   const wrap=document.getElementById('outputWrap');
   const area=document.getElementById('outputArea');
   area.value=output;
@@ -929,6 +985,141 @@ function showToast(msg){
 }
 
 /* ══════════════════════════════════════════
+   GITHUB PUBLISH + ENCRYPTED TOKEN
+══════════════════════════════════════════ */
+const onPages = location.hostname.endsWith('.github.io');
+const GH = {
+  owner: onPages ? location.hostname.split('.')[0] : 'mirahmadian',
+  repo:  onPages ? (location.pathname.split('/')[1] || 'iraq-guide') : 'iraq-guide'
+};
+const TOKEN_KEY = 'caravan-admin-token';
+const KEY_FILE  = 'admin-key.json';
+let ghToken = null;
+try { ghToken = localStorage.getItem(TOKEN_KEY); } catch(e) {}
+
+const b64 = u8 => { let s=''; u8.forEach(b=>s+=String.fromCharCode(b)); return btoa(s); };
+const unb64 = t => Uint8Array.from(atob(t), c=>c.charCodeAt(0));
+
+async function deriveKey(pass, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:250000, hash:'SHA-256'}, base,
+    {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function encryptToken(token, pass) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt);
+  const data = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(token)));
+  return JSON.stringify({v:1, salt:b64(salt), iv:b64(iv), data:b64(data)});
+}
+async function decryptToken(blob, pass) {
+  const key = await deriveKey(pass, unb64(blob.salt));
+  const out = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(blob.iv)}, key, unb64(blob.data));
+  return new TextDecoder().decode(out);
+}
+
+async function gh(path, token, opts = {}) {
+  return fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}${path}`, {
+    ...opts,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      ...(opts.headers || {})
+    }
+  });
+}
+async function verifyToken(token) {
+  const r = await gh('', token);
+  if (r.status === 401) throw new Error('توکن نامعتبر است.');
+  if (r.status === 404) throw new Error('توکن به مخزن iraq-guide دسترسی ندارد.');
+  if (!r.ok) throw new Error('خطا در ارتباط با گیتهاب (' + r.status + ')');
+  const j = await r.json();
+  if (!j.permissions || !j.permissions.push) throw new Error('توکن اجازه نوشتن ندارد. Contents را روی Read and write بگذارید.');
+}
+async function putFile(path, text, message, token) {
+  let sha;
+  const cur = await gh('/contents/' + path, token);
+  if (cur.ok) sha = (await cur.json()).sha;
+  const r = await gh('/contents/' + path, token, {
+    method: 'PUT',
+    body: JSON.stringify({ message, content: b64(new TextEncoder().encode(text)), ...(sha ? {sha} : {}) })
+  });
+  if (!r.ok) throw new Error('انتشار ناموفق بود (' + r.status + ')');
+}
+
+function lockShow(which) {
+  ['lockLoading','lockUnlock','lockSetup'].forEach(id => document.getElementById(id).style.display = id === which ? 'block' : 'none');
+  document.getElementById('lockOverlay').classList.add('show');
+}
+function showSetup() { lockShow('lockSetup'); }
+function lockHide() { document.getElementById('lockOverlay').classList.remove('show'); }
+
+async function authInit() {
+  if (ghToken) { lockHide(); return; }
+  lockShow('lockLoading');
+  try {
+    const r = await fetch(KEY_FILE + '?t=' + Date.now(), {cache:'no-store'});
+    lockShow(r.ok ? 'lockUnlock' : 'lockSetup');
+  } catch(e) { lockShow('lockSetup'); }
+}
+
+async function doUnlock() {
+  const err = document.getElementById('unlockErr');
+  err.textContent = '';
+  const pass = document.getElementById('unlockPass').value;
+  if (!pass) return;
+  try {
+    const blob = await (await fetch(KEY_FILE + '?t=' + Date.now(), {cache:'no-store'})).json();
+    let token;
+    try { token = await decryptToken(blob, pass); } catch(e) { throw new Error('رمز اشتباه است.'); }
+    await verifyToken(token);
+    ghToken = token;
+    try { localStorage.setItem(TOKEN_KEY, token); } catch(e) {}
+    lockHide();
+    showToast('وارد شدید ✅');
+  } catch(e) { err.textContent = e.message; }
+}
+
+async function doSetup() {
+  const err = document.getElementById('setupErr');
+  err.textContent = '';
+  const token = document.getElementById('setupToken').value.trim();
+  const pass = document.getElementById('setupPass').value;
+  if (!token) { err.textContent = 'توکن را وارد کنید.'; return; }
+  if (pass.length < 8) { err.textContent = 'رمز حداقل ۸ حرف باشد.'; return; }
+  try {
+    await verifyToken(token);
+    await putFile(KEY_FILE, await encryptToken(token, pass), 'Update admin key', token);
+    ghToken = token;
+    try { localStorage.setItem(TOKEN_KEY, token); } catch(e) {}
+    lockHide();
+    showToast('تنظیم شد ✅');
+  } catch(e) { err.textContent = e.message; }
+}
+
+function forgetDevice() {
+  if (!confirm('از این دستگاه خارج می‌شوید؟ دفعه بعد باید رمز را وارد کنید.')) return;
+  try { localStorage.removeItem(TOKEN_KEY); } catch(e) {}
+  ghToken = null;
+  document.getElementById('unlockPass').value = '';
+  authInit();
+}
+
+async function publishData() {
+  if (!ghToken) { authInit(); return; }
+  const btn = document.getElementById('pubBtn');
+  btn.disabled = true; btn.textContent = '... در حال انتشار';
+  try {
+    await putFile('data.js', buildOutput(), 'Update data.js from admin panel', ghToken);
+    showToast('منتشر شد ✅ — حدود ۱ دقیقه بعد برای کاربران نمایش داده می‌شود');
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 انتشار برای کاربران';
+  }
+}
+
+/* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
 function init(){
@@ -945,6 +1136,7 @@ function init(){
 }
 
 init();
+authInit();
 </script>
 </body>
 </html>

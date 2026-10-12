@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v3';
+const CACHE = 'caravan-v4';
 const STATIC = [
   'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap'
 ];
@@ -30,7 +30,7 @@ self.addEventListener('fetch', e => {
   if (isCore || e.request.mode === 'navigate') {
     /* همیشه اول از شبکه بگیر، کش را آپدیت کن */
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'no-cache' })
         .then(res => {
           if (res && res.status === 200) {
             const clone = res.clone();
