@@ -98,7 +98,13 @@ const CARAVAN_DATA = {
           { role: "نماینده سازمان در کاظمین", phone: "07736395692", name: "آقای صمد عبداللهی", countryCode: "964" }
         ]
       },
-      clinic: null,
+      clinic: {
+        title: "درمانگاه کاظمین",
+        address: "خیابان باب المراد، جنب هتل جمیره، ابتدای فرعی",
+        mapNeshanUrl: "https://nshn.ir/_bS-scpACiha",
+        mapGoogleUrl: "https://maps.app.goo.gl/41GSUKV1jtzKCjLHA",
+        contacts: []
+      },
       consulate: null
     }
 
