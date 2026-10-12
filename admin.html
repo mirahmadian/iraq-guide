@@ -525,6 +525,22 @@
       <button class="add-row-btn" onclick="addContact('kadhimiya-hq')">+ افزودن شماره جدید</button>
     </div>
   </div>
+  <!-- CLINIC -->
+  <div class="sec-card" id="card-kadhimiya-clinic">
+    <div class="sec-card-head" onclick="toggleCard('kadhimiya-clinic')">
+      <div class="sec-head-icon ico-clinic">🏥</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">درمانگاه کاظمین</div>
+        <div class="sec-head-sub">آدرس و لینک نقشه</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="map-urls-kadhimiya-clinic"></div>
+      <div id="contacts-kadhimiya-clinic"></div>
+      <button class="add-row-btn" onclick="addContact('kadhimiya-clinic')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
   <!-- HOTELS -->
   <div class="sec-card" id="card-hotel-kadhimiya">
     <div class="sec-card-head" onclick="toggleCard('hotel-kadhimiya')">
@@ -631,8 +647,8 @@ function renderCalendar() {
 ══════════════════════════════════════════ */
 const state = {};
 const mapState = {};
-const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
-const MAP_SECTIONS = ['najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','najaf-consulate','karbala-consulate'];
+const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','kadhimiya-clinic','najaf-consulate','karbala-consulate'];
+const MAP_SECTIONS = ['najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','kadhimiya-clinic','najaf-consulate','karbala-consulate'];
 
 function getInitialContacts(key) {
   if(key==='insurance') return CARAVAN_DATA.insurance?.contacts||[];
@@ -645,7 +661,7 @@ function getInitialMapUrls(key) {
   const [city,sec]=key.split('-');
   const c=CARAVAN_DATA.cities.find(c=>c.id===city);
   const s=({hq:c?.hq,clinic:c?.clinic,consulate:c?.consulate})[sec];
-  return{neshanUrl:s?.mapNeshanUrl||'',googleUrl:s?.mapGoogleUrl||''};
+  return{neshanUrl:s?.mapNeshanUrl||'',googleUrl:s?.mapGoogleUrl||'',address:s?.address||''};
 }
 
 /* ══════════════════════════════════════════
@@ -655,7 +671,13 @@ function renderMapFields(key) {
   const el=document.getElementById('map-urls-'+key);
   if(!el) return;
   const m=mapState[key];
-  el.innerHTML=`
+  const addrField=key==='kadhimiya-clinic'?`
+    <div class="field">
+      <div class="field-label">📍 آدرس</div>
+      <input type="text" class="input-full" placeholder="آدرس درمانگاه" value="${escH(m.address)}"
+             oninput="mapState['${key}'].address=this.value">
+    </div>`:'';
+  el.innerHTML=addrField+`
     <div class="field">
       <div class="field-label">🗺️ لینک نقشه نشان</div>
       <input type="text" class="input-full" placeholder="https://nshn.ir/..." value="${escH(m.neshanUrl)}"
@@ -946,13 +968,26 @@ const CARAVAN_DATA = {
         mapGoogleUrl: ${qq(mapState['kadhimiya-hq']?.googleUrl)},
         contacts: ${buildContactsJS('kadhimiya-hq','        ')}
       },
-      clinic: null,
+      clinic: ${buildKadhimiyaClinicJS()},
       consulate: null
     }
 
   ]
 };`;
   return output;
+}
+
+function buildKadhimiyaClinicJS(){
+  const m=mapState['kadhimiya-clinic']||{};
+  const has=(m.address||'').trim()||(m.neshanUrl||'').trim()||(m.googleUrl||'').trim()||state['kadhimiya-clinic'].some(c=>c.phone.trim());
+  if(!has) return 'null';
+  return`{
+        title: "درمانگاه کاظمین",
+        address: ${qq((m.address||'').trim())},
+        mapNeshanUrl: ${qq(m.neshanUrl)},
+        mapGoogleUrl: ${qq(m.googleUrl)},
+        contacts: ${buildContactsJS('kadhimiya-clinic','        ')}
+      }`;
 }
 
 function generateOutput(){
