@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>پنل مدیریت | راهنمای کاروان عراق</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --gold:#2E7D5E; --gold-l:#3A9B74; --gold-dim:rgba(46,125,94,.10); --gold-dim2:rgba(46,125,94,.05);
@@ -18,6 +18,7 @@
       --shadow:0 2px 12px rgba(0,0,0,.06);
     }
     *{margin:0;padding:0;box-sizing:border-box}
+    button,input,select,textarea{font-family:var(--font)}
     body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
 
     /* ── TOP BAR ── */
@@ -176,7 +177,7 @@
     textarea{
       width:100%;height:360px;background:#0E2A1C;color:#C8F0DC;
       border:1px solid rgba(46,125,94,.3);border-radius:9px;
-      font-family:monospace;font-size:11.5px;padding:12px;
+      font-family:var(--font);font-size:11.5px;padding:12px;
       resize:vertical;outline:none;direction:ltr;
     }
     .copy-btn{
