@@ -94,7 +94,9 @@ const CARAVAN_DATA = {
         address: "شارع باب المراد – هتل جمیره",
         mapNeshanUrl: "https://nshn.ir/c3_bS-LAYACueZ",
         mapGoogleUrl: "https://maps.app.goo.gl/BMoX9nV6TtcJxikD9",
-        contacts: []
+        contacts: [
+          { role: "نماینده سازمان در کاظمین", phone: "07736395692", name: "آقای صمد عبداللهی", countryCode: "964" }
+        ]
       },
       clinic: null,
       consulate: null
