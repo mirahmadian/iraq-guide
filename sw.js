@@ -1,10 +1,12 @@
-const CACHE = 'caravan-v5';
+const CACHE = 'caravan-v6';
 const STATIC = [
   './',
   'index.html',
   'data.js',
   'manifest.json',
   'app-icon.png',
+  'app-icon-192.png',
+  'apple-touch-icon.png',
   'hajj-logo.png',
   'fonts/fonts.css',
   'fonts/Vazirmatn-arabic.woff2',
