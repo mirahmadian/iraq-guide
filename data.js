@@ -17,6 +17,13 @@ const CARAVAN_DATA = {
   ]
   },
 
+  transport: {
+    title: "ناظر نقل شرکت‌های عراقی",
+    contacts: [
+    { role: "ناظر نقل شرکت‌های عراقی", phone: "07722310002", name: "آقای علی گریطی", countryCode: "964" }
+  ]
+  },
+
   cities: [
 
     {

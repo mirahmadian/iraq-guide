@@ -365,6 +365,22 @@
     </div>
   </div>
 
+  <!-- TRANSPORT -->
+  <div class="sec-card open" id="card-transport">
+    <div class="sec-card-head" onclick="toggleCard('transport')">
+      <div class="sec-head-icon ico-ins">🚌</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">ناظر نقل شرکت‌های عراقی</div>
+        <div class="sec-head-sub">مشترک همه شهرها</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div id="contacts-transport"></div>
+      <button class="add-row-btn" onclick="addContact('transport')">+ افزودن شماره جدید</button>
+    </div>
+  </div>
+
   <!-- OUTPUT -->
   <div class="output-card" id="outputWrap" style="display:none">
     <button class="copy-btn" onclick="copyOutput()">📋 کپی همه</button>
@@ -648,11 +664,12 @@ function renderCalendar() {
 ══════════════════════════════════════════ */
 const state = {};
 const mapState = {};
-const SECTIONS = ['insurance','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','kadhimiya-clinic','najaf-consulate','karbala-consulate'];
+const SECTIONS = ['insurance','transport','najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','kadhimiya-clinic','najaf-consulate','karbala-consulate'];
 const MAP_SECTIONS = ['najaf-hq','karbala-hq','kadhimiya-hq','najaf-clinic','karbala-clinic','kadhimiya-clinic','najaf-consulate','karbala-consulate'];
 
 function getInitialContacts(key) {
   if(key==='insurance') return CARAVAN_DATA.insurance?.contacts||[];
+  if(key==='transport') return CARAVAN_DATA.transport?.contacts||[];
   const [city,sec]=key.split('-');
   const c=CARAVAN_DATA.cities.find(c=>c.id===city);
   if(!c) return [];
@@ -896,6 +913,11 @@ const CARAVAN_DATA = {
     title: "نماینده بیمه معلم – تمام شهرها",
     subtitle: "نجف · کربلا · کاظمین",
     contacts: ${buildContactsJS('insurance','  ')}
+  },
+
+  transport: {
+    title: "ناظر نقل شرکت‌های عراقی",
+    contacts: ${buildContactsJS('transport','  ')}
   },
 
   cities: [

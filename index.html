@@ -892,6 +892,39 @@ function sectionCard(opts) {
   return html;
 }
 
+function globalCardHTML(group, icon) {
+  if (!group || !group.contacts || !group.contacts.length) return '';
+  let rows = '';
+  group.contacts.forEach(c => {
+    const intl = buildPhone(c.phone, c.countryCode);
+    rows += `
+    <div class="gin-row">
+      <div class="gin-avatar" aria-hidden="true">🧑‍💼</div>
+      <div class="gin-info">
+        <div class="gin-role">${c.role}</div>
+        <div class="gin-phone" dir="ltr">${c.phone}</div>
+        ${c.name ? `<div class="gin-name">${c.name}</div>` : ''}
+      </div>
+      <div class="gin-acts">
+        <a href="tel:${intl}" class="act act-call" aria-label="تماس" title="تماس">${PHONE_ICON}</a>
+        <a href="https://wa.me/${intl.replace('+','')}" target="_blank" rel="noopener"
+           class="act act-wa" aria-label="واتساپ" title="واتساپ">${WA_ICON}</a>
+        <button class="act act-cp" onclick="copyNum('${c.phone}',this)"
+                aria-label="کپی شماره" title="کپی">${COPY_ICON}</button>
+      </div>
+    </div>`;
+  });
+  return `
+  <div class="global-ins">
+    <div class="global-ins-head">
+      <div class="global-ins-ico" aria-hidden="true">${icon}</div>
+      <div class="global-ins-title">${group.title}</div>
+      <span class="global-badge">مشترک</span>
+    </div>
+    <div class="global-ins-body">${rows}</div>
+  </div>`;
+}
+
 /* ══════════════════════════════════════════
    RENDER from CARAVAN_DATA
 ══════════════════════════════════════════ */
@@ -899,41 +932,10 @@ function render() {
   // update date
   document.getElementById('updateDate').textContent = CARAVAN_DATA.lastUpdate || '—';
 
-  // insurance
-  const ins = CARAVAN_DATA.insurance;
-  if (ins) {
-    const insEl = document.getElementById('globalInsurance');
-    let rows = '';
-    ins.contacts.forEach(c => {
-      const intl = buildPhone(c.phone, c.countryCode);
-      rows += `
-      <div class="gin-row">
-        <div class="gin-avatar" aria-hidden="true">🧑‍💼</div>
-        <div class="gin-info">
-          <div class="gin-role">${c.role}</div>
-          <div class="gin-phone" dir="ltr">${c.phone}</div>
-          ${c.name ? `<div class="gin-name">${c.name}</div>` : ''}
-        </div>
-        <div class="gin-acts">
-          <a href="tel:${intl}" class="act act-call" aria-label="تماس" title="تماس">${PHONE_ICON}</a>
-          <a href="https://wa.me/${intl.replace('+','')}" target="_blank" rel="noopener"
-             class="act act-wa" aria-label="واتساپ" title="واتساپ">${WA_ICON}</a>
-          <button class="act act-cp" onclick="copyNum('${c.phone}',this)"
-                  aria-label="کپی شماره" title="کپی">${COPY_ICON}</button>
-        </div>
-      </div>`;
-    });
-
-    insEl.innerHTML = `
-    <div class="global-ins">
-      <div class="global-ins-head">
-        <div class="global-ins-ico" aria-hidden="true">📋</div>
-        <div class="global-ins-title">${ins.title}</div>
-        <span class="global-badge">مشترک</span>
-      </div>
-      <div class="global-ins-body">${rows}</div>
-    </div>`;
-  }
+  // global cards (insurance + transport supervisor)
+  document.getElementById('globalInsurance').innerHTML =
+    globalCardHTML(CARAVAN_DATA.insurance, '📋') +
+    globalCardHTML(CARAVAN_DATA.transport, '🚌');
 
   // tabs + city sections
   const tabList = document.getElementById('tabList');
@@ -1117,6 +1119,9 @@ function getAllContacts() {
   });
   (CARAVAN_DATA.insurance?.contacts || []).forEach(c => {
     list.push({ ...c, cityName: 'بیمه مشترک', sectionTitle: CARAVAN_DATA.insurance.title });
+  });
+  (CARAVAN_DATA.transport?.contacts || []).forEach(c => {
+    list.push({ ...c, cityName: 'نقل مشترک', sectionTitle: CARAVAN_DATA.transport.title });
   });
   return list;
 }
