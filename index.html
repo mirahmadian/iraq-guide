@@ -364,6 +364,9 @@
     .hotel-drop-item:hover,.hotel-drop-item:active{background:var(--card2)}
     .hotel-drop-name{font-size:calc(13px * var(--fs,1));font-weight:600;color:var(--text)}
     .hotel-drop-sub{font-size:calc(10.5px * var(--fs,1));color:var(--dim);margin-top:2px}
+    .hotel-list-cap{padding:8px 15px 4px;font-size:calc(10.5px * var(--fs,1));color:var(--dim);font-weight:700}
+    .hotel-more{padding:12px 15px;text-align:center;font-size:calc(12.5px * var(--fs,1));font-weight:800;color:var(--c-hotel);cursor:pointer;border-top:1px solid var(--border)}
+    .hotel-more small{font-weight:400;color:var(--dim);font-size:calc(10.5px * var(--fs,1))}
     .hotel-empty{padding:14px;text-align:center;font-size:calc(12px * var(--fs,1));color:var(--dim);font-style:italic}
 
     /* ── HOTEL DETAIL (expanded) ── */
@@ -840,6 +843,34 @@ function hotelSearchSection(cityId, hotels) {
 /* داده هتل‌ها را به ازای هر شهر نگه می‌داریم */
 const _hotelData = {};
 
+const HOTEL_PREVIEW = 5;
+
+function hotelItemsHTML(cityId, list) {
+  return list.map(h => `
+      <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id.replace(/'/g,"\\'")}')">
+        <span style="font-size:20px">🏨</span>
+        <div>
+          <div class="hotel-drop-name">${h.name}</div>
+          ${h.nameEn ? `<div class="hotel-drop-sub">${h.nameEn}</div>` : ''}
+        </div>
+      </div>`).join('');
+}
+
+/* وقتی کادر جستجو خالی است: چند هتل اول را نشان بده */
+function showDefaultHotels(cityId, all) {
+  const drop = document.getElementById('hotel-drop-' + cityId);
+  const hotels = _hotelData[cityId] || [];
+  if (!drop || !hotels.length) return;
+  const list = all ? hotels : hotels.slice(0, HOTEL_PREVIEW);
+  let html = `<div class="hotel-list-cap">${all ? 'همه هتل‌ها' : 'هتل‌ها'}</div>` + hotelItemsHTML(cityId, list);
+  if (!all && hotels.length > HOTEL_PREVIEW) {
+    html += `<div class="hotel-more" onclick="showDefaultHotels('${cityId}', true)">
+      نمایش همه هتل‌ها (${(hotels.length).toLocaleString('fa')}) ▾<br><small>یا نام هتل را در کادر بالا جستجو کنید</small></div>`;
+  }
+  drop.innerHTML = html;
+  drop.classList.add('show');
+}
+
 function hotelSearch(input, cityId) {
   const q = input.value.trim();
   const clearBtn = input.parentElement.querySelector('.hotel-search-clear');
@@ -850,24 +881,17 @@ function hotelSearch(input, cityId) {
   detail.classList.remove('show');
   detail.innerHTML = '';
 
-  if (!q) { drop.classList.remove('show'); drop.innerHTML = ''; return; }
+  if (!q) { showDefaultHotels(cityId); return; }
 
   const hotels = _hotelData[cityId] || [];
   const results = hotels.filter(h =>
-    h.name.includes(q) || h.nameEn.toLowerCase().includes(q.toLowerCase())
+    h.name.includes(q) || (h.nameEn || '').toLowerCase().includes(q.toLowerCase())
   );
 
   if (!results.length) {
     drop.innerHTML = `<div class="hotel-empty">هتلی با این نام پیدا نشد</div>`;
   } else {
-    drop.innerHTML = results.map(h => `
-      <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id}')">
-        <span style="font-size:20px">🏨</span>
-        <div>
-          <div class="hotel-drop-name">${h.name}</div>
-          <div class="hotel-drop-sub">${h.nameEn}</div>
-        </div>
-      </div>`).join('');
+    drop.innerHTML = hotelItemsHTML(cityId, results);
   }
   drop.classList.add('show');
 }
@@ -931,8 +955,8 @@ function hotelClear(cityId) {
   const detail = document.getElementById('hotel-detail-' + cityId);
   if (input) input.value = '';
   if (clearBtn) clearBtn.classList.remove('show');
-  drop.classList.remove('show'); drop.innerHTML = '';
   detail.classList.remove('show'); detail.innerHTML = '';
+  showDefaultHotels(cityId);
 }
 
 function hotelImages(h) {
@@ -1074,6 +1098,7 @@ function render() {
   let tabsHTML = '';
   let sectionsHTML = '';
 
+  const hotelCities = [];
   CARAVAN_DATA.cities.forEach((city, idx) => {
     const isFirst = idx === 0;
     tabsHTML += `
@@ -1140,6 +1165,7 @@ function render() {
     if (city.hotels && city.hotels.length > 0) {
       _hotelData[city.id] = city.hotels;
       cityHTML += hotelSearchSection(city.id, city.hotels);
+      hotelCities.push(city.id);
     }
 
     // Consulate
@@ -1159,6 +1185,7 @@ function render() {
 
   tabList.innerHTML = tabsHTML;
   mainContent.innerHTML = sectionsHTML + footerHTML();
+  hotelCities.forEach(id => showDefaultHotels(id));
 
   // برگرداندن شهر انتخاب‌شده قبلی (مثلاً بعد از بروزرسانی خودکار صفحه)
   try {
