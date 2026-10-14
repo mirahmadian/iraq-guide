@@ -402,6 +402,19 @@
     .photo-cap{margin-top:14px;color:#fff;font-size:calc(15px * var(--fs,1));font-weight:700}
     @keyframes zoomIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
 
+    /* ── HOTEL GALLERY ── */
+    .card-img-wrap{position:relative}
+    .gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;width:100%;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .gal::-webkit-scrollbar{display:none}
+    .gal img{flex:0 0 100%;width:100%;max-height:68vh;object-fit:contain;scroll-snap-align:center;border-radius:0;background:#111}
+    .gal-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:none;
+      background:rgba(0,0,0,.5);color:#fff;font-size:26px;line-height:1;cursor:pointer;font-family:var(--font)}
+    .gal-prev{right:8px}.gal-next{left:8px}
+    .gal-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;pointer-events:none}
+    .gal-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45)}
+    .gal-dots span.on{background:#fff;transform:scale(1.25)}
+    .gal-count{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:100px}
+
     /* ── BUSINESS CARD MODAL ── */
     .card-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.88);
@@ -888,17 +901,16 @@ function hotelSelect(cityId, hotelId) {
     </div>`;
   }
 
-  const safeId = hotel.id.replace(/'/g,"\\'");
-  const safeName = hotel.name.replace(/'/g,"\\'");
-  const safeImg = (hotel.cardImage||'').replace(/'/g,"\\'");
-
-  html += `
-    <button class="hotel-card-img-btn" onclick="openCardModal('${safeId}','${safeName}','${safeImg}')"
-            aria-label="مشاهده کارت ویزیت">
-      <span aria-hidden="true">🪪</span>
-      <span>مشاهده کارت ویزیت</span>
+  const imgs = hotelImages(hotel);
+  if (imgs.length) {
+    html += `
+    <button class="hotel-card-img-btn" onclick="openGallery('${cityId}','${hotel.id.replace(/'/g,"\\'")}')"
+            aria-label="مشاهده تصاویر هتل">
+      <span aria-hidden="true">🖼️</span>
+      <span>مشاهده تصاویر هتل${imgs.length > 1 ? ' (' + imgs.length.toLocaleString('fa') + ' تصویر)' : ''}</span>
       <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
     </button>`;
+  }
 
   html += mapRowHTML(hotel.mapNeshanUrl, hotel.mapGoogleUrl);
 
@@ -923,12 +935,43 @@ function hotelClear(cityId) {
   detail.classList.remove('show'); detail.innerHTML = '';
 }
 
-function openCardModal(hotelId, hotelName, imagePath) {
-  document.getElementById('cardModalTitle').textContent = hotelName;
-  const wrap = document.getElementById('cardImgWrap');
-  wrap.innerHTML = `<img src="${imagePath}" alt="کارت ویزیت ${hotelName}"
-    onerror="this.parentElement.innerHTML='<div class=\\'card-img-placeholder\\'>📷<br>تصویر کارت ویزیت<br>هنوز بارگذاری نشده است</div>'">`;
+function hotelImages(h) {
+  return (h.images && h.images.length) ? h.images : (h.cardImage ? [h.cardImage] : []);
+}
+
+let galIdx = 0, galCount = 0;
+function openGallery(cityId, hotelId) {
+  const hotel = (_hotelData[cityId] || []).find(h => h.id === hotelId);
+  if (!hotel) return;
+  const imgs = hotelImages(hotel);
+  if (!imgs.length) return;
+  galIdx = 0; galCount = imgs.length;
+  document.getElementById('cardModalTitle').textContent = hotel.name;
+  document.getElementById('cardImgWrap').innerHTML = `
+    <div class="gal" id="gal" onscroll="galScroll()">
+      ${imgs.map((src, i) => `<img src="${src}" alt="تصویر ${i + 1} از ${hotel.name}" loading="${i ? 'lazy' : 'eager'}" onerror="this.style.opacity=.25">`).join('')}
+    </div>
+    ${imgs.length > 1 ? `
+    <button class="gal-nav gal-prev" onclick="galGo(-1)" aria-label="قبلی">›</button>
+    <button class="gal-nav gal-next" onclick="galGo(1)" aria-label="بعدی">‹</button>
+    <div class="gal-dots" id="galDots">${imgs.map((_, i) => `<span class="${i ? '' : 'on'}"></span>`).join('')}</div>
+    <div class="gal-count" id="galCount">${(1).toLocaleString('fa')} / ${imgs.length.toLocaleString('fa')}</div>` : ''}`;
   document.getElementById('cardOverlay').classList.add('open');
+}
+function galScroll() {
+  const g = document.getElementById('gal');
+  if (!g || !g.clientWidth) return;
+  const i = Math.min(galCount - 1, Math.round(Math.abs(g.scrollLeft) / g.clientWidth));
+  if (i === galIdx) return;
+  galIdx = i;
+  document.querySelectorAll('#galDots span').forEach((d, k) => d.classList.toggle('on', k === i));
+  const c = document.getElementById('galCount');
+  if (c) c.textContent = (i + 1).toLocaleString('fa') + ' / ' + galCount.toLocaleString('fa');
+}
+function galGo(d) {
+  const g = document.getElementById('gal');
+  const i = Math.max(0, Math.min(galCount - 1, galIdx + d));
+  if (g && g.children[i]) g.children[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
 function closeCardModal() {
