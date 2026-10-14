@@ -34,7 +34,7 @@ const CARAVAN_DATA = {
     ]
   },
   "insurance": {
-    "title": "نماینده بیمه معلم در عراق",
+    "title": "نماینده بیمه معلم – تمام شهرها",
     "contacts": [
       {
         "role": "نماینده بیمه معلم",
@@ -49,11 +49,11 @@ const CARAVAN_DATA = {
     "title": "ناظر نقل شرکت‌های عراقی",
     "contacts": [
       {
-        "role": "مسئول نقل دفتر نمایندگی سازمان حج و زیارت",
+        "role": "ناظر نقل شرکت‌های عراقی",
         "phone": "07722310002",
         "name": "آقای علی گریطی",
         "countryCode": "964",
-        "photo": "people/p-1792007282732-53hxg.jpg"
+        "photo": "people/p-1792007308924-kqnoa.jpg"
       }
     ]
   },
