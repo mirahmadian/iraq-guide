@@ -251,6 +251,12 @@
     .view-btn{padding:9px 14px;border:1px solid var(--border-s);border-radius:9px;background:var(--card);color:var(--gold);
       font-family:var(--font);font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap}
 
+    /* ── HOTEL CARD PICK ── */
+    .card-pick{display:flex;gap:8px;align-items:center}
+    .card-pick-btn{flex:1;min-height:56px;border:1.5px dashed var(--border-s);border-radius:10px;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:12.5px;color:var(--gold);font-weight:600}
+    .card-pick-btn img{max-width:100%;max-height:150px;display:block;object-fit:contain}
+
     /* ── PHOTO PICK ── */
     .photo-cell{position:relative;flex-shrink:0}
     .photo-btn{width:42px;height:42px;border-radius:10px;border:1.5px dashed var(--border-s);background:var(--bg);
@@ -783,13 +789,55 @@ function clearPhoto(ref){
   delete c.photoData; c.photo='';
   rerenderRef(ref);
 }
+function resizeMax(file,maxW=1200){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const k=Math.min(1,maxW/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*k);cv.height=Math.round(img.height*k);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=()=>reject(new Error('تصویر خوانده نشد'));
+    img.src=url;
+  });
+}
+async function pickHotelCard(cityId,idx,input){
+  const f=input.files&&input.files[0];
+  if(!f) return;
+  try{
+    hotelState[cityId][idx].cardImageData=await resizeMax(f);
+    renderHotels(cityId);
+    showToast('تصویر انتخاب شد — برای ثبت، «انتشار» را بزنید');
+  }catch(e){showToast('❌ '+e.message);}
+}
+function clearHotelCard(cityId,idx){
+  const h=hotelState[cityId][idx];
+  delete h.cardImageData; h.cardImage='';
+  renderHotels(cityId);
+}
 function allContactObjects(){
   const list=[];
   Object.keys(state).forEach(k=>state[k].forEach(c=>list.push(c)));
   Object.keys(hotelState).forEach(id=>hotelState[id].forEach(h=>h.contacts.forEach(c=>list.push(c))));
   return list;
 }
+async function uploadPendingHotelCards(token){
+  for(const id of Object.keys(hotelState)){
+    for(const h of hotelState[id]){
+      if(!h.cardImageData) continue;
+      const path='hotels/h-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
+      await putFile(path,'','Add hotel card',token,h.cardImageData.split(',')[1]);
+      h.cardImage=path; delete h.cardImageData;
+    }
+    renderHotels(id);
+  }
+}
 async function uploadPendingPhotos(token){
+  await uploadPendingHotelCards(token);
   const pending=allContactObjects().filter(c=>c.photoData);
   for(const c of pending){
     const path='people/p-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
@@ -947,9 +995,14 @@ function renderHotels(cityId){
                  oninput="updateHotel('${cityId}',${i},'address',this.value)">
         </div>
         <div>
-          <div class="field-label">🪪 مسیر تصویر کارت ویزیت</div>
-          <input type="text" class="input-full" placeholder="hotels/name.jpg" value="${escH(h.cardImage)}"
-                 oninput="updateHotel('${cityId}',${i},'cardImage',this.value)" dir="ltr">
+          <div class="field-label">🪪 تصویر کارت ویزیت هتل</div>
+          <div class="card-pick">
+            <label class="card-pick-btn">
+              ${(h.cardImageData||h.cardImage)?`<img src="${escH(h.cardImageData||h.cardImage)}" alt="">`:'<span>📷 انتخاب تصویر کارت</span>'}
+              <input type="file" accept="image/*" hidden onchange="pickHotelCard('${cityId}',${i},this)">
+            </label>
+            ${(h.cardImageData||h.cardImage)?`<button class="del-btn" title="حذف تصویر" onclick="clearHotelCard('${cityId}',${i})">🗑</button>`:''}
+          </div>
         </div>
         <div>
           <div class="field-label">🗺️ لینک نشان</div>
