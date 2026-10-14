@@ -13,7 +13,7 @@ const CARAVAN_DATA = {
     title: "نماینده بیمه معلم – تمام شهرها",
     subtitle: "نجف · کربلا · کاظمین",
     contacts: [
-    { role: "نماینده بیمه معلم", phone: "07755488001", name: "آقای مجتبی ناصری", countryCode: "964" }
+    { role: "نماینده بیمه معلم", phone: "07755488001", name: "آقای مجتبی ناصری", countryCode: "964", photo: "people/p-1792004328489-dyhmd.jpg" }
   ]
   },
 
