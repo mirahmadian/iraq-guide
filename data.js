@@ -63,10 +63,10 @@ const CARAVAN_DATA = {
       "name": "نجف اشرف",
       "arabic": "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
       "icon": "🕌",
-      "heroImage": "cities/najaf-1792014332006.jpg",
+      "heroImage": "cities/najaf-1792014425895.jpg",
       "heroFocus": {
         "x": 64,
-        "y": 40
+        "y": 32
       },
       "hotels": [],
       "hq": {
