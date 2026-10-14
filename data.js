@@ -52,7 +52,8 @@ const CARAVAN_DATA = {
         "role": "مسئول نقل دفتر نمایندگی سازمان حج و زیارت",
         "phone": "07722310002",
         "name": "آقای علی گریطی",
-        "countryCode": "964"
+        "countryCode": "964",
+        "photo": "people/p-1792007282732-53hxg.jpg"
       }
     ]
   },
