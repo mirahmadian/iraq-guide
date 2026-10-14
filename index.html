@@ -573,12 +573,13 @@
       background:var(--card);border:1px solid var(--border);
       border-radius:var(--r);padding:18px 16px;text-align:center;
     }
-    .footer-bismillah{font-size:calc(15px * var(--fs,1));color:var(--gold);font-weight:700;margin-bottom:10px;letter-spacing:.5px}
-    .footer-salawat{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:2;margin-bottom:12px}
-    .footer-salawat strong{color:var(--gold-l);display:block;font-size:calc(13px * var(--fs,1));margin-bottom:4px}
+    .footer-bismillah{font-size:calc(15px * var(--fs,1));color:var(--gold);font-weight:700;margin-bottom:10px;letter-spacing:.5px;line-height:1.8}
+    .footer-text{font-size:calc(12.5px * var(--fs,1));color:var(--muted);line-height:2;margin-bottom:6px}
+    .footer-text strong{color:var(--gold);font-weight:700}
+    .footer-bold{font-size:calc(13px * var(--fs,1));color:var(--gold);font-weight:700;line-height:2;margin-bottom:6px}
+    .footer-admin{display:inline-block;margin-top:14px;padding:8px 14px;font-size:calc(11px * var(--fs,1));color:var(--dim);text-decoration:none;
+      border:1px dashed var(--border-s);border-radius:100px}
     .footer-divider{height:1px;background:var(--border);margin:12px 0}
-    .footer-dev{font-size:calc(11px * var(--fs,1));color:var(--dim);line-height:1.9}
-    .footer-dev strong{color:var(--gold);font-weight:700}
 
     ::-webkit-scrollbar{width:3px}
     ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:3px}
@@ -595,8 +596,8 @@
                                                 🕌
       </div>
         <div class="brand-text">
-          <h1>راهنمای کاروان عراق</h1>
-          <p>ستادها، درمانگاه‌ها و شماره‌های تماس</p>
+          <h1 id="appTitle">راهنمای کاروان عراق</h1>
+          <p id="appSub">ستادها، درمانگاه‌ها و شماره‌های تماس</p>
         </div>
       </div>
       <div class="header-actions">
@@ -1010,6 +1011,12 @@ function globalCardHTML(group, icon, kind) {
    RENDER from CARAVAN_DATA
 ══════════════════════════════════════════ */
 function render() {
+  const site = CARAVAN_DATA.site || {};
+  if (site.appTitle) {
+    document.getElementById('appTitle').textContent = site.appTitle;
+    document.title = site.appTitle;
+  }
+  if (site.appSubtitle !== undefined) document.getElementById('appSub').textContent = site.appSubtitle;
   // update date
   document.getElementById('updateDate').textContent = CARAVAN_DATA.lastUpdate || '—';
 
@@ -1117,20 +1124,34 @@ function render() {
   } catch(e) {}
 }
 
+const DEFAULT_FOOTER = [
+  { type: 'heading', text: '✦ بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيم ✦' },
+  { type: 'bold',    text: 'هزینه استفاده از این برنامه' },
+  { type: 'text',    text: 'صلواتی نثار روح پاک شهدا و درگذشتگان 🌹' },
+  { type: 'divider', text: '' },
+  { type: 'text',    text: 'طراحی و برنامه‌نویسی: **محمد میراحمدیان**\nاگر این برنامه برایتان مفید بود،' },
+  { type: 'bold',    text: 'پدرم را هم در دعایتان یاد کنید 🤲' }
+];
+
+function escHtml(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+/* **متن** → پررنگ ، خط جدید → br */
+function richText(t) {
+  return escHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+
 function footerHTML() {
+  const blocks = (CARAVAN_DATA.site && CARAVAN_DATA.site.footer) || DEFAULT_FOOTER;
+  const body = blocks.map(b => {
+    if (b.type === 'divider') return '<div class="footer-divider"></div>';
+    const cls = { heading: 'footer-bismillah', bold: 'footer-bold', text: 'footer-text' }[b.type] || 'footer-text';
+    return `<div class="${cls}">${richText(b.text || '')}</div>`;
+  }).join('');
   return `
   <footer class="footer" role="contentinfo">
-    <div class="footer-bismillah">✦ بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيم ✦</div>
-    <div class="footer-salawat">
-      <strong>هزینه استفاده از این برنامه</strong>
-      صلواتی نثار روح پاک شهدا و درگذشتگان 🌹<br> 
-    </div>
-    <div class="footer-divider"></div>
-    <div class="footer-dev">
-      طراحی و برنامه‌نویسی: <strong>محمد میراحمدیان</strong><br>
-      اگر این برنامه برایتان مفید بود،<br>
-      <strong>پدرم را هم در دعایتان یاد کنید 🤲</strong>
-    </div>
+    ${body}
+    <a class="footer-admin" href="admin.html">⚙️ ورود مدیر</a>
   </footer>`;
 }
 
