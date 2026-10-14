@@ -155,7 +155,22 @@ const CARAVAN_DATA = {
       "name": "کاظمین",
       "arabic": "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       "icon": "🕌",
-      "hotels": [],
+      "hotels": [
+        {
+          "id": "hotel-kadhimiya-1792009081227",
+          "name": "ضیوف قصرالکاظمیه",
+          "nameEn": "",
+          "address": "",
+          "cardImage": "hotels/h-1792009129579-x6q90.jpg",
+          "images": [
+            "hotels/h-1792009129579-x6q90.jpg",
+            "hotels/h-1792009131876-2chfa.jpg"
+          ],
+          "mapNeshanUrl": "",
+          "mapGoogleUrl": "",
+          "contacts": []
+        }
+      ],
       "hq": {
         "title": "ستاد کاظمین",
         "address": "شارع باب المراد – هتل جمیره",
