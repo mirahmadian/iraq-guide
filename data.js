@@ -160,20 +160,105 @@ const CARAVAN_DATA = {
       "name": "کاظمین",
       "arabic": "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       "icon": "🕌",
+      "heroImage": "cities/kadhimiya-1792046851650.jpg",
+      "heroFocus": {
+        "x": 50,
+        "y": 40
+      },
       "hotels": [
         {
-          "id": "hotel-kadhimiya-1792009081227",
-          "name": "ضیوف قصرالکاظمیه",
-          "nameEn": "",
-          "address": "",
-          "cardImage": "hotels/h-1792009129579-x6q90.jpg",
+          "id": "hotel-kadhimiya-1792045499598",
+          "name": "هتل قرطاج ( جنه الباقر)",
+          "nameEn": "GARTHAGE",
+          "address": "باب المراد، خیابان تربیه 🛣️، بعد از هتل خفاجی ",
+          "cardImage": "hotels/h-1792046854715-p8j2u.jpg",
           "images": [
-            "hotels/h-1792009129579-x6q90.jpg",
-            "hotels/h-1792009131876-2chfa.jpg"
+            "hotels/h-1792046854715-p8j2u.jpg",
+            "hotels/h-1792046857872-dmr8j.jpg",
+            "hotels/h-1792046860219-kjnuc.jpg",
+            "hotels/h-1792046862468-70roy.jpg",
+            "hotels/h-1792046864732-s6tlo.jpg"
           ],
-          "mapNeshanUrl": "",
-          "mapGoogleUrl": "",
-          "contacts": []
+          "mapNeshanUrl": "https://nshn.ir/rbS-3KpACO0c",
+          "mapGoogleUrl": "https://maps.app.goo.gl/dfartnpr3BC6F2Yi6",
+          "contacts": [
+            {
+              "role": "",
+              "phone": "07843260008",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07755517449",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792046283430",
+          "name": "هتل کمیل",
+          "nameEn": "KUMAIL",
+          "address": "کاظمین باب دروازه ساحه قریش خلف الاطفا پشت مول کاظمیه",
+          "cardImage": "hotels/h-1792046867183-7wvn2.jpg",
+          "images": [
+            "hotels/h-1792046867183-7wvn2.jpg",
+            "hotels/h-1792046870059-tbyvk.jpg",
+            "hotels/h-1792046872493-u2yfu.jpg",
+            "hotels/h-1792046874668-u5oti.jpg",
+            "hotels/h-1792047801527-omsqk.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/efrbSVyBYACVV2",
+          "mapGoogleUrl": "https://maps.app.goo.gl/As5pkRXWqkFa96as5",
+          "contacts": [
+            {
+              "role": "",
+              "phone": "07808899082",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07711119632",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07901335660",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792046871490",
+          "name": "هتل برج الضامن",
+          "nameEn": "BURJ ALDAAMIN",
+          "address": "ساحه الزهرا نهایه شارع القبله مجاور النرکز الصحی الاسنان",
+          "cardImage": "hotels/h-1792047803962-ks5yt.jpg",
+          "images": [
+            "hotels/h-1792047803962-ks5yt.jpg",
+            "hotels/h-1792047806459-eu930.jpg",
+            "hotels/h-1792047808704-wtsew.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/rbSVMKIAC56X",
+          "mapGoogleUrl": "https://maps.app.goo.gl/bN5d4Pak2KzpSJo3A",
+          "contacts": [
+            {
+              "role": "",
+              "phone": "07735300615",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07709649098",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         }
       ],
       "hq": {
