@@ -267,6 +267,31 @@ const CARAVAN_DATA = {
               "countryCode": "964"
             }
           ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792079952746",
+          "name": "هتل میقات",
+          "nameEn": "AL-MIGGAT",
+          "address": "آخر شارع تربیه داخل کوچه روبروی هتل جنه الجواد",
+          "cardImage": "hotels/h-1792080477403-19oei.jpg",
+          "images": [
+            "hotels/h-1792080477403-19oei.jpg",
+            "hotels/h-1792080484635-qw730.jpg",
+            "hotels/h-1792080495686-g2i90.jpg",
+            "hotels/h-1792080521295-o2oaz.jpg",
+            "hotels/h-1792080538686-9z6ft.jpg",
+            "hotels/h-1792080552517-f9ryg.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/sbS-zqQACAU9",
+          "mapGoogleUrl": "https://maps.app.goo.gl/jPnXbbhkDr4jXZMi9",
+          "contacts": [
+            {
+              "role": "",
+              "phone": "07866595599",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         }
       ],
       "hq": {
