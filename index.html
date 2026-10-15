@@ -404,7 +404,10 @@
       transition:background .15s;text-align:right;
     }
     .hotel-card-img-btn:hover,.hotel-card-img-btn:active{background:var(--card2);color:var(--gold)}
-    .hotel-card-img-btn span{flex:1}
+    .hotel-card-img-btn span{flex:0 0 auto}
+    .hotel-card-img-btn .hc-txt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hotel-thumb{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);background:var(--card2)}
+    .hotel-thumb.lg{width:52px;height:52px;border-radius:12px;cursor:zoom-in}
 
     /* ── PHOTO LIGHTBOX ── */
     .photo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:260;display:none;
@@ -604,6 +607,8 @@
     .footer-text{font-size:calc(12.5px * var(--fs,1));color:var(--muted);line-height:2;margin-bottom:6px}
     .footer-text strong{color:var(--gold);font-weight:700}
     .footer-bold{font-size:calc(13px * var(--fs,1));color:var(--gold);font-weight:700;line-height:2;margin-bottom:6px}
+    .footer-update{margin-top:12px;font-size:calc(11px * var(--fs,1));color:var(--dim)}
+    .footer-update strong{color:var(--gold);font-weight:700}
     .footer-admin{display:inline-block;margin-top:14px;padding:8px 14px;font-size:calc(11px * var(--fs,1));color:var(--dim);text-decoration:none;
       border:1px dashed var(--border-s);border-radius:100px}
     .footer-divider{height:1px;background:var(--border);margin:12px 0}
@@ -661,13 +666,6 @@
   
   <!-- GLOBAL INSURANCE (rendered by JS) -->
   <div id="globalInsurance"></div>
-
-  <!-- LAST UPDATE -->
-  <div class="update-badge" id="updateBadge" aria-label="تاریخ آخرین بروزرسانی">
-    <span aria-hidden="true">🕐</span>
-    <span>آخرین بروزرسانی:</span>
-    <strong id="updateDate">—</strong>
-  </div>
 
   <!-- TABS -->
   <nav class="tabs-wrap" aria-label="انتخاب شهر">
@@ -856,10 +854,17 @@ const _hotelData = {};
 
 const HOTEL_PREVIEW = 5;
 
+function hotelThumb(h, cls = '', attrs = '') {
+  const first = hotelImages(h)[0];
+  return first
+    ? `<img class="hotel-thumb ${cls}" src="${first}" alt="" loading="lazy" ${attrs} onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🏨',style:'font-size:22px'}))">`
+    : `<span style="font-size:22px" aria-hidden="true">🏨</span>`;
+}
+
 function hotelItemsHTML(cityId, list) {
   return list.map(h => `
       <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id.replace(/'/g,"\\'")}')">
-        <span style="font-size:20px">🏨</span>
+        ${hotelThumb(h)}
         <div>
           <div class="hotel-drop-name">${h.name}</div>
           ${h.nameEn ? `<div class="hotel-drop-sub">${h.nameEn}</div>` : ''}
@@ -921,6 +926,7 @@ function hotelSelect(cityId, hotelId) {
   let html = `
     <div class="hotel-detail-head">
       <button class="hotel-detail-back" onclick="hotelClear('${cityId}')" aria-label="بازگشت">‹</button>
+      ${hotelThumb(hotel, 'lg', `onclick="openGallery('${cityId}','${hotel.id.replace(/'/g,"\\'")}')"`)}
       <div class="hotel-detail-name">${hotel.name}</div>
       <span class="badge badge-hotel">هتل</span>
     </div>`;
@@ -942,7 +948,7 @@ function hotelSelect(cityId, hotelId) {
     <button class="hotel-card-img-btn" onclick="openGallery('${cityId}','${hotel.id.replace(/'/g,"\\'")}')"
             aria-label="مشاهده تصاویر هتل">
       <span aria-hidden="true">🖼️</span>
-      <span>مشاهده تصاویر هتل${imgs.length > 1 ? ' (' + imgs.length.toLocaleString('fa') + ' تصویر)' : ''}</span>
+      <span class="hc-txt">مشاهده تصاویر هتل${imgs.length > 1 ? ' (' + imgs.length.toLocaleString('fa') + ' تصویر)' : ''}</span>
       <span aria-hidden="true" style="font-size:11px;opacity:.6">›</span>
     </button>`;
   }
@@ -1096,7 +1102,6 @@ function render() {
   }
   if (site.appSubtitle !== undefined) document.getElementById('appSub').textContent = site.appSubtitle;
   // update date
-  document.getElementById('updateDate').textContent = CARAVAN_DATA.lastUpdate || '—';
 
   // global cards (insurance + transport supervisor)
   const globals = globalCardHTML(CARAVAN_DATA.insurance, '📋', 'ins') +
@@ -1232,6 +1237,7 @@ function footerHTML() {
   return `
   <footer class="footer" role="contentinfo">
     ${body}
+    <div class="footer-update"><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></div>
     <a class="footer-admin" href="admin.html">⚙️ ورود مدیر</a>
   </footer>`;
 }

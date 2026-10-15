@@ -149,6 +149,22 @@
     .del-btn:hover{background:rgba(231,76,60,.18)}
 
     /* ── HOTEL ENTRY ── */
+    .hotel-entry-head{cursor:pointer}
+    .hotel-thumb-a{width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border-s);background:var(--bg);
+      display:flex;align-items:center;justify-content:center;font-size:16px}
+    .hotel-meta{font-size:10.5px;color:var(--dim);font-weight:500;margin-top:2px}
+    .hotel-ctl{display:flex;gap:4px;flex-shrink:0}
+    .hotel-ctl button{width:30px;height:30px;border:1px solid var(--border-s);border-radius:7px;background:var(--card);cursor:pointer;font-size:12px;color:var(--muted)}
+    .hotel-ctl .del-btn{border-color:rgba(231,76,60,.3);color:var(--red);background:var(--red-bg)}
+    .hotel-chev{font-size:11px;color:var(--dim);transition:transform .2s;flex-shrink:0}
+    .hotel-entry.open .hotel-chev{transform:rotate(180deg)}
+    .hotel-entry.open{outline:2px solid var(--gold-dim);background:var(--card)}
+    .hotel-body{display:none}
+    .hotel-entry.open .hotel-body{display:block}
+    .hotel-entry.hide{display:none}
+    .hotel-tools{display:flex;gap:8px;padding:10px 16px 0}
+    .hotel-tools input{flex:1;min-width:0}
+    .hotel-tools .add-row-btn{margin:0;width:auto;white-space:nowrap}
     .hotel-entry{
       border-bottom:1px solid var(--border);background:rgba(180,140,60,.02);
     }
@@ -534,7 +550,6 @@
     </div>
     <div class="sec-body">
       <div id="hotels-najaf"></div>
-      <button class="add-row-btn" onclick="addHotel('najaf')">+ افزودن هتل جدید</button>
     </div>
   </div>
 </div><!-- /tab-najaf -->
@@ -602,7 +617,6 @@
     </div>
     <div class="sec-body">
       <div id="hotels-karbala"></div>
-      <button class="add-row-btn" onclick="addHotel('karbala')">+ افزودن هتل جدید</button>
     </div>
   </div>
 </div><!-- /tab-karbala -->
@@ -670,7 +684,6 @@
     </div>
     <div class="sec-body">
       <div id="hotels-kadhimiya"></div>
-      <button class="add-row-btn" onclick="addHotel('kadhimiya')">+ افزودن هتل جدید</button>
     </div>
   </div>
 </div><!-- /tab-kadhimiya -->
@@ -982,6 +995,7 @@ function deleteContact(key,idx){
    HOTELS
 ══════════════════════════════════════════ */
 const hotelState={najaf:[],karbala:[],kadhimiya:[]};
+const hotelOpen={najaf:-1,karbala:-1,kadhimiya:-1};
 
 function getInitialHotels(cityId){
   const city=CARAVAN_DATA.cities.find(c=>c.id===cityId);
@@ -1011,14 +1025,29 @@ function renderHotels(cityId){
   if(!el) return;
   const hotels=hotelState[cityId];
   updateHotelCount(cityId);
-  if(!hotels.length){el.innerHTML=`<div class="empty-msg">هتلی ثبت نشده</div>`;return;}
-  el.innerHTML=hotels.map((h,i)=>`
-    <div class="hotel-entry">
-      <div class="hotel-entry-head">
+  const open=hotelOpen[cityId];
+  const tools=`<div class="hotel-tools">
+      ${hotels.length>4?`<input type="text" placeholder="🔍 جستجوی هتل..." oninput="filterHotels('${cityId}',this.value)">`:''}
+      <button class="add-row-btn" onclick="addHotel('${cityId}')">+ هتل جدید</button>
+    </div>`;
+  if(!hotels.length){el.innerHTML=tools+`<div class="empty-msg">هتلی ثبت نشده</div>`;return;}
+  el.innerHTML=tools+hotels.map((h,i)=>`
+    <div class="hotel-entry ${open===i?'open':''}" id="hotel-entry-${cityId}-${i}" data-name="${escH(h.name)}">
+      <div class="hotel-entry-head" onclick="toggleHotel('${cityId}',${i})">
         <div class="hotel-num">${i+1}</div>
-        <div class="hotel-entry-name">${escH(h.name)||'هتل جدید'}</div>
-        <button class="del-btn" onclick="deleteHotel('${cityId}',${i})">🗑</button>
+        ${(h.imgs[0]&&(h.imgs[0].data||h.imgs[0].path))?`<img class="hotel-thumb-a" src="${escH(h.imgs[0].data||h.imgs[0].path)}" alt="">`:'<div class="hotel-thumb-a">🏨</div>'}
+        <div style="flex:1;min-width:0">
+          <div class="hotel-entry-name" id="hn-${cityId}-${i}">${escH(h.name)||'هتل جدید'}</div>
+          <div class="hotel-meta">${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
+        </div>
+        <div class="hotel-ctl" onclick="event.stopPropagation()">
+          <button title="بالاتر" onclick="moveHotel('${cityId}',${i},-1)">▲</button>
+          <button title="پایین‌تر" onclick="moveHotel('${cityId}',${i},1)">▼</button>
+          <button class="del-btn" title="حذف" onclick="deleteHotel('${cityId}',${i})">🗑</button>
+        </div>
+        <span class="hotel-chev">▼</span>
       </div>
+      <div class="hotel-body">
       <div class="hotel-fields">
         <div>
           <div class="field-label">نام فارسی *</div>
@@ -1069,8 +1098,9 @@ function renderHotels(cityId){
         <div id="hotel-phones-${cityId}-${i}"></div>
         <button class="add-row-btn" style="margin-top:6px" onclick="addHotelPhone('${cityId}',${i})">+ افزودن شماره</button>
       </div>
+      </div>
     </div>`).join('');
-  hotels.forEach((_,i)=>renderHotelPhones(cityId,i));
+  if(open>=0&&hotels[open]) renderHotelPhones(cityId,open);
 }
 
 function renderHotelPhones(cityId,hotelIdx){
@@ -1096,21 +1126,43 @@ function renderHotelPhones(cityId,hotelIdx){
 function updateHotel(cityId,idx,field,val){
   hotelState[cityId][idx][field]=val;
   if(field==='name'){
-    const el=document.querySelector(`#hotels-${cityId} .hotel-entry:nth-child(${idx+1}) .hotel-entry-name`);
+    const el=document.getElementById(`hn-${cityId}-${idx}`);
     if(el) el.textContent=val||'هتل جدید';
+    const row=document.getElementById(`hotel-entry-${cityId}-${idx}`);
+    if(row) row.dataset.name=val;
   }
+}
+function toggleHotel(cityId,i){
+  hotelOpen[cityId]=hotelOpen[cityId]===i?-1:i;
+  renderHotels(cityId);
+  if(hotelOpen[cityId]===i) setTimeout(()=>document.getElementById(`hotel-entry-${cityId}-${i}`)?.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
+}
+function moveHotel(cityId,i,d){
+  const a=hotelState[cityId],j=i+d;
+  if(j<0||j>=a.length) return;
+  [a[i],a[j]]=[a[j],a[i]];
+  if(hotelOpen[cityId]===i) hotelOpen[cityId]=j; else if(hotelOpen[cityId]===j) hotelOpen[cityId]=i;
+  renderHotels(cityId);
+}
+function filterHotels(cityId,q){
+  q=q.trim();
+  document.querySelectorAll(`#hotels-${cityId} .hotel-entry`).forEach(e=>e.classList.toggle('hide',!!q&&!(e.dataset.name||'').includes(q)));
 }
 function addHotel(cityId){
   hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',address:'',imgs:[],mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
+  const idx=hotelState[cityId].length-1;
+  hotelOpen[cityId]=idx;
   renderHotels(cityId);
   setTimeout(()=>{
-    const rows=document.querySelectorAll(`#hotels-${cityId} .hotel-entry`);
-    if(rows.length) rows[rows.length-1].querySelector('input')?.focus();
-  },50);
+    const row=document.getElementById(`hotel-entry-${cityId}-${idx}`);
+    if(row){row.scrollIntoView({behavior:'smooth',block:'start'});row.querySelector('.hotel-fields input')?.focus();}
+  },60);
 }
 function deleteHotel(cityId,idx){
   if(!confirm('این هتل حذف شود؟')) return;
-  hotelState[cityId].splice(idx,1); renderHotels(cityId);
+  hotelState[cityId].splice(idx,1);
+  if(hotelOpen[cityId]===idx) hotelOpen[cityId]=-1; else if(hotelOpen[cityId]>idx) hotelOpen[cityId]--;
+  renderHotels(cityId);
 }
 function addHotelPhone(cityId,hi){hotelState[cityId][hi].contacts.push({role:'',phone:'',countryCode:'964'});renderHotelPhones(cityId,hi);}
 function deleteHotelPhone(cityId,hi,pi){hotelState[cityId][hi].contacts.splice(pi,1);renderHotelPhones(cityId,hi);}
