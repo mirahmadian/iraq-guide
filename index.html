@@ -1000,6 +1000,13 @@ function openGallery(cityId, hotelId) {
     <div class="gal-dots" id="galDots">${imgs.map((_, i) => `<span class="${i ? '' : 'on'}"></span>`).join('')}</div>
     <div class="gal-count" id="galCount" dir="ltr">${(1).toLocaleString('fa')} / ${imgs.length.toLocaleString('fa')}</div>` : ''}`;
   document.getElementById('cardOverlay').classList.add('open');
+  galNav();
+}
+/* فلش قبلی در تصویر اول و فلش بعدی در تصویر آخر پنهان می‌شود */
+function galNav() {
+  const prev = document.querySelector('.gal-prev'), next = document.querySelector('.gal-next');
+  if (prev) prev.style.display = galIdx <= 0 ? 'none' : 'flex';
+  if (next) next.style.display = galIdx >= galCount - 1 ? 'none' : 'flex';
 }
 function galScroll() {
   const g = document.getElementById('gal');
@@ -1007,6 +1014,7 @@ function galScroll() {
   const i = Math.min(galCount - 1, Math.round(Math.abs(g.scrollLeft) / g.clientWidth));
   if (i === galIdx) return;
   galIdx = i;
+  galNav();
   document.querySelectorAll('#galDots span').forEach((d, k) => d.classList.toggle('on', k === i));
   const c = document.getElementById('galCount');
   if (c) c.textContent = (i + 1).toLocaleString('fa') + ' / ' + galCount.toLocaleString('fa');
