@@ -167,8 +167,8 @@ const CARAVAN_DATA = {
       "icon": "🕌",
       "heroImage": "cities/kadhimiya-1792046851650.jpg",
       "heroFocus": {
-        "x": 50,
-        "y": 40
+        "x": 92,
+        "y": 50
       },
       "hotels": [
         {
