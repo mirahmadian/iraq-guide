@@ -114,6 +114,11 @@ const CARAVAN_DATA = {
       "name": "کربلای معلی",
       "arabic": "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
       "icon": "🕌",
+      "heroImage": "cities/karbala-1792066586443.jpg",
+      "heroFocus": {
+        "x": 59,
+        "y": 46
+      },
       "hotels": [],
       "hq": {
         "title": "ستاد کربلا",
