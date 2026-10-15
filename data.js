@@ -71,7 +71,7 @@ const CARAVAN_DATA = {
       "hotels": [],
       "hq": {
         "title": "ستاد نجف اشرف",
-        "address": "شارع امام صادق (ع) – زیرزمین هتل نبع الکوثر",
+        "address": "شارع امام صادق (ع) – طبقه زیر همکف هتل نبع الکوثر",
         "mapNeshanUrl": "https://nshn.ir/33_b_rKR_AAW8r",
         "mapGoogleUrl": "https://www.google.com/maps?q=31.994793829649662, 44.3121325",
         "contacts": [
