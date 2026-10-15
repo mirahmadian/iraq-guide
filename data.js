@@ -292,6 +292,36 @@ const CARAVAN_DATA = {
               "countryCode": "964"
             }
           ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792091645911",
+          "name": "سراج المنیر",
+          "nameEn": "",
+          "address": "باب المراد شارع التربیه روبروی هتل خفاجی داخل کوچه",
+          "cardImage": "hotels/h-1792091968557-nktuc.jpg",
+          "images": [
+            "hotels/h-1792091968557-nktuc.jpg",
+            "hotels/h-1792091971213-mviw1.jpg",
+            "hotels/h-1792091973730-sq3h3.jpg",
+            "hotels/h-1792091976511-qhp4i.jpg",
+            "hotels/h-1792091978778-u5ux4.jpg",
+            "hotels/h-1792091981449-fw47b.jpg",
+            "hotels/h-1792091983920-3l1qg.jpg",
+            "hotels/h-1792091986890-sw7c9.jpg",
+            "hotels/h-1792091989429-hqc8c.jpg",
+            "hotels/h-1792091992092-txeyr.jpg",
+            "hotels/h-1792091994722-8uj89.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/sbS-xVIAC-5G",
+          "mapGoogleUrl": "https://maps.app.goo.gl/PMjEJxWCJe8aJw9w7",
+          "contacts": [
+            {
+              "role": "مدیر داخلی",
+              "phone": "07825405948",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         }
       ],
       "hq": {
