@@ -177,7 +177,8 @@ const CARAVAN_DATA = {
             "hotels/h-1792046857872-dmr8j.jpg",
             "hotels/h-1792046860219-kjnuc.jpg",
             "hotels/h-1792046862468-70roy.jpg",
-            "hotels/h-1792046864732-s6tlo.jpg"
+            "hotels/h-1792046864732-s6tlo.jpg",
+            "hotels/h-1792047942900-uyu2d.jpg"
           ],
           "mapNeshanUrl": "https://nshn.ir/rbS-3KpACO0c",
           "mapGoogleUrl": "https://maps.app.goo.gl/dfartnpr3BC6F2Yi6",
@@ -207,7 +208,8 @@ const CARAVAN_DATA = {
             "hotels/h-1792046870059-tbyvk.jpg",
             "hotels/h-1792046872493-u2yfu.jpg",
             "hotels/h-1792046874668-u5oti.jpg",
-            "hotels/h-1792047801527-omsqk.jpg"
+            "hotels/h-1792047801527-omsqk.jpg",
+            "hotels/h-1792047950461-7umh5.jpg"
           ],
           "mapNeshanUrl": "https://nshn.ir/efrbSVyBYACVV2",
           "mapGoogleUrl": "https://maps.app.goo.gl/As5pkRXWqkFa96as5",
@@ -241,7 +243,8 @@ const CARAVAN_DATA = {
           "images": [
             "hotels/h-1792047803962-ks5yt.jpg",
             "hotels/h-1792047806459-eu930.jpg",
-            "hotels/h-1792047808704-wtsew.jpg"
+            "hotels/h-1792047808704-wtsew.jpg",
+            "hotels/h-1792047953095-fs4ks.jpg"
           ],
           "mapNeshanUrl": "https://nshn.ir/rbSVMKIAC56X",
           "mapGoogleUrl": "https://maps.app.goo.gl/bN5d4Pak2KzpSJo3A",
