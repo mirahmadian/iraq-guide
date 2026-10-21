@@ -1717,6 +1717,12 @@ const CARAVAN_DATA = {
       "name": "نجف اشرف",
       "arabic": "النجف الأشرف · مرقد امیرالمومنین علی بن ابی‌طالب (ع)",
       "icon": "🕌",
+      "map": {
+        "image": "maps/najaf-1792625974629.jpg",
+        "pdf": "maps/najaf-1792625974629.pdf",
+        "w": 3600,
+        "h": 2547
+      },
       "heroImage": "cities/najaf-1792014425895.jpg",
       "heroFocus": {
         "x": 64,
