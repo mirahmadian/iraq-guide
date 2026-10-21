@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v8';
+const CACHE = 'caravan-v9';
 const STATIC = [
   './',
   'index.html',
@@ -73,4 +73,17 @@ self.addEventListener('fetch', e => {
 /* به همه تب‌های باز بگو reload کن وقتی SW عوض شد */
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+  /* برنامه فهرست نقشه‌ها و تصاویر را می‌فرستد تا برای استفاده آفلاین از قبل ذخیره شوند */
+  if (e.data && e.data.type === 'warm') e.waitUntil(warmCache(e.data.urls || []));
 });
+
+async function warmCache(urls) {
+  const c = await caches.open(CACHE);
+  for (const u of urls) {
+    try {
+      if (await c.match(u)) continue;
+      const res = await fetch(u, { cache: 'no-cache' });
+      if (res && res.ok) await c.put(u, res);
+    } catch (_) {}
+  }
+}

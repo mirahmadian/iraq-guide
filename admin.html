@@ -839,7 +839,7 @@ function renderCalendar() {
    PHOTOS
 ══════════════════════════════════════════ */
 function photoCell(ref,c){
-  const src=c.photoData||c.photo||'';
+  const src=c.photoData||c.photoPreview||c.photo||'';
   return`<div class="photo-cell">
     <label class="photo-btn" title="انتخاب تصویر">${src?`<img src="${escH(src)}" alt="">`:'📷'}
       <input type="file" accept="image/*" hidden onchange="pickPhoto('${ref}',this)"></label>
@@ -881,7 +881,7 @@ async function pickPhoto(ref,input){
 }
 function clearPhoto(ref){
   const c=contactByRef(ref);
-  delete c.photoData; c.photo='';
+  delete c.photoData; delete c.photoPreview; c.photo='';
   rerenderRef(ref);
 }
 function resizeMax(file,maxW=1200){
@@ -933,7 +933,7 @@ async function uploadPendingHeroes(token){
     if(!m.heroData) continue;
     const path='cities/'+id+'-'+Date.now()+'.jpg';
     await putFile(path,'','Add city image',token,m.heroData.split(',')[1]);
-    m.heroImage=path; delete m.heroData;
+    m.heroImage=path; m.heroPreview=m.heroData; delete m.heroData;
     renderCityMeta(id);
   }
 }
@@ -947,7 +947,7 @@ async function uploadPendingHotelCards(token){
         if(!im.data) continue;
         const path='hotels/h-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
         await putFile(path,'','Add hotel image',token,im.data.split(',')[1]);
-        im.path=path; delete im.data; any=true;
+        im.path=path; im.preview=im.data; delete im.data; any=true;
       }
     }
     if(any) renderHotels(id);
@@ -959,7 +959,7 @@ async function uploadPendingPhotos(token){
   for(const c of pending){
     const path='people/p-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
     await putFile(path,'','Add photo',token,c.photoData.split(',')[1]);
-    c.photo=path; delete c.photoData;
+    c.photo=path; c.photoPreview=c.photoData; delete c.photoData;
   }
   if(pending.length){
     Object.keys(state).forEach(renderSection);
@@ -1100,7 +1100,7 @@ function renderHotels(cityId){
     <div class="hotel-entry ${open===i?'open':''}" id="hotel-entry-${cityId}-${i}" data-name="${escH(h.name)}">
       <div class="hotel-entry-head" onclick="toggleHotel('${cityId}',${i})">
         <div class="hotel-num">${i+1}</div>
-        ${(h.imgs[0]&&(h.imgs[0].data||h.imgs[0].path))?`<img class="hotel-thumb-a" src="${escH(h.imgs[0].data||h.imgs[0].path)}" alt="">`:'<div class="hotel-thumb-a">🏨</div>'}
+        ${(h.imgs[0]&&(h.imgs[0].data||h.imgs[0].preview||h.imgs[0].path))?`<img class="hotel-thumb-a" src="${escH(h.imgs[0].data||h.imgs[0].preview||h.imgs[0].path)}" alt="">`:'<div class="hotel-thumb-a">🏨</div>'}
         <div style="flex:1;min-width:0">
           <div class="hotel-entry-name" id="hn-${cityId}-${i}">${escH(h.name)||'هتل جدید'}</div>
           <div class="hotel-meta">${h.code?'کد '+escH(h.code)+' · ':''}${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
@@ -1139,7 +1139,7 @@ function renderHotels(cityId){
           <div class="gal-grid">
             ${h.imgs.map((im,k)=>`
               <div class="gal-item">
-                <img src="${escH(im.data||im.path)}" alt="">
+                <img src="${escH(im.data||im.preview||im.path)}" alt="">
                 <span class="gal-num">${k+1}</span>
                 <div class="gal-ctl">
                   <button title="جلوتر" onclick="moveHotelImage('${cityId}',${i},${k},-1)">▶</button>
@@ -1410,7 +1410,7 @@ function renderCityMeta(id){
   </div>`;
 }
 
-function heroSrc(id){return cityMeta[id].heroData||cityMeta[id].heroImage||'';}
+function heroSrc(id){return cityMeta[id].heroData||cityMeta[id].heroPreview||cityMeta[id].heroImage||'';}
 function heroPickerHTML(id){
   const m=cityMeta[id],src=heroSrc(id);
   const picker=`<label>${src?'🔄 تغییر عکس':'📷 انتخاب عکس'}<input type="file" accept="image/*" hidden onchange="pickHero('${id}',this)"></label>`;
@@ -1444,7 +1444,7 @@ function setHeroFocus(e,id){
 }
 function clearHero(id){
   const m=cityMeta[id];
-  delete m.heroData;m.heroImage='';
+  delete m.heroData;delete m.heroPreview;m.heroImage='';
   renderCityMeta(id);
 }
 

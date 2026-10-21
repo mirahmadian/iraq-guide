@@ -82,8 +82,15 @@ function openCityMap(cityId, code) {
   const loading = document.getElementById('mapLoading');
   img.style.visibility = 'hidden'; loading.style.display = 'flex';
   img.onload = () => { MV.w = img.naturalWidth; MV.h = img.naturalHeight; loading.style.display = 'none'; img.style.visibility = 'visible'; mapFit(); };
-  img.onerror = () => { loading.textContent = 'نقشه بارگذاری نشد. اتصال اینترنت را بررسی کنید.'; };
-  if (img.getAttribute('src') !== city.map.image) img.src = city.map.image;
+  let retried = false;
+  img.onerror = () => {
+    if (!retried && navigator.onLine) { retried = true; img.src = city.map.image + '?r=' + Date.now(); return; }
+    loading.textContent = navigator.onLine
+      ? 'نقشه بارگذاری نشد. اگر نقشه تازه منتشر شده، چند دقیقه بعد دوباره امتحان کنید.'
+      : 'شما آفلاین هستید و این نقشه هنوز روی گوشی ذخیره نشده است. یک‌بار با اینترنت برنامه را باز کنید تا نقشه برای استفاده آفلاین ذخیره شود.';
+  };
+  loading.textContent = 'در حال بارگذاری نقشه...';
+  if (!img.getAttribute('src') || !img.getAttribute('src').startsWith(city.map.image)) img.src = city.map.image;
   else if (img.complete && img.naturalWidth) img.onload();
   v.classList.add('open');
   document.documentElement.style.overflow = 'hidden';

@@ -1617,8 +1617,35 @@ if ('serviceWorker' in navigator) {
 
       /* بررسی دستی آپدیت در هر بار باز شدن */
       reg.update().catch(() => {});
+      warmMediaCache();
     } catch(e) {}
   });
+}
+
+/* ══════════════════════════════════════════
+   OFFLINE: نقشه‌ها و تصاویر را از قبل در گوشی ذخیره کن
+══════════════════════════════════════════ */
+function mediaUrls() {
+  const urls = new Set();
+  const addC = list => (list || []).forEach(c => c && c.photo && urls.add(c.photo));
+  addC(CARAVAN_DATA.insurance && CARAVAN_DATA.insurance.contacts);
+  addC(CARAVAN_DATA.transport && CARAVAN_DATA.transport.contacts);
+  CARAVAN_DATA.cities.forEach(city => {
+    if (city.hidden && !SHOW_HIDDEN) return;
+    if (city.map && city.map.image) urls.add(city.map.image);
+    if (city.heroImage) urls.add(city.heroImage);
+    ['hq', 'clinic', 'consulate'].forEach(k => city[k] && addC(city[k].contacts));
+    (city.places || []).forEach(p => addC(p.contacts));
+    (city.hotels || []).forEach(h => { hotelImages(h).forEach(u => urls.add(u)); addC(h.contacts); });
+  });
+  return [...urls].filter(u => u && !u.startsWith('data:')).map(u => new URL(u, location.href).href);
+}
+function warmMediaCache() {
+  if (!('serviceWorker' in navigator) || !navigator.onLine) return;
+  if (navigator.connection && navigator.connection.saveData) return;
+  navigator.serviceWorker.ready.then(reg => {
+    if (reg.active) reg.active.postMessage({ type: 'warm', urls: mediaUrls() });
+  }).catch(() => {});
 }
 
 /* ══════════════════════════════════════════

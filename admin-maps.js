@@ -75,7 +75,7 @@ function imageToMap(file) {
 
 function mapPickerHTML(id) {
   const m = cityMeta[id], pend = m.mapData, cur = m.map;
-  const src = pend ? pend.img : (cur && cur.image);
+  const src = pend ? pend.img : (m.mapPreview || (cur && cur.image));
   const picker = `<label class="add-row-btn" style="margin:0;text-align:center;cursor:pointer">${src ? '🔄 تغییر نقشه' : '📄 انتخاب فایل نقشه (PDF یا عکس)'}
     <input type="file" accept="application/pdf,image/*" hidden onchange="pickCityMap('${id}',this)"></label>`;
   if (cityMapBusy[id]) return `<div class="cmap-busy">⏳ در حال تبدیل نقشه به تصویر... (چند ثانیه صبر کنید)</div>`;
@@ -107,7 +107,7 @@ async function pickCityMap(id, input) {
 }
 function clearCityMap(id) {
   if (!confirm('نقشه این شهر حذف شود؟')) return;
-  delete cityMeta[id].mapData; cityMeta[id].map = null;
+  delete cityMeta[id].mapData; delete cityMeta[id].mapPreview; cityMeta[id].map = null;
   renderCityMeta(id);
 }
 async function uploadPendingMaps(token) {
@@ -119,6 +119,7 @@ async function uploadPendingMaps(token) {
     let pdf = '';
     if (p.pdfB64) { await putFile(base + '.pdf', '', 'Add city map PDF', token, p.pdfB64); pdf = base + '.pdf'; }
     m.map = { image: base + '.jpg', pdf, w: p.w, h: p.h };
+    m.mapPreview = p.img;
     delete m.mapData;
     renderCityMeta(id);
   }
