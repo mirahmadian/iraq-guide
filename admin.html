@@ -369,7 +369,7 @@
       <div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div>
     </div>
   </div>
-  <a class="view-btn" href="index.html" target="_blank" rel="noopener">👁 مشاهده برنامه</a>
+  <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
   <button class="save-btn hide-sm" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
   <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
   <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
@@ -381,6 +381,7 @@
   <button class="tab-btn" onclick="switchTab('najaf',this)">🕌 نجف</button>
   <button class="tab-btn" onclick="switchTab('karbala',this)">🕌 کربلا</button>
   <button class="tab-btn" onclick="switchTab('kadhimiya',this)">🕌 کاظمین</button>
+  <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -688,6 +689,11 @@
   </div>
 </div><!-- /tab-kadhimiya -->
 
+<!-- ══ TAB: FOOD ══ -->
+<div class="page" id="tab-food" style="max-width:1100px">
+  <div id="food-admin"></div>
+</div><!-- /tab-food -->
+
 <!-- CALENDAR MODAL -->
 <div class="cal-overlay" id="calModal">
   <div class="cal-box">
@@ -707,6 +713,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="data.js"></script>
+<script src="admin-food.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1193,7 +1200,7 @@ let siteState={}, groupMeta={}, cityMeta={};
 function contactsData(key){
   return state[key].filter(c=>c.phone.trim()).map(c=>{
     const o={role:c.role||'',phone:c.phone.trim(),name:c.name&&c.name.trim()?c.name.trim():null,countryCode:c.countryCode||'964'};
-    if(c.photo) o.photo=c.photo;
+    {const ph=c.photo||(BUILD_PENDING&&c.photoData)||'';if(ph) o.photo=ph;}
     return o;
   });
 }
@@ -1211,17 +1218,21 @@ function sectionData(key){
 function hotelsData(cityId){
   return hotelState[cityId].filter(h=>h.name.trim()).map(h=>({
     id:h.id,name:h.name,nameEn:h.nameEn,address:h.address,
-    cardImage:(h.imgs.find(i=>i.path)||{}).path||'',
-    images:h.imgs.filter(i=>i.path).map(i=>i.path),
+    cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
+    images:h.imgs.map(imgSrc).filter(Boolean),
     mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,
     contacts:h.contacts.filter(c=>c.phone.trim()).map(c=>{
       const o={role:c.role||'',phone:c.phone.trim(),name:c.name&&c.name.trim()?c.name.trim():null,countryCode:c.countryCode||'964'};
-      if(c.photo) o.photo=c.photo;
+      {const ph=c.photo||(BUILD_PENDING&&c.photoData)||'';if(ph) o.photo=ph;}
       return o;
     })
   }));
 }
-function buildOutput(){
+let BUILD_PENDING=false;
+/* pending=true: تصاویر هنوز آپلودنشده هم (برای پیش‌نمایش) لحاظ می‌شوند */
+function imgSrc(i){return i.path||(BUILD_PENDING&&i.data)||'';}
+function buildData(pending){
+  BUILD_PENDING=!!pending;
   const date=document.getElementById('lastUpdate').value.trim();
   const D={
     lastUpdate:date,
@@ -1232,18 +1243,26 @@ function buildOutput(){
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
+    food:getFoodData(),
     cities:['najaf','karbala','kadhimiya'].map(id=>({
       id,
       name:cityMeta[id].name.trim()||DEFAULT_CITY[id],
       arabic:cityMeta[id].arabic.trim(),
       icon:'🕌',
-      ...(cityMeta[id].heroImage?{heroImage:cityMeta[id].heroImage,heroFocus:{x:cityMeta[id].fx,y:cityMeta[id].fy}}:{}),
+      ...((cityMeta[id].heroImage||(BUILD_PENDING&&cityMeta[id].heroData))?{heroImage:cityMeta[id].heroImage||cityMeta[id].heroData,heroFocus:{x:cityMeta[id].fx,y:cityMeta[id].fy}}:{}),
       hotels:hotelsData(id),
       hq:sectionData(id+'-hq'),
       clinic:sectionData(id+'-clinic'),
       consulate:sectionData(id+'-consulate')
     }))
   };
+  BUILD_PENDING=false;
+  return D;
+}
+
+function buildOutput(){
+  const D=buildData(false);
+  const date=D.lastUpdate;
   return`/**
  * =====================================================
  *  فایل داده‌های راهنمای کاروان عراق
@@ -1548,6 +1567,7 @@ function init(){
   });
   renderSiteFields();renderFooterEditor();
   renderGroupMeta('insurance');renderGroupMeta('transport');
+  initFood();
   fitTabsBar();
 }
 
@@ -1558,7 +1578,25 @@ function fitTabsBar(){
 window.addEventListener('resize',fitTabsBar);
 window.addEventListener('load',fitTabsBar);
 
+/* ══════════════════════════════════════════
+   LIVE PREVIEW (پیش‌نمایش بدون انتشار)
+   پیش‌نویس در مرورگر ذخیره می‌شود و تب پیش‌نمایش خودکار تازه می‌شود
+══════════════════════════════════════════ */
+let adminReady=false, draftTimer=null;
+function saveDraft(){
+  if(!adminReady) return;
+  try{ localStorage.setItem('caravan-draft',JSON.stringify(buildData(true))); }
+  catch(e){ try{ localStorage.setItem('caravan-draft',JSON.stringify(buildData(false))); }catch(e2){} }
+}
+function queueDraft(){ clearTimeout(draftTimer); draftTimer=setTimeout(saveDraft,900); }
+['input','change','click'].forEach(ev=>document.addEventListener(ev,queueDraft,true));
+function openPreview(){
+  saveDraft();
+  window.open('index.html?preview=1','caravan-preview');
+}
+
 init();
+adminReady=true;
 authInit();
 </script>
 </body>
