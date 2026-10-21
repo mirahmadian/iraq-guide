@@ -669,9 +669,6 @@
   <!-- GLOBAL INSURANCE (rendered by JS) -->
   <div id="globalInsurance"></div>
 
-  <!-- FOOD PLAN ENTRY (rendered by JS) -->
-  <div id="foodEntry"></div>
-
   <!-- TABS -->
   <nav class="tabs-wrap" aria-label="انتخاب شهر">
     <div class="tabs" role="tablist" id="tabList"></div>
@@ -1147,7 +1144,6 @@ function render() {
   const globals = globalCardHTML(CARAVAN_DATA.insurance, '📋', 'ins') +
                   globalCardHTML(CARAVAN_DATA.transport, '🚌', 'transport');
   document.getElementById('globalInsurance').innerHTML = globals ? `<div class="global-row">${globals}</div>` : '';
-  document.getElementById('foodEntry').innerHTML = foodEntryHTML();
 
   // tabs + city sections
   const tabList = document.getElementById('tabList');
@@ -1241,7 +1237,7 @@ function render() {
   });
 
   tabList.innerHTML = tabsHTML;
-  mainContent.innerHTML = sectionsHTML + footerHTML();
+  mainContent.innerHTML = sectionsHTML + `<div id="foodEntry">${foodEntryHTML()}</div>` + footerHTML();
   hotelCities.forEach(id => showDefaultHotels(id));
 
   // برگرداندن شهر انتخاب‌شده قبلی (مثلاً بعد از بروزرسانی خودکار صفحه)

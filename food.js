@@ -7,6 +7,7 @@
   .food-entry{display:flex;align-items:center;gap:12px;width:calc(100% - 28px);margin:0 14px 10px;padding:13px 14px;
     border-radius:var(--r-sm);border:1px solid rgba(217,128,26,.35);border-top:3px solid #D9801A;background:var(--card);
     box-shadow:var(--shadow);cursor:pointer;font-family:var(--font);text-align:right;color:var(--text)}
+  .content .food-entry{width:100%;margin:2px 0 14px}
   .fe-ico{width:46px;height:46px;border-radius:12px;background:rgba(217,128,26,.13);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
   .fe-txt{flex:1;min-width:0}
   .fe-t{display:block;font-size:calc(14px * var(--fs,1));font-weight:800}
