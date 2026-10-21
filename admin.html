@@ -381,6 +381,7 @@
   <button class="tab-btn" onclick="switchTab('najaf',this)">🕌 نجف</button>
   <button class="tab-btn" onclick="switchTab('karbala',this)">🕌 کربلا</button>
   <button class="tab-btn" onclick="switchTab('kadhimiya',this)">🕌 کاظمین</button>
+  <button class="tab-btn" onclick="switchTab('samarra',this)">🕌 سامراء</button>
   <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
 </div>
 
@@ -539,6 +540,18 @@
       <button class="add-row-btn" onclick="addContact('najaf-consulate')">+ افزودن شماره جدید</button>
     </div>
   </div>
+  <!-- PLACES -->
+  <div class="sec-card" id="card-places-najaf">
+    <div class="sec-card-head" onclick="toggleCard('places-najaf')">
+      <div class="sec-head-icon ico-gen">📍</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">مکان‌ها: رستوران، پارکینگ، درمانگاه و ...</div>
+        <div class="sec-head-sub" id="place-count-najaf">هنوز مکانی ثبت نشده</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body"><div id="places-najaf"></div></div>
+  </div>
   <!-- HOTELS -->
   <div class="sec-card" id="card-hotel-najaf">
     <div class="sec-card-head" onclick="toggleCard('hotel-najaf')">
@@ -605,6 +618,18 @@
       <div id="contacts-karbala-consulate"></div>
       <button class="add-row-btn" onclick="addContact('karbala-consulate')">+ افزودن شماره جدید</button>
     </div>
+  </div>
+  <!-- PLACES -->
+  <div class="sec-card" id="card-places-karbala">
+    <div class="sec-card-head" onclick="toggleCard('places-karbala')">
+      <div class="sec-head-icon ico-gen">📍</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">مکان‌ها: رستوران، پارکینگ، درمانگاه و ...</div>
+        <div class="sec-head-sub" id="place-count-karbala">هنوز مکانی ثبت نشده</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body"><div id="places-karbala"></div></div>
   </div>
   <!-- HOTELS -->
   <div class="sec-card open" id="card-hotel-karbala">
@@ -673,6 +698,18 @@
       <button class="add-row-btn" onclick="addContact('kadhimiya-consulate')">+ افزودن شماره جدید</button>
     </div>
   </div>
+  <!-- PLACES -->
+  <div class="sec-card" id="card-places-kadhimiya">
+    <div class="sec-card-head" onclick="toggleCard('places-kadhimiya')">
+      <div class="sec-head-icon ico-gen">📍</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">مکان‌ها: رستوران، پارکینگ، درمانگاه و ...</div>
+        <div class="sec-head-sub" id="place-count-kadhimiya">هنوز مکانی ثبت نشده</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body"><div id="places-kadhimiya"></div></div>
+  </div>
   <!-- HOTELS -->
   <div class="sec-card" id="card-hotel-kadhimiya">
     <div class="sec-card-head" onclick="toggleCard('hotel-kadhimiya')">
@@ -688,6 +725,23 @@
     </div>
   </div>
 </div><!-- /tab-kadhimiya -->
+
+<!-- ══ TAB: SAMARRA ══ -->
+<div class="page" id="tab-samarra">
+  <div id="citymeta-samarra"></div>
+  <!-- PLACES -->
+  <div class="sec-card open" id="card-places-samarra">
+    <div class="sec-card-head" onclick="toggleCard('places-samarra')">
+      <div class="sec-head-icon ico-gen">📍</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">مکان‌ها: رستوران، پارکینگ، درمانگاه و ...</div>
+        <div class="sec-head-sub" id="place-count-samarra">هنوز مکانی ثبت نشده</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body"><div id="places-samarra"></div></div>
+  </div>
+</div><!-- /tab-samarra -->
 
 <!-- ══ TAB: FOOD ══ -->
 <div class="page" id="tab-food" style="max-width:1100px">
@@ -714,6 +768,7 @@
 
 <script src="data.js"></script>
 <script src="admin-food.js"></script>
+<script src="admin-places.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1193,7 +1248,8 @@ const DEFAULT_SITE={
     {type:'bold',text:'پدرم را هم در دعایتان یاد کنید 🤲'}
   ]
 };
-const DEFAULT_CITY={najaf:'نجف اشرف',karbala:'کربلای معلی',kadhimiya:'کاظمین'};
+const DEFAULT_CITY={najaf:'نجف اشرف',karbala:'کربلای معلی',kadhimiya:'کاظمین',samarra:'سامراء'};
+const DEFAULT_ARABIC={samarra:'سامراء · مرقد امام علی النقی الهادی (ع) و امام حسن عسکری (ع)'};
 const SECTION_LABEL={hq:'ستاد',clinic:'درمانگاه',consulate:'کنسولگری'};
 let siteState={}, groupMeta={}, cityMeta={};
 
@@ -1205,6 +1261,7 @@ function contactsData(key){
   });
 }
 function sectionData(key){
+  if(!mapState[key]) return null;
   const m=mapState[key], cs=contactsData(key);
   if(![m.title,m.address,m.neshanUrl,m.googleUrl].some(x=>(x||'').trim()) && !cs.length) return null;
   const [city,sec]=key.split('-');
@@ -1216,7 +1273,7 @@ function sectionData(key){
   return o;
 }
 function hotelsData(cityId){
-  return hotelState[cityId].filter(h=>h.name.trim()).map(h=>({
+  return (hotelState[cityId]||[]).filter(h=>h.name.trim()).map(h=>({
     id:h.id,name:h.name,nameEn:h.nameEn,address:h.address,
     cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
     images:h.imgs.map(imgSrc).filter(Boolean),
@@ -1244,16 +1301,18 @@ function buildData(pending){
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
     food:getFoodData(),
-    cities:['najaf','karbala','kadhimiya'].map(id=>({
+    cities:ALL_CITIES.map(id=>({
       id,
       name:cityMeta[id].name.trim()||DEFAULT_CITY[id],
       arabic:cityMeta[id].arabic.trim(),
       icon:'🕌',
+      ...(cityMeta[id].hidden?{hidden:true}:{}),
       ...((cityMeta[id].heroImage||(BUILD_PENDING&&cityMeta[id].heroData))?{heroImage:cityMeta[id].heroImage||cityMeta[id].heroData,heroFocus:{x:cityMeta[id].fx,y:cityMeta[id].fy}}:{}),
       hotels:hotelsData(id),
       hq:sectionData(id+'-hq'),
       clinic:sectionData(id+'-clinic'),
-      consulate:sectionData(id+'-consulate')
+      consulate:sectionData(id+'-consulate'),
+      places:placesData(id)
     }))
   };
   BUILD_PENDING=false;
@@ -1320,6 +1379,12 @@ function renderCityMeta(id){
       <div class="sec-head-info"><div class="sec-head-title">نام شهر</div><div class="sec-head-sub">عنوان بالای صفحه شهر</div></div>
     </div>
     <div class="sec-body" style="display:block">
+      <div class="field">
+        <label class="fchk" style="padding:0">
+          <input type="checkbox" ${cityMeta[id].hidden?'':'checked'} onchange="cityMeta['${id}'].hidden=!this.checked;renderCityMeta('${id}')">
+          <b>${cityMeta[id].hidden?'⛔ این شهر فعلاً برای کاربران پنهان است (فقط شما در پیش‌نمایش می‌بینید)':'✅ این شهر برای کاربران نمایش داده می‌شود'}</b>
+        </label>
+      </div>
       <div class="field"><div class="field-label">نام فارسی</div>
         <input type="text" class="input-full" value="${escH(cityMeta[id].name)}" oninput="cityMeta['${id}'].name=this.value"></div>
       <div class="field"><div class="field-label">نام عربی · نام حرم (با نقطه وسط «·» جدا کنید)</div>
@@ -1560,14 +1625,16 @@ function init(){
     insurance:{title:CARAVAN_DATA.insurance?.title||''},
     transport:{title:CARAVAN_DATA.transport?.title||''}
   };
-  ['najaf','karbala','kadhimiya'].forEach(id=>{
+  ALL_CITIES.forEach(id=>{
     const c=CARAVAN_DATA.cities.find(x=>x.id===id)||{};
-    cityMeta[id]={name:c.name||DEFAULT_CITY[id],arabic:c.arabic||'',heroImage:c.heroImage||'',fx:c.heroFocus?.x??50,fy:c.heroFocus?.y??40};
+    cityMeta[id]={name:c.name||DEFAULT_CITY[id],arabic:c.arabic||DEFAULT_ARABIC[id]||'',heroImage:c.heroImage||'',fx:c.heroFocus?.x??50,fy:c.heroFocus?.y??40,
+      hidden:c.id?!!c.hidden:true};
     renderCityMeta(id);
   });
   renderSiteFields();renderFooterEditor();
   renderGroupMeta('insurance');renderGroupMeta('transport');
   initFood();
+  initPlaces();
   fitTabsBar();
 }
 

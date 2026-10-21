@@ -29,8 +29,8 @@
       --ruby-l:    #E74C3C;
       --blue-l:    #5A9CF5;
       --green-wa:  #25D366;
-      --c-hq:#2E7D5E; --c-clinic:#D32F2F; --c-consulate:#4F5BB5; --c-hotel:#B48C3C; --c-ins:#2F7BD6; --c-transport:#D9801A;
-      --rgb-hq:46,125,94; --rgb-clinic:211,47,47; --rgb-consulate:79,91,181; --rgb-hotel:180,140,60; --rgb-ins:47,123,214; --rgb-transport:217,128,26;
+      --c-hq:#2E7D5E; --c-clinic:#D32F2F; --c-consulate:#4F5BB5; --c-hotel:#B48C3C; --c-ins:#2F7BD6; --c-transport:#D9801A; --c-restaurant:#D9801A; --c-parking:#1E78C8; --c-other:#607D8B;
+      --rgb-hq:46,125,94; --rgb-clinic:211,47,47; --rgb-consulate:79,91,181; --rgb-hotel:180,140,60; --rgb-ins:47,123,214; --rgb-transport:217,128,26; --rgb-restaurant:217,128,26; --rgb-parking:30,120,200; --rgb-other:96,125,139;
       --text:      #0A2A1A;
       --muted:     #3A6B52;
       --dim:       #6B9B7F;
@@ -327,6 +327,11 @@
     .sec-card{--accent:var(--c-hq);--accent-rgb:var(--rgb-hq);border-top:3px solid var(--accent)}
     .sec-card.k-clinic{--accent:var(--c-clinic);--accent-rgb:var(--rgb-clinic)}
     .sec-card.k-consulate{--accent:var(--c-consulate);--accent-rgb:var(--rgb-consulate)}
+    .sec-card.k-restaurant{--accent:var(--c-restaurant);--accent-rgb:var(--rgb-restaurant)}
+    .sec-card.k-parking{--accent:var(--c-parking);--accent-rgb:var(--rgb-parking)}
+    .sec-card.k-other{--accent:var(--c-other);--accent-rgb:var(--rgb-other)}
+    .tab-hidden{display:block;font-size:calc(9px * var(--fs,1));color:#E74C3C;font-weight:800}
+    .tab.active .tab-hidden{color:#FFD5D0}
     .sec-ico{background:rgba(var(--accent-rgb),.14)}
     .ico-hotel{background:rgba(var(--rgb-hotel),.18)}
     .badge-acc{background:rgba(var(--accent-rgb),.13);color:var(--accent);border-color:rgba(var(--accent-rgb),.32)}
@@ -781,6 +786,8 @@ const COPY_ICON = `<svg style="width:20px;height:20px;display:block" viewBox="0 
   <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
 </svg>`;
 
+const PLACE_META = { restaurant: ['🍽️', 'رستوران'], parking: ['🅿️', 'پارکینگ'], clinic: ['🏥', 'درمانگاه'], other: ['📍', 'مکان'] };
+
 const RC_ICON = `<svg class="rc" viewBox="0 0 24 24" aria-hidden="true"><path fill="#D32F2F" d="M16.46 4.85A9 9 0 1 0 16.46 19.15 7.3 7.3 0 1 1 16.46 4.85Z"/></svg>`;
 
 function coordsFrom(url) {
@@ -1152,7 +1159,7 @@ function render() {
   let sectionsHTML = '';
 
   const hotelCities = [];
-  CARAVAN_DATA.cities.forEach((city, idx) => {
+  CARAVAN_DATA.cities.filter(c => !c.hidden || SHOW_HIDDEN).forEach((city, idx) => {
     const isFirst = idx === 0;
     tabsHTML += `
     <button class="tab ${isFirst ? 'active' : ''}" id="tab-${city.id}"
@@ -1160,13 +1167,19 @@ function render() {
             aria-controls="sec-${city.id}"
             onclick="switchTab('${city.id}')"
             onkeydown="handleTabKey(event,'${city.id}')">
-      <span class="tab-icon" aria-hidden="true">${city.icon}</span>${city.name}
+      <span class="tab-icon" aria-hidden="true">${city.icon}</span>${city.name}${city.hidden ? '<small class="tab-hidden">پنهان از کاربران</small>' : ''}
     </button>`;
 
     const arParts = (city.arabic || '').split(' · ');
     const chips = [];
     if (city.hq)       chips.push(['hq', '🏢', 'ستاد', `${city.id}-hq`]);
     if (city.clinic)   chips.push(['clinic', RC_ICON, 'درمانگاه', `${city.id}-clinic`]);
+    const firstPlace = {};
+    (city.places || []).forEach((p, i) => { if (!(p.type in firstPlace)) firstPlace[p.type] = i; });
+    if (!city.clinic && 'clinic' in firstPlace) chips.push(['clinic', RC_ICON, 'درمانگاه', `${city.id}-place-${firstPlace.clinic}`]);
+    ['restaurant', 'parking', 'other'].forEach(t => {
+      if (t in firstPlace) chips.push([t, PLACE_META[t][0], PLACE_META[t][1], `${city.id}-place-${firstPlace[t]}`]);
+    });
     if (city.hotels && city.hotels.length) chips.push(['hotel', '🏨', 'هتل', `hotel-wrap-${city.id}`]);
     if (city.consulate) chips.push(['consulate', '🏛️', 'کنسولگری', `${city.id}-consulate`]);
     const quickNav = chips.length > 1 ? `<div class="quick-nav" role="navigation" aria-label="پرش به بخش">` +
@@ -1213,6 +1226,16 @@ function render() {
         contacts: city.clinic.contacts
       });
     }
+
+    // Other places (restaurant, parking, extra clinics, ...)
+    (city.places || []).forEach((p, i) => {
+      const kind = PLACE_META[p.type] ? p.type : 'other';
+      cityHTML += sectionCard({
+        id: `${city.id}-place-${i}`, kind, icoClass: '', icoEmoji: kind === 'clinic' ? RC_ICON : PLACE_META[kind][0],
+        title: p.title, badge: PLACE_META[kind][1], badgeClass: 'badge-acc',
+        address: p.address, mapNeshan: p.mapNeshanUrl, mapGoogle: p.mapGoogleUrl, contacts: p.contacts
+      });
+    });
 
     // Hotels
     if (city.hotels && city.hotels.length > 0) {
@@ -1390,6 +1413,10 @@ const srBody = document.getElementById('srBody');
 function getAllContacts() {
   const list = [];
   CARAVAN_DATA.cities.forEach(city => {
+    if (city.hidden && !SHOW_HIDDEN) return;
+    (city.places || []).forEach(p => (p.contacts || []).forEach(c => {
+      list.push({ ...c, cityName: city.name, sectionTitle: p.title });
+    }));
     ['hq','clinic','consulate'].forEach(sec => {
       if (!city[sec]) return;
       (city[sec].contacts || []).forEach(c => {
