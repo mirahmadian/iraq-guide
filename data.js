@@ -165,10 +165,10 @@ const CARAVAN_DATA = {
       "name": "کاظمین",
       "arabic": "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       "icon": "🕌",
-      "heroImage": "cities/kadhimiya-1792046851650.jpg",
+      "heroImage": "cities/kadhimiya-1792610186678.jpg",
       "heroFocus": {
-        "x": 92,
-        "y": 50
+        "x": 50,
+        "y": 40
       },
       "hotels": [
         {
@@ -318,6 +318,36 @@ const CARAVAN_DATA = {
             {
               "role": "مدیر داخلی",
               "phone": "07825405948",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792609013578",
+          "name": "زمزم",
+          "nameEn": "ZAMZAM",
+          "address": "باب المراد مقابل شریف الرضی",
+          "cardImage": "hotels/h-1792610189705-katoz.jpg",
+          "images": [
+            "hotels/h-1792610189705-katoz.jpg",
+            "hotels/h-1792610193599-7eqic.jpg",
+            "hotels/h-1792610204801-jtc2g.jpg",
+            "hotels/h-1792610207660-zod1g.jpg",
+            "hotels/h-1792610210115-m05vy.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/QbS-oDOACAQj",
+          "mapGoogleUrl": "https://maps.app.goo.gl/Ps93wevLdb5sxyqGA",
+          "contacts": [
+            {
+              "role": "",
+              "phone": "0778 231 1903",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07711651111",
               "name": null,
               "countryCode": "964"
             }
