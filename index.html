@@ -672,6 +672,9 @@
     <button class="install-btn" id="installBtn">نصب</button>
   </div>
   
+  <!-- SITE BANNER (rendered by JS) -->
+  <div id="siteBanner"></div>
+
   <!-- GLOBAL INSURANCE (rendered by JS) -->
   <div id="globalInsurance"></div>
 
@@ -727,6 +730,7 @@
 <script src="data.js"></script>
 <script src="food.js"></script>
 <script src="map-viewer.js"></script>
+<script src="banner.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -1083,9 +1087,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function sectionCard(opts) {
-  const {id, kind, icoClass, icoEmoji, title, badge, badgeClass, address, mapNeshan, mapGoogle, contacts} = opts;
+  const {id, kind, icoClass, icoEmoji, title, badge, badgeClass, address, mapNeshan, mapGoogle, contacts, banner} = opts;
   let html = `
   <div class="sec-card k-${kind}" id="${id}">
+    ${secBannerHTML(banner, title)}
     <div class="sec-head">
       <div class="sec-ico ${icoClass}" aria-hidden="true">${icoEmoji}</div>
       <div class="sec-info"><h3>${title}</h3></div>
@@ -1160,6 +1165,8 @@ function render() {
   if (site.appSubtitle !== undefined) document.getElementById('appSub').textContent = site.appSubtitle;
   // update date
 
+  renderSiteBanner();
+
   // global cards (insurance + transport supervisor)
   const globals = globalCardHTML(CARAVAN_DATA.insurance, '📋', 'ins') +
                   globalCardHTML(CARAVAN_DATA.transport, '🚌', 'transport');
@@ -1223,7 +1230,7 @@ function render() {
     if (city.hq) {
       cityHTML += sectionCard({
         id: `${city.id}-hq`, kind: 'hq', icoClass: 'ico-hq', icoEmoji: '🏢',
-        title: city.hq.title, badge: 'ستاد', badgeClass: 'badge-acc',
+        title: city.hq.title, badge: 'ستاد', badgeClass: 'badge-acc', banner: city.hqBanner,
         address: city.hq.address,
         mapNeshan: city.hq.mapNeshanUrl, mapGoogle: city.hq.mapGoogleUrl,
         contacts: city.hq.contacts
@@ -1630,10 +1637,12 @@ function mediaUrls() {
   const addC = list => (list || []).forEach(c => c && c.photo && urls.add(c.photo));
   addC(CARAVAN_DATA.insurance && CARAVAN_DATA.insurance.contacts);
   addC(CARAVAN_DATA.transport && CARAVAN_DATA.transport.contacts);
+  if (siteBannerData()) urls.add(siteBannerData().image);
   CARAVAN_DATA.cities.forEach(city => {
     if (city.hidden && !SHOW_HIDDEN) return;
     if (city.map && city.map.image) urls.add(city.map.image);
     if (city.heroImage) urls.add(city.heroImage);
+    if (city.hqBanner) urls.add(city.hqBanner);
     ['hq', 'clinic', 'consulate'].forEach(k => city[k] && addC(city[k].contacts));
     (city.places || []).forEach(p => addC(p.contacts));
     (city.hotels || []).forEach(h => { hotelImages(h).forEach(u => urls.add(u)); addC(h.contacts); });
@@ -1654,6 +1663,7 @@ function warmMediaCache() {
 render();
 applyFs();
 foodRestore();
+showSplash(new URLSearchParams(location.search).has('splash'));
 </script>
 </body>
 </html>

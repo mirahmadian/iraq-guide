@@ -1,10 +1,11 @@
-const CACHE = 'caravan-v9';
+const CACHE = 'caravan-v10';
 const STATIC = [
   './',
   'index.html',
   'data.js',
   'food.js',
   'map-viewer.js',
+  'banner.js',
   'manifest.json',
   'app-icon.png',
   'app-icon-192.png',
