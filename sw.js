@@ -1,9 +1,10 @@
-const CACHE = 'caravan-v7';
+const CACHE = 'caravan-v8';
 const STATIC = [
   './',
   'index.html',
   'data.js',
   'food.js',
+  'map-viewer.js',
   'manifest.json',
   'app-icon.png',
   'app-icon-192.png',
@@ -36,7 +37,7 @@ self.addEventListener('activate', e => {
 /* fetch: network-first برای HTML و JS، cache-first برای بقیه */
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  const isCore = url.endsWith('index.html') || url.endsWith('data.js') || url.endsWith('food.js') ||
+  const isCore = url.endsWith('index.html') || url.endsWith('data.js') || url.endsWith('food.js') || url.endsWith('map-viewer.js') ||
                  url.endsWith('/') || url.includes('iraq-guide/') && !url.includes('.');
 
   if (isCore || e.request.mode === 'navigate') {

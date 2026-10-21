@@ -1,7 +1,45 @@
 /* ══════════════════════════════════════════
    PLACES ADMIN — مکان‌های هر شهر (رستوران، پارکینگ، درمانگاه، ...)
 ══════════════════════════════════════════ */
-const PLACE_TYPES = { restaurant: ['🍽️', 'رستوران'], parking: ['🅿️', 'پارکینگ'], clinic: ['🏥', 'درمانگاه'], other: ['📍', 'سایر'] };
+const PLACE_TYPES = { restaurant: ['🍽️', 'رستوران'], parking: ['🅿️', 'پارکینگ'], clinic: ['🏥', 'درمانگاه'], ziyarat: ['🕌', 'اماکن زیارتی'], other: ['📍', 'سایر'] };
+
+/* مکان‌های پیشنهادی از روی نقشه‌های رسمی سازمان حج و زیارت (خرداد ۱۴۰۴)
+   لینک‌ها جستجوی گوگل مپ هستند؛ برای مسیریابی دقیق، لینک کامل با مختصات جایگزین کنید */
+const gq = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+const NOTE_MAP = ' (طبق نقشه رسمی)';
+const PLACE_SUGGEST = {
+  najaf: [
+    ['ziyarat', 'مرقد حضرت هود و صالح (ع)', 'قبرستان وادی السلام', gq('مرقد النبي هود والنبي صالح النجف')],
+    ['ziyarat', 'مقام امام زمان (عج) و امام صادق (ع)', 'قبرستان وادی السلام', gq('مقام الإمام المهدي وادي السلام النجف')],
+    ['ziyarat', 'مقام امام سجاد (ع)', 'غرب حرم، نزدیک مقام صافی صفا' + NOTE_MAP, gq('مقام الإمام زين العابدين النجف')],
+    ['ziyarat', 'مقام صافی صفا', 'غرب حرم' + NOTE_MAP, gq('مقام صافي صفا النجف')],
+    ['ziyarat', 'مرقد آیت‌الله حکیم', 'میدان ثورة العشرین', gq('مرقد السيد محسن الحكيم النجف')],
+    ['ziyarat', 'مرقد آیت‌الله قاضی', 'قبرستان وادی السلام' + NOTE_MAP, gq('مرقد السيد علي القاضي النجف')],
+    ['ziyarat', 'مزار علامه امینی', 'نزدیک حرم، کنار کنسولگری ایران' + NOTE_MAP, gq('مرقد العلامة الأميني النجف')],
+    ['ziyarat', 'منزل امام خمینی (ره)', 'محله حویش، نزدیک حرم' + NOTE_MAP, gq('بيت الإمام الخميني النجف')],
+    ['ziyarat', 'قبرستان وادی السلام', 'شمال حرم', gq('مقبرة وادي السلام النجف')]
+  ],
+  karbala: [
+    ['clinic', 'هلال احمر — مستشفی السفیر', 'خیابان شهداء، نزدیک صحن عقیله' + NOTE_MAP, gq('مستشفى السفير كربلاء')],
+    ['clinic', 'هلال احمر — نزدیک هتل ملاک', 'نزدیک هتل ملاک' + NOTE_MAP, ''],
+    ['clinic', 'هلال احمر — نزدیک هتل الماس شرق', 'نزدیک هتل الماس شرق، محدوده باب الخان' + NOTE_MAP, ''],
+    ['parking', 'گاراژ موحد', 'نزدیک باب طویریج و جسر الحسین' + NOTE_MAP, ''],
+    ['ziyarat', 'خیمه‌گاه', 'جنوب غرب حرم امام حسین (ع)', gq('المخيم الحسيني كربلاء')],
+    ['ziyarat', 'مقام امام زمان (عج)', 'شمال حرم، خیابان امام مهدی (عج)', gq('مقام الإمام المهدي كربلاء')]
+  ]
+};
+function addSuggestedPlaces(id) {
+  const ex = new Set(placeState[id].map(p => p.title.trim()));
+  let n = 0;
+  (PLACE_SUGGEST[id] || []).forEach(([type, title, address, g]) => {
+    if (ex.has(title)) return;
+    placeState[id].push({ id: pid(), type, title, address, mapNeshanUrl: '', mapGoogleUrl: g, contacts: [] });
+    n++;
+  });
+  placeOpen[id] = -1;
+  renderPlaces(id);
+  showToast(n ? `${n} مکان اضافه شد — بررسی کنید و «انتشار» را بزنید` : 'همه مکان‌های پیشنهادی از قبل اضافه شده‌اند');
+}
 const ALL_CITIES = ['najaf', 'karbala', 'kadhimiya', 'samarra'];
 const placeState = {}, placeOpen = {};
 const pid = () => 'pl' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -38,7 +76,8 @@ function renderPlaces(id) {
   const cnt = document.getElementById('place-count-' + id);
   if (cnt) cnt.textContent = list.length ? list.length + ' مکان' : 'هنوز مکانی ثبت نشده';
   const tools = `<div class="hotel-tools" style="flex-wrap:wrap">${Object.entries(PLACE_TYPES).map(([k, [ico, l]]) =>
-    `<button class="add-row-btn" onclick="addPlace('${id}','${k}')">+ ${ico} ${l}</button>`).join('')}</div>`;
+    `<button class="add-row-btn" onclick="addPlace('${id}','${k}')">+ ${ico} ${l}</button>`).join('')}
+    ${PLACE_SUGGEST[id] ? `<button class="add-row-btn" style="flex-basis:100%" onclick="addSuggestedPlaces('${id}')">📥 افزودن مکان‌های پیشنهادی از نقشه رسمی (هلال احمر، اماکن زیارتی و ...)</button>` : ''}</div>`;
   if (!list.length) { el.innerHTML = tools + '<div class="empty-msg">مکانی ثبت نشده</div>'; return; }
   el.innerHTML = tools + list.map((p, i) => {
     const [ico, label] = PLACE_TYPES[p.type];

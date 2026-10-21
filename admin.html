@@ -769,6 +769,7 @@
 <script src="data.js"></script>
 <script src="admin-food.js"></script>
 <script src="admin-places.js"></script>
+<script src="admin-maps.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -938,6 +939,7 @@ async function uploadPendingHeroes(token){
 }
 async function uploadPendingHotelCards(token){
   await uploadPendingHeroes(token);
+  await uploadPendingMaps(token);
   for(const id of Object.keys(hotelState)){
     let any=false;
     for(const h of hotelState[id]){
@@ -1062,7 +1064,7 @@ const hotelOpen={najaf:-1,karbala:-1,kadhimiya:-1};
 function getInitialHotels(cityId){
   const city=CARAVAN_DATA.cities.find(c=>c.id===cityId);
   return(city?.hotels||[]).map(h=>({
-    id:h.id,name:h.name||'',nameEn:h.nameEn||'',
+    id:h.id,name:h.name||'',nameEn:h.nameEn||'',code:h.code?String(h.code):'',
     address:h.address||'',
     imgs:(h.images&&h.images.length?h.images:(h.cardImage?[h.cardImage]:[])).map(path=>({path})),
     mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',
@@ -1091,7 +1093,8 @@ function renderHotels(cityId){
   const tools=`<div class="hotel-tools">
       ${hotels.length>4?`<input type="text" placeholder="🔍 جستجوی هتل..." oninput="filterHotels('${cityId}',this.value)">`:''}
       <button class="add-row-btn" onclick="addHotel('${cityId}')">+ هتل جدید</button>
-    </div>`;
+      <button class="add-row-btn" onclick="toggleHotelBulk('${cityId}')">📥 افزودن گروهی</button>
+    </div>`+hotelBulkHTML(cityId);
   if(!hotels.length){el.innerHTML=tools+`<div class="empty-msg">هتلی ثبت نشده</div>`;return;}
   el.innerHTML=tools+hotels.map((h,i)=>`
     <div class="hotel-entry ${open===i?'open':''}" id="hotel-entry-${cityId}-${i}" data-name="${escH(h.name)}">
@@ -1100,7 +1103,7 @@ function renderHotels(cityId){
         ${(h.imgs[0]&&(h.imgs[0].data||h.imgs[0].path))?`<img class="hotel-thumb-a" src="${escH(h.imgs[0].data||h.imgs[0].path)}" alt="">`:'<div class="hotel-thumb-a">🏨</div>'}
         <div style="flex:1;min-width:0">
           <div class="hotel-entry-name" id="hn-${cityId}-${i}">${escH(h.name)||'هتل جدید'}</div>
-          <div class="hotel-meta">${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
+          <div class="hotel-meta">${h.code?'کد '+escH(h.code)+' · ':''}${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
         </div>
         <div class="hotel-ctl" onclick="event.stopPropagation()">
           <button title="بالاتر" onclick="moveHotel('${cityId}',${i},-1)">▲</button>
@@ -1115,6 +1118,11 @@ function renderHotels(cityId){
           <div class="field-label">نام فارسی *</div>
           <input type="text" class="input-full" placeholder="نام هتل" value="${escH(h.name)}"
                  oninput="updateHotel('${cityId}',${i},'name',this.value)">
+        </div>
+        <div>
+          <div class="field-label">🔢 کد هتل روی نقشه رسمی شهر</div>
+          <input type="text" class="input-full" inputmode="numeric" placeholder="مثلاً ۱۱۸" value="${escH(h.code)}"
+                 oninput="updateHotel('${cityId}',${i},'code',this.value)" dir="ltr" style="max-width:160px">
         </div>
         <div>
           <div class="field-label">نام انگلیسی</div>
@@ -1211,7 +1219,7 @@ function filterHotels(cityId,q){
   document.querySelectorAll(`#hotels-${cityId} .hotel-entry`).forEach(e=>e.classList.toggle('hide',!!q&&!(e.dataset.name||'').includes(q)));
 }
 function addHotel(cityId){
-  hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',address:'',imgs:[],mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
+  hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',code:'',address:'',imgs:[],mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
   const idx=hotelState[cityId].length-1;
   hotelOpen[cityId]=idx;
   renderHotels(cityId);
@@ -1274,7 +1282,7 @@ function sectionData(key){
 }
 function hotelsData(cityId){
   return (hotelState[cityId]||[]).filter(h=>h.name.trim()).map(h=>({
-    id:h.id,name:h.name,nameEn:h.nameEn,address:h.address,
+    id:h.id,name:h.name,nameEn:h.nameEn,...((h.code||'').trim()?{code:toEnA(h.code).trim()}:{}),address:h.address,
     cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
     images:h.imgs.map(imgSrc).filter(Boolean),
     mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,
@@ -1307,6 +1315,7 @@ function buildData(pending){
       arabic:cityMeta[id].arabic.trim(),
       icon:'🕌',
       ...(cityMeta[id].hidden?{hidden:true}:{}),
+      ...cityMapData(id),
       ...((cityMeta[id].heroImage||(BUILD_PENDING&&cityMeta[id].heroData))?{heroImage:cityMeta[id].heroImage||cityMeta[id].heroData,heroFocus:{x:cityMeta[id].fx,y:cityMeta[id].fy}}:{}),
       hotels:hotelsData(id),
       hq:sectionData(id+'-hq'),
@@ -1392,6 +1401,10 @@ function renderCityMeta(id){
       <div class="field">
         <div class="field-label">🖼️ عکس پس‌زمینه عنوان شهر (مثلاً عکس حرم) — برنامه خودش متناسب با هر صفحه برش می‌دهد</div>
         ${heroPickerHTML(id)}
+      </div>
+      <div class="field">
+        <div class="field-label">🗺️ نقشه شهر (فایل PDF نقشه رسمی یا عکس) — کاربر آن را با دو انگشت بزرگ‌نمایی می‌کند</div>
+        ${mapPickerHTML(id)}
       </div>
     </div>
   </div>`;
@@ -1628,7 +1641,7 @@ function init(){
   ALL_CITIES.forEach(id=>{
     const c=CARAVAN_DATA.cities.find(x=>x.id===id)||{};
     cityMeta[id]={name:c.name||DEFAULT_CITY[id],arabic:c.arabic||DEFAULT_ARABIC[id]||'',heroImage:c.heroImage||'',fx:c.heroFocus?.x??50,fy:c.heroFocus?.y??40,
-      hidden:c.id?!!c.hidden:true};
+      hidden:c.id?!!c.hidden:true,map:c.map||null};
     renderCityMeta(id);
   });
   renderSiteFields();renderFooterEditor();
