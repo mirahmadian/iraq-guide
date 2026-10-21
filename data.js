@@ -8,7 +8,7 @@
 const CARAVAN_DATA = {
   "lastUpdate": "1405/07/30",
   "site": {
-    "appTitle": "راهنمای کاروان عراق",
+    "appTitle": "همراه عتبات",
     "appSubtitle": "ستادها، درمانگاه‌ها و شماره‌های تماس",
     "footer": [
       {
