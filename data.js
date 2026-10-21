@@ -352,6 +352,44 @@ const CARAVAN_DATA = {
               "countryCode": "964"
             }
           ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792618267189",
+          "name": "جنه الجواد",
+          "nameEn": "",
+          "address": "کاظمین شارع المحیط القدیم قرب التربیه",
+          "cardImage": "hotels/h-1792618492401-88pu5.jpg",
+          "images": [
+            "hotels/h-1792618492401-88pu5.jpg",
+            "hotels/h-1792618495239-cbxkz.jpg",
+            "hotels/h-1792618497637-ducru.jpg",
+            "hotels/h-1792618501488-evuoi.jpg",
+            "hotels/h-1792618504266-xt5mo.jpg",
+            "hotels/h-1792618506930-quib1.jpg",
+            "hotels/h-1792618509884-pfs4o.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/51rbSM802ACABS",
+          "mapGoogleUrl": "https://maps.app.goo.gl/cjHDeAoMxz8mHhBb8",
+          "contacts": [
+            {
+              "role": "مدیر روزانه",
+              "phone": "07751700500",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "مدیریت داخلی",
+              "phone": "07804905136",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "مدیر شبانه",
+              "phone": "07807313652",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         }
       ],
       "hq": {
