@@ -2101,7 +2101,7 @@ const CARAVAN_DATA = {
           "id": "plmviqlno0p3e",
           "type": "clinic",
           "title": "مستشفی سامرا العام",
-          "address": "سامراء،، شارع الملويه",
+          "address": "سامراء، شارع الملويه",
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://maps.app.goo.gl/iZS2epXxiwT2F4hJ9?g_st=ic",
           "contacts": []
