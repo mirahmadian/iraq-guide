@@ -1775,6 +1775,12 @@ const CARAVAN_DATA = {
       "name": "کربلای معلی",
       "arabic": "كربلاء المقدسة · مرقد سیدالشهداء الحسین (ع) و العباس (ع)",
       "icon": "🕌",
+      "map": {
+        "image": "maps/karbala-1792626001094.jpg",
+        "pdf": "maps/karbala-1792626001094.pdf",
+        "w": 3600,
+        "h": 2547
+      },
       "heroImage": "cities/karbala-1792066586443.jpg",
       "heroFocus": {
         "x": 59,
