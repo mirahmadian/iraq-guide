@@ -2092,9 +2092,18 @@ const CARAVAN_DATA = {
           "id": "plmviqh76nawc",
           "type": "clinic",
           "title": "مستشفی محمد الماجد- الحشد",
-          "address": "",
+          "address": "سامراء - جنب فرمانداری صلاح الدین",
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://maps.app.goo.gl/rQVxYZyYGVygkKC68?g_st=ic",
+          "contacts": []
+        },
+        {
+          "id": "plmviqlno0p3e",
+          "type": "clinic",
+          "title": "مستشفی سامرا العام",
+          "address": "سامراء،، شارع الملويه",
+          "mapNeshanUrl": "",
+          "mapGoogleUrl": "https://maps.app.goo.gl/iZS2epXxiwT2F4hJ9?g_st=ic",
           "contacts": []
         }
       ]
