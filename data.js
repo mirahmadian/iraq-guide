@@ -1791,7 +1791,6 @@ const CARAVAN_DATA = {
         "x": 59,
         "y": 46
       },
-      "hqBanner": "banners/hq-karbala-1792627208528.jpg",
       "hotels": [],
       "hq": {
         "title": "ستاد کربلا",
