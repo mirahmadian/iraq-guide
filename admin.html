@@ -779,6 +779,14 @@
 <div class="toast" id="toast"></div>
 
 <script src="data.js"></script>
+<script>
+/* نسخه سایت ممکن است تا چند دقیقه بعد از انتشار قدیمی بماند؛ اگر آخرین نسخه از گیتهاب گرفته شده، همان را بارگذاری کن */
+try{
+  const f=sessionStorage.getItem('admin-fresh-data');
+  if(f){sessionStorage.removeItem('admin-fresh-data');Object.keys(CARAVAN_DATA).forEach(k=>delete CARAVAN_DATA[k]);Object.assign(CARAVAN_DATA,JSON.parse(f));}
+}catch(e){}
+const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
+</script>
 <script src="admin-food.js"></script>
 <script src="admin-places.js"></script>
 <script src="admin-maps.js"></script>
@@ -1550,13 +1558,45 @@ async function verifyToken(token) {
 }
 async function putFile(path, text, message, token, rawB64) {
   let sha;
-  const cur = await gh('/contents/' + path, token);
+  const cur = await gh('/contents/' + path + '?t=' + Date.now(), token, {cache:'no-store'});
   if (cur.ok) sha = (await cur.json()).sha;
   const r = await gh('/contents/' + path, token, {
     method: 'PUT',
     body: JSON.stringify({ message, content: rawB64 || b64(new TextEncoder().encode(text)), ...(sha ? {sha} : {}) })
   });
   if (!r.ok) throw new Error('انتشار ناموفق بود (' + r.status + ')');
+  return r.json();
+}
+
+/* ══════════════════════════════════════════
+   همیشه با آخرین نسخه منتشرشده کار کن
+   (جلوگیری از اینکه انتشار از روی نسخه قدیمی، تغییرات قبلی را پاک کند)
+══════════════════════════════════════════ */
+let dataSha = null;
+async function fetchLatestData(token) {
+  const r = await gh('/contents/data.js?ref=main&t=' + Date.now(), token, {cache:'no-store'});
+  if (!r.ok) throw new Error('(' + r.status + ')');
+  const j = await r.json();
+  const text = new TextDecoder().decode(unb64(j.content.replace(/\s/g, '')));
+  return { sha: j.sha, data: new Function(text + '\n;return CARAVAN_DATA;')() };
+}
+async function syncLatestData() {
+  lockShow('lockLoading');
+  document.querySelector('#lockLoading p').textContent = 'در حال دریافت آخرین نسخه اطلاعات...';
+  try {
+    const { sha, data } = await fetchLatestData(ghToken);
+    dataSha = sha;
+    if (JSON.stringify(data) !== LOADED_DATA_JSON && !sessionStorage.getItem('admin-fresh-reloaded')) {
+      sessionStorage.setItem('admin-fresh-data', JSON.stringify(data));
+      sessionStorage.setItem('admin-fresh-reloaded', '1');
+      location.reload();
+      return;
+    }
+    sessionStorage.removeItem('admin-fresh-reloaded');
+  } catch(e) {
+    showToast('⚠️ آخرین نسخه اطلاعات دریافت نشد — اینترنت را بررسی و صفحه را تازه کنید');
+  }
+  lockHide();
 }
 
 function lockShow(which) {
@@ -1567,7 +1607,7 @@ function showSetup() { lockShow('lockSetup'); }
 function lockHide() { document.getElementById('lockOverlay').classList.remove('show'); }
 
 async function authInit() {
-  if (ghToken) { lockHide(); return; }
+  if (ghToken) { syncLatestData(); return; }
   lockShow('lockLoading');
   try {
     const r = await fetch(KEY_FILE + '?t=' + Date.now(), {cache:'no-store'});
@@ -1587,8 +1627,8 @@ async function doUnlock() {
     await verifyToken(token);
     ghToken = token;
     try { localStorage.setItem(TOKEN_KEY, token); } catch(e) {}
-    lockHide();
     showToast('وارد شدید ✅');
+    syncLatestData();
   } catch(e) { err.textContent = e.message; }
 }
 
@@ -1622,10 +1662,18 @@ async function publishData() {
   const btn = document.getElementById('pubBtn');
   btn.disabled = true; btn.textContent = '... در حال انتشار';
   try {
+    if (dataSha) {
+      const cur = await gh('/contents/data.js?ref=main&t=' + Date.now(), ghToken, {cache:'no-store'});
+      if (cur.ok && (await cur.json()).sha !== dataSha) {
+        if (confirm('از زمانی که این صفحه را باز کرده‌اید، تغییرات دیگری (از تب یا دستگاه دیگر) منتشر شده است.\nاگر الان منتشر کنید، آن تغییرات پاک می‌شود.\n\nصفحه تازه شود تا آخرین نسخه بیاید؟\n(تغییرات منتشرنشده همین صفحه از بین می‌رود)')) location.reload();
+        return;
+      }
+    }
     btn.textContent = '... آپلود تصاویر';
     await uploadPendingPhotos(ghToken);
     btn.textContent = '... در حال انتشار';
-    await putFile('data.js', buildOutput(), 'Update data.js from admin panel', ghToken);
+    const res = await putFile('data.js', buildOutput(), 'Update data.js from admin panel', ghToken);
+    if (res && res.content) dataSha = res.content.sha;
     showToast('منتشر شد ✅ — حدود ۱ دقیقه بعد برای کاربران نمایش داده می‌شود');
   } catch(e) {
     showToast('❌ ' + e.message);

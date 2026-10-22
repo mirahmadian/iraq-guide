@@ -2094,11 +2094,10 @@ const CARAVAN_DATA = {
       "name": "سامراء",
       "arabic": "سامراء · مرقد امام علی النقی الهادی (ع) و امام حسن عسکری (ع)",
       "icon": "🕌",
-      "hidden": true,
       "heroImage": "cities/samarra-1792624909328.jpg",
       "heroFocus": {
-        "x": 73,
-        "y": 44
+        "x": 41,
+        "y": 45
       },
       "hotels": [],
       "hq": null,
