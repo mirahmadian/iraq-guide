@@ -2069,13 +2069,15 @@ const CARAVAN_DATA = {
           "name": "ملاذ الجوادین",
           "nameEn": "MALADH ALJAVADIN",
           "address": "باب قبله شارع عسگریه قرب ساحه الزهرا",
-          "cardImage": "hotels/h-1792669215687-mpjlg.jpg",
+          "cardImage": "hotels/h-1792669863193-3uq4u.jpg",
           "images": [
-            "hotels/h-1792669215687-mpjlg.jpg",
-            "hotels/h-1792669218687-aiq5e.jpg",
-            "hotels/h-1792669221628-vn9rh.jpg",
-            "hotels/h-1792669224827-st0ok.jpg",
-            "hotels/h-1792669227165-khdbl.jpg"
+            "hotels/h-1792669863193-3uq4u.jpg",
+            "hotels/h-1792669865983-hgqjj.jpg",
+            "hotels/h-1792669868585-z8obw.jpg",
+            "hotels/h-1792669871148-zlfe0.jpg",
+            "hotels/h-1792669873611-rb460.jpg",
+            "hotels/h-1792669876782-80kp1.jpg",
+            "hotels/h-1792669879435-l5l6r.jpg"
           ],
           "mapNeshanUrl": "https://nshn.ir/10rbSViryACv9Q",
           "mapGoogleUrl": "https://maps.app.goo.gl/UqA9m9nTdnfyoRpr6",
