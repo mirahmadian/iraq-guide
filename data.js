@@ -2063,6 +2063,30 @@ const CARAVAN_DATA = {
               "countryCode": "964"
             }
           ]
+        },
+        {
+          "id": "hotel-kadhimiya-1792668913654",
+          "name": "ملاذ الجوادین",
+          "nameEn": "MALADH ALJAVADIN",
+          "address": "باب قبله شارع عسگریه قرب ساحه الزهرا",
+          "cardImage": "hotels/h-1792669215687-mpjlg.jpg",
+          "images": [
+            "hotels/h-1792669215687-mpjlg.jpg",
+            "hotels/h-1792669218687-aiq5e.jpg",
+            "hotels/h-1792669221628-vn9rh.jpg",
+            "hotels/h-1792669224827-st0ok.jpg",
+            "hotels/h-1792669227165-khdbl.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/10rbSViryACv9Q",
+          "mapGoogleUrl": "https://maps.app.goo.gl/UqA9m9nTdnfyoRpr6",
+          "contacts": [
+            {
+              "role": "مدیر داخلی",
+              "phone": "۰۷۸۰۶۸۰۰۰۸۶",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         }
       ],
       "hq": {
