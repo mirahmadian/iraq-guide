@@ -2097,8 +2097,8 @@ const CARAVAN_DATA = {
       "icon": "🕌",
       "heroImage": "cities/samarra-1792624909328.jpg",
       "heroFocus": {
-        "x": 73,
-        "y": 44
+        "x": 41,
+        "y": 45
       },
       "hotels": [],
       "hq": null,
