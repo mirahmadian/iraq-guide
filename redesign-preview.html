@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طرح‌های پیشنهادی</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* ── صفحه نمایش طرح‌ها ── */
+  :root{--pg-bg:#ECEFEC;--pg-card:#fff;--pg-text:#1B241F;--pg-muted:#55625A;--pg-line:#D5DCD7;--pg-pri:#1F6B4F}
+  @media (prefers-color-scheme:dark){:root{--pg-bg:#111513;--pg-card:#1A201C;--pg-text:#E9EEEA;--pg-muted:#A3B0A8;--pg-line:#2C3530;--pg-pri:#5FC39A}}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Vazirmatn',sans-serif;background:var(--pg-bg);color:var(--pg-text);line-height:1.8;padding:16px}
+  .pg-head{max-width:1300px;margin:0 auto 14px}
+  .pg-head h1{font-size:22px;font-weight:900}
+  .pg-head p{color:var(--pg-muted);font-size:14px}
+  .audit{max-width:1300px;margin:0 auto 16px;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:14px;padding:14px 16px}
+  .audit summary{cursor:pointer;font-weight:800;font-size:15px}
+  .audit ol{padding-right:20px;margin-top:8px;font-size:14px}
+  .audit li{margin-bottom:6px}
+  .audit li b{color:var(--pg-pri)}
+  .controls{max-width:1300px;margin:0 auto 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;top:0;z-index:50;
+    background:var(--pg-bg);padding:8px 0}
+  .seg{display:flex;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:12px;padding:4px;gap:4px}
+  .seg button{border:none;background:none;font-family:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;color:var(--pg-muted);min-height:40px}
+  .seg button.on{background:var(--pg-pri);color:#fff}
+  .controls a{color:var(--pg-pri);font-weight:700;font-size:14px}
+  .frames{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+  .fr-wrap{display:none}
+  .fr-wrap.on{display:block}
+  @media (min-width:1240px){.fr-wrap{display:block}.seg.dirs{display:none}}
+  @media (max-width:1239px){.frames{grid-template-columns:minmax(0,420px);justify-content:center}}
+  .fr-title{font-weight:900;font-size:17px;margin-bottom:2px}
+  .fr-desc{color:var(--pg-muted);font-size:13px;margin-bottom:10px;min-height:46px}
+  .phone{height:min(780px,82vh);overflow:auto;border-radius:28px;border:8px solid #222;box-shadow:0 12px 40px rgba(0,0,0,.18);position:relative;
+    scrollbar-width:none;overscroll-behavior:contain}
+  .phone::-webkit-scrollbar{display:none}
+
+  /* ══════════ مؤلفه‌های مشترک داخل گوشی ══════════ */
+  .app{--fs:1;min-height:100%;background:var(--bg);color:var(--text);font-size:calc(14px * var(--fsb));position:relative;display:flex;flex-direction:column}
+  .app .ink{color:var(--text)}
+  .k-hq{--acc:var(--hq)}.k-clinic{--acc:var(--clinic)}.k-consulate{--acc:var(--consulate)}.k-hotel{--acc:var(--hotel)}.k-ins{--acc:var(--ins)}.k-transport{--acc:var(--transport)}
+  .hdr{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--hdr-bg);color:var(--hdr-ink);border-bottom:1px solid var(--line)}
+  .hdr .logo{width:38px;height:38px;border-radius:11px;flex-shrink:0;background:#fff center/cover;border:1px solid var(--line)}
+  .hdr h1{flex:1;font-size:calc(17px * var(--fsb));font-weight:900;line-height:1.3}
+  .hdr h1 small{display:block;font-size:calc(11.5px * var(--fsb));font-weight:500;opacity:.8}
+  .ibtn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);display:flex;align-items:center;justify-content:center;
+    font-family:inherit;font-weight:800;font-size:calc(14px * var(--fsb));cursor:pointer}
+  .ibtn svg{width:20px;height:20px}
+  .search{margin:12px 14px 0;display:flex;align-items:center;gap:8px;padding:0 14px;height:48px;border-radius:var(--r);background:var(--card);border:var(--bw) solid var(--line);color:var(--muted)}
+  .search svg{width:20px;height:20px;flex-shrink:0}
+  .bstrip{margin:12px 14px 0;display:flex;align-items:center;gap:12px;padding:8px;border-radius:var(--r);background:var(--card);border:var(--bw) solid var(--line);box-shadow:var(--sh)}
+  .bstrip img{width:56px;height:56px;border-radius:calc(var(--r) - 6px);object-fit:cover;object-position:50% 45%;flex-shrink:0}
+  .bstrip b{display:block;font-size:calc(13.5px * var(--fsb));line-height:1.5}
+  .bstrip span{display:block;font-size:calc(12px * var(--fsb));color:var(--muted)}
+  .sec-lbl{margin:18px 16px 8px;font-size:calc(12.5px * var(--fsb));font-weight:800;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .sec-lbl::after{content:'';flex:1;height:1px;background:var(--line)}
+  .glob{margin:0 14px;background:var(--card);border-radius:var(--r);border:var(--bw) solid var(--line);box-shadow:var(--sh);overflow:hidden}
+  .grow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .grow:last-child{border-bottom:none}
+  .ava{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--acc);background:var(--soft) center/cover}
+  .ava.ph{display:flex;align-items:center;justify-content:center;color:var(--acc)}
+  .ava.ph svg{width:22px;height:22px}
+  .who{flex:1;min-width:0}
+  .who .role{font-size:calc(12px * var(--fsb));color:var(--acc-ink);font-weight:700;line-height:1.5}
+  .who .name{font-size:calc(13.5px * var(--fsb));font-weight:800;line-height:1.5}
+  .who .num{font-size:calc(19px * var(--fsb));font-weight:900;letter-spacing:.5px;line-height:1.4;direction:ltr;text-align:right;color:var(--text)}
+  .acts{display:flex;gap:8px;flex-shrink:0}
+  .act{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;border:var(--bw) solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+  .act svg{width:22px;height:22px}
+  .act.call{background:var(--acc);border-color:var(--acc);color:#fff}
+  .act.wa{color:#128C4A}
+  .tabs{position:sticky;top:62px;z-index:4;display:flex;gap:6px;padding:10px 14px;background:var(--bg);overflow-x:auto;scrollbar-width:none}
+  .tab{flex:1;min-width:max-content;padding:10px 12px;border-radius:12px;border:var(--bw) solid var(--line);background:var(--card);font-family:inherit;
+    font-size:calc(13.5px * var(--fsb));font-weight:800;color:var(--muted);cursor:pointer;min-height:46px}
+  .tab.on{background:var(--pri);border-color:var(--pri);color:#fff}
+  .hero{margin:4px 14px 0;border-radius:var(--r);min-height:170px;background:#1E3A2E center/cover;position:relative;overflow:hidden;color:#fff;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-end;padding:18px 14px 16px;text-align:center}
+  .hero::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 20%,rgba(0,0,0,.72))}
+  .hero>*{position:relative}
+  .hero h2{font-size:calc(30px * var(--fsb));font-weight:900;line-height:1.3;text-shadow:0 2px 12px rgba(0,0,0,.4)}
+  .hero .ar{font-size:calc(15px * var(--fsb));color:#F6E3AE;font-weight:700}
+  .qnav{display:flex;gap:8px;padding:12px 14px 4px;overflow-x:auto;scrollbar-width:none}
+  .qn{display:flex;align-items:center;gap:6px;padding:0 14px;height:44px;border-radius:100px;border:var(--bw) solid var(--acc);background:var(--card);color:var(--acc-ink);
+    font-family:inherit;font-weight:800;font-size:calc(13px * var(--fsb));white-space:nowrap;cursor:pointer}
+  .qn i{width:9px;height:9px;border-radius:50%;background:var(--acc)}
+  .card{margin:12px 14px 0;background:var(--card);border-radius:var(--r);border:var(--bw) solid var(--line);box-shadow:var(--sh);overflow:hidden}
+  .chead{display:flex;align-items:center;gap:10px;padding:12px 14px}
+  .chead .cico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .chead .cico svg{width:22px;height:22px}
+  .chead h3{flex:1;font-size:calc(16px * var(--fsb));font-weight:900;line-height:1.5}
+  .chead .tag{font-size:calc(11.5px * var(--fsb));font-weight:800;padding:2px 10px;border-radius:100px}
+  .addr{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);font-size:calc(13.5px * var(--fsb));line-height:1.8}
+  .addr svg{width:18px;height:18px;flex-shrink:0;margin-top:4px;color:var(--acc)}
+  .route{display:flex;gap:8px;padding:0 14px 12px}
+  .route a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:46px;border-radius:12px;font-weight:800;font-size:calc(13px * var(--fsb));
+    border:var(--bw) solid var(--line);color:var(--text);background:var(--card);text-decoration:none}
+  .route a.go{flex:1.6;background:var(--acc);border-color:var(--acc);color:#fff}
+  .route svg{width:18px;height:18px}
+  .ccontacts .grow{border-top:1px solid var(--line);border-bottom:none}
+  .hotel-res{display:flex;gap:12px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+  .hotel-res img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0}
+  .hotel-res b{display:block;font-size:calc(14.5px * var(--fsb));line-height:1.5}
+  .hotel-res span{display:block;font-size:calc(12.5px * var(--fsb));color:var(--muted);line-height:1.6}
+  .hcode{display:inline-block;margin-inline-start:6px;font-size:calc(11px * var(--fsb));font-weight:800;padding:0 8px;border-radius:6px;background:var(--soft);color:var(--acc-ink)}
+  .spacer{flex:1;min-height:20px}
+  .sos{position:sticky;bottom:0;z-index:5;display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);
+    box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+  .sos a{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border-radius:14px;color:#fff;font-weight:900;font-size:calc(14px * var(--fsb));text-decoration:none}
+  .sos a svg{width:20px;height:20px}
+  .sos a.hq{background:var(--hq)}.sos a.cl{background:var(--clinic)}
+  .sos .more{flex:0 0 52px;background:var(--card);color:var(--text);border:var(--bw) solid var(--line)}
+
+  /* ══════════ طرح الف — رسمی و آرام ══════════ */
+  .d-a{--fsb:1;--r:16px;--bw:1px;--bg:#F4F7F5;--card:#FFFFFF;--soft:#EEF4F0;--text:#14251C;--muted:#4D6157;--line:#DDE6E0;--pri:#1F6B4F;
+    --hdr-bg:#FFFFFF;--hdr-ink:#14251C;--sh:0 1px 2px rgba(20,37,28,.05),0 6px 18px rgba(20,37,28,.06);
+    --hq:#1F6B4F;--clinic:#C62828;--consulate:#3F4AA0;--hotel:#8A6416;--ins:#1E63B5;--transport:#A65400;--acc-ink:var(--acc)}
+  .d-a.dark{--bg:#0F1613;--card:#18221D;--soft:#1F2C25;--text:#EAF1ED;--muted:#A6B8AE;--line:#2A3831;--pri:#2E8A66;--hdr-bg:#0F1613;--hdr-ink:#EAF1ED;
+    --sh:none;--hq:#2E8A66;--clinic:#D33A3A;--consulate:#4F5BC0;--hotel:#9A7420;--ins:#2A72C8;--transport:#B4610A}
+  .d-a.dark .k-hq,.d-a.dark .k-clinic,.d-a.dark .k-consulate,.d-a.dark .k-hotel,.d-a.dark .k-ins,.d-a.dark .k-transport{--acc-ink:color-mix(in srgb,var(--acc) 55%,#fff)}
+  .d-a .chead{border-bottom:none}
+  .d-a .chead .cico{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc-ink)}
+  .d-a .chead .tag{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc-ink)}
+  .d-a .card{border-top:3px solid var(--acc)}
+  .d-a .hdr h1{color:var(--pri)}
+  .d-a.dark .hdr h1{color:#7FD3AE}
+
+  /* ══════════ طرح ب — پرکنتراست (زیر آفتاب) ══════════ */
+  .d-b{--fsb:1.1;--r:12px;--bw:2px;--bg:#FFFFFF;--card:#FFFFFF;--soft:#F1F3F2;--text:#000000;--muted:#2E3833;--line:#1A1A1A26;--pri:#0B5134;
+    --hdr-bg:#0B5134;--hdr-ink:#FFFFFF;--sh:none;
+    --hq:#0B5134;--clinic:#B71C1C;--consulate:#283593;--hotel:#6D4C0B;--ins:#0D47A1;--transport:#8A4300;--acc-ink:var(--acc)}
+  .d-b.dark{--bg:#000000;--card:#0E0E0E;--soft:#1A1A1A;--text:#FFFFFF;--muted:#D6D6D6;--line:#FFFFFF40;--pri:#127A50;--hdr-bg:#0B3D27;
+    --hq:#127A50;--clinic:#C62828;--consulate:#3949AB;--hotel:#8D6612;--ins:#1565C0;--transport:#A65400}
+  .d-b.dark .k-hq,.d-b.dark .k-clinic,.d-b.dark .k-consulate,.d-b.dark .k-hotel,.d-b.dark .k-ins,.d-b.dark .k-transport{--acc-ink:color-mix(in srgb,var(--acc) 40%,#fff)}
+  .d-b .hdr .ibtn{background:transparent;color:#fff;border-color:#FFFFFF66}
+  .d-b .chead{background:var(--acc);color:#fff}
+  .d-b .chead .cico{background:#FFFFFF26;color:#fff}
+  .d-b .chead .tag{background:#fff;color:var(--acc)}
+  .d-b .card{border-color:var(--acc)}
+  .d-b .who .num{font-size:calc(22px * var(--fsb))}
+  .d-b .act{width:52px;height:52px}
+  .d-b .hero{border-radius:var(--r)}
+  .d-b .sec-lbl{color:var(--text)}
+  .d-b .tab.on{box-shadow:inset 0 -4px 0 #FFD54F}
+
+  /* ══════════ طرح ج — معنوی و سنتی ══════════ */
+  .d-c{--fsb:1;--r:18px;--bw:1px;--bg:#FAF6EE;--card:#FFFDF8;--soft:#F3ECDD;--text:#2A2116;--muted:#6A5A43;--line:#E6DAC2;--pri:#0E5A44;--gold:#A87A22;
+    --hdr-bg:#0E5A44;--hdr-ink:#FFF8E6;--sh:0 2px 10px rgba(90,64,20,.08);
+    --hq:#0E5A44;--clinic:#B3261E;--consulate:#3B4592;--hotel:#8A5F12;--ins:#1C5C9E;--transport:#9A4E06;--acc-ink:var(--acc);
+    --pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23C9A24B' stroke-opacity='.35' stroke-width='1'%3E%3Cpath d='M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Crect x='14' y='14' width='20' height='20' transform='rotate(45 24 24)'/%3E%3C/g%3E%3C/svg%3E")}
+  .d-c.dark{--bg:#14110C;--card:#1E1A13;--soft:#2A241A;--text:#F4EBDA;--muted:#C2B293;--line:#3A3122;--pri:#147358;--hdr-bg:#0B3B2D;--hdr-ink:#FFF8E6;--sh:none;
+    --hq:#147358;--clinic:#C0392B;--consulate:#4A55A8;--hotel:#9C6F1C;--ins:#2468B0;--transport:#A9580C}
+  .d-c.dark .k-hq,.d-c.dark .k-clinic,.d-c.dark .k-consulate,.d-c.dark .k-hotel,.d-c.dark .k-ins,.d-c.dark .k-transport{--acc-ink:color-mix(in srgb,var(--acc) 45%,#fff)}
+  .d-c .hdr{background:var(--hdr-bg) var(--pat);background-size:48px}
+  .d-c .hdr .ibtn{background:#FFFFFF14;color:#FFF8E6;border-color:#C9A24B88}
+  .d-c .hdr h1 small{color:#E8CF8F;opacity:1}
+  .d-c .hero{border-radius:120px 120px var(--r) var(--r);min-height:200px;border:2px solid var(--gold);box-shadow:0 0 0 4px var(--bg),0 0 0 5px #C9A24B88}
+  .d-c .hero h2{font-size:calc(32px * var(--fsb))}
+  .d-c .hero .orn{color:#E8CF8F;letter-spacing:6px;font-size:12px}
+  .d-c .chead{border-bottom:1px solid var(--line);background:linear-gradient(0deg,transparent,var(--soft))}
+  .d-c .chead .cico{background:var(--acc);color:#fff;border-radius:50%;box-shadow:0 0 0 3px var(--card),0 0 0 4px #C9A24B}
+  .d-c .chead .tag{border:1px solid var(--gold);color:var(--gold)}
+  .d-c.dark .chead .tag{color:#E2C27A;border-color:#E2C27A}
+  .d-c .sec-lbl{color:var(--gold);justify-content:center}
+  .d-c .sec-lbl::before{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+  .d-c .sec-lbl::after{background:linear-gradient(90deg,var(--gold),transparent)}
+  .d-c .app{background-image:var(--pat);background-size:96px}
+  .d-c .tab.on{background:var(--pri);box-shadow:inset 0 -3px 0 #C9A24B}
+  .d-c .card{border-color:var(--line)}
+</style>
+</head>
+<body>
+<header class="pg-head">
+  <h1>طرح‌های پیشنهادی برای برنامه</h1>
+  <p>سه سبک مختلف، با اطلاعات واقعی خود برنامه. هیچ‌کدام هنوز روی برنامه اصلی اعمال نشده است. داخل هر گوشی می‌توانید بالا و پایین بروید.</p>
+</header>
+
+<details class="audit">
+  <summary>🔎 ایرادهای طرح فعلی که در هر سه طرح برطرف شده</summary>
+  <ol>
+    <li><b>بنر بالای صفحه کل صفحه اول را می‌گیرد.</b> کاربر برای رسیدن به شماره ستاد یا انتخاب شهر باید دو صفحه پایین برود. در طرح جدید بنر کامل فقط در صفحه خوش‌آمد می‌آید و بالای برنامه یک نوار کوچک است که با لمس، بنر بزرگ باز می‌شود.</li>
+    <li><b>دکمه‌های پایین صفحه (QR و اشتراک‌گذاری) بهترین جای صفحه را گرفته‌اند</b>، یعنی جایی که شست راحت به آن می‌رسد. در طرح جدید آنجا دو دکمه اضطراری است: <b>تماس با ستاد</b> و <b>تماس با درمانگاه</b> همان شهری که باز است. QR و اشتراک‌گذاری به دکمه «⋯» رفته‌اند.</li>
+    <li><b>بالای صفحه هنگام پایین رفتن خیلی جا می‌گیرد</b> (عنوان دو خطی + شهرها، حدود یک‌سوم صفحه). در طرح جدید یک خط است.</li>
+    <li><b>کنار هر شماره یک آیکون تلفن خاکستری هست که دکمه نیست</b> و با دکمه تماس اشتباه گرفته می‌شود. در طرح جدید دکمه تماس پررنگ و رنگی است و جای عکس، آیکون آدمک است.</li>
+    <li><b>بعضی رنگ‌ها زیر آفتاب خوانا نیستند:</b> نوشته‌های کم‌رنگ (مثل «آدرس») و دکمه‌های نارنجی و طلایی کمتر از حد استاندارد خوانایی‌اند. رنگ‌ها پررنگ‌تر شده‌اند.</li>
+    <li><b>کارت‌های بیمه و نقل خیلی بلندند</b> (عکس بزرگ وسط کارت). در طرح جدید هر نفر یک ردیف است: عکس، نام، شماره، دکمه تماس.</li>
+    <li><b>در حالت تیره، آرم سازمان یک مربع سفید خالی دیده می‌شود.</b></li>
+  </ol>
+</details>
+
+<div class="controls">
+  <div class="seg dirs" id="dirSeg">
+    <button class="on" data-d="a">الف · رسمی</button><button data-d="b">ب · پرکنتراست</button><button data-d="c">ج · معنوی</button>
+  </div>
+  <div class="seg" id="modeSeg"><button class="on" data-m="light">☀️ روشن</button><button data-m="dark">🌙 تیره</button></div>
+  <a href="index.html" target="_blank">مقایسه با برنامه فعلی ←</a>
+</div>
+
+<div class="frames" id="frames"></div>
+
+<script src="data.js"></script>
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const I = {
+  phone:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1z"/></svg>',
+  wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.8.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>',
+  nav:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>',
+  hq:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5zm4-13h2v2H8zm6 0h2v2h-2zm-6 4h2v2H8zm6 0h2v2h-2z"/></svg>',
+  cross:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.46 4.85A9 9 0 1 0 16.46 19.15 7.3 7.3 0 1 1 16.46 4.85Z"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 21h18v-2H3zm2-3h2v-7H5zm4 0h2v-7H9zm4 0h2v-7h-2zm4 0h2v-7h-2zM12 2L2 8v1h20V8z"/></svg>',
+  bed:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18v-12h2v8h6V8h7a3 3 0 013 3v7h-2v-2H5v2zm4-6a2 2 0 110-4 2 2 0 010 4z"/></svg>',
+  dots:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'
+};
+const D = CARAVAN_DATA;
+const city = D.cities.find(c => c.id === 'najaf') || D.cities[0];
+const hotelCity = D.cities.find(c => (c.hotels || []).some(h => h.cardImage || (h.images || []).length)) || city;
+const hotels = (hotelCity.hotels || []).slice(0, 3);
+const cityList = D.cities.filter(c => !c.hidden);
+
+function contactRow(c, kind) {
+  const ava = c.photo ? `<img class="ava" src="${esc(c.photo)}" alt="">` : `<div class="ava ph">${I.user}</div>`;
+  return `<div class="grow k-${kind}">${ava}
+    <div class="who">${c.name ? `<div class="name">${esc(c.name)}</div>` : ''}<div class="role">${esc(c.role)}</div><div class="num">${esc(c.phone)}</div></div>
+    <div class="acts"><span class="act call" title="تماس">${I.phone}</span><span class="act wa" title="واتساپ">${I.wa}</span></div></div>`;
+}
+function card(kind, ico, tag, sec) {
+  if (!sec) return '';
+  return `<section class="card k-${kind}">
+    <div class="chead"><div class="cico">${ico}</div><h3>${esc(sec.title)}</h3><span class="tag">${tag}</span></div>
+    ${sec.address ? `<div class="addr">${I.pin}<div>${esc(sec.address)}</div></div>` : ''}
+    <div class="route"><a class="go">${I.nav} مسیریابی</a><a>نشان</a><a>گوگل مپ</a></div>
+    <div class="ccontacts">${(sec.contacts || []).slice(0, 3).map(c => contactRow(c, kind)).join('')}</div>
+  </section>`;
+}
+function appHTML(dir) {
+  const banner = D.site && D.site.banner && D.site.banner.image;
+  const ar = (city.arabic || '').split(' · ');
+  return `<div class="app">
+    <div class="hdr"><div class="logo" style="background-image:url(app-icon-192.png)"></div>
+      <h1>${esc(D.site?.appTitle || 'راهنمای کاروان عراق')}</h1>
+      <span class="ibtn">Aa</span><span class="ibtn">${I.moon}</span></div>
+    ${banner ? `<div class="bstrip"><img src="${esc(banner)}" alt=""><div><b>دفتر نمایندگی حج و زیارت در عراق</b><span>برای دیدن بنر لمس کنید</span></div></div>` : ''}
+    <div class="tabs">${cityList.map(c => `<span class="tab ${c.id === city.id ? 'on' : ''}">${esc(c.name)}</span>`).join('')}</div>
+    <div class="hero" style="${city.heroImage ? `background-image:url('${esc(city.heroImage)}');background-position:${city.heroFocus?.x ?? 50}% ${city.heroFocus?.y ?? 40}%` : ''}">
+      ${dir === 'c' ? '<div class="orn">✦ ✦ ✦</div>' : ''}<h2>${esc(city.name)}</h2><div class="ar">${esc(ar[0] || '')}</div></div>
+    <div class="qnav"><span class="qn k-hq"><i></i>ستاد</span><span class="qn k-clinic"><i></i>درمانگاه</span><span class="qn k-hotel"><i></i>هتل</span><span class="qn k-consulate"><i></i>کنسولگری</span></div>
+    ${card('hq', I.hq, 'ستاد', city.hq)}
+    ${card('clinic', I.cross, 'درمانگاه', city.clinic)}
+    <div class="sec-lbl">برای همه شهرها</div>
+    <div class="glob">${[...(D.insurance?.contacts || []).slice(0, 1).map(c => contactRow(c, 'ins')), ...(D.transport?.contacts || []).slice(0, 1).map(c => contactRow(c, 'transport'))].join('')}</div>
+    <div class="sec-lbl">هتل‌های ${esc(hotelCity.name)}</div>
+    <section class="card k-hotel" style="margin-top:0">
+      <div class="search" style="margin:12px 14px">${I.search}<span>نام یا کد هتل...</span></div>
+      ${hotels.map(h => `<div class="hotel-res">${(h.cardImage || (h.images || [])[0]) ? `<img src="${esc(h.cardImage || h.images[0])}" alt="">` : ''}
+        <div><b>${esc(h.name)}${h.code ? `<span class="hcode">کد ${esc(h.code)}</span>` : ''}</b><span>${esc(h.address || '')}</span></div></div>`).join('')}
+    </section>
+    ${card('consulate', I.flag, 'کنسولگری', city.consulate)}
+    <div class="spacer"></div>
+    <nav class="sos"><a class="hq">${I.phone} ستاد ${esc(city.name)}</a><a class="cl">${I.phone} درمانگاه</a><a class="more" aria-label="بیشتر">${I.dots}</a></nav>
+  </div>`;
+}
+const DIRS = [
+  ['a', 'طرح الف · رسمی و آرام', 'همان سبز فعلی، مرتب‌تر و خلوت‌تر. مناسب ظاهر رسمی سازمانی.'],
+  ['b', 'طرح ب · پرکنتراست (زیر آفتاب)', 'نوشته‌ها درشت‌تر، رنگ‌ها پررنگ، سرِ هر کارت تمام‌رنگی. بیشترین خوانایی در آفتاب و برای مسن‌ترها.'],
+  ['c', 'طرح ج · معنوی و سنتی', 'زمینه کرم، نقش هندسی اسلامی، قاب طاقی‌شکل برای عکس حرم و خطوط طلایی.']
+];
+let mode = 'light', dir = 'a';
+function draw() {
+  document.getElementById('frames').innerHTML = DIRS.map(([d, t, s]) => `
+    <div class="fr-wrap ${d === dir ? 'on' : ''}">
+      <div class="fr-title">${t}</div><div class="fr-desc">${s}</div>
+      <div class="phone d-${d} ${mode}">${appHTML(d)}</div>
+    </div>`).join('');
+}
+document.getElementById('dirSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  dir = b.dataset.d; document.querySelectorAll('#dirSeg button').forEach(x => x.classList.toggle('on', x === b)); draw();
+});
+document.getElementById('modeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = b.dataset.m; document.querySelectorAll('#modeSeg button').forEach(x => x.classList.toggle('on', x === b)); draw();
+});
+draw();
+</script>
+</body>
+</html>
