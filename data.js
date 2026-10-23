@@ -33,7 +33,7 @@ const CARAVAN_DATA = {
       }
     ],
     "banner": {
-      "image": "banners/site-1792626961293.jpg",
+      "image": "banners/site-1792740045436.jpg",
       "splash": true,
       "top": true
     }
