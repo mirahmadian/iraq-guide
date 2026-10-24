@@ -10,6 +10,7 @@ const CARAVAN_DATA = {
   "site": {
     "appTitle": "همراه عتبات",
     "appSubtitle": "ستادها، درمانگاه‌ها و شماره‌های تماس",
+    "iconName": "همراه عتبات",
     "footer": [
       {
         "type": "heading",
