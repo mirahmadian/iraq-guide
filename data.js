@@ -1764,7 +1764,7 @@ const CARAVAN_DATA = {
       },
       "clinic": {
         "title": "درمانگاه نجف",
-        "address": "شارع السور – هتل نباء – درمانگاه نباء",
+        "address": "شارع السور – هتل مباهله - درمانگاه نباء",
         "mapNeshanUrl": "https://nshn.ir/65_b_s1ROAAlS4",
         "mapGoogleUrl": "https://www.google.com/maps?q=31.997154012304026, 44.322958184605156",
         "contacts": []
