@@ -752,7 +752,11 @@ const CARAVAN_DATA = {
         "id": "p-economic",
         "title": "کاروان‌های اقتصادی",
         "caravanType": "economic",
-        "grades": [],
+        "grades": [
+          "3الف",
+          "3ب",
+          "3ج"
+        ],
         "period": "ابلاغی شهریور ۱۴۰۵",
         "active": true,
         "notes": "",
@@ -1724,6 +1728,12 @@ const CARAVAN_DATA = {
         "note": "تاریخ اجرا ۱۴۰۵/۰۷/۰۱ — در صورت استفاده از کیک با وزن کمتر، باید به تعداد کیک اضافه شود."
       }
     ]
+  },
+  "besat": {
+    "enabled": false,
+    "title": "برنامه‌های فرهنگی بعثه مقام معظم رهبری",
+    "emblem": "besat/emblem-1792879999513.png",
+    "cities": {}
   },
   "cities": [
     {
