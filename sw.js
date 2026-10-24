@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v15';
+const CACHE = 'caravan-v16';
 const STATIC = [
   './',
   'index.html',
@@ -9,6 +9,7 @@ const STATIC = [
   'besat.js',
   'besat-logo.png',
   'besat-emblem.png',
+  'ins-logo.png',
   'manifest.json',
   'app-icon.png',
   'app-icon-192.png',
