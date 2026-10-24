@@ -383,6 +383,7 @@
   <button class="tab-btn" onclick="switchTab('kadhimiya',this)">🕌 کاظمین</button>
   <button class="tab-btn" onclick="switchTab('samarra',this)">🕌 سامراء</button>
   <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
+  <button class="tab-btn" onclick="switchTab('besat',this)">📜 بعثه</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -772,6 +773,10 @@
   <div id="food-admin"></div>
 </div><!-- /tab-food -->
 
+<div class="page" id="tab-besat" style="max-width:900px">
+  <div id="besat-admin"></div>
+</div><!-- /tab-besat -->
+
 <!-- CALENDAR MODAL -->
 <div class="cal-overlay" id="calModal">
   <div class="cal-box">
@@ -804,6 +809,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-maps.js"></script>
 <script src="admin-banners.js"></script>
 <script src="admin-icon.js"></script>
+<script src="admin-besat.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -975,6 +981,7 @@ async function uploadPendingHotelCards(token){
   await uploadPendingHeroes(token);
   await uploadPendingBanners(token);
   await uploadPendingIcon(token);
+  await uploadPendingBesat(token);
   await uploadPendingMaps(token);
   for(const id of Object.keys(hotelState)){
     let any=false;
@@ -1349,6 +1356,7 @@ function buildData(pending){
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
     food:getFoodData(),
+    besat:getBesatData(),
     cities:ALL_CITIES.map(id=>({
       id,
       name:cityMeta[id].name.trim()||DEFAULT_CITY[id],
@@ -1759,6 +1767,7 @@ function init(){
   initPlaces();
   initBanners();
   initIcon();
+  initBesat();
   fitTabsBar();
 }
 

@@ -716,6 +716,7 @@
 <script src="food.js"></script>
 <script src="map-viewer.js"></script>
 <script src="banner.js"></script>
+<script src="besat.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -1198,7 +1199,8 @@ function render() {
         </svg>
       </div>
       ${cityMapButtonHTML(city)}
-      ${quickNav}`;
+      ${quickNav}
+      ${besatStripHTML(city)}`;
 
     // HQ
     if (city.hq) {
@@ -1611,7 +1613,7 @@ let touchStartX = 0, touchStartY = 0, touchIgnore = false;
 document.addEventListener('touchstart', e => {
   touchStartX = e.changedTouches[0].clientX;
   touchStartY = e.changedTouches[0].clientY;
-  touchIgnore = !!e.target.closest('input, textarea, select, .hotel-dropdown, .modal, .card-modal, .search-results, #foodView, #mapView');
+  touchIgnore = !!e.target.closest('input, textarea, select, .hotel-dropdown, .modal, .card-modal, .search-results, #foodView, #mapView, #besatView');
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (touchIgnore) return;
@@ -1666,6 +1668,11 @@ function mediaUrls() {
   if (siteBannerData()) urls.add(siteBannerData().image);
   const ic = (CARAVAN_DATA.site || {}).icon;
   if (ic) ['i192', 'i512', 'mask', 'apple'].forEach(k => ic[k] && urls.add(ic[k]));
+  const bs = CARAVAN_DATA.besat;
+  if (bs) {
+    [bs.logo, bs.emblem].forEach(u => u && urls.add(u));
+    Object.values(bs.cities || {}).forEach(list => list.forEach(p => p.poster && urls.add(p.poster)));
+  }
   CARAVAN_DATA.cities.forEach(city => {
     if (city.hidden && !SHOW_HIDDEN) return;
     if (city.map && city.map.image) urls.add(city.map.image);
