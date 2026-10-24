@@ -38,6 +38,13 @@ const CARAVAN_DATA = {
       "title": "دفتر نمایندگی حج و زیارت در عراق",
       "splash": true,
       "top": true
+    },
+    "icon": {
+      "i192": "icons/i192-1792870106170.png",
+      "i512": "icons/i512-1792870106170.png",
+      "mask": "icons/mask-1792870106170.png",
+      "apple": "icons/apple-1792870106170.png",
+      "bg": "#044e39"
     }
   },
   "insurance": {
