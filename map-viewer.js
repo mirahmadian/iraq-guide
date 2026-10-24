@@ -4,8 +4,13 @@
 ══════════════════════════════════════════ */
 (function injectMapCSS() {
   const css = `
-  .map-open{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:11px 14px;border-radius:var(--r-sm);
-    border:1px solid var(--brass-l,#C9A24B);background:var(--card);box-shadow:var(--shadow);color:var(--text);min-height:60px;cursor:pointer;font-family:var(--font);text-align:right}
+  .map-card{margin:0 0 12px;border-radius:var(--r-sm);border:1px solid var(--brass-l,#C9A24B);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+  .map-open{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:none;
+    background:none;color:var(--text);min-height:60px;cursor:pointer;font-family:var(--font);text-align:right}
+  .map-dl{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 14px;border-top:1px solid var(--border);
+    background:var(--gold-dim2,rgba(14,90,68,.05));color:var(--pri-ink,#0E5A44);font-family:var(--font);font-size:calc(13.5px * var(--fs,1));font-weight:800;text-decoration:none}
+  .map-dl svg,.mapv-dl svg{width:20px;height:20px;flex-shrink:0}
+  .map-dl small{font-weight:500;color:var(--dim);font-size:calc(11.5px * var(--fs,1))}
   .map-open .mo-ico{font-size:24px;flex-shrink:0}
   .map-open .mo-t{display:block;font-size:calc(14.5px * var(--fs,1));font-weight:900;color:var(--pri-ink,#0E5A44)}
   .map-open .mo-s{display:block;font-size:calc(12px * var(--fs,1));color:var(--dim);margin-top:1px;line-height:1.6}
@@ -19,6 +24,7 @@
   .mapv-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,0,0,.55);color:#fff;z-index:2}
   .mapv-bar button,.mapv-bar a{height:40px;min-width:40px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);
     color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center}
+  .mapv-bar a.mapv-dl{background:#C9A24B;border-color:#C9A24B;color:#1b1f1d;font-weight:900;gap:6px;padding:0 14px;height:42px}
   .mapv-title{flex:1;font-weight:800;font-size:calc(14px * var(--fs,1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mapv-stage{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;background:#e9ecea}
   .mapv-stage img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;max-width:none;will-change:transform}
@@ -34,13 +40,29 @@
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
 })();
 
+const DL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg>`;
+
+function mapPdfName(city) { return 'نقشه ' + city.name + '.pdf'; }
+
 function cityMapButtonHTML(city) {
   if (!city.map || !city.map.image) return '';
-  return `<button class="map-open" onclick="openCityMap('${city.id}')">
-    <span class="mo-ico" aria-hidden="true">🗺️</span>
-    <span style="flex:1"><span class="mo-t">نقشه ${escHtml(city.name)}</span>
-    <span class="mo-s">محل هتل‌ها، هلال احمر، اماکن زیارتی و ستاد — با دو انگشت بزرگ کنید</span></span>
-  </button>`;
+  return `<div class="map-card">
+    <button class="map-open" onclick="openCityMap('${city.id}')">
+      <span class="mo-ico" aria-hidden="true">🗺️</span>
+      <span style="flex:1"><span class="mo-t">نقشه ${escHtml(city.name)}</span>
+      <span class="mo-s">محل هتل‌ها، هلال احمر، اماکن زیارتی و ستاد — با دو انگشت بزرگ کنید</span></span>
+    </button>
+    ${city.map.pdf ? `<a class="map-dl" href="${escHtml(city.map.pdf)}" download="${escHtml(mapPdfName(city))}" onclick="mapDownload(event)">
+      ${DL_ICON}<span>دانلود نقشه برای داشتن در گوشی <small>(PDF)</small></span></a>` : ''}
+  </div>`;
+}
+
+/* پیام کوتاه: فایل کجا ذخیره می‌شود */
+function mapDownload(e) {
+  if (!navigator.onLine) { e.preventDefault(); showToast('برای دانلود نقشه به اینترنت نیاز است'); return; }
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) showToast('نقشه باز می‌شود. برای ذخیره، دکمه اشتراک‌گذاری ⬆️ را بزنید و گزینه Save to Files را انتخاب کنید', 6000);
+  else showToast('در حال دانلود… در پوشه «دانلود» گوشی ذخیره می‌شود', 4000);
 }
 
 const MV = { s: 1, x: 0, y: 0, min: 1, max: 8, w: 0, h: 0, pts: new Map(), last: null, pinch: null, tap: 0 };
@@ -55,7 +77,7 @@ function openCityMap(cityId, code) {
       <div class="mapv-bar">
         <button onclick="closeCityMap()" aria-label="بستن">✕</button>
         <div class="mapv-title" id="mapTitle"></div>
-        <a id="mapPdf" target="_blank" rel="noopener" download>📄 PDF</a>
+        <a id="mapPdf" class="mapv-dl" target="_blank" rel="noopener" onclick="mapDownload(event)">${DL_ICON}دانلود نقشه</a>
       </div>
       <div class="mapv-hint" id="mapHint"></div>
       <div class="mapv-stage" id="mapStage"><div class="mapv-loading" id="mapLoading">در حال بارگذاری نقشه...</div><img id="mapImg" alt="نقشه شهر" draggable="false"></div>
@@ -73,7 +95,7 @@ function openCityMap(cityId, code) {
   document.getElementById('mapTitle').textContent = 'نقشه ' + city.name;
   const pdf = document.getElementById('mapPdf');
   pdf.style.display = city.map.pdf ? 'flex' : 'none';
-  if (city.map.pdf) pdf.href = city.map.pdf;
+  if (city.map.pdf) { pdf.href = city.map.pdf; pdf.setAttribute('download', mapPdfName(city)); }
   const hint = document.getElementById('mapHint');
   if (code) { hint.textContent = `🔎 دنبال شماره ${faDigits(code)} روی نقشه بگردید`; hint.style.display = 'block'; }
   else hint.style.display = 'none';

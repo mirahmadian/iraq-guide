@@ -556,7 +556,7 @@
       border-radius:100px;padding:10px 20px;
       font-size:calc(13px * var(--fs,1));font-weight:800;
       box-shadow:var(--shadow);opacity:0;transition:all .25s;
-      z-index:300;white-space:nowrap;pointer-events:none;
+      z-index:300;pointer-events:none;width:max-content;max-width:calc(100% - 32px);text-align:center;line-height:1.7;
     }
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -1443,12 +1443,12 @@ function copyNum(num, btn) {
 /* ══════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════ */
-function showToast(msg) {
+function showToast(msg, ms = 2400) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.remove('show'), 2400);
+  t._tid = setTimeout(() => t.classList.remove('show'), ms);
 }
 
 /* ══════════════════════════════════════════
