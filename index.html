@@ -1482,6 +1482,12 @@ function getAllContacts() {
       });
     });
   });
+  const bs = CARAVAN_DATA.besat;
+  if (bs && (bs.enabled || SHOW_HIDDEN)) Object.entries(bs.contacts || {}).forEach(([cid, cl]) => {
+    const city = CARAVAN_DATA.cities.find(c => c.id === cid);
+    if (!city || (city.hidden && !SHOW_HIDDEN)) return;
+    cl.forEach(c => list.push({ ...c, cityName: city.name, sectionTitle: 'بعثه' }));
+  });
   (CARAVAN_DATA.insurance?.contacts || []).forEach(c => {
     list.push({ ...c, cityName: 'بیمه مشترک', sectionTitle: CARAVAN_DATA.insurance.title });
   });

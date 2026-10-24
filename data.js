@@ -1796,12 +1796,102 @@ const CARAVAN_DATA = {
           "place": "خیمه‌گاه حسینی",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1"
         }
+      ],
+      "najaf": [
+        {
+          "id": "bpn1",
+          "title": "سخنرانی و مدیحه‌سرایی",
+          "at": "fajr",
+          "days": [],
+          "place": "صحن حرم امیرالمؤمنین علی (ع)، مدرسه غروی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%88%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn2",
+          "title": "برنامه حرم‌شناسی",
+          "at": "fajr",
+          "offset": 80,
+          "dur": 45,
+          "days": [],
+          "place": "صحن حرم امیرالمؤمنین علی (ع)، مدرسه غروی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%88%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%81",
+          "desc": "بعد از مراسم سخنرانی و مدیحه‌سرایی"
+        },
+        {
+          "id": "bpn3",
+          "title": "دعای پرفیض ندبه",
+          "at": "fajr",
+          "days": [
+            5
+          ],
+          "place": "صحن حرم امیرالمؤمنین علی (ع)، مدرسه غروی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%88%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn4",
+          "title": "برنامه روایتگری",
+          "start": "08:30",
+          "days": [],
+          "place": "بیت حضرت امام خمینی (ره)",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A8%D9%8A%D8%AA%20%D8%A7%D9%84%D8%A5%D9%85%D8%A7%D9%85%20%D8%A7%D9%84%D8%AE%D9%85%D9%8A%D9%86%D9%8A%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn5",
+          "title": "برنامه روایتگری",
+          "start": "10:00",
+          "days": [],
+          "place": "مقبره صافی صفا",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D9%85%D9%82%D8%A7%D9%85%20%D8%B5%D8%A7%D9%81%D9%8A%20%D8%B5%D9%81%D8%A7%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn6",
+          "title": "برنامه روایتگری",
+          "start": "16:00",
+          "days": [],
+          "place": "بیت حضرت امام خمینی (ره)",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A8%D9%8A%D8%AA%20%D8%A7%D9%84%D8%A5%D9%85%D8%A7%D9%85%20%D8%A7%D9%84%D8%AE%D9%85%D9%8A%D9%86%D9%8A%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn7",
+          "title": "سخنرانی و مدیحه‌سرایی",
+          "at": "maghrib",
+          "days": [],
+          "place": "صحن حرم امیرالمؤمنین علی (ع)، مدرسه غروی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%88%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        },
+        {
+          "id": "bpn8",
+          "title": "دعای پرفیض کمیل",
+          "at": "maghrib",
+          "days": [
+            4
+          ],
+          "place": "صحن حرم امیرالمؤمنین علی (ع)، مدرسه غروی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%88%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%81"
+        }
       ]
     },
     "link": "https://ble.ir/beseh_in_iraq",
     "linkLabel": "صوت و فیلم برنامه‌ها در کانال بله",
     "posters": {
-      "karbala": "besat/poster-karbala.jpg"
+      "karbala": "besat/poster-karbala.jpg",
+      "najaf": "besat/poster-najaf.jpg"
+    },
+    "contacts": {
+      "najaf": [
+        {
+          "role": "نظارت و بازرسی بعثه",
+          "phone": "07848322779",
+          "name": null,
+          "countryCode": "964"
+        },
+        {
+          "role": "حراست بعثه",
+          "phone": "07852615807",
+          "name": null,
+          "countryCode": "964"
+        }
+      ]
     }
   },
   "cities": [

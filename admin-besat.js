@@ -15,8 +15,9 @@ const besatOpen = {};
 function initBesat() {
   const b = CARAVAN_DATA.besat || {};
   besatState = { enabled: !!b.enabled, title: b.title || BESAT_TITLE, logo: b.logo || '', emblem: b.emblem || '',
-    link: b.link || '', linkLabel: b.linkLabel || '', posters: { ...(b.posters || {}) }, cities: {} };
+    link: b.link || '', linkLabel: b.linkLabel || '', posters: { ...(b.posters || {}) }, cities: {}, contacts: {} };
   ALL_CITIES.forEach(id => {
+    besatState.contacts[id] = ((b.contacts || {})[id] || []).map(c => ({ role: c.role || '', phone: c.phone || '', name: c.name || '', countryCode: c.countryCode || '964' }));
     besatState.cities[id] = ((b.cities || {})[id] || []).map(p => ({
       id: p.id || bid(), title: p.title || '', start: p.start || '', end: p.end || '', days: (p.days || []).slice(),
       at: p.at || '', offset: p.offset != null ? String(p.offset) : '', dur: p.dur ? String(p.dur) : '',
@@ -78,10 +79,22 @@ function renderBesatAdmin() {
     <div class="sec-body">
       <div class="field"><div class="field-label">🖼️ پوستر کلی برنامه‌های این شهر (اختیاری) — بالای فهرست برنامه‌ها نمایش داده می‌شود</div>
         ${besatPosterPick(id)}</div>
+      <div class="field"><div class="field-label">📞 شماره‌های تماس بعثه در این شهر (اختیاری) — پایین صفحه برنامه‌ها و در جستجوی برنامه نمایش داده می‌شود</div>
+        <div id="besat-ct-${id}">${besatContactsHTML(id)}</div></div>
       <div id="besat-${id}">${besatListHTML(id)}</div>
     </div>
   </div>`).join('')}`;
 }
+
+function besatContactsHTML(id) {
+  return besatState.contacts[id].map((c, k) => `
+    <div class="phone-row" style="flex-wrap:wrap">
+      <input type="text" class="input-role" style="flex:1" placeholder="نقش (مثلاً حراست بعثه)" value="${escH(c.role)}" oninput="besatState.contacts['${id}'][${k}].role=this.value">
+      <input type="tel" class="input-phone" placeholder="07..." dir="ltr" value="${escH(c.phone)}" oninput="besatState.contacts['${id}'][${k}].phone=this.value">
+      <button class="del-btn" onclick="besatState.contacts['${id}'].splice(${k},1);renderBesatContacts('${id}')">🗑</button>
+    </div>`).join('') + `<button class="add-row-btn" style="margin-top:6px" onclick="besatState.contacts['${id}'].push({role:'',phone:'',name:'',countryCode:'964'});renderBesatContacts('${id}')">+ افزودن شماره</button>`;
+}
+function renderBesatContacts(id) { const el = document.getElementById('besat-ct-' + id); if (el) el.innerHTML = besatContactsHTML(id); }
 
 function besatPosterPick(id) {
   const src = besatState.posters[id + 'Data'] || besatState.posters[id + 'Preview'] || besatState.posters[id];
@@ -263,11 +276,16 @@ function getBesatData() {
     });
     if (list.length) cities[id] = list;
   });
-  const posters = {};
+  const posters = {}, contacts = {};
   ALL_CITIES.forEach(id => { const v = besatState.posters[id] || (BUILD_PENDING && besatState.posters[id + 'Data']); if (v) posters[id] = v; });
+  ALL_CITIES.forEach(id => {
+    const list = besatState.contacts[id].filter(c => c.phone.trim()).map(c => ({ role: c.role.trim(), phone: c.phone.trim(), name: c.name.trim() || null, countryCode: c.countryCode || '964' }));
+    if (list.length) contacts[id] = list;
+  });
   return { enabled: besatState.enabled, title: besatState.title.trim() || BESAT_TITLE,
     ...(besatState.link.trim() ? { link: besatState.link.trim(), ...(besatState.linkLabel.trim() ? { linkLabel: besatState.linkLabel.trim() } : {}) } : {}),
     ...(Object.keys(posters).length ? { posters } : {}),
+    ...(Object.keys(contacts).length ? { contacts } : {}),
     ...(img('logo') ? { logo: img('logo') } : {}), ...(img('emblem') ? { emblem: img('emblem') } : {}), cities };
 }
 

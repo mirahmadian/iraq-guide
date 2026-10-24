@@ -51,6 +51,7 @@
   .bp-desc{font-size:calc(13px * var(--fs,1));color:var(--text);line-height:1.9;margin-top:6px}
   .bp-poster{display:block;margin-top:10px;max-width:100%;max-height:240px;border-radius:12px;cursor:zoom-in;border:1px solid var(--border)}
   .bp .map-row{padding:10px 0 0;border:none}
+  .bv-contacts{margin:14px 14px 0}
   .bv-empty{padding:30px 16px;text-align:center;color:var(--dim)}
   `;
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
@@ -247,5 +248,7 @@ function renderBesatView() {
         </div>
       </div>`;
     }).join('') : '<div class="bv-empty">برنامه‌ای برای این شهر ثبت نشده است</div>'}</div>
+    ${((b.contacts || {})[cid] || []).length ? `<div class="bv-contacts sec-card k-hq"><div class="divider-lbl" style="border-top:none">📞 شماره‌های تماس بعثه</div>
+      <div class="contacts" role="list">${b.contacts[cid].map(c => contactHTML(c)).join('')}</div></div>` : ''}
   </div>`;
 }
