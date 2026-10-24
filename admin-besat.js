@@ -11,11 +11,21 @@ const BESAT_AT = { '': '🕐 ساعت مشخص', fajr: '🌅 بعد از نما�
 const BESAT_AT_OFFSET = { fajr: 20, dhuhr: 30, maghrib: 30 };
 let besatState = { enabled: false, title: BESAT_TITLE, logo: '', emblem: '', link: '', linkLabel: '', posters: {}, cities: {} };
 const besatOpen = {};
+(function injectBesatAdminCSS() {
+  document.head.insertAdjacentHTML('beforeend', `<style>
+  .pr-tbl{width:100%;border-collapse:collapse;font-size:13px;text-align:center}
+  .pr-tbl th{font-size:11.5px;color:var(--muted);font-weight:700;padding:4px}
+  .pr-tbl td{padding:6px 4px;border-top:1px solid var(--border)}
+  .pr-t{font-size:15px;font-weight:800;direction:ltr}
+  .pr-adj{width:64px;margin-top:4px;padding:4px 6px;border:1px solid var(--border-s);border-radius:8px;text-align:center;font-family:inherit;direction:ltr}
+  </style>`);
+})();
 
 function initBesat() {
   const b = CARAVAN_DATA.besat || {};
   besatState = { enabled: !!b.enabled, title: b.title || BESAT_TITLE, logo: b.logo || '', emblem: b.emblem || '',
-    link: b.link || '', linkLabel: b.linkLabel || '', posters: { ...(b.posters || {}) }, cities: {}, contacts: {} };
+    link: b.link || '', linkLabel: b.linkLabel || '', posters: { ...(b.posters || {}) }, cities: {}, contacts: {},
+    adjust: JSON.parse(JSON.stringify(b.adjust || {})) };
   ALL_CITIES.forEach(id => {
     besatState.contacts[id] = ((b.contacts || {})[id] || []).map(c => ({ role: c.role || '', phone: c.phone || '', name: c.name || '', countryCode: c.countryCode || '964' }));
     besatState.cities[id] = ((b.cities || {})[id] || []).map(p => ({
@@ -68,6 +78,15 @@ function renderBesatAdmin() {
     </div>
   </div>
 
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">🕌</div>
+      <div class="sec-head-info"><div class="sec-head-title">ساعت اذان (برای برنامه‌های «بعد از نماز»)</div>
+        <div class="sec-head-sub">خودکار حساب می‌شود (روش مؤسسه ژئوفیزیک تهران، مثل «باد صبا») — به وقت عراق</div></div>
+    </div>
+    <div class="sec-body" style="display:block" id="besat-prayer">${besatPrayerHTML()}</div>
+  </div>
+
   ${ALL_CITIES.map(id => `
   <div class="sec-card ${besatState.cities[id].length || id === 'najaf' || id === 'karbala' ? 'open' : ''}" id="card-besat-${id}">
     <div class="sec-card-head" onclick="toggleCard('besat-${id}')">
@@ -95,6 +114,30 @@ function besatContactsHTML(id) {
     </div>`).join('') + `<button class="add-row-btn" style="margin-top:6px" onclick="besatState.contacts['${id}'].push({role:'',phone:'',name:'',countryCode:'964'});renderBesatContacts('${id}')">+ افزودن شماره</button>`;
 }
 function renderBesatContacts(id) { const el = document.getElementById('besat-ct-' + id); if (el) el.innerHTML = besatContactsHTML(id); }
+
+/* جدول اذان امروز هر شهر + تنظیم دستی (± دقیقه) برای هماهنگی با اذان حرم */
+function besatPrayerHTML() {
+  const ni = iraqNow(), fa = t => prayerHM(t).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  const K = [['fajr', 'صبح'], ['dhuhr', 'ظهر'], ['maghrib', 'مغرب']];
+  return `<div class="field" style="overflow-x:auto">
+    <table class="pr-tbl"><thead><tr><th>امروز</th>${K.map(([, l]) => `<th>اذان ${l}</th>`).join('')}</tr></thead><tbody>
+    ${ALL_CITIES.map(id => {
+      const adj = besatState.adjust[id] || {}, t = prayerTimes(id, ni.y, ni.mo, ni.d, adj);
+      return `<tr><td><b>${escH((cityMeta[id] && cityMeta[id].name) || DEFAULT_CITY[id])}</b></td>${K.map(([k]) => `<td>
+        <div class="pr-t" id="pt-${id}-${k}">${fa(t[k])}</div>
+        <input type="number" class="pr-adj" step="1" min="-30" max="30" placeholder="±۰" value="${adj[k] ? adj[k] : ''}" title="چند دقیقه کم یا زیاد شود"
+          oninput="setPrayerAdj('${id}','${k}',this.value)"></td>`).join('')}</tr>`;
+    }).join('')}</tbody></table>
+    <div class="empty-msg" style="padding:8px 0 0;line-height:2">اگر اذان حرم چند دقیقه با این ساعت‌ها فرق دارد، در خانه زیر هر ساعت بنویسید چند دقیقه دیرتر (مثلاً ۲) یا زودتر (مثلاً ‎-2‎) است. همه برنامه‌های «بعد از نماز» آن شهر خودکار همان‌قدر جابه‌جا می‌شوند.</div></div>`;
+}
+function setPrayerAdj(id, k, v) {
+  const a = besatState.adjust[id] = besatState.adjust[id] || {};
+  const n = Math.round(+v || 0);
+  if (n) a[k] = n; else delete a[k];
+  const ni = iraqNow(), t = prayerTimes(id, ni.y, ni.mo, ni.d, a);
+  const el = document.getElementById(`pt-${id}-${k}`);
+  if (el) el.textContent = prayerHM(t[k]).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+}
 
 function besatPosterPick(id) {
   const src = besatState.posters[id + 'Data'] || besatState.posters[id + 'Preview'] || besatState.posters[id];
@@ -276,7 +319,8 @@ function getBesatData() {
     });
     if (list.length) cities[id] = list;
   });
-  const posters = {}, contacts = {};
+  const posters = {}, contacts = {}, adjust = {};
+  ALL_CITIES.forEach(id => { const a = besatState.adjust[id]; if (a && Object.keys(a).length) adjust[id] = { ...a }; });
   ALL_CITIES.forEach(id => { const v = besatState.posters[id] || (BUILD_PENDING && besatState.posters[id + 'Data']); if (v) posters[id] = v; });
   ALL_CITIES.forEach(id => {
     const list = besatState.contacts[id].filter(c => c.phone.trim()).map(c => ({ role: c.role.trim(), phone: c.phone.trim(), name: c.name.trim() || null, countryCode: c.countryCode || '964' }));
@@ -286,6 +330,7 @@ function getBesatData() {
     ...(besatState.link.trim() ? { link: besatState.link.trim(), ...(besatState.linkLabel.trim() ? { linkLabel: besatState.linkLabel.trim() } : {}) } : {}),
     ...(Object.keys(posters).length ? { posters } : {}),
     ...(Object.keys(contacts).length ? { contacts } : {}),
+    ...(Object.keys(adjust).length ? { adjust } : {}),
     ...(img('logo') ? { logo: img('logo') } : {}), ...(img('emblem') ? { emblem: img('emblem') } : {}), cities };
 }
 

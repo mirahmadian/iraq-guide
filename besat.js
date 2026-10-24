@@ -78,48 +78,14 @@ function besatDays(p) {
   return runs.map(r => r.length >= 3 ? BESAT_DAY_NAMES[r[0]] + ' تا ' + BESAT_DAY_NAMES[r[r.length - 1]] : r.map(d => BESAT_DAY_NAMES[d]).join('، ')).join('، ');
 }
 
-/* همه ساعت‌ها به وقت عراق حساب می‌شوند، حتی اگر ساعت گوشی روی وقت ایران مانده باشد */
-const IRAQ_TZ = 3;
-function iraqNow(d = new Date()) {
-  const t = new Date(d.getTime() + IRAQ_TZ * 3600e3);
-  return { day: t.getUTCDay(), min: t.getUTCHours() * 60 + t.getUTCMinutes(), y: t.getUTCFullYear(), mo: t.getUTCMonth(), d: t.getUTCDate() };
-}
-
-/* اوقات شرعی به روش جعفری (فجر ۱۶ درجه، مغرب ۴ درجه زیر افق) — بدون اینترنت محاسبه می‌شود
-   خروجی: دقیقه از نیمه‌شب به وقت عراق */
-const BESAT_COORDS = { najaf: [31.996, 44.3148], karbala: [32.6165, 44.0325], kadhimiya: [33.3798, 44.3379], samarra: [34.1987, 43.8738] };
 const PRAYER_LABEL = { fajr: 'بعد از نماز صبح', dhuhr: 'بعد از نماز ظهر و عصر', maghrib: 'بعد از نماز مغرب و عشاء' };
 const PRAYER_AZAN = { fajr: 'اذان صبح', dhuhr: 'اذان ظهر', maghrib: 'اذان مغرب' };
 const PRAYER_OFFSET = { fajr: 20, dhuhr: 30, maghrib: 30 };
-const prayerCache = {};
-function prayerTimes(cityId, y, mo, d) {
-  const key = [cityId, y, mo, d].join('-');
-  if (prayerCache[key]) return prayerCache[key];
-  const [lat, lng] = BESAT_COORDS[cityId] || BESAT_COORDS.najaf;
-  const rad = Math.PI / 180, sin = x => Math.sin(x * rad), cos = x => Math.cos(x * rad);
-  const fixH = h => ((h % 24) + 24) % 24;
-  const jd0 = Date.UTC(y, mo, d) / 864e5 + 2440587.5 - lng / 360;
-  const sun = jd => {
-    const D = jd - 2451545, g = (357.529 + 0.98560028 * D) % 360, q = (280.459 + 0.98564736 * D) % 360;
-    const L = (q + 1.915 * sin(g) + 0.020 * sin(2 * g)) % 360, e = 23.439 - 0.00000036 * D;
-    const RA = Math.atan2(cos(e) * sin(L), cos(L)) / rad / 15;
-    return { decl: Math.asin(sin(e) * sin(L)) / rad, eqt: q / 15 - fixH(RA) };
-  };
-  const mid = t => fixH(12 - sun(jd0 + t).eqt);
-  const angleTime = (angle, t, before) => {
-    const { decl } = sun(jd0 + t);
-    const v = (-sin(angle) - sin(decl) * sin(lat)) / (cos(decl) * cos(lat));
-    const T = Math.acos(Math.max(-1, Math.min(1, v))) / rad / 15;
-    return mid(t) + (before ? -T : T);
-  };
-  const toMin = h => Math.round((h + IRAQ_TZ - lng / 15) * 60);
-  return prayerCache[key] = {
-    fajr: toMin(angleTime(16, 5 / 24, true)), sunrise: toMin(angleTime(0.833, 6 / 24, true)),
-    dhuhr: toMin(mid(12 / 24)), maghrib: toMin(angleTime(4, 18 / 24, false))
-  };
-}
+/* اوقات شرعی (prayer.js) + تنظیم دستی مدیر برای هماهنگی با اذان حرم */
+function besatPrayer(cityId, ni) { return prayerTimes(cityId, ni.y, ni.mo, ni.d, ((besat() || {}).adjust || {})[cityId]); }
+
 function besatStart(p, cityId, ni) {
-  if (p.at && PRAYER_LABEL[p.at]) return prayerTimes(cityId, ni.y, ni.mo, ni.d)[p.at] + (p.offset != null && p.offset !== '' ? +p.offset : PRAYER_OFFSET[p.at]);
+  if (p.at && PRAYER_LABEL[p.at]) return besatPrayer(cityId, ni)[p.at] + (p.offset != null && p.offset !== '' ? +p.offset : PRAYER_OFFSET[p.at]);
   return besatMin(p.start);
 }
 function besatEnd(p, cityId, ni) {
@@ -216,9 +182,9 @@ function renderBesatView() {
   if (!cities.some(c => c.id === besatCity) && cities.length) besatCity = cities[0].id;
   const now = new Date(), ni = iraqNow(now), day = ni.day, m = ni.min, cid = besatCity;
   const n = besatNext(cid, now);
-  const all = besatSorted(besatList(cid), cid, ni);
-  const list = all.filter(p => besatOnDay(p, day)).concat(all.filter(p => !besatOnDay(p, day)));
-  const pt = prayerTimes(cid, ni.y, ni.mo, ni.d);
+  /* فقط برنامه‌های امروز؛ برنامه‌های روزهای دیگر نمایش داده نمی‌شوند */
+  const list = besatSorted(besatList(cid).filter(p => besatOnDay(p, day)), cid, ni);
+  const pt = besatPrayer(cid, ni);
   const poster = (b.posters || {})[cid];
   v.innerHTML = `<div class="bv-inner">
     <div class="bv-head"><button onclick="closeBesat()" aria-label="بستن">✕</button><div class="bv-t">${escHtml(b.title || 'برنامه‌های فرهنگی بعثه')}</div></div>
@@ -232,9 +198,8 @@ function renderBesatView() {
       const onToday = besatOnDay(p, day), s = besatStart(p, cid, ni), e = besatEnd(p, cid, ni);
       const live = onToday && s <= m && m < e, isNext = !live && n && n.p === p;
       const done = onToday && !live && e <= m;
-      const badge = live ? 'هم‌اکنون در حال اجرا' : isNext ? (n.when === 'today' ? 'برنامه بعدی' : 'برنامه بعدی · ' + (n.when === 'tomorrow' ? 'فردا' : n.when))
-        : !onToday ? 'امروز برگزار نمی‌شود' : done ? 'برنامه امروز تمام شده' : '';
-      return `<div class="bp ${live ? 'now' : isNext ? 'next' : (!onToday || done) ? 'off' : ''}">
+      const badge = live ? 'هم‌اکنون در حال اجرا' : isNext ? 'برنامه بعدی' : done ? 'برنامه امروز تمام شده' : '';
+      return `<div class="bp ${live ? 'now' : isNext ? 'next' : done ? 'off' : ''}">
         <div class="bp-time">${p.at ? '<small>حدود</small>' : ''}<b dir="ltr">${faDigits(besatHM(s))}</b>${!p.at && p.end ? `<small>تا ${faDigits(p.end)}</small>` : ''}<small>${besatDays(p)}</small></div>
         <div class="bp-body">
           ${badge ? `<span class="bp-badge">${badge}</span>` : ''}
@@ -247,7 +212,7 @@ function renderBesatView() {
           ${mapRowHTML(p.mapNeshanUrl, p.mapGoogleUrl)}
         </div>
       </div>`;
-    }).join('') : '<div class="bv-empty">برنامه‌ای برای این شهر ثبت نشده است</div>'}</div>
+    }).join('') : `<div class="bv-empty">امروز برنامه‌ای نیست${n ? `<br>برنامه بعدی: <b>${escHtml(n.p.title)}</b> — ${besatWhenHTML(n, cid)}` : ''}</div>`}</div>
     ${((b.contacts || {})[cid] || []).length ? `<div class="bv-contacts sec-card k-hq"><div class="divider-lbl" style="border-top:none">📞 شماره‌های تماس بعثه</div>
       <div class="contacts" role="list">${b.contacts[cid].map(c => contactHTML(c)).join('')}</div></div>` : ''}
   </div>`;
