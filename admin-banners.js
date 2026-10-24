@@ -1,11 +1,11 @@
 /* ══════════════════════════════════════════
    BANNERS — بنر اصلی (صفحه خوش‌آمد / بالای صفحه) و بنر ستاد هر شهر
 ══════════════════════════════════════════ */
-let bannerState = { image: '', splash: true, top: true };
+let bannerState = { image: '', title: '', splash: true, top: true };
 
 function initBanners() {
   const b = (CARAVAN_DATA.site || {}).banner || {};
-  bannerState = { image: b.image || '', splash: b.splash !== false, top: b.top !== false };
+  bannerState = { image: b.image || '', title: b.title || '', splash: b.splash !== false, top: b.top !== false };
   ALL_CITIES.forEach(id => {
     const c = CARAVAN_DATA.cities.find(x => x.id === id) || {};
     cityMeta[id].hqBanner = c.hqBanner || '';
@@ -31,11 +31,13 @@ function renderBannerEditor() {
   el.innerHTML = `
     <div class="field">${bannerPickHTML(src, 'pickSiteBanner(this)', 'clearSiteBanner()')}</div>
     ${src ? `
+    <div class="field"><div class="field-label">عنوان کوتاه بنر (کنار عکس کوچک بالای برنامه نوشته می‌شود)</div>
+      <input type="text" class="input-full" placeholder="مثلاً: دفتر نمایندگی حج و زیارت در عراق" value="${escH(bannerState.title)}" oninput="bannerState.title=this.value"></div>
     <div class="field">
       <label class="fchk" style="padding:0"><input type="checkbox" ${bannerState.splash ? 'checked' : ''} onchange="bannerState.splash=this.checked">
         <b>صفحه خوش‌آمد: هنگام باز کردن برنامه چند ثانیه نمایش داده شود</b></label>
       <label class="fchk" style="padding:0;margin-top:8px"><input type="checkbox" ${bannerState.top ? 'checked' : ''} onchange="bannerState.top=this.checked">
-        <b>بالای صفحه اصلی برنامه نمایش داده شود (کاربر می‌تواند آن را جمع کند)</b></label>
+        <b>بالای صفحه اصلی برنامه به‌صورت یک نوار کوچک نمایش داده شود (با لمس، بنر کامل باز می‌شود)</b></label>
     </div>
     <div style="padding:0 16px"><button class="add-row-btn" onclick="previewSplash()">▶ دیدن صفحه خوش‌آمد در پیش‌نمایش</button></div>` : ''}
     <div class="empty-msg">بهترین اندازه: عکس افقی (عرض بیشتر از ارتفاع). برای ثبت، «انتشار» را بزنید.</div>`;
@@ -80,7 +82,7 @@ function clearHqBanner(id) {
 /* خروجی برای data.js */
 function siteBannerOut() {
   const img = bannerState.image || (BUILD_PENDING && bannerState.imageData) || '';
-  return img ? { banner: { image: img, splash: bannerState.splash, top: bannerState.top } } : {};
+  return img ? { banner: { image: img, ...(bannerState.title.trim() ? { title: bannerState.title.trim() } : {}), splash: bannerState.splash, top: bannerState.top } } : {};
 }
 function hqBannerOut(id) {
   const m = cityMeta[id];

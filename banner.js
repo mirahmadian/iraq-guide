@@ -1,17 +1,14 @@
 /* ══════════════════════════════════════════
    BANNERS — صفحه خوش‌آمد، بنر بالای صفحه، بنر ستاد هر شهر
-   داده: site.banner = { image, splash, top }   ·   city.hqBanner = path
+   داده: site.banner = { image, title, splash, top }   ·   city.hqBanner = path
 ══════════════════════════════════════════ */
 (function injectBannerCSS() {
   const css = `
-  .site-banner{position:relative;margin:10px 14px 4px;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);
-    border:1px solid var(--border);background:var(--card);line-height:0}
-  .site-banner img{width:100%;height:auto;display:block;cursor:zoom-in}
-  .site-banner .sb-close{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
-    background:rgba(0,0,0,.45);color:#fff;font-size:14px;line-height:30px;font-family:var(--font)}
-  .site-banner-mini{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 14px 2px;padding:7px 12px;width:calc(100% - 28px);
-    border:1px dashed var(--border-s);border-radius:var(--r-sm);background:none;color:var(--dim);cursor:pointer;
-    font-family:var(--font);font-size:calc(11.5px * var(--fs,1));font-weight:700}
+  .site-banner{display:flex;align-items:center;gap:12px;width:calc(100% - 28px);margin:12px 14px 0;padding:8px;text-align:right;
+    border-radius:var(--r);background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);cursor:zoom-in;font-family:var(--font);color:var(--text)}
+  .site-banner img{width:58px;height:58px;border-radius:calc(var(--r) - 6px);object-fit:cover;object-position:50% 45%;flex-shrink:0;display:block}
+  .site-banner b{display:block;font-size:calc(14px * var(--fs,1));font-weight:800;line-height:1.5}
+  .site-banner small{display:block;font-size:calc(12px * var(--fs,1));color:var(--dim);line-height:1.5}
   .sec-banner{line-height:0;background:var(--card2);border-bottom:1px solid var(--border)}
   .sec-banner img{width:100%;height:auto;display:block;cursor:zoom-in}
 
@@ -30,25 +27,15 @@ function siteBannerData() {
   const b = (CARAVAN_DATA.site || {}).banner;
   return b && b.image ? b : null;
 }
-function bannerCollapsed() {
-  try { return localStorage.getItem('caravan-banner') === (siteBannerData() || {}).image; } catch (e) { return false; }
-}
+/* بالای صفحه فقط یک نوار کوچک است؛ با لمس، بنر کامل باز می‌شود */
 function siteBannerHTML() {
   const b = siteBannerData();
   if (!b || !b.top) return '';
-  if (bannerCollapsed())
-    return `<button class="site-banner-mini" onclick="setBannerCollapsed(false)">🖼️ نمایش بنر</button>`;
-  return `<div class="site-banner">
-    <img src="${escHtml(b.image)}" alt="${escHtml(b.alt || 'بنر')}" onclick="openPhoto(this.src,'')">
-    <button class="sb-close" onclick="setBannerCollapsed(true)" aria-label="جمع کردن بنر" title="جمع کردن">✕</button>
-  </div>`;
-}
-function setBannerCollapsed(on) {
-  try {
-    if (on) localStorage.setItem('caravan-banner', siteBannerData().image);
-    else localStorage.removeItem('caravan-banner');
-  } catch (e) {}
-  renderSiteBanner();
+  const title = b.title || (CARAVAN_DATA.site || {}).appTitle || '';
+  return `<button type="button" class="site-banner" onclick="openPhoto('${escHtml(b.image)}','')" aria-label="نمایش بنر ${escHtml(title)}">
+    <img src="${escHtml(b.image)}" alt="">
+    <span><b>${escHtml(title)}</b><small>برای دیدن بنر لمس کنید</small></span>
+  </button>`;
 }
 function renderSiteBanner() {
   const el = document.getElementById('siteBanner');
