@@ -1269,6 +1269,7 @@ function escH(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').repl
 const DEFAULT_SITE={
   appTitle:'راهنمای کاروان عراق',
   appSubtitle:'ستادها، درمانگاه‌ها و شماره‌های تماس',
+  iconName:'کاروان عراق',
   footer:[
     {type:'heading',text:'✦ بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيم ✦'},
     {type:'bold',text:'هزینه استفاده از این برنامه'},
@@ -1326,6 +1327,7 @@ function buildData(pending){
     site:{
       appTitle:siteState.appTitle.trim()||DEFAULT_SITE.appTitle,
       appSubtitle:siteState.appSubtitle.trim(),
+      iconName:siteState.iconName.trim()||DEFAULT_SITE.iconName,
       footer:siteState.footer.filter(b=>b.type==='divider'||(b.text||'').trim()).map(b=>({type:b.type,text:b.type==='divider'?'':b.text.trim()})),
       ...siteBannerOut()
     },
@@ -1374,7 +1376,16 @@ function renderSiteFields(){
     <div class="field"><div class="field-label">عنوان برنامه</div>
       <input type="text" class="input-full" value="${escH(siteState.appTitle)}" oninput="siteState.appTitle=this.value"></div>
     <div class="field"><div class="field-label">زیرعنوان</div>
-      <input type="text" class="input-full" value="${escH(siteState.appSubtitle)}" oninput="siteState.appSubtitle=this.value"></div>`;
+      <input type="text" class="input-full" value="${escH(siteState.appSubtitle)}" oninput="siteState.appSubtitle=this.value"></div>
+    <div class="field"><div class="field-label">📱 نام زیر آیکون روی گوشی (کوتاه باشد؛ حداکثر حدود ۱۲ حرف)</div>
+      <input type="text" class="input-full" maxlength="30" value="${escH(siteState.iconName)}" oninput="siteState.iconName=this.value;iconNameHint(this)">
+      <div class="empty-msg" id="iconNameHint" style="padding:6px 0 0"></div></div>`;
+  iconNameHint(document.querySelector('#site-title-fields input[maxlength]'));
+}
+function iconNameHint(inp){
+  const n=[...inp.value.trim()].length, el=document.getElementById('iconNameHint');
+  el.textContent=n>12?`⚠️ ${n} حرف — ممکن است زیر آیکون کامل دیده نشود و با «...» کوتاه شود`
+    :'گوشی‌هایی که برنامه را قبلاً نصب کرده‌اند: اندروید معمولاً تا یکی دو روز بعد خودش نام را عوض می‌کند؛ آیفون فقط اگر برنامه را حذف و دوباره نصب کنند.';
 }
 function renderFooterEditor(){
   const el=document.getElementById('footer-editor');
@@ -1657,6 +1668,18 @@ function forgetDevice() {
   authInit();
 }
 
+/* نام برنامه در manifest.json (نام زیر آیکون) — فقط اگر عوض شده باشد ذخیره می‌شود */
+async function updateManifest(token) {
+  const r = await gh('/contents/manifest.json?ref=main&t=' + Date.now(), token, {cache:'no-store'});
+  if (!r.ok) return;
+  const m = JSON.parse(new TextDecoder().decode(unb64((await r.json()).content.replace(/\s/g, ''))));
+  const name = siteState.appTitle.trim() || DEFAULT_SITE.appTitle;
+  const short = siteState.iconName.trim() || DEFAULT_SITE.iconName;
+  if (m.name === name && m.short_name === short) return;
+  m.name = name; m.short_name = short;
+  await putFile('manifest.json', JSON.stringify(m, null, 2) + '\n', 'Update app name from admin panel', token);
+}
+
 async function publishData() {
   if (!ghToken) { authInit(); return; }
   const btn = document.getElementById('pubBtn');
@@ -1674,6 +1697,7 @@ async function publishData() {
     btn.textContent = '... در حال انتشار';
     const res = await putFile('data.js', buildOutput(), 'Update data.js from admin panel', ghToken);
     if (res && res.content) dataSha = res.content.sha;
+    await updateManifest(ghToken);
     showToast('منتشر شد ✅ — حدود ۱ دقیقه بعد برای کاربران نمایش داده می‌شود');
   } catch(e) {
     showToast('❌ ' + e.message);
@@ -1700,6 +1724,7 @@ function init(){
   siteState={
     appTitle:st.appTitle||DEFAULT_SITE.appTitle,
     appSubtitle:st.appSubtitle!==undefined?st.appSubtitle:DEFAULT_SITE.appSubtitle,
+    iconName:st.iconName||DEFAULT_SITE.iconName,
     footer:(st.footer&&st.footer.length?st.footer:DEFAULT_SITE.footer).map(b=>({...b}))
   };
   groupMeta={
