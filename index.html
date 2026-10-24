@@ -115,7 +115,7 @@
     .header-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
     .brand-icon{
       width:40px;height:40px;border-radius:12px;flex-shrink:0;
-      background:url(app-icon-192.png) center/cover,#0B3B2D;
+      background:var(--app-icon,url(app-icon-192.png)) center/cover,#0B3B2D;
       box-shadow:0 0 0 2px rgba(201,162,75,.6);font-size:0;color:transparent;
     }
     .brand-text{min-width:0}
@@ -571,7 +571,7 @@
     /* ── ABOUT (درباره برنامه) ── */
     .about{max-height:90vh;overflow-y:auto;text-align:center;overscroll-behavior:contain}
     .about-head{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:14px}
-    .about-icon{width:72px;height:72px;border-radius:20px;background:url(app-icon-192.png) center/cover,#0B3B2D;
+    .about-icon{width:72px;height:72px;border-radius:20px;background:var(--app-icon,url(app-icon-192.png)) center/cover,#0B3B2D;
       box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--brass-l),0 6px 18px rgba(60,40,10,.2)}
     .about-name{font-size:calc(19px * var(--fs,1));font-weight:900;color:var(--text);line-height:1.4;margin-top:6px}
     .about-sub{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:1.7}
@@ -1127,6 +1127,11 @@ function render() {
     document.getElementById('appTitle').textContent = site.appTitle;
     document.title = site.appTitle;
   }
+  if (site.icon && site.icon.i192) {
+    document.documentElement.style.setProperty('--app-icon', `url("${site.icon.i192}")`);
+    document.querySelector('link[rel="icon"]').href = site.icon.i192;
+    document.querySelector('link[rel="apple-touch-icon"]').href = site.icon.apple || site.icon.i192;
+  }
   if (site.iconName) {
     const m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (m) m.content = site.iconName;
@@ -1659,6 +1664,8 @@ function mediaUrls() {
   addC(CARAVAN_DATA.insurance && CARAVAN_DATA.insurance.contacts);
   addC(CARAVAN_DATA.transport && CARAVAN_DATA.transport.contacts);
   if (siteBannerData()) urls.add(siteBannerData().image);
+  const ic = (CARAVAN_DATA.site || {}).icon;
+  if (ic) ['i192', 'i512', 'mask', 'apple'].forEach(k => ic[k] && urls.add(ic[k]));
   CARAVAN_DATA.cities.forEach(city => {
     if (city.hidden && !SHOW_HIDDEN) return;
     if (city.map && city.map.image) urls.add(city.map.image);

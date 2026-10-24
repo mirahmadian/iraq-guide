@@ -427,6 +427,18 @@
     <div class="sec-body" style="display:block" id="site-title-fields"></div>
   </div>
 
+  <!-- APP ICON -->
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">📱</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">آیکون برنامه</div>
+        <div class="sec-head-sub">تصویری که روی صفحه گوشی کاربران دیده می‌شود</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="app-icon-editor"></div>
+  </div>
+
   <!-- BANNER -->
   <div class="sec-card open">
     <div class="sec-card-head no-toggle">
@@ -791,6 +803,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-places.js"></script>
 <script src="admin-maps.js"></script>
 <script src="admin-banners.js"></script>
+<script src="admin-icon.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -961,6 +974,7 @@ async function uploadPendingHeroes(token){
 async function uploadPendingHotelCards(token){
   await uploadPendingHeroes(token);
   await uploadPendingBanners(token);
+  await uploadPendingIcon(token);
   await uploadPendingMaps(token);
   for(const id of Object.keys(hotelState)){
     let any=false;
@@ -1329,7 +1343,8 @@ function buildData(pending){
       appSubtitle:siteState.appSubtitle.trim(),
       iconName:siteState.iconName.trim()||DEFAULT_SITE.iconName,
       footer:siteState.footer.filter(b=>b.type==='divider'||(b.text||'').trim()).map(b=>({type:b.type,text:b.type==='divider'?'':b.text.trim()})),
-      ...siteBannerOut()
+      ...siteBannerOut(),
+      ...siteIconOut()
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
@@ -1378,7 +1393,7 @@ function renderSiteFields(){
     <div class="field"><div class="field-label">زیرعنوان</div>
       <input type="text" class="input-full" value="${escH(siteState.appSubtitle)}" oninput="siteState.appSubtitle=this.value"></div>
     <div class="field"><div class="field-label">📱 نام زیر آیکون روی گوشی (کوتاه باشد؛ حداکثر حدود ۱۲ حرف)</div>
-      <input type="text" class="input-full" maxlength="30" value="${escH(siteState.iconName)}" oninput="siteState.iconName=this.value;iconNameHint(this)">
+      <input type="text" class="input-full" maxlength="30" value="${escH(siteState.iconName)}" oninput="siteState.iconName=this.value;iconNameHint(this);renderIconEditor()">
       <div class="empty-msg" id="iconNameHint" style="padding:6px 0 0"></div></div>`;
   iconNameHint(document.querySelector('#site-title-fields input[maxlength]'));
 }
@@ -1675,9 +1690,10 @@ async function updateManifest(token) {
   const m = JSON.parse(new TextDecoder().decode(unb64((await r.json()).content.replace(/\s/g, ''))));
   const name = siteState.appTitle.trim() || DEFAULT_SITE.appTitle;
   const short = siteState.iconName.trim() || DEFAULT_SITE.iconName;
-  if (m.name === name && m.short_name === short) return;
-  m.name = name; m.short_name = short;
-  await putFile('manifest.json', JSON.stringify(m, null, 2) + '\n', 'Update app name from admin panel', token);
+  const icons = iconManifestList();
+  if (m.name === name && m.short_name === short && JSON.stringify(m.icons) === JSON.stringify(icons)) return;
+  m.name = name; m.short_name = short; m.icons = icons;
+  await putFile('manifest.json', JSON.stringify(m, null, 2) + '\n', 'Update app name/icon from admin panel', token);
 }
 
 async function publishData() {
@@ -1742,6 +1758,7 @@ function init(){
   initFood();
   initPlaces();
   initBanners();
+  initIcon();
   fitTabsBar();
 }
 
