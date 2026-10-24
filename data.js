@@ -1733,7 +1733,76 @@ const CARAVAN_DATA = {
     "enabled": false,
     "title": "برنامه‌های فرهنگی بعثه مقام معظم رهبری",
     "emblem": "besat/emblem-1792879999513.png",
-    "cities": {}
+    "cities": {
+      "karbala": [
+        {
+          "id": "bpk1",
+          "title": "مراسم سخنرانی و عزاداری",
+          "at": "fajr",
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            6
+          ],
+          "place": "حرم مطهر امام حسین (ع)",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1",
+          "desc": "همراه با زیارت عاشورا"
+        },
+        {
+          "id": "bpk2",
+          "title": "دعای ندبه",
+          "at": "fajr",
+          "offset": 0,
+          "days": [
+            5
+          ],
+          "place": "خیمه‌گاه حسینی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1",
+          "desc": "همراه با اقامه نماز جماعت صبح"
+        },
+        {
+          "id": "bpk3",
+          "title": "روایتگری مصور حماسه عاشورا",
+          "start": "10:00",
+          "days": [],
+          "place": "خیمه‌گاه حسینی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1"
+        },
+        {
+          "id": "bpk4",
+          "title": "مراسم سخنرانی و عزاداری",
+          "at": "maghrib",
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            6
+          ],
+          "place": "سرداب حرم حضرت ابوالفضل العباس (ع)",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D8%B9%D8%AA%D8%A8%D8%A9%20%D8%A7%D9%84%D8%B9%D8%A8%D8%A7%D8%B3%D9%8A%D8%A9%20%D8%A7%D9%84%D9%85%D9%82%D8%AF%D8%B3%D8%A9%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1",
+          "desc": "ورودی آقایان: باب ۹\nورودی بانوان: باب ۸"
+        },
+        {
+          "id": "bpk5",
+          "title": "دعای کمیل",
+          "at": "maghrib",
+          "days": [
+            4
+          ],
+          "place": "خیمه‌گاه حسینی",
+          "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1"
+        }
+      ]
+    },
+    "link": "https://ble.ir/beseh_in_iraq",
+    "linkLabel": "صوت و فیلم برنامه‌ها در کانال بله",
+    "posters": {
+      "karbala": "besat/poster-karbala.jpg"
+    }
   },
   "cities": [
     {

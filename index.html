@@ -1672,7 +1672,7 @@ function mediaUrls() {
   if (ic) ['i192', 'i512', 'mask', 'apple'].forEach(k => ic[k] && urls.add(ic[k]));
   const bs = CARAVAN_DATA.besat;
   if (bs) {
-    [bs.logo, bs.emblem].forEach(u => u && urls.add(u));
+    [bs.logo, bs.emblem, ...Object.values(bs.posters || {})].forEach(u => u && urls.add(u));
     Object.values(bs.cities || {}).forEach(list => list.forEach(p => p.poster && urls.add(p.poster)));
   }
   CARAVAN_DATA.cities.forEach(city => {

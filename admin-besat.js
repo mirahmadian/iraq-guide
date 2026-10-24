@@ -7,15 +7,19 @@ const BESAT_TITLE = 'برنامه‌های فرهنگی بعثه مقام معظ
 /* ترتیب هفته ایرانی؛ عدد = getDay() جاوااسکریپت */
 const BESAT_DAYS = [[6, 'شنبه'], [0, 'یکشنبه'], [1, 'دوشنبه'], [2, 'سه‌شنبه'], [3, 'چهارشنبه'], [4, 'پنجشنبه'], [5, 'جمعه']];
 const bid = () => 'bp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-let besatState = { enabled: false, title: BESAT_TITLE, logo: '', emblem: '', cities: {} };
+const BESAT_AT = { '': '🕐 ساعت مشخص', fajr: '🌅 بعد از نماز صبح', dhuhr: '☀️ بعد از نماز ظهر و عصر', maghrib: '🌙 بعد از نماز مغرب و عشاء' };
+const BESAT_AT_OFFSET = { fajr: 20, dhuhr: 30, maghrib: 30 };
+let besatState = { enabled: false, title: BESAT_TITLE, logo: '', emblem: '', link: '', linkLabel: '', posters: {}, cities: {} };
 const besatOpen = {};
 
 function initBesat() {
   const b = CARAVAN_DATA.besat || {};
-  besatState = { enabled: !!b.enabled, title: b.title || BESAT_TITLE, logo: b.logo || '', emblem: b.emblem || '', cities: {} };
+  besatState = { enabled: !!b.enabled, title: b.title || BESAT_TITLE, logo: b.logo || '', emblem: b.emblem || '',
+    link: b.link || '', linkLabel: b.linkLabel || '', posters: { ...(b.posters || {}) }, cities: {} };
   ALL_CITIES.forEach(id => {
     besatState.cities[id] = ((b.cities || {})[id] || []).map(p => ({
       id: p.id || bid(), title: p.title || '', start: p.start || '', end: p.end || '', days: (p.days || []).slice(),
+      at: p.at || '', offset: p.offset != null ? String(p.offset) : '', dur: p.dur ? String(p.dur) : '',
       place: p.place || '', mapNeshanUrl: p.mapNeshanUrl || '', mapGoogleUrl: p.mapGoogleUrl || '',
       speaker: p.speaker || '', desc: p.desc || '', poster: p.poster || ''
     }));
@@ -57,6 +61,9 @@ function renderBesatAdmin() {
         ${besatLogoPick('emblem', 'آرم کوچک (مربعی)', 'besat-emblem.png')}
         ${besatLogoPick('logo', 'آرم کامل (با نوشته)', 'besat-logo.png')}
       </div>
+      <div class="field"><div class="field-label">🎧 لینک صوت و فیلم برنامه‌ها (مثلاً کانال بله یا ایتا) — اختیاری</div>
+        <input type="text" class="input-full" dir="ltr" placeholder="https://ble.ir/..." value="${escH(besatState.link)}" oninput="besatState.link=this.value">
+        <input type="text" class="input-full" style="margin-top:6px" placeholder="متن دکمه — پیش‌فرض: صوت و فیلم برنامه‌ها" value="${escH(besatState.linkLabel)}" oninput="besatState.linkLabel=this.value"></div>
     </div>
   </div>
 
@@ -68,8 +75,25 @@ function renderBesatAdmin() {
         <div class="sec-head-sub" id="besat-cnt-${id}">${besatCountLabel(id)}</div></div>
       <span class="sec-chevron">▼</span>
     </div>
-    <div class="sec-body" id="besat-${id}">${besatListHTML(id)}</div>
+    <div class="sec-body">
+      <div class="field"><div class="field-label">🖼️ پوستر کلی برنامه‌های این شهر (اختیاری) — بالای فهرست برنامه‌ها نمایش داده می‌شود</div>
+        ${besatPosterPick(id)}</div>
+      <div id="besat-${id}">${besatListHTML(id)}</div>
+    </div>
   </div>`).join('')}`;
+}
+
+function besatPosterPick(id) {
+  const src = besatState.posters[id + 'Data'] || besatState.posters[id + 'Preview'] || besatState.posters[id];
+  return `${src ? `<img src="${escH(src)}" alt="" style="max-width:220px;border-radius:10px;display:block;margin-bottom:6px">` : ''}
+    <div class="hero-btns"><label>${src ? '🔄 تغییر پوستر' : '📷 انتخاب پوستر'}<input type="file" accept="image/*" hidden onchange="pickCityPoster('${id}',this)"></label>
+    ${src ? `<label style="border-color:rgba(231,76,60,.4);color:var(--red);background:var(--red-bg)" onclick="['','Data','Preview'].forEach(s=>delete besatState.posters['${id}'+s]);renderBesatAdmin()">🗑 حذف</label>` : ''}</div>`;
+}
+async function pickCityPoster(id, input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  try { besatState.posters[id + 'Data'] = await resizeMax(f, 1500); renderBesatAdmin(); showToast('پوستر انتخاب شد — برای ثبت، «انتشار» را بزنید'); }
+  catch (e) { showToast('❌ ' + e.message); }
 }
 
 function besatLogoPick(k, label, def) {
@@ -110,7 +134,7 @@ function besatListHTML(id) {
     <div class="hotel-entry ${open === i ? 'open' : ''}">
       <div class="hotel-entry-head" onclick="toggleBesat('${id}',${i})">
         <div class="hotel-num">${i + 1}</div>
-        <div class="hotel-thumb-a" id="bt-${id}-${i}" style="font-size:12px;font-weight:800;width:auto;padding:0 8px" dir="ltr">${escH(p.start || '--:--')}</div>
+        <div class="hotel-thumb-a" id="bt-${id}-${i}" style="font-size:12px;font-weight:800;width:auto;padding:0 8px" dir="ltr">${besatHeadTime(p)}</div>
         <div style="flex:1;min-width:0">
           <div class="hotel-entry-name" id="bn-${id}-${i}">${escH(p.title) || 'برنامه جدید'}</div>
           <div class="hotel-meta">${besatDaysLabel(p.days)}${p.place ? ' · ' + escH(p.place) : ''}</div>
@@ -130,10 +154,20 @@ function besatListHTML(id) {
     h += `
       <div class="hotel-fields">
         ${f('title', 'عنوان برنامه', 'مثلاً: دعای کمیل و سخنرانی')}
+        <div><div class="field-label">⏰ زمان برگزاری</div>
+          <select class="fsel-a" onchange="setBesat('${id}',${i},'at',this.value);renderBesatCity('${id}')">
+            ${Object.entries(BESAT_AT).map(([k, l]) => `<option value="${k}" ${p.at === k ? 'selected' : ''}>${l}</option>`).join('')}
+          </select></div>
+        ${p.at ? `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          ${f('start', '🕐 ساعت شروع', '', 'time', true)}
-          ${f('end', '🕐 ساعت پایان (اختیاری)', '', 'time', true)}
+          ${f('offset', 'چند دقیقه بعد از اذان شروع می‌شود؟', String(BESAT_AT_OFFSET[p.at]), 'number', true)}
+          ${f('dur', 'مدت برنامه (دقیقه)', '60', 'number', true)}
         </div>
+        <div class="empty-msg" style="padding:0">ساعت اذان هر روز خودکار برای همین شهر حساب می‌شود (روش جعفری). اگر خالی بگذارید، ${BESAT_AT_OFFSET[p.at]} دقیقه بعد از اذان و مدت ۶۰ دقیقه در نظر گرفته می‌شود.</div>` : `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${f('start', '🕐 ساعت شروع (وقت عراق)', '', 'time', true)}
+          ${f('end', '🕐 ساعت پایان (اختیاری)', '', 'time', true)}
+        </div>`}
         <div><div class="field-label">📅 روزهای اجرا — هیچ‌کدام را انتخاب نکنید یعنی «هر روز»</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px">${BESAT_DAYS.map(([d, l]) => `<button type="button" class="add-row-btn"
             style="margin:0;width:auto;padding:6px 12px;${p.days.includes(d) ? 'background:var(--gold);color:#fff;border-style:solid' : ''}"
@@ -153,9 +187,16 @@ function besatListHTML(id) {
     return h;
   }).join('');
 }
+function besatHeadTime(p) { return p.at ? { fajr: 'صبح', dhuhr: 'ظهر', maghrib: 'مغرب' }[p.at] : (p.start || '--:--'); }
 function besatDaysLabel(days) {
   if (!days.length || days.length === 7) return 'هر روز';
-  return BESAT_DAYS.filter(([d]) => days.includes(d)).map(([, l]) => l).join('، ');
+  const runs = [];
+  BESAT_DAYS.forEach(([d, l], k) => {
+    if (!days.includes(d)) return;
+    const r = runs[runs.length - 1];
+    if (r && r[r.length - 1][0] === k - 1) r.push([k, l]); else runs.push([[k, l]]);
+  });
+  return runs.map(r => r.length >= 3 ? r[0][1] + ' تا ' + r[r.length - 1][1] : r.map(x => x[1]).join('، ')).join('، ');
 }
 function besatCountLabel(id) { const n = besatState.cities[id].length; return n ? n + ' برنامه' : 'هنوز برنامه‌ای ثبت نشده'; }
 function renderBesatCity(id) {
@@ -166,7 +207,7 @@ function renderBesatCity(id) {
 }
 function toggleBesat(id, i) { besatOpen[id] = besatOpen[id] === i ? -1 : i; renderBesatCity(id); }
 function addBesat(id) {
-  besatState.cities[id].push({ id: bid(), title: '', start: '', end: '', days: [], place: '', mapNeshanUrl: '', mapGoogleUrl: '', speaker: '', desc: '', poster: '' });
+  besatState.cities[id].push({ id: bid(), title: '', start: '', end: '', at: '', offset: '', dur: '', days: [], place: '', mapNeshanUrl: '', mapGoogleUrl: '', speaker: '', desc: '', poster: '' });
   besatOpen[id] = besatState.cities[id].length - 1; renderBesatCity(id);
 }
 function dupBesat(id, i) {
@@ -187,7 +228,7 @@ function delBesat(id, i) {
 function setBesat(id, i, k, v) {
   besatState.cities[id][i][k] = v;
   if (k === 'title') { const n = document.getElementById(`bn-${id}-${i}`); if (n) n.textContent = v || 'برنامه جدید'; }
-  if (k === 'start') { const n = document.getElementById(`bt-${id}-${i}`); if (n) n.textContent = v || '--:--'; }
+  if (k === 'start') { const n = document.getElementById(`bt-${id}-${i}`); if (n) n.textContent = besatHeadTime(besatState.cities[id][i]); }
 }
 function toggleBesatDay(id, i, d) {
   const days = besatState.cities[id][i].days, k = days.indexOf(d);
@@ -211,7 +252,9 @@ function getBesatData() {
   const cities = {};
   ALL_CITIES.forEach(id => {
     const list = besatState.cities[id].filter(p => p.title.trim()).map(p => {
-      const o = { id: p.id, title: p.title.trim(), start: p.start, ...(p.end ? { end: p.end } : {}),
+      const o = { id: p.id, title: p.title.trim(),
+        ...(p.at ? { at: p.at, ...(p.offset !== '' ? { offset: +p.offset } : {}), ...(+p.dur ? { dur: +p.dur } : {}) }
+                 : { start: p.start, ...(p.end ? { end: p.end } : {}) }),
         days: p.days.slice().sort((a, b) => a - b), place: p.place.trim() };
       ['mapNeshanUrl', 'mapGoogleUrl', 'speaker', 'desc'].forEach(k => { if (p[k].trim()) o[k] = p[k].trim(); });
       const poster = p.poster || (BUILD_PENDING && p.posterData);
@@ -220,7 +263,11 @@ function getBesatData() {
     });
     if (list.length) cities[id] = list;
   });
+  const posters = {};
+  ALL_CITIES.forEach(id => { const v = besatState.posters[id] || (BUILD_PENDING && besatState.posters[id + 'Data']); if (v) posters[id] = v; });
   return { enabled: besatState.enabled, title: besatState.title.trim() || BESAT_TITLE,
+    ...(besatState.link.trim() ? { link: besatState.link.trim(), ...(besatState.linkLabel.trim() ? { linkLabel: besatState.linkLabel.trim() } : {}) } : {}),
+    ...(Object.keys(posters).length ? { posters } : {}),
     ...(img('logo') ? { logo: img('logo') } : {}), ...(img('emblem') ? { emblem: img('emblem') } : {}), cities };
 }
 
@@ -231,6 +278,13 @@ async function uploadPendingBesat(token) {
     const path = `besat/${k}-${Date.now()}.png`;
     await putFile(path, '', 'Add Besat logo', token, besatState[k + 'Data'].split(',')[1]);
     besatState[k] = path; besatState[k + 'Preview'] = besatState[k + 'Data']; delete besatState[k + 'Data']; any = true;
+  }
+  for (const id of ALL_CITIES) {
+    const d = besatState.posters[id + 'Data'];
+    if (!d) continue;
+    const path = `besat/poster-${id}-${Date.now()}.jpg`;
+    await putFile(path, '', 'Add Besat city poster', token, d.split(',')[1]);
+    besatState.posters[id] = path; besatState.posters[id + 'Preview'] = d; delete besatState.posters[id + 'Data']; any = true;
   }
   for (const id of ALL_CITIES) for (const p of besatState.cities[id]) {
     if (!p.posterData) continue;
