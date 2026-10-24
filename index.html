@@ -561,13 +561,26 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
     /* ── FOOTER ── */
-    .footer{
-      margin:22px 14px 120px;position:relative;
-      background:var(--card);border:1px solid var(--border);
-      border-radius:var(--r);padding:22px 16px 18px;text-align:center;box-shadow:var(--shadow);
-    }
+    .foot-mini{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;margin:18px 0 0;
+      font-size:calc(12.5px * var(--fs,1));color:var(--dim);text-align:center}
+    .foot-mini strong{color:var(--brass);font-weight:800}
+    .foot-mini button{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 6px;border:none;background:none;cursor:pointer;
+      font-family:var(--font);font-size:calc(13px * var(--fs,1));font-weight:800;color:var(--pri-ink)}
+    .foot-mini .chev{width:15px;height:15px}
+
+    /* ── ABOUT (درباره برنامه) ── */
+    .about{max-height:90vh;overflow-y:auto;text-align:center;overscroll-behavior:contain}
+    .about-head{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:14px}
+    .about-icon{width:72px;height:72px;border-radius:20px;background:url(app-icon-192.png) center/cover,#0B3B2D;
+      box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--brass-l),0 6px 18px rgba(60,40,10,.2)}
+    .about-name{font-size:calc(19px * var(--fs,1));font-weight:900;color:var(--text);line-height:1.4;margin-top:6px}
+    .about-sub{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:1.7}
+    .footer{position:relative;margin:18px 0 14px;background:var(--card2);border:1px solid var(--border);
+      border-radius:var(--r);padding:22px 14px 14px;text-align:center}
     .footer::before{content:'✦';position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:26px;height:26px;line-height:26px;
-      border-radius:50%;background:var(--bg);color:var(--brass-l);font-size:14px;border:1px solid var(--brass-l)}
+      border-radius:50%;background:var(--card);color:var(--brass-l);font-size:14px;border:1px solid var(--brass-l)}
+    .about-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .about-acts .sheet-btn{margin:0;justify-content:center}
     .footer-bismillah{font-size:calc(16px * var(--fs,1));color:var(--pri-ink);font-weight:800;margin-bottom:10px;line-height:1.9}
     .footer-text{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:2;margin-bottom:6px}
     .footer-text strong{color:var(--pri-ink);font-weight:800}
@@ -684,9 +697,15 @@
     <div class="modal-title">گزینه‌های بیشتر</div>
     <button class="sheet-btn" onclick="closeMore();shareApp()"><span aria-hidden="true">🔗</span>اشتراک‌گذاری برنامه</button>
     <button class="sheet-btn" onclick="closeMore();showQR()"><span aria-hidden="true">📱</span>QR کد برنامه</button>
+    <button class="sheet-btn" onclick="openAbout()"><span aria-hidden="true">ℹ️</span>درباره برنامه</button>
     <button class="sheet-btn" id="moreInstall" style="display:none" onclick="closeMore();document.getElementById('installBtn').click()"><span aria-hidden="true">📲</span>نصب روی گوشی</button>
     <button class="modal-close" onclick="closeMore()">بستن</button>
   </div>
+</div>
+
+<!-- ABOUT SHEET -->
+<div class="overlay" id="aboutOverlay" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" onclick="if(event.target===this)closeAbout()">
+  <div class="modal about" id="aboutBox"></div>
 </div>
 
 <!-- TOAST -->
@@ -807,7 +826,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('.has-photo');
   if (b) openPhoto(b.dataset.photo, b.dataset.cap);
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhoto(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePhoto(); closeAbout(); closeMore(); } });
 
 function buildPhone(num, cc) {
   return '+' + cc + (num.startsWith('0') ? num.slice(1) : num);
@@ -1262,20 +1281,47 @@ function richText(t) {
   return escHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }
 
+/* پایین صفحه فقط یک خط؛ متن کامل در صفحه «درباره برنامه» */
 function footerHTML() {
-  const blocks = (CARAVAN_DATA.site && CARAVAN_DATA.site.footer) || DEFAULT_FOOTER;
+  return `
+  <footer class="foot-mini" role="contentinfo">
+    <span><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></span>
+    <span aria-hidden="true">·</span>
+    <button type="button" onclick="openAbout()">درباره برنامه ${CHEV_FWD}</button>
+  </footer>`;
+}
+function aboutHTML() {
+  const site = CARAVAN_DATA.site || {};
+  const blocks = site.footer || DEFAULT_FOOTER;
   const body = blocks.map(b => {
     if (b.type === 'divider') return '<div class="footer-divider"></div>';
     const cls = { heading: 'footer-bismillah', bold: 'footer-bold', text: 'footer-text' }[b.type] || 'footer-text';
     return `<div class="${cls}">${richText(b.text || '')}</div>`;
   }).join('');
   return `
-  <footer class="footer" role="contentinfo">
-    ${body}
-    <div class="footer-update"><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></div>
-    <a class="footer-admin" href="admin.html">⚙️ ورود مدیر</a>
-  </footer>`;
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="about-head">
+      <div class="about-icon" aria-hidden="true"></div>
+      <div class="about-name" id="aboutTitle">${escHtml(site.appTitle || 'راهنمای کاروان عراق')}</div>
+      ${site.appSubtitle ? `<div class="about-sub">${escHtml(site.appSubtitle)}</div>` : ''}
+    </div>
+    ${body ? `<div class="footer">${body}
+      <div class="footer-update"><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></div></div>` : ''}
+    <div class="about-acts">
+      <button class="sheet-btn" onclick="closeAbout();shareApp()"><span aria-hidden="true">🔗</span>اشتراک‌گذاری</button>
+      <button class="sheet-btn" onclick="closeAbout();showQR()"><span aria-hidden="true">📱</span>QR کد</button>
+    </div>
+    <button class="modal-close" onclick="closeAbout()">بستن</button>
+    <a class="footer-admin" href="admin.html">⚙️ ورود مدیر</a>`;
 }
+function openAbout() {
+  closeMore();
+  const box = document.getElementById('aboutBox');
+  box.innerHTML = aboutHTML();
+  box.scrollTop = 0;
+  document.getElementById('aboutOverlay').classList.add('open');
+}
+function closeAbout() { document.getElementById('aboutOverlay').classList.remove('open'); }
 
 /* ══════════════════════════════════════════
    QUICK JUMP

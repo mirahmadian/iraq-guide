@@ -444,8 +444,8 @@
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📝</div>
       <div class="sec-head-info">
-        <div class="sec-head-title">متن‌های پایین برنامه</div>
-        <div class="sec-head-sub">معرفی برنامه‌نویس، دعا و ... — هر خط را اضافه، کم یا جابه‌جا کنید</div>
+        <div class="sec-head-title">متن صفحه «درباره برنامه»</div>
+        <div class="sec-head-sub">معرفی برنامه‌نویس، دعا و ... — در برنامه با دکمه «درباره برنامه» باز می‌شود</div>
       </div>
     </div>
     <div class="sec-body" style="display:block">
@@ -1401,7 +1401,7 @@ function renderFooterEditor(){
         <button onclick="moveFooter(${i},1)" title="پایین">▼</button>
         <button class="del" onclick="delFooter(${i})" title="حذف">🗑</button>
       </div>
-    </div>`).join('')||'<div class="empty-msg">متنی وجود ندارد (پایین برنامه خالی می‌ماند)</div>';
+    </div>`).join('')||'<div class="empty-msg">متنی وجود ندارد (صفحه درباره برنامه خالی می‌ماند)</div>';
 }
 function setFooterType(i,t){siteState.footer[i].type=t;renderFooterEditor();}
 function addFooter(type){siteState.footer.push({type,text:''});renderFooterEditor();
