@@ -5,15 +5,14 @@
 (function injectMapCSS() {
   const css = `
   .map-open{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:11px 14px;border-radius:var(--r-sm);
-    border:1.5px solid rgba(30,120,200,.35);background:rgba(30,120,200,.07);color:var(--text);cursor:pointer;font-family:var(--font);text-align:right}
+    border:1px solid var(--brass-l,#C9A24B);background:var(--card);box-shadow:var(--shadow);color:var(--text);min-height:60px;cursor:pointer;font-family:var(--font);text-align:right}
   .map-open .mo-ico{font-size:24px;flex-shrink:0}
-  .map-open .mo-t{display:block;font-size:calc(13.5px * var(--fs,1));font-weight:800;color:#1E78C8}
-  [data-theme="dark"] .map-open .mo-t{color:#6AA9F5}
-  .map-open .mo-s{display:block;font-size:calc(10.5px * var(--fs,1));color:var(--dim);margin-top:2px}
+  .map-open .mo-t{display:block;font-size:calc(14.5px * var(--fs,1));font-weight:900;color:var(--pri-ink,#0E5A44)}
+  .map-open .mo-s{display:block;font-size:calc(12px * var(--fs,1));color:var(--dim);margin-top:1px;line-height:1.6}
   .hcode{display:inline-block;font-size:calc(10px * var(--fs,1));font-weight:800;padding:1px 7px;border-radius:6px;margin-right:6px;
     background:rgba(var(--rgb-hotel),.15);color:var(--c-hotel);vertical-align:middle;white-space:nowrap}
   .hotel-map-btn{display:flex;align-items:center;gap:8px;width:100%;padding:10px 15px;border:none;border-bottom:1px solid var(--border);
-    background:none;cursor:pointer;font-family:var(--font);color:#1E78C8;font-size:calc(12px * var(--fs,1));font-weight:700;text-align:right}
+    background:none;cursor:pointer;font-family:var(--font);color:var(--pri-ink,#0E5A44);font-size:calc(13.5px * var(--fs,1));font-weight:800;text-align:right;min-height:50px}
 
   .mapv{position:fixed;inset:0;z-index:250;background:#1b1f1d;display:none;flex-direction:column}
   .mapv.open{display:flex}
