@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v18';
+const CACHE = 'caravan-v20';
 const STATIC = [
   './',
   'index.html',
@@ -7,6 +7,7 @@ const STATIC = [
   'map-viewer.js',
   'banner.js',
   'besat.js',
+  'home.js',
   'besat-logo.png',
   'besat-emblem.png',
   'ins-logo.png',
@@ -25,7 +26,7 @@ const STATIC = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(STATIC))
+      .then(c => c.addAll(STATIC.map(u => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -39,24 +40,28 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* fetch: network-first برای HTML و JS، cache-first برای بقیه */
+/* fetch:
+   - پنل ادمین و فایل‌هایش هرگز cache نمی‌شوند (همیشه نسخه تازه؛ انتشار به‌هرحال اینترنت می‌خواهد)
+   - کد برنامه (html/js/css/json): اول از شبکه، اگر اینترنت نبود از cache
+   - بقیه (عکس، نقشه، فونت): اول از cache */
 self.addEventListener('fetch', e => {
-  const url = e.request.url;
-  const isCore = url.endsWith('index.html') || url.endsWith('data.js') || url.endsWith('food.js') || url.endsWith('map-viewer.js') ||
-                 url.endsWith('/') || url.includes('iraq-guide/') && !url.includes('.');
+  const req = e.request, u = new URL(req.url);
+  if (req.method !== 'GET' || u.origin !== location.origin) return;
+  const file = u.pathname.split('/').pop();
+  if (file.startsWith('admin')) return;
+  const isCode = req.mode === 'navigate' || file === '' || /\.(html|js|css|json)$/.test(file);
 
-  if (isCore || e.request.mode === 'navigate') {
-    /* همیشه اول از شبکه بگیر، کش را آپدیت کن */
+  if (isCode) {
     e.respondWith(
-      fetch(e.request, { cache: 'no-cache' })
+      fetch(req, { cache: 'no-cache' })
         .then(res => {
           if (res && res.status === 200) {
             const clone = res.clone();
-            caches.open(CACHE).then(c => c.put(e.request, clone));
+            caches.open(CACHE).then(c => c.put(req, clone));
           }
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(req, { ignoreSearch: req.mode === 'navigate' }))
     );
     return;
   }

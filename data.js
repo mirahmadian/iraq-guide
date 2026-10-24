@@ -1876,6 +1876,22 @@ const CARAVAN_DATA = {
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1"
         }
       ]
+    },
+    "contacts": {
+      "najaf": [
+        {
+          "role": "نظارت و بازرسی بعثه",
+          "phone": "07848322779",
+          "name": null,
+          "countryCode": "964"
+        },
+        {
+          "role": "حراست بعثه",
+          "phone": "07852615807",
+          "name": null,
+          "countryCode": "964"
+        }
+      ]
     }
   },
   "cities": [

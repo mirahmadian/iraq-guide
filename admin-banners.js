@@ -37,7 +37,7 @@ function renderBannerEditor() {
       <label class="fchk" style="padding:0"><input type="checkbox" ${bannerState.splash ? 'checked' : ''} onchange="bannerState.splash=this.checked">
         <b>صفحه خوش‌آمد: هنگام باز کردن برنامه چند ثانیه نمایش داده شود</b></label>
       <label class="fchk" style="padding:0;margin-top:8px"><input type="checkbox" ${bannerState.top ? 'checked' : ''} onchange="bannerState.top=this.checked">
-        <b>بالای صفحه اصلی برنامه به‌صورت یک نوار کوچک نمایش داده شود (با لمس، بنر کامل باز می‌شود)</b></label>
+        <b>در اسلایدر صفحه اول نمایش داده شود (اگر «اسلایدهای خودکار» در چیدمان صفحه اول روشن باشد)</b></label>
     </div>
     <div style="padding:0 16px"><button class="add-row-btn" onclick="previewSplash()">▶ دیدن صفحه خوش‌آمد در پیش‌نمایش</button></div>` : ''}
     <div class="empty-msg">بهترین اندازه: عکس افقی (عرض بیشتر از ارتفاع). برای ثبت، «انتشار» را بزنید.</div>`;

@@ -428,6 +428,18 @@
     <div class="sec-body" style="display:block" id="site-title-fields"></div>
   </div>
 
+  <!-- HOME LAYOUT -->
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">🧩</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">چیدمان صفحه اول</div>
+        <div class="sec-head-sub">ترتیب آیکون‌ها، دکمه‌های نوار پایین و اسلایدر اطلاعیه‌ها</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="layout-editor"></div>
+  </div>
+
   <!-- APP ICON -->
   <div class="sec-card open">
     <div class="sec-card-head no-toggle">
@@ -810,6 +822,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-banners.js"></script>
 <script src="admin-icon.js"></script>
 <script src="admin-besat.js"></script>
+<script src="admin-layout.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -982,6 +995,7 @@ async function uploadPendingHotelCards(token){
   await uploadPendingBanners(token);
   await uploadPendingIcon(token);
   await uploadPendingBesat(token);
+  await uploadPendingSlides(token);
   await uploadPendingMaps(token);
   for(const id of Object.keys(hotelState)){
     let any=false;
@@ -1351,7 +1365,8 @@ function buildData(pending){
       iconName:siteState.iconName.trim()||DEFAULT_SITE.iconName,
       footer:siteState.footer.filter(b=>b.type==='divider'||(b.text||'').trim()).map(b=>({type:b.type,text:b.type==='divider'?'':b.text.trim()})),
       ...siteBannerOut(),
-      ...siteIconOut()
+      ...siteIconOut(),
+      ...layoutOut()
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
@@ -1768,6 +1783,7 @@ function init(){
   initBanners();
   initIcon();
   initBesat();
+  initLayout();
   fitTabsBar();
 }
 

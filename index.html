@@ -621,7 +621,8 @@
     </div>
   </header>
 
-  <!-- SEARCH -->
+  <!-- SEARCH (در صفحه «جستجو» نمایش داده می‌شود) -->
+  <div id="searchPark" style="display:none">
   <div class="search-wrap" role="search">
     <div class="search-box">
       <span class="search-ico" aria-hidden="true">🔍</span>
@@ -632,6 +633,7 @@
   <div class="search-results" id="searchResults" role="region" aria-label="نتایج جستجو">
     <div class="sr-header">نتایج جستجو</div>
     <div id="srBody"></div>
+  </div>
   </div>
 
   <!-- INSTALL BANNER -->
@@ -644,23 +646,12 @@
     <button class="install-btn" id="installBtn">نصب</button>
   </div>
   
-  <!-- SITE BANNER (rendered by JS) -->
-  <div id="siteBanner"></div>
-
-  <!-- GLOBAL INSURANCE (rendered by JS) -->
-  <div id="globalInsurance"></div>
-
-  <!-- TABS -->
-  <nav class="tabs-wrap" aria-label="انتخاب شهر">
-    <div class="tabs" role="tablist" id="tabList"></div>
-  </nav>
-
   <!-- CONTENT (rendered by JS) -->
   <main class="content" id="mainContent"></main>
 
   <!-- BOTTOM BUTTONS -->
   <div class="bot-bar">
-    <div class="bot-inner" id="sosBar" role="navigation" aria-label="تماس فوری"></div>
+    <nav id="sosBar" aria-label="منوی اصلی"></nav>
   </div>
 
 </div><!-- /app-wrapper -->
@@ -719,6 +710,7 @@
 <script src="map-viewer.js"></script>
 <script src="banner.js"></script>
 <script src="besat.js"></script>
+<script src="home.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -1142,135 +1134,11 @@ function render() {
   if (site.appSubtitle !== undefined) document.getElementById('appSub').textContent = site.appSubtitle;
   // update date
 
-  renderSiteBanner();
-
-  // global cards (insurance + transport supervisor) — داخل هر شهر، بعد از درمانگاه
-  const globalCards = globalCardHTML(CARAVAN_DATA.insurance, '<img src="ins-logo.png" alt="">', 'ins') +
-                      globalCardHTML(CARAVAN_DATA.transport, '🚌', 'transport');
-  const globals = globalCards ? `<div class="sec-lbl">برای همه شهرها</div><div class="global-row">${globalCards}</div>` : '';
-
-  // tabs + city sections
-  const tabList = document.getElementById('tabList');
-  const mainContent = document.getElementById('mainContent');
-  let tabsHTML = '';
-  let sectionsHTML = '';
-
-  const hotelCities = [];
-  CARAVAN_DATA.cities.filter(c => !c.hidden || SHOW_HIDDEN).forEach((city, idx) => {
-    const isFirst = idx === 0;
-    tabsHTML += `
-    <button class="tab ${isFirst ? 'active' : ''}" id="tab-${city.id}"
-            role="tab" aria-selected="${isFirst}"
-            aria-controls="sec-${city.id}"
-            onclick="switchTab('${city.id}')"
-            onkeydown="handleTabKey(event,'${city.id}')">
-      <span class="tab-icon" aria-hidden="true">${city.icon}</span>${city.name}${city.hidden ? '<small class="tab-hidden">پنهان از کاربران</small>' : ''}
-    </button>`;
-
-    const arParts = (city.arabic || '').split(' · ');
-    const chips = [];
-    if (city.hq)       chips.push(['hq', '🏢', 'ستاد', `${city.id}-hq`]);
-    if (city.clinic)   chips.push(['clinic', RC_ICON, 'درمانگاه', `${city.id}-clinic`]);
-    const firstPlace = {};
-    (city.places || []).forEach((p, i) => { if (!(p.type in firstPlace)) firstPlace[p.type] = i; });
-    if (!city.clinic && 'clinic' in firstPlace) chips.push(['clinic', RC_ICON, 'درمانگاه', `${city.id}-place-${firstPlace.clinic}`]);
-    ['restaurant', 'parking', 'ziyarat', 'other'].forEach(t => {
-      if (t in firstPlace) chips.push([t, PLACE_META[t][0], PLACE_META[t][1], `${city.id}-place-${firstPlace[t]}`]);
-    });
-    if (city.hotels && city.hotels.length) chips.push(['hotel', '🏨', 'هتل', `hotel-wrap-${city.id}`]);
-    if (city.consulate) chips.push(['consulate', '🏛️', 'کنسولگری', `${city.id}-consulate`]);
-    const quickNav = chips.length > 1 ? `<div class="quick-nav" role="navigation" aria-label="پرش به بخش">` +
-      chips.map(([k, ico, label, target]) =>
-        `<button class="qn" style="--accent:var(--c-${k});--accent-rgb:var(--rgb-${k})" onclick="jumpTo('${target}')">${ico}<span>${label}</span></button>`
-      ).join('') + `</div>` : '';
-
-    let cityHTML = `
-    <div class="city-sec ${isFirst ? 'active' : ''}" id="sec-${city.id}"
-         role="tabpanel" aria-labelledby="tab-${city.id}">
-      <div class="city-hero${city.heroImage ? ' has-img' : ''}"${city.heroImage ? ` style="--hero-img:url(${encodeURI(city.heroImage)});--fx:${(city.heroFocus && city.heroFocus.x) ?? 50}%;--fy:${(city.heroFocus && city.heroFocus.y) ?? 40}%"` : ''}>
-        <div class="hero-name">${city.name}</div>
-        <div class="hero-orn" aria-hidden="true"><span></span>✦<span></span></div>
-        <div class="hero-ar" lang="ar" dir="rtl">${arParts[0] || ''}</div>
-        ${arParts[1] ? `<div class="hero-shrine">${arParts.slice(1).join(' · ')}</div>` : ''}
-        <svg class="hero-skyline" viewBox="0 0 400 56" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-          <path d="M150 56V40C150 14 250 14 250 40V56Z"/><rect x="199" y="6" width="2" height="12"/><circle cx="200" cy="5" r="3"/>
-          <rect x="102" y="16" width="10" height="40"/><path d="M100 16L107 2L114 16Z"/><rect x="99" y="26" width="16" height="3"/>
-          <rect x="288" y="16" width="10" height="40"/><path d="M286 16L293 2L300 16Z"/><rect x="285" y="26" width="16" height="3"/>
-          <path d="M40 56V46C40 34 72 34 72 46V56Z"/><path d="M328 56V46C328 34 360 34 360 46V56Z"/>
-          <rect x="0" y="52" width="400" height="4"/>
-        </svg>
-      </div>
-      ${cityMapButtonHTML(city)}
-      ${quickNav}
-      ${besatStripHTML(city)}`;
-
-    // HQ
-    if (city.hq) {
-      cityHTML += sectionCard({
-        id: `${city.id}-hq`, kind: 'hq', icoClass: 'ico-hq', icoEmoji: '🏢',
-        title: city.hq.title, badge: 'ستاد', badgeClass: 'badge-acc', banner: city.hqBanner,
-        address: city.hq.address,
-        mapNeshan: city.hq.mapNeshanUrl, mapGoogle: city.hq.mapGoogleUrl,
-        contacts: city.hq.contacts
-      });
-    }
-
-    // Clinic
-    if (city.clinic) {
-      cityHTML += sectionCard({
-        id: `${city.id}-clinic`, kind: 'clinic', icoClass: 'ico-clinic', icoEmoji: RC_ICON,
-        title: city.clinic.title, badge: 'درمانگاه', badgeClass: 'badge-acc',
-        address: city.clinic.address,
-        mapNeshan: city.clinic.mapNeshanUrl, mapGoogle: city.clinic.mapGoogleUrl,
-        contacts: city.clinic.contacts
-      });
-    }
-
-    cityHTML += globals;
-
-    // Other places (restaurant, parking, extra clinics, ...)
-    (city.places || []).forEach((p, i) => {
-      const kind = PLACE_META[p.type] ? p.type : 'other';
-      cityHTML += sectionCard({
-        id: `${city.id}-place-${i}`, kind, icoClass: '', icoEmoji: kind === 'clinic' ? RC_ICON : PLACE_META[kind][0],
-        title: p.title, badge: PLACE_META[kind][1], badgeClass: 'badge-acc',
-        address: p.address, mapNeshan: p.mapNeshanUrl, mapGoogle: p.mapGoogleUrl, contacts: p.contacts
-      });
-    });
-
-    // Hotels
-    if (city.hotels && city.hotels.length > 0) {
-      _hotelData[city.id] = city.hotels;
-      cityHTML += hotelSearchSection(city.id, city.hotels);
-      hotelCities.push(city.id);
-    }
-
-    // Consulate
-    if (city.consulate) {
-      cityHTML += sectionCard({
-        id: `${city.id}-consulate`, kind: 'consulate', icoClass: 'ico-consulate', icoEmoji: '🏛️',
-        title: city.consulate.title, badge: 'کنسولگری', badgeClass: 'badge-acc',
-        address: city.consulate.address || null,
-        mapNeshan: city.consulate.mapNeshanUrl, mapGoogle: city.consulate.mapGoogleUrl,
-        contacts: city.consulate.contacts
-      });
-    }
-
-    cityHTML += `</div>`;
-    sectionsHTML += cityHTML;
-  });
-
-  tabList.innerHTML = tabsHTML;
-  mainContent.innerHTML = sectionsHTML + `<div id="foodEntry">${foodEntryHTML()}</div>` + footerHTML();
-  hotelCities.forEach(id => showDefaultHotels(id));
-  const firstSec = document.querySelector('.city-sec');
-  if (firstSec) renderSos(firstSec.id.slice(4));
+  CARAVAN_DATA.cities.forEach(c => { _hotelData[c.id] = c.hotels || []; });
 
   // برگرداندن شهر انتخاب‌شده قبلی (مثلاً بعد از بروزرسانی خودکار صفحه)
-  try {
-    const last = sessionStorage.getItem('caravan-city');
-    if (last && document.getElementById('sec-' + last)) switchTab(last, true);
-  } catch(e) {}
+  try { homeCityId = sessionStorage.getItem('caravan-city') || null; } catch(e) {}
+  renderHome();
 }
 
 const DEFAULT_FOOTER = [
@@ -1374,17 +1242,9 @@ window.addEventListener('load', updateSticky);
    TABS
 ══════════════════════════════════════════ */
 function switchTab(cityId, silent) {
-  document.querySelectorAll('.city-sec').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.remove('active');
-    t.setAttribute('aria-selected','false');
-  });
-  const sec = document.getElementById('sec-' + cityId);
-  const tab = document.getElementById('tab-' + cityId);
-  if (sec) sec.classList.add('active');
-  if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected','true'); }
+  homeCityId = cityId;
   try { sessionStorage.setItem('caravan-city', cityId); } catch(e) {}
-  renderSos(cityId);
+  renderHome();
   if (!silent) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1395,22 +1255,6 @@ function handleTabKey(e, cityId) {
   if (e.key === 'ArrowLeft' && idx < tabs.length-1) { tabs[idx+1].click(); tabs[idx+1].focus(); }
 }
 
-/* ══════════════════════════════════════════
-   BOTTOM BAR — تماس فوری با ستاد و درمانگاه شهر باز
-══════════════════════════════════════════ */
-function renderSos(cityId) {
-  const bar = document.getElementById('sosBar');
-  const city = CARAVAN_DATA.cities.find(c => c.id === cityId);
-  if (!bar || !city) return;
-  const first = sec => sec && (sec.contacts || []).find(c => c.phone);
-  const hq = first(city.hq);
-  const clinic = first(city.clinic) || first((city.places || []).find(p => p.type === 'clinic' && first(p)));
-  const btn = (c, cls, label) => c ? `<a class="bot-btn ${cls}" href="tel:${buildPhone(c.phone, c.countryCode)}" aria-label="${label} — ${c.phone}">${PHONE_ICON}${label}</a>` : '';
-  const calls = btn(hq, 'sos-hq', 'تماس با ستاد') + btn(clinic, 'sos-clinic', 'درمانگاه');
-  bar.innerHTML = calls
-    ? calls + `<button class="bot-btn more" onclick="openMore()" aria-label="گزینه‌های بیشتر"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`
-    : `<button class="bot-btn wide" onclick="shareApp()">🔗 اشتراک‌گذاری</button><button class="bot-btn more" onclick="showQR()" aria-label="QR کد">📱</button>`;
-}
 function openMore() {
   document.getElementById('moreInstall').style.display = deferredPrompt ? 'flex' : 'none';
   document.getElementById('moreOverlay').classList.add('open');
@@ -1621,17 +1465,16 @@ let touchStartX = 0, touchStartY = 0, touchIgnore = false;
 document.addEventListener('touchstart', e => {
   touchStartX = e.changedTouches[0].clientX;
   touchStartY = e.changedTouches[0].clientY;
-  touchIgnore = !!e.target.closest('input, textarea, select, .hotel-dropdown, .modal, .card-modal, .search-results, #foodView, #mapView, #besatView');
+  touchIgnore = !!e.target.closest('input, textarea, select, .hotel-dropdown, .modal, .card-modal, .search-results, .hslides, .city-chips, #foodView, #mapView, #besatView, #pageView');
 }, { passive: true });
 document.addEventListener('touchend', e => {
   if (touchIgnore) return;
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
   if (Math.abs(dx) < 110 || Math.abs(dx) < Math.abs(dy) * 2.5) return;
-  const tabs = Array.from(document.querySelectorAll('.tab'));
-  const activeIdx = tabs.findIndex(t => t.classList.contains('active'));
-  if (dx < 0 && activeIdx < tabs.length - 1) tabs[activeIdx + 1].click(); // swipe left → next
-  if (dx > 0 && activeIdx > 0) tabs[activeIdx - 1].click();               // swipe right → prev
+  const ids = homeCities().map(c => c.id), i = ids.indexOf(homeCity().id);
+  if (dx < 0 && i < ids.length - 1) switchTab(ids[i + 1]); // swipe left → next
+  if (dx > 0 && i > 0) switchTab(ids[i - 1]);              // swipe right → prev
 }, { passive: true });
 
 /* ══════════════════════════════════════════
@@ -1674,6 +1517,7 @@ function mediaUrls() {
   addC(CARAVAN_DATA.insurance && CARAVAN_DATA.insurance.contacts);
   addC(CARAVAN_DATA.transport && CARAVAN_DATA.transport.contacts);
   if (siteBannerData()) urls.add(siteBannerData().image);
+  (((CARAVAN_DATA.site || {}).layout || {}).slides || []).forEach(x => x.image && urls.add(x.image));
   const ic = (CARAVAN_DATA.site || {}).icon;
   if (ic) ['i192', 'i512', 'mask', 'apple'].forEach(k => ic[k] && urls.add(ic[k]));
   const bs = CARAVAN_DATA.besat;
