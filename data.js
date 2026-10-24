@@ -1840,10 +1840,10 @@ const CARAVAN_DATA = {
       "name": "کاظمین",
       "arabic": "الكاظمية · مرقد الإمام موسى الكاظم (ع) والجواد (ع)",
       "icon": "🕌",
-      "heroImage": "cities/kadhimiya-1792610186678.jpg",
+      "heroImage": "cities/kadhimiya-1792864757658.jpg",
       "heroFocus": {
-        "x": 50,
-        "y": 40
+        "x": 72,
+        "y": 49
       },
       "hotels": [
         {
