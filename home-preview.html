@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پیش‌نمایش صفحه اول</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{
+    --bg:#FAF6EE;--card:#FFFDF8;--card2:#F7F0E2;--text:#2A2116;--muted:#5E4F3A;--dim:#75664D;--border:#E6DAC2;--border-s:#D9C9A8;
+    --pri:#0E5A44;--pri-ink:#0E5A44;--brass:#8C6418;--brass-l:#C9A24B;--hdr:#0E5A44;--sos:#B3261E;
+    --shadow:0 2px 10px rgba(90,64,20,.08);--r:18px;
+    --pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23C9A24B' stroke-opacity='.30' stroke-width='1'%3E%3Cpath d='M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Crect x='14' y='14' width='20' height='20' transform='rotate(45 24 24)'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  [data-theme=dark]{--bg:#14110C;--card:#1E1A13;--card2:#2A241A;--text:#F4EBDA;--muted:#C2B293;--dim:#A39375;--border:#3A3122;--border-s:#4A3F2C;
+    --pri:#147358;--pri-ink:#8AB9AC;--brass:#E2C27A;--hdr:#0B3B2D;--shadow:0 4px 18px rgba(0,0,0,.45)}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Vazirmatn',sans-serif;background:#E7E3DA;color:var(--text);line-height:1.7}
+  [data-theme=dark] body,body[data-theme=dark]{background:#0b0a07}
+  button{font-family:inherit}
+  /* ── page around the phone ── */
+  .pg{max-width:980px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:24px;align-items:start}
+  @media (max-width:860px){.pg{grid-template-columns:1fr;justify-items:center}.notes{max-width:400px}}
+  .notes h1{font-size:20px;font-weight:900;margin-bottom:6px}
+  .notes p,.notes li{font-size:14px;color:#4b4235}
+  .notes ul{padding-right:18px;margin:8px 0}
+  .notes .ctl{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  .notes .ctl button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #cbbd9e;background:#fff;font-weight:800;cursor:pointer}
+  .notes .ctl button.on{background:#0E5A44;color:#fff;border-color:#0E5A44}
+  .phone{width:100%;max-width:400px;height:min(820px,88vh);border:8px solid #1c1c1c;border-radius:34px;overflow:hidden;position:relative;background:var(--bg);box-shadow:0 14px 40px rgba(0,0,0,.25)}
+  .scr{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;background:var(--bg) }
+  .scr::-webkit-scrollbar{display:none}
+  .scr::before{content:'';position:fixed;inset:0;background-image:var(--pat);background-size:96px;opacity:.5;pointer-events:none}
+
+  /* ── app ── */
+  .hdr{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--hdr) var(--pat);background-size:48px;color:#FFF8E6}
+  .hdr .logo{width:40px;height:40px;border-radius:12px;background:center/cover;box-shadow:0 0 0 2px rgba(201,162,75,.6)}
+  .hdr h1{flex:1;font-size:17px;font-weight:900;line-height:1.35}
+  .hdr h1 small{display:block;font-size:11.5px;font-weight:500;color:#E8CF8F}
+  .ib{width:42px;height:42px;border-radius:12px;border:1px solid rgba(201,162,75,.55);background:rgba(255,255,255,.08);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .ib svg{width:20px;height:20px}
+  .cities{display:flex;gap:6px;padding:12px 14px 0;overflow-x:auto;scrollbar-width:none;position:relative}
+  .cities button{flex:1 0 auto;min-height:44px;padding:0 14px;border-radius:100px;border:1px solid var(--border-s);background:var(--card);color:var(--muted);font-weight:800;font-size:13.5px;cursor:pointer}
+  .cities button.on{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:inset 0 -3px 0 var(--brass-l)}
+
+  .slider{position:relative;margin:12px 14px 0;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--brass-l)}
+  .slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .slides::-webkit-scrollbar{display:none}
+  .slide{flex:0 0 100%;scroll-snap-align:center;aspect-ratio:16/9;position:relative;background:#0E5A44;cursor:pointer;color:#fff;overflow:hidden}
+  /* کل عکس دیده شود؛ دو طرف با نسخه محو همان عکس پر شود (برای هر اندازه عکس) */
+  .slide .blur{position:absolute;inset:-20px;background:var(--img) center/cover;filter:blur(16px) brightness(.75)}
+  .slide .fit{position:absolute;inset:0;background:var(--img) center/contain no-repeat}
+  .slide::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.72))}
+  .slide .cap{position:absolute;right:14px;left:14px;bottom:24px;z-index:1;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+  .slide .cap small{display:inline-block;background:var(--brass-l);color:#2A2116;font-size:11px;font-weight:800;padding:0 8px;border-radius:100px;margin-bottom:4px;text-shadow:none}
+  .slide .cap b{display:block;font-size:16px;font-weight:900;line-height:1.5}
+  .dots{position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:5px;z-index:2}
+  .dots i{width:7px;height:7px;border-radius:100px;background:rgba(255,255,255,.5);transition:width .2s}
+  .dots i.on{width:20px;background:#fff}
+
+  .bstrip{display:flex;align-items:center;gap:12px;margin:12px 14px 0;padding:10px 12px;border-radius:var(--r);background:linear-gradient(90deg,var(--card),var(--card2));border:1.5px solid var(--brass-l);box-shadow:var(--shadow);cursor:pointer}
+  .bstrip .em{width:46px;height:46px;border-radius:12px;background:#fff center/72% no-repeat;border:1px solid var(--border);flex-shrink:0}
+  .bstrip .t{flex:1;min-width:0}
+  .bstrip .w{font-size:12px;font-weight:800;color:var(--brass);display:flex;gap:6px;align-items:center}
+  .bstrip .w .live{background:var(--sos);color:#fff;border-radius:100px;padding:0 8px;font-size:11px}
+  .bstrip b{display:block;font-size:14.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bstrip .all{font-size:11.5px;font-weight:800;color:var(--pri-ink);flex-shrink:0}
+
+  .sec-t{display:flex;align-items:center;gap:10px;margin:18px 16px 10px;color:var(--brass);font-size:12.5px;font-weight:800}
+  .sec-t::before,.sec-t::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--brass-l))}
+  .sec-t::after{background:linear-gradient(270deg,transparent,var(--brass-l))}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 14px}
+  .tile{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:14px 6px 12px;border-radius:var(--r);background:var(--card);border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;color:var(--text);min-height:112px}
+  .tile:active{transform:scale(.97)}
+  .tile .ic{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--c);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15),0 0 0 3px var(--card),0 0 0 4px var(--brass-l)}
+  .tile .ic svg{width:28px;height:28px}
+  .tile .ic.img{background:#fff}
+  .tile .ic.img img{width:40px;height:40px;object-fit:contain}
+  .tile span{font-size:13px;font-weight:800;text-align:center;line-height:1.45}
+  .tile small{display:block;font-size:10.5px;color:var(--dim);font-weight:600;margin-top:-6px}
+  .spacer{height:100px}
+
+  .nav{position:absolute;bottom:0;left:0;right:0;z-index:6;display:flex;align-items:flex-end;justify-content:space-around;padding:6px 6px 10px;background:var(--card);border-top:1px solid var(--border-s);box-shadow:0 -6px 20px rgba(60,40,10,.10)}
+  .nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--dim);font-size:11px;font-weight:800;cursor:pointer;min-height:52px;justify-content:center}
+  .nav button svg{width:24px;height:24px}
+  .nav button.on{color:var(--pri-ink)}
+  .nav .sos{flex:0 0 76px;margin-top:-26px}
+  .nav .sos .b{width:62px;height:62px;border-radius:50%;background:var(--sos);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 5px var(--card),0 6px 16px rgba(179,38,30,.45)}
+  .nav .sos .b svg{width:28px;height:28px}
+  .nav .sos{color:var(--sos)}
+
+  /* sheets / sub pages */
+  .sheet{position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.5);display:none;align-items:flex-end}
+  .sheet.open{display:flex}
+  .sheet .box{width:100%;max-height:86%;overflow-y:auto;background:var(--card);border-radius:24px 24px 0 0;border-top:2px solid var(--brass-l);padding:14px 16px 18px}
+  .sheet h3{text-align:center;font-size:16px;font-weight:900;margin:6px 0 12px}
+  .handle{width:40px;height:4px;border-radius:2px;background:var(--border-s);margin:0 auto}
+  .call{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .call:last-child{border-bottom:none}
+  .call .who{flex:1;min-width:0}
+  .call .who small{display:block;font-size:12px;color:var(--c,var(--muted));font-weight:800}
+  .call .who b{display:block;font-size:18px;font-weight:900;direction:ltr;text-align:right}
+  .call .who em{display:block;font-style:normal;font-size:12px;color:var(--dim)}
+  .call a{width:50px;height:50px;border-radius:14px;background:var(--c,var(--pri));color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .call a svg{width:22px;height:22px}
+  .grp{font-size:12.5px;font-weight:900;color:var(--brass);margin-top:10px}
+  .sub{position:absolute;inset:0;z-index:9;background:var(--bg);display:none;flex-direction:column}
+  .sub.open{display:flex}
+  .sub .top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--hdr) var(--pat);background-size:48px;color:#fff}
+  .sub .top button{width:42px;height:42px;border-radius:12px;border:1px solid rgba(201,162,75,.55);background:rgba(255,255,255,.08);color:#fff}
+  .sub .top button svg{width:20px;height:20px}
+  .sub .top b{font-size:16px;font-weight:900}
+  .sub .body{flex:1;overflow-y:auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--c);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
+  .card .addr{font-size:14px;color:var(--muted);margin-bottom:6px}
+  .ph{padding:28px 10px;text-align:center;color:var(--dim);font-size:13.5px}
+
+  /* edit mode (sample of admin) */
+  .edit .tile{cursor:default;position:relative}
+  .edit .tile.off{opacity:.35}
+  .tile .ed{display:none;position:absolute;top:4px;left:4px;right:4px;justify-content:space-between}
+  .edit .tile .ed{display:flex}
+  .ed button{width:26px;height:26px;border-radius:8px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="pg">
+  <div class="phone" id="phone"><div class="scr" id="scr"></div>
+    <div class="nav" id="nav"></div>
+    <div class="sub" id="sub"><div class="top"><button onclick="closeSub()" aria-label="بازگشت"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg></button><b id="subT"></b></div><div class="body" id="subB"></div></div>
+    <div class="sheet" id="sheet" onclick="if(event.target===this)this.classList.remove('open')"><div class="box"><div class="handle"></div><h3>📞 تماس فوری</h3><div id="sheetB"></div></div></div>
+  </div>
+  <div class="notes">
+    <h1>پیش‌نمایش صفحه اول جدید</h1>
+    <p>با اطلاعات واقعی برنامه. برنامه اصلی هنوز تغییری نکرده است. داخل گوشی را لمس کنید: آیکون‌ها، اسلایدر (ورق بزنید)، شهرها و دکمه قرمز وسط پایین.</p>
+    <div class="ctl">
+      <button id="themeB" onclick="toggleTheme()">🌙 حالت تیره</button>
+      <button id="editB" onclick="toggleEdit()">✏️ نمونه ویرایش چیدمان (پنل ادمین)</button>
+    </div>
+    <ul>
+      <li><b>اسلایدر:</b> اطلاعیه‌ها را مدیر از پنل اضافه می‌کند؛ هر اسلاید با لمس، بخش مربوط را باز می‌کند. هر ۵ ثانیه خودش ورق می‌خورد.</li>
+      <li><b>نوار بعثه:</b> برنامه «هم‌اکنون / بعدی» شهر انتخاب‌شده، درست زیر اسلایدر.</li>
+      <li><b>شبکه آیکون‌ها:</b> فقط بخش‌هایی که برای آن شهر اطلاعات دارند نمایش داده می‌شوند (مثلاً «هتل‌ها» فقط در کاظمین).</li>
+      <li><b>دکمه قرمز وسط:</b> تماس فوری با ستاد، درمانگاه، بیمه و نقل — همیشه با یک لمس.</li>
+      <li><b>ویرایش چیدمان:</b> دکمه «✏️» بالا را بزنید تا ببینید مدیر چطور ترتیب آیکون‌ها را با ▲▼ عوض می‌کند یا با 👁 پنهانشان می‌کند.</li>
+    </ul>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = CARAVAN_DATA, esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const I = {
+  hq:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5zm4-13h2v2H8zm6 0h2v2h-2zm-6 4h2v2H8zm6 0h2v2h-2z"/></svg>',
+  clinic:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.46 4.85A9 9 0 1 0 16.46 19.15 7.3 7.3 0 1 1 16.46 4.85Z"/></svg>',
+  consulate:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 21h18v-2H3zm2-3h2v-7H5zm4 0h2v-7H9zm4 0h2v-7h-2zm4 0h2v-7h-2zM12 2L2 8v1h20V8z"/></svg>',
+  hotel:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18V6h2v8h6V8h7a3 3 0 013 3v7h-2v-2H5v2zm4-6a2 2 0 110-4 2 2 0 010 4z"/></svg>',
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  transport:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16V6a3 3 0 013-3h8a3 3 0 013 3v10a2 2 0 01-1 1.7V20a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H9v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-2.3A2 2 0 015 16zm2-9v4h10V7zm1.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>',
+  food:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h2v7a2 2 0 01-1 1.7V22H6V10.7A2 2 0 015 9V2h2v5h0zm9 0a4 4 0 014 4v7h-3v9h-2V2z"/></svg>',
+  ziyarat:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1 2c3 1 6 4 6 8v1H5v-1c0-4 3-7 6-8zM4 15h16v2H4zm1 3h14v4H5z"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1z"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>'
+};
+const COLORS = { hq:'#0E5A44', clinic:'#B3261E', consulate:'#3B4592', hotel:'#7E5610', map:'#17609E', transport:'#944A04', food:'#944A04', ziyarat:'#00695C', ins:'#1C5C9E', besat:'#00796B' };
+const cities = D.cities.filter(c => !c.hidden);
+let city = cities[0], editMode = false;
+/* چیدمانی که مدیر در ادمین تعیین می‌کند */
+let layout = ['hq','clinic','consulate','besat','hotel','map','ins','transport','food','ziyarat'].map(id => ({ id, on: true }));
+const besatList = id => ((D.besat || {}).cities || {})[id] || [];
+const clinicOf = c => c.clinic || (c.places || []).find(p => p.type === 'clinic');
+const TILES = {
+  hq:        { label: 'ستاد', has: c => !!c.hq },
+  clinic:    { label: 'درمانگاه', has: c => !!clinicOf(c) },
+  consulate: { label: 'کنسولگری', has: c => !!c.consulate },
+  besat:     { label: 'برنامه‌های بعثه', has: c => besatList(c.id).length > 0, img: () => (D.besat && D.besat.emblem) || 'besat-emblem.png' },
+  hotel:     { label: 'هتل‌ها', has: c => (c.hotels || []).length > 0, sub: c => fa((c.hotels || []).length) + ' هتل' },
+  map:       { label: 'نقشه شهر', has: c => !!(c.map && c.map.image) },
+  ins:       { label: 'بیمه معلم', has: () => !!(D.insurance && D.insurance.contacts.length), img: () => 'ins-logo.png' },
+  transport: { label: 'ناظر نقل', has: () => !!(D.transport && D.transport.contacts.length) },
+  food:      { label: 'برنامه غذایی', has: () => !!D.food },
+  ziyarat:   { label: 'اماکن زیارتی', has: c => (c.places || []).some(p => p.type === 'ziyarat') }
+};
+
+function slides() {
+  const s = [];
+  if (D.site && D.site.banner) s.push({ img: D.site.banner.image, tag: 'اطلاعیه', t: D.site.banner.title || '' });
+  const bp = ((D.besat || {}).posters || {})[city.id];
+  if (bp) s.push({ img: bp, tag: 'بعثه', t: 'برنامه‌های فرهنگی بعثه در ' + city.name, go: 'besat' });
+  if (city.heroImage) s.push({ img: city.heroImage, tag: 'خوش آمدید', t: city.name + ' — ' + ((city.arabic || '').split(' · ')[1] || '') });
+  return s;
+}
+function render() {
+  const icon = (D.site && D.site.icon && D.site.icon.i192) || 'app-icon-192.png';
+  const sl = slides(), bl = besatList(city.id);
+  const visible = layout.filter(t => (editMode || t.on) && TILES[t.id].has(city));
+  document.getElementById('scr').innerHTML = `
+    <div class="hdr"><div class="logo" style="background-image:url('${esc(icon)}')"></div>
+      <h1>${esc((D.site && D.site.appTitle) || 'راهنمای کاروان عراق')}<small>${esc((D.site && D.site.appSubtitle) || '')}</small></h1>
+      <span class="ib">Aa</span><span class="ib">${I.moon}</span></div>
+    <div class="cities">${cities.map(c => `<button class="${c === city ? 'on' : ''}" onclick="pickCity('${c.id}')">${esc(c.name)}</button>`).join('')}</div>
+    ${sl.length ? `<div class="slider"><div class="slides" id="slides" onscroll="slideDots()">${sl.map(x => `
+      <div class="slide" style="--img:url('${esc(x.img)}')" onclick="${x.go ? `openTile('${x.go}')` : `openSub('${esc(x.t)}','<img src=&quot;${esc(x.img)}&quot; style=&quot;width:100%;border-radius:14px&quot;>')`}">
+        <div class="blur"></div><div class="fit"></div><div class="cap"><small>${esc(x.tag)}</small><b>${esc(x.t)}</b></div></div>`).join('')}</div>
+      <div class="dots" id="dots">${sl.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div></div>` : ''}
+    ${bl.length ? `<div class="bstrip" onclick="openTile('besat')"><div class="em" style="background-image:url('${esc(TILES.besat.img())}')"></div>
+      <div class="t"><div class="w">برنامه بعدی بعثه</div><b>${esc(bl[0].title)}</b></div><span class="all">همه برنامه‌ها ›</span></div>` : ''}
+    <div class="sec-t">بخش‌های ${esc(city.name)}</div>
+    <div class="grid ${editMode ? 'edit' : ''}">${visible.map(t => {
+      const T = TILES[t.id], k = layout.indexOf(t);
+      return `<div class="tile ${t.on ? '' : 'off'}" onclick="${editMode ? '' : `openTile('${t.id}')`}">
+        <div class="ed"><button onclick="mv(${k},-1)" title="جلوتر">▲</button><button onclick="tog(${k})" title="نمایش / پنهان">${t.on ? '👁' : '🚫'}</button><button onclick="mv(${k},1)" title="عقب‌تر">▼</button></div>
+        <div class="ic ${T.img ? 'img' : ''}" style="--c:${COLORS[t.id]}">${T.img ? `<img src="${esc(T.img())}" alt="">` : I[t.id] || ''}</div>
+        <span>${T.label}</span>${T.sub ? `<small>${T.sub(city)}</small>` : ''}</div>`;
+    }).join('')}</div>
+    <div class="spacer"></div>`;
+  document.getElementById('nav').innerHTML = `
+    <button class="on">${I.home}خانه</button><button onclick="openSub('جستجو','<div class=ph>جستجوی شماره، نقش یا نام (مثل الان)</div>')">${I.search}جستجو</button>
+    <button class="sos" onclick="openSos()"><span class="b">${I.phone}</span>تماس فوری</button>
+    <button onclick="openTile('besat')"><img src="${esc(TILES.besat.img())}" alt="" style="width:24px;height:24px;object-fit:contain">بعثه</button>
+    <button onclick="openSub('بیشتر','<div class=ph>درباره برنامه · اشتراک‌گذاری · QR کد · نصب روی گوشی · اندازه نوشته</div>')">${I.more}بیشتر</button>`;
+  clearInterval(window._auto);
+  window._auto = setInterval(() => { const el = document.getElementById('slides'); if (!el || editMode) return;
+    const n = el.children.length, i = Math.round(Math.abs(el.scrollLeft) / el.clientWidth); el.children[(i + 1) % n].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }, 5000);
+}
+function slideDots() { const el = document.getElementById('slides'), i = Math.round(Math.abs(el.scrollLeft) / el.clientWidth);
+  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === i)); }
+function pickCity(id) { city = cities.find(c => c.id === id); render(); document.getElementById('scr').scrollTop = 0; }
+function mv(k, d) { event.stopPropagation(); const j = k + d; if (j < 0 || j >= layout.length) return; [layout[k], layout[j]] = [layout[j], layout[k]]; render(); }
+function tog(k) { event.stopPropagation(); layout[k].on = !layout[k].on; render(); }
+function toggleEdit() { editMode = !editMode; document.getElementById('editB').classList.toggle('on', editMode); render(); }
+function toggleTheme() { const d = document.documentElement.dataset.theme === 'dark'; document.documentElement.dataset.theme = d ? '' : 'dark'; document.body.dataset.theme = d ? '' : 'dark'; document.getElementById('themeB').classList.toggle('on', !d); }
+
+const callRow = (c, color) => `<div class="call" style="--c:${color}"><div class="who"><small>${esc(c.role)}</small><b>${esc(c.phone)}</b>${c.name ? `<em>${esc(c.name)}</em>` : ''}</div><a>${I.phone}</a></div>`;
+const groupCalls = (sec, color, title) => sec && (sec.contacts || []).length ? `<div class="grp">${esc(title || sec.title)}</div>${sec.contacts.map(c => callRow(c, color)).join('')}` : '';
+function openSos() {
+  const cl = clinicOf(city);
+  document.getElementById('sheetB').innerHTML =
+    groupCalls(city.hq, COLORS.hq) + groupCalls(cl, COLORS.clinic) + groupCalls(D.insurance, COLORS.ins) + groupCalls(D.transport, COLORS.transport)
+    || '<div class="ph">شماره‌ای برای این شهر ثبت نشده</div>';
+  document.getElementById('sheet').classList.add('open');
+}
+function openSub(t, html) { document.getElementById('subT').textContent = t; document.getElementById('subB').innerHTML = html; document.getElementById('sub').classList.add('open'); }
+function closeSub() { document.getElementById('sub').classList.remove('open'); }
+function secCard(sec, color) {
+  if (!sec) return '<div class="ph">اطلاعاتی ثبت نشده</div>';
+  return `<div class="card" style="--c:${color}">${sec.address ? `<div class="addr">📍 ${esc(sec.address)}</div>` : ''}
+    ${(sec.contacts || []).map(c => callRow(c, color)).join('') || '<div class="ph" style="padding:8px">شماره‌ای ثبت نشده</div>'}</div>
+    <div class="ph">در نسخه نهایی: دکمه‌های مسیریابی، واتساپ، کپی و … مثل الان</div>`;
+}
+function openTile(id) {
+  if (editMode) return;
+  const T = TILES[id];
+  if (id === 'hq') return openSub(city.hq.title, secCard(city.hq, COLORS.hq));
+  if (id === 'clinic') return openSub(clinicOf(city).title, secCard(clinicOf(city), COLORS.clinic));
+  if (id === 'consulate') return openSub(city.consulate.title, secCard(city.consulate, COLORS.consulate));
+  if (id === 'ins') return openSub(D.insurance.title, secCard(D.insurance, COLORS.ins));
+  if (id === 'transport') return openSub(D.transport.title, secCard(D.transport, COLORS.transport));
+  if (id === 'besat') return openSub('برنامه‌های بعثه — ' + city.name, besatList(city.id).length
+    ? besatList(city.id).map(p => `<div class="card" style="--c:${COLORS.besat};margin-bottom:10px"><b>${esc(p.title)}</b><div class="addr">📍 ${esc(p.place || '')}</div></div>`).join('') + '<div class="ph">در نسخه نهایی: همان صفحه کامل بعثه با «هم‌اکنون / بعدی»</div>'
+    : '<div class="ph">برای این شهر برنامه‌ای ثبت نشده</div>');
+  if (id === 'hotel') return openSub('هتل‌های ' + city.name, (city.hotels || []).slice(0, 8).map(h => `<div class="card" style="--c:${COLORS.hotel};margin-bottom:8px"><b>${esc(h.name)}</b></div>`).join('') + '<div class="ph">در نسخه نهایی: جستجو، کد هتل، گالری تصاویر و …</div>');
+  if (id === 'map') return openSub('نقشه ' + city.name, `<img src="${esc(city.map.image)}" style="width:100%;border-radius:12px"><div class="ph">در نسخه نهایی: بزرگ‌نمایی با دو انگشت و دانلود PDF</div>`);
+  openSub(T.label, '<div class="ph">این بخش در نسخه نهایی همان صفحه فعلی برنامه را باز می‌کند</div>');
+}
+render();
+</script>
+</body>
+</html>
