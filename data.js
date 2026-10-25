@@ -89,6 +89,10 @@ const CARAVAN_DATA = {
           "on": true
         },
         {
+          "id": "currency",
+          "on": true
+        },
+        {
           "id": "ziyarat",
           "on": true
         },
@@ -2416,6 +2420,15 @@ const CARAVAN_DATA = {
           "address": "سامراء، شارع الملويه",
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://maps.app.goo.gl/iZS2epXxiwT2F4hJ9?g_st=ic",
+          "contacts": []
+        },
+        {
+          "id": "plmvnffph0yea",
+          "type": "restaurant",
+          "title": "رستوران عسکریین",
+          "address": "",
+          "mapNeshanUrl": "",
+          "mapGoogleUrl": "https://www.google.com/maps/place/34%C2%B012'17.1%22N+43%C2%B052'02.3%22E/@34.2047501,43.8647347,17z/data=!3m1!4b1!4m4!3m3!8m2!3d34.2047501!4d43.8673096?hl=en&entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D",
           "contacts": []
         }
       ]
