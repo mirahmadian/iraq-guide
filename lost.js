@@ -12,7 +12,10 @@
   .lc-row small{display:block;font-size:calc(12.5px * var(--fs,1));color:#666;font-weight:700}
   .lc-row b{display:block;font-size:calc(19px * var(--fs,1));font-weight:900;line-height:1.6}
   .lc-row i{display:block;font-style:normal;font-size:calc(15px * var(--fs,1));font-weight:800;color:#333}
-  .lc-tel{display:inline-block;margin:4px 0 0 10px;font-size:calc(22px * var(--fs,1));font-weight:900;color:#0E5A44;text-decoration:none;direction:ltr}
+  .lc-ph{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;padding:4px 0}
+  .lc-ph + .lc-ph{border-top:1px dotted #ddd}
+  .lc-ph small{display:inline;font-size:calc(12.5px * var(--fs,1));color:#555;font-weight:700}
+  .lc-tel{display:inline-block;font-size:calc(22px * var(--fs,1));font-weight:900;color:#0E5A44;text-decoration:none;direction:ltr}
   .lc-fa{border-top:1px dashed #ccc;padding-top:8px;font-size:calc(12px * var(--fs,1));color:#555;line-height:1.8}
   .lc-miss{border-top:1px dashed #ccc;padding:10px 0;font-size:calc(14px * var(--fs,1));font-weight:800;color:#B3261E;text-align:center}
   .lost-p{font-size:calc(13px * var(--fs,1));color:var(--muted);line-height:1.9;margin:0 4px 8px}
@@ -46,7 +49,10 @@ function myInfo() {
 function mySave(o) { try { localStorage.setItem(MY_KEY, JSON.stringify(o)); } catch (e) {} }
 function myHotel(c) { return c && (c.hotels || []).find(h => h.id === myInfo().hotels[c.id]); }
 function lostIntl(num) { const n = toEnDigits(num || '').replace(/[^\d+]/g, ''); return !n ? '' : n.startsWith('+') ? n : n.startsWith('00') ? '+' + n.slice(2) : n.startsWith('0') ? '+98' + n.slice(1) : '+' + n; }
-function lostTel(c) { return `<a class="lc-tel" href="tel:${buildPhone(c.phone, c.countryCode || '964')}">${escHtml(c.phone)}</a>`; }
+/* هر شماره در یک خط جدا، با عنوان صاحب شماره، تا دو شماره با هم اشتباه نشوند */
+function lostTel(c) {
+  return `<div class="lc-ph"><a class="lc-tel" href="tel:${buildPhone(c.phone, c.countryCode || '964')}">${escHtml(c.phone)}</a>${c.role ? `<small>${escHtml(c.role)}</small>` : ''}</div>`;
+}
 
 function lostCardHTML(c) {
   const me = myInfo(), h = myHotel(c), city = (c.arabic || c.name || '').split(' · ')[0];
@@ -63,8 +69,8 @@ function lostCardHTML(c) {
   } else {
     html += `<div class="lc-miss">هتل شما هنوز انتخاب نشده — از پایین همین صفحه انتخابش کنید</div>`;
   }
-  if (me.phone) html += `<div class="lc-row"><small>مسؤول القافلة</small><a class="lc-tel" href="tel:${lostIntl(me.phone)}">${escHtml(me.phone)}</a></div>`;
-  if (hq.length) html += `<div class="lc-row"><small>مقر الزوار الإيرانيين</small>${hq.map(lostTel).join('')}</div>`;
+  if (me.phone) html += `<div class="lc-row"><small>مسؤول القافلة</small><div class="lc-ph"><a class="lc-tel" href="tel:${lostIntl(me.phone)}">${escHtml(me.phone)}</a></div></div>`;
+  if (hq.length) html += `<div class="lc-row"><small>مقر الزوار الإيرانيين${c.hq.title ? ' · ' + escHtml(c.hq.title) : ''}</small>${hq.map(lostTel).join('')}</div>`;
   return html + `<div class="lc-fa">ترجمه: من زائر ایرانی هستم و راه را گم کرده‌ام. لطفاً کمکم کنید به هتلم برسم یا با یکی از این شماره‌ها تماس بگیرید.</div></div>`;
 }
 
