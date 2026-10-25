@@ -20,6 +20,13 @@
     background:var(--gold);color:#fff;font-family:var(--font);font-size:calc(15px * var(--fs,1));font-weight:900;cursor:pointer}
   .rem-alt{display:block;text-align:center;margin:10px 0 4px;font-size:calc(12.5px * var(--fs,1));font-weight:700;color:var(--pri-ink)}
   .rem-note{font-size:calc(12px * var(--fs,1));color:var(--dim);line-height:1.9;margin-top:8px;text-align:center}
+  .rem-cur{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--gold-dim);border:1px solid var(--gold);font-size:calc(13px * var(--fs,1));line-height:1.9;color:var(--text)}
+  .rem-del{display:inline-flex;align-items:center;gap:6px;min-height:40px;margin-top:8px;padding:0 14px;border-radius:10px;cursor:pointer;
+    border:1px solid rgba(179,38,30,.4);background:rgba(179,38,30,.08);color:var(--c-clinic);font-family:var(--font);font-size:calc(13px * var(--fs,1));font-weight:800}
+  [data-theme="dark"] .rem-del{color:var(--i-clinic)}
+  .rem-item{padding:12px 14px}
+  .rem-item b{font-size:calc(15px * var(--fs,1))}
+  .rem-meta{font-size:calc(12.5px * var(--fs,1));color:var(--muted);line-height:1.8}
   .rem-when{font-size:calc(13px * var(--fs,1));color:var(--muted);text-align:center;margin-top:-6px}
   `;
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
@@ -73,7 +80,8 @@ function renderReminder() {
     <div class="modal-handle" aria-hidden="true"></div>
     <div class="modal-title">⏰ یادآوری «${escHtml(p.title)}»</div>
     <div class="rem-when">نوبت بعدی: ${remWhenText(occ[0])}${p.at ? ' (حدودی، بعد از اذان)' : ''}</div>
-    <div class="rem-sec">چند دقیقه قبل خبرم کن؟</div>
+    ${remCurrentHTML(p.id)}
+    <div class="rem-sec">${remIsSet(p.id) ? 'یا یادآوری تازه بگذارید — ' : ''}چند دقیقه قبل خبرم کن؟</div>
     <div class="rem-chips">${REM_LEADS.map(m => `<button class="${remSel.lead === m ? 'on' : ''}" onclick="remSel.lead=${m};renderReminder()">${m.toLocaleString('fa')} دقیقه</button>`).join('')}</div>
     <div class="rem-sec">برای کدام نوبت‌ها؟</div>
     <div class="rem-chips">
@@ -81,9 +89,22 @@ function renderReminder() {
       <button class="${remSel.scope === 'all' ? 'on' : ''}" ${occ.length < 2 ? 'disabled' : ''} onclick="remSel.scope='all';renderReminder()">همه نوبت‌های ۷ روز آینده (${occ.length.toLocaleString('fa')} بار)</button>
     </div>
     <button class="rem-go" onclick="addReminder()">📅 افزودن به تقویم گوشی</button>
-    <a class="rem-alt" href="${remGoogleUrl(cityId, p, occ[0])}" target="_blank" rel="noopener" onclick="remRemember()">یا: افزودن با تقویم گوگل (نیاز به اینترنت) ›</a>
+    <a class="rem-alt" href="${remGoogleUrl(cityId, p, occ[0])}" target="_blank" rel="noopener" onclick="remRemember(null,'google');closeReminder()">یا: افزودن با تقویم گوگل (نیاز به اینترنت) ›</a>
     <div class="rem-note">گوشی می‌پرسد «به تقویم اضافه شود؟» — «افزودن / ذخیره» را بزنید.<br>از آن به بعد تقویم گوشی سر وقت خبرتان می‌کند، حتی اگر این برنامه بسته باشد.</div>
     <button class="modal-close" style="margin-top:12px" onclick="closeReminder()">بستن</button>`;
+}
+
+/* یادآوری فعلی این برنامه + دکمه حذف */
+function remCurrentHTML(pid) {
+  const mine = remLoad().filter(r => r.pid === pid && r.end > Date.now()).sort((a, b) => a.start - b.start);
+  if (!mine.length) return '';
+  return `<div class="rem-cur"><b>✓ یادآوری فعلی:</b> ${mine.length.toLocaleString('fa')} نوبت · ${(mine[0].lead || 15).toLocaleString('fa')} دقیقه قبل
+    <br>اولین: ${remWhenText({ start: mine[0].start, day: iraqNow(new Date(mine[0].start)).day, k: remDayOffset(mine[0].start) })}
+    <button class="rem-del" onclick="removeReminders('${pid}')">🗑 حذف یادآوری</button></div>`;
+}
+function remDayOffset(ms) {
+  const a = iraqNow(), b = iraqNow(new Date(ms));
+  return Math.round((Date.UTC(b.y, b.mo, b.d) - Date.UTC(a.y, a.mo, a.d)) / 864e5);
 }
 
 /* ── فایل تقویم (iCalendar) ── */
@@ -113,6 +134,56 @@ function buildIcs(cityId, p, occs, lead) {
   lines.push('END:VCALENDAR');
   return lines.map(icsFold).join('\r\n') + '\r\n';
 }
+/* فایل لغو: به تقویم می‌گوید همان رویدادها (با همان شناسه) حذف شوند */
+function buildCancelIcs(records) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//iraq-guide//besat//FA', 'CALSCALE:GREGORIAN', 'METHOD:CANCEL'];
+  records.forEach(r => lines.push('BEGIN:VEVENT', `UID:${r.pid}-${icsTime(r.start)}@iraq-guide`, `DTSTAMP:${icsTime(Date.now())}`,
+    `DTSTART:${icsTime(r.start)}`, `DTEND:${icsTime(r.end)}`, 'SEQUENCE:1', 'STATUS:CANCELLED', `SUMMARY:${icsEsc(r.title)}`, 'END:VEVENT'));
+  lines.push('END:VCALENDAR');
+  return lines.map(icsFold).join('\r\n') + '\r\n';
+}
+const remIsIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function remDownload(ics, name) {
+  if (remIsIos()) { location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); return; }
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function removeReminders(pid) {
+  const all = remLoad(), gone = all.filter(r => pid === '*' || r.pid === pid);
+  if (!gone.length) return;
+  if (!confirm(pid === '*' ? 'همه یادآوری‌ها حذف شود؟' : `یادآوری «${gone[0].title}» حذف شود؟`)) return;
+  remSave(all.filter(r => !gone.includes(r)));
+  const fromIcs = gone.filter(r => r.via !== 'google');
+  if (fromIcs.length) remDownload(buildCancelIcs(fromIcs), 'لغو یادآوری.ics');
+  showToast(fromIcs.length
+    ? (remIsIos() ? 'در پنجره باز شده تأیید کنید تا از تقویم حذف شود' : 'فایل لغو دانلود شد — بازش کنید تا از تقویم حذف شود. اگر حذف نشد، رویداد را در تقویم گوشی لمس کنید و «حذف» را بزنید')
+    : 'از برنامه حذف شد — رویداد را در تقویم گوگل لمس کنید و «حذف» را بزنید', 9000);
+  closeReminder();
+  const b = document.getElementById('besatView');
+  if (b && b.classList.contains('open')) renderBesatView();
+  const pv = document.getElementById('pvBody');
+  if (pv && pv.querySelector('.rem-list')) pv.innerHTML = myRemindersHTML();
+}
+
+/* ── «یادآوری‌های من» (از منوی بیشتر) ── */
+function myRemindersHTML() {
+  const groups = {};
+  remLoad().filter(r => r.end > Date.now()).sort((a, b) => a.start - b.start).forEach(r => { (groups[r.pid] = groups[r.pid] || []).push(r); });
+  const ids = Object.keys(groups);
+  if (!ids.length) return '<div class="rem-list"><div class="sr-empty">یادآوری فعالی ندارید.<br>در صفحه برنامه‌های بعثه، دکمه «⏰ یادآوری» را بزنید.</div></div>';
+  return `<div class="rem-list">${ids.map(id => {
+    const g = groups[id], f = g[0], city = (CARAVAN_DATA.cities.find(c => c.id === f.city) || {}).name || '';
+    return `<div class="sec-card k-ziyarat rem-item"><b>${escHtml(f.title)}</b>
+      <div class="rem-meta">📍 ${escHtml([f.place, city].filter(Boolean).join('، '))}</div>
+      <div class="rem-meta">⏰ ${g.length.toLocaleString('fa')} نوبت · ${(f.lead || 15).toLocaleString('fa')} دقیقه قبل · اولین: ${remWhenText({ start: f.start, day: iraqNow(new Date(f.start)).day, k: remDayOffset(f.start) })}</div>
+      <button class="rem-del" onclick="removeReminders('${id}')">🗑 حذف</button></div>`;
+  }).join('')}
+  ${ids.length > 1 ? `<button class="modal-close" onclick="removeReminders('*')">🗑 حذف همه یادآوری‌ها</button>` : ''}</div>`;
+}
+function openMyReminders() { closeMore(); openPage('⏰ یادآوری‌های من', myRemindersHTML()); }
+
 function remGoogleUrl(cityId, p, o) {
   const city = CARAVAN_DATA.cities.find(c => c.id === cityId) || {};
   return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(p.title) +
@@ -120,11 +191,11 @@ function remGoogleUrl(cityId, p, o) {
     '&details=' + encodeURIComponent(((besat() || {}).title || '') + (p.at ? '\n' + PRAYER_LABEL[p.at] : ''));
 }
 
-function remRemember(occs) {
+function remRemember(occs, via) {
   const { cityId, p } = remProg;
   occs = occs || remOccurrences(cityId, p).slice(0, 1);
   const list = remLoad().filter(r => !(r.pid === p.id && occs.some(o => o.start === r.start)));
-  occs.forEach(o => list.push({ pid: p.id, city: cityId, title: p.title, place: p.place || '', start: o.start, end: o.end, lead: remSel.lead, shown: false }));
+  occs.forEach(o => list.push({ pid: p.id, city: cityId, title: p.title, place: p.place || '', start: o.start, end: o.end, lead: remSel.lead, via: via || 'ics', shown: false }));
   remSave(list);
   if ('Notification' in window && Notification.permission === 'default') try { Notification.requestPermission(); } catch (e) {}
   const b = document.getElementById('besatView');
@@ -133,16 +204,9 @@ function remRemember(occs) {
 function addReminder() {
   const { cityId, p } = remProg, all = remOccurrences(cityId, p);
   const occs = remSel.scope === 'all' ? all : all.slice(0, 1);
-  const ics = buildIcs(cityId, p, occs, remSel.lead), name = 'یادآوری ' + p.title + '.ics';
-  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (ios) {
-    location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
-  } else {
-    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: name });
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  }
+  const ios = remIsIos();
+  /* اگر قبلاً برای همین نوبت‌ها یادآوری بوده، همان رویدادها در تقویم جایگزین می‌شوند (شناسه یکسان) */
+  remDownload(buildIcs(cityId, p, occs, remSel.lead), 'یادآوری ' + p.title + '.ics');
   remRemember(occs);
   closeReminder();
   showToast(ios ? 'در پنجره باز شده «Add to Calendar» را بزنید' : 'فایل تقویم دانلود شد — آن را باز کنید و «ذخیره» را بزنید', 6000);
