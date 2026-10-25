@@ -78,9 +78,12 @@ async function reporterCreate(btn) {
   try {
     const w = await gh('/actions/workflows/rate-market.yml', tok);
     if (!w.ok) throw new Error('این کلید به Actions مخزن iraq-guide دسترسی ندارد (' + w.status + '). مرحله ۳ و ۴ را بررسی کنید.');
-    const repo = await gh('', tok);
-    if (repo.ok && ((await repo.json()).permissions || {}).push)
-      throw new Error('این کلید اجازه تغییر فایل‌ها (Contents) را هم دارد؛ برای امنیت، کلیدی بسازید که فقط Actions داشته باشد.');
+    /* آزمایش بی‌خطر: نوشتن خالی (بدون محتوا) — کلید بدون دسترسی Contents خطای ۴۰۳ می‌گیرد،
+       کلید با دسترسی نوشتن خطای ۴۲۲ (محتوای ناقص)؛ در هر دو حالت چیزی نوشته نمی‌شود.
+       (permissions در پاسخ /repos دسترسی خود حساب مدیر است، نه کلید؛ برای بررسی کلید به کار نمی‌آید.) */
+    const probe = await gh('/contents/.rate-key-probe', tok, { method: 'PUT', body: '{}' });
+    if (probe.status === 422 && !confirm('به نظر می‌رسد این کلید اجازه تغییر فایل‌های برنامه (Contents) را هم دارد.\nبرای امنیت بهتر است کلیدی بسازید که فقط Actions داشته باشد.\n\nبا همین کلید ادامه می‌دهید؟'))
+      throw new Error('ساخت دسترسی لغو شد');
     await putFile('rate-key.json', await encryptToken(tok, pass), 'Add rate reporter key', ghToken);
     showToast('✅ دسترسی ساخته شد — لینک و رمز را برای ثبت‌کننده بفرستید', 4000);
     setTimeout(renderReporter, 1500);
