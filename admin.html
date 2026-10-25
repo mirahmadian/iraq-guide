@@ -440,6 +440,18 @@
     <div class="sec-body" style="display:block" id="notice-editor"></div>
   </div>
 
+  <!-- RATE -->
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">💱</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">نرخ دینار (مبدل ارز)</div>
+        <div class="sec-head-sub">خودکار به‌روز می‌شود؛ نرخ دستی اختیاری است</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="rate-editor"></div>
+  </div>
+
   <!-- HOME LAYOUT -->
   <div class="sec-card open">
     <div class="sec-card-head no-toggle">
@@ -837,6 +849,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-besat.js"></script>
 <script src="admin-layout.js"></script>
 <script src="admin-notice.js"></script>
+<script src="admin-rate.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1386,7 +1399,8 @@ function buildData(pending){
       ...siteBannerOut(),
       ...siteIconOut(),
       ...layoutOut(),
-      ...noticesOut()
+      ...noticesOut(),
+      ...rateOut()
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
@@ -1844,6 +1858,7 @@ function init(){
   initBesat();
   initLayout();
   initNotices();
+  initRate();
   fitTabsBar();
 }
 

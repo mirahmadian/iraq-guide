@@ -69,6 +69,7 @@
 })();
 
 const HI = {
+  currency: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
   lost: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.8"/><path d="M5.6 5.6l3.7 3.7M14.7 14.7l3.7 3.7M18.4 5.6l-3.7 3.7M9.3 14.7l-3.7 3.7"/></svg>',
   hq: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5zm4-13h2v2H8zm6 0h2v2h-2zm-6 4h2v2H8zm6 0h2v2h-2z"/></svg>',
   clinic: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.46 4.85A9 9 0 1 0 16.46 19.15 7.3 7.3 0 1 1 16.46 4.85Z"/></svg>',
@@ -119,6 +120,7 @@ const TILE_DEFS = {
   transport: { label: 'ناظر نقل', color: 'transport', has: () => hasContacts(CARAVAN_DATA.transport),
                open: () => openPage(CARAVAN_DATA.transport.title, globalCardHTML(CARAVAN_DATA.transport, '🚌', 'transport')) },
   food:      { label: 'برنامه غذایی', color: 'restaurant', has: () => foodVisible(), hidden: () => !food().enabled, open: () => openFood() },
+  currency:  { label: 'تبدیل ارز', color: 'ins', has: () => typeof openCurrency === 'function', open: () => openCurrency() },
   ziyarat:   { label: 'اماکن زیارتی', color: 'ziyarat', has: c => placesOf(c, 'ziyarat').length > 0, open: c => openPage('اماکن زیارتی ' + c.name, placeCards(c, 'ziyarat')) },
   restaurant:{ label: 'رستوران', color: 'restaurant', has: c => placesOf(c, 'restaurant').length > 0, open: c => openPage('رستوران‌ها', placeCards(c, 'restaurant')) },
   parking:   { label: 'پارکینگ', color: 'parking', has: c => placesOf(c, 'parking').length > 0, open: c => openPage('پارکینگ‌ها', placeCards(c, 'parking')) },
@@ -134,6 +136,7 @@ const NAV_DEFS = {
   map:    { label: 'نقشه', icon: () => HI.map, act: () => TILE_DEFS.map.has(homeCity()) ? TILE_DEFS.map.open(homeCity()) : showToast('برای این شهر نقشه ثبت نشده'), },
   hotel:  { label: 'هتل‌ها', icon: () => HI.hotel, act: () => TILE_DEFS.hotel.has(homeCity()) ? TILE_DEFS.hotel.open(homeCity()) : showToast('برای این شهر هتلی ثبت نشده') },
   food:   { label: 'غذا', icon: () => HI.food, act: () => openFood(), has: () => foodVisible() },
+  currency: { label: 'ارز', icon: () => HI.currency, act: () => openCurrency() },
   hq:     { label: 'ستاد', icon: () => HI.hq, act: () => TILE_DEFS.hq.has(homeCity()) && TILE_DEFS.hq.open(homeCity()) }
 };
 const DEFAULT_NAV = ['home', 'search', 'besat', 'more'];
