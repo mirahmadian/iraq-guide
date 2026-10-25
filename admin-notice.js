@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   NOTICES — اطلاعیه‌های کاروان (بالای صفحه اول برنامه نمایش داده می‌شود)
+   NOTICES — اطلاعیه‌های عمومی برای همه زائران (بالای صفحه اول برنامه نمایش داده می‌شود)
 ══════════════════════════════════════════ */
 const NOTICE_DAYS = [[1, '۱ روز'], [2, '۲ روز'], [3, '۳ روز'], [5, '۵ روز'], [7, '۱ هفته'], [14, '۲ هفته'], [0, 'تا وقتی خودم حذف کنم']];
 let noticeState = [];
@@ -23,7 +23,7 @@ function renderNotices() {
     <button class="add-row-btn" onclick="addNotice()">+ اطلاعیه جدید</button>
     ${noticeState.map((n, i) => `<div class="lay-slide" style="${noticeExpired(n) ? 'opacity:.55' : ''}">
       <textarea rows="3" class="input-full" style="resize:vertical;min-height:80px;height:100px;background:#fff;color:#1a1a1a;border:1px solid #cfd8d3;border-radius:10px;padding:10px;font-family:inherit;line-height:1.8"
-        placeholder="مثلاً: حرکت به نجف فردا ساعت ۷ صبح جلوی در هتل. لطفاً ساعت ۶:۴۵ آماده باشید."
+        placeholder="مثلاً: به دلیل ازدحام، ورودی باب‌القبله حرم امام حسین (ع) امروز از ساعت ۱۸ تا ۲۲ بسته است."
         oninput="noticeState[${i}].text=this.value">${escH(n.text)}</textarea>
       <div class="field-label" style="margin:4px 0 0">مدت نمایش</div>
       <select class="fsel-a" onchange="noticeState[${i}].days=+this.value;renderNotices()">
