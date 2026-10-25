@@ -1123,7 +1123,7 @@ function getInitialHotels(cityId){
   const city=CARAVAN_DATA.cities.find(c=>c.id===cityId);
   return(city?.hotels||[]).map(h=>({
     id:h.id,name:h.name||'',nameEn:h.nameEn||'',code:h.code?String(h.code):'',
-    address:h.address||'',
+    address:h.address||'',addressAr:h.addressAr||'',
     imgs:(h.images&&h.images.length?h.images:(h.cardImage?[h.cardImage]:[])).map(path=>({path})),
     mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',
     contacts:(h.contacts||[]).map(c=>({...c}))
@@ -1191,6 +1191,11 @@ function renderHotels(cityId){
           <div class="field-label">📍 آدرس</div>
           <input type="text" class="input-full" placeholder="آدرس کامل" value="${escH(h.address)}"
                  oninput="updateHotel('${cityId}',${i},'address',this.value)">
+        </div>
+        <div>
+          <div class="field-label">🆘 آدرس به عربی (روی کارت «گم شده‌ام» به راننده یا پلیس نشان داده می‌شود)</div>
+          <input type="text" class="input-full" placeholder="مثلاً: الكاظمية، باب المراد، شارع التربية" value="${escH(h.addressAr)}"
+                 oninput="updateHotel('${cityId}',${i},'addressAr',this.value)">
         </div>
         <div>
           <div class="field-label">🪪 تصاویر هتل (کارت ویزیت، لابی، اتاق و ...) — کاربر با ورق زدن همه را می‌بیند</div>
@@ -1277,7 +1282,7 @@ function filterHotels(cityId,q){
   document.querySelectorAll(`#hotels-${cityId} .hotel-entry`).forEach(e=>e.classList.toggle('hide',!!q&&!(e.dataset.name||'').includes(q)));
 }
 function addHotel(cityId){
-  hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',code:'',address:'',imgs:[],mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
+  hotelState[cityId].push({id:'hotel-'+cityId+'-'+Date.now(),name:'',nameEn:'',code:'',address:'',addressAr:'',imgs:[],mapNeshanUrl:'',mapGoogleUrl:'',contacts:[]});
   const idx=hotelState[cityId].length-1;
   hotelOpen[cityId]=idx;
   renderHotels(cityId);
@@ -1341,7 +1346,7 @@ function sectionData(key){
 }
 function hotelsData(cityId){
   return (hotelState[cityId]||[]).filter(h=>h.name.trim()).map(h=>({
-    id:h.id,name:h.name,nameEn:h.nameEn,...((h.code||'').trim()?{code:toEnA(h.code).trim()}:{}),address:h.address,
+    id:h.id,name:h.name,nameEn:h.nameEn,...((h.code||'').trim()?{code:toEnA(h.code).trim()}:{}),address:h.address,...((h.addressAr||'').trim()?{addressAr:h.addressAr.trim()}:{}),
     cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
     images:h.imgs.map(imgSrc).filter(Boolean),
     mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,

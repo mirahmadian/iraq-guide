@@ -245,7 +245,7 @@ function hotelBulkApply(cityId) {
     if (!name) return;
     const ex = hotelState[cityId].find(h => normHotelName(h.name) === normHotelName(name));
     if (ex) { if (code && ex.code !== code) { ex.code = code; updated++; } return; }
-    hotelState[cityId].push({ id: 'hotel-' + cityId + '-' + Date.now() + '-' + added, name, nameEn: '', code, address: '', imgs: [],
+    hotelState[cityId].push({ id: 'hotel-' + cityId + '-' + Date.now() + '-' + added, name, nameEn: '', code, address: '', addressAr: '', imgs: [],
       mapNeshanUrl: '', mapGoogleUrl: '', contacts: [] });
     added++;
   });

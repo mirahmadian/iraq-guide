@@ -4,16 +4,16 @@
    فهرست شناسه‌ها باید با TILE_DEFS و NAV_DEFS در home.js یکی باشد
 ══════════════════════════════════════════ */
 const LAYOUT_TILES = {
-  hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
+  lost: ['گم شده‌ام', 'clinic', '🆘'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
   besat: ['برنامه‌های بعثه', 'ziyarat', '📜'], hotel: ['هتل‌ها', 'hotel', '🏨'], map: ['نقشه شهر', 'parking', '🗺️'],
   ins: ['بیمه معلم', 'ins', '📋'], transport: ['ناظر نقل', 'transport', '🚌'], food: ['برنامه غذایی', 'restaurant', '🍽️'],
   ziyarat: ['اماکن زیارتی', 'ziyarat', '🕌'], restaurant: ['رستوران', 'restaurant', '🍴'], parking: ['پارکینگ', 'parking', '🅿️'], other: ['سایر مکان‌ها', 'other', '📍']
 };
 const LAYOUT_COLORS = { hq: ['سبز', '#0E5A44'], clinic: ['قرمز', '#B3261E'], consulate: ['سرمه‌ای', '#3B4592'], hotel: ['قهوه‌ای', '#7E5610'],
   ins: ['آبی', '#1C5C9E'], parking: ['آبی روشن', '#17609E'], transport: ['نارنجی', '#944A04'], ziyarat: ['فیروزه‌ای', '#00695C'], other: ['خاکستری', '#55636B'] };
-const LAYOUT_NAV = { home: '🏠 خانه', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', food: '🍽️ غذا', hq: '🏢 ستاد' };
+const LAYOUT_NAV = { home: '🏠 خانه', lost: '🆘 گم شده‌ام', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', food: '🍽️ غذا', hq: '🏢 ستاد' };
 const LAYOUT_NAV_DEFAULT = ['home', 'search', 'besat', 'more'];
-const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
+const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', lost: 'گم شده‌ام', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
   map: 'نقشه شهر', ins: 'بیمه معلم', transport: 'ناظر نقل', food: 'برنامه غذایی', ziyarat: 'اماکن زیارتی', url: 'باز کردن یک لینک' };
 let layoutState = { tiles: [], nav: [], autoSlides: true, slides: [] };
 
@@ -21,7 +21,7 @@ function initLayout() {
   const L = (CARAVAN_DATA.site || {}).layout || {};
   const saved = (L.tiles || []).filter(t => LAYOUT_TILES[t.id]);
   layoutState = {
-    tiles: saved.concat(Object.keys(LAYOUT_TILES).filter(id => !saved.some(t => t.id === id)).map(id => ({ id, on: true })))
+    tiles: Object.keys(LAYOUT_TILES).reduce((a, id, i) => { if (!saved.some(t => t.id === id)) a.splice(Math.min(i, a.length), 0, { id, on: true }); return a; }, saved.slice())
       .map(t => ({ id: t.id, on: t.on !== false, label: t.label || '', color: t.color || '' })),
     nav: Object.keys(LAYOUT_NAV).map(id => ({ id, on: (L.nav && L.nav.length ? L.nav : LAYOUT_NAV_DEFAULT).includes(id) }))
       .sort((a, b) => { const o = L.nav && L.nav.length ? L.nav : LAYOUT_NAV_DEFAULT; return (o.indexOf(a.id) + 1 || 99) - (o.indexOf(b.id) + 1 || 99); }),

@@ -69,6 +69,7 @@
 })();
 
 const HI = {
+  lost: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.8"/><path d="M5.6 5.6l3.7 3.7M14.7 14.7l3.7 3.7M18.4 5.6l-3.7 3.7M9.3 14.7l-3.7 3.7"/></svg>',
   hq: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5zm4-13h2v2H8zm6 0h2v2h-2zm-6 4h2v2H8zm6 0h2v2h-2z"/></svg>',
   clinic: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.46 4.85A9 9 0 1 0 16.46 19.15 7.3 7.3 0 1 1 16.46 4.85Z"/></svg>',
   consulate: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 21h18v-2H3zm2-3h2v-7H5zm4 0h2v-7H9zm4 0h2v-7h-2zm4 0h2v-7h-2zM12 2L2 8v1h20V8z"/></svg>',
@@ -103,6 +104,7 @@ const hasContacts = g => !!(g && (g.contacts || []).length);
 
 /* همه آیکون‌های ممکن صفحه اول — ترتیب همین فهرست، پیش‌فرض است */
 const TILE_DEFS = {
+  lost:      { label: 'گم شده‌ام', color: 'clinic', has: () => true, open: () => openLost() },
   hq:        { label: 'ستاد', color: 'hq', has: c => !!c.hq, open: c => openPage(c.hq.title, secOf(c, 'hq', '🏢', 'ستاد', { banner: c.hqBanner })) },
   clinic:    { label: 'درمانگاه', color: 'clinic', has: c => cityClinics(c).length > 0,
                open: c => openPage(cityClinics(c)[0].title, secOf(c, 'clinic', RC_ICON, 'درمانگاه') + placeCards(c, 'clinic')) },
@@ -125,6 +127,7 @@ const TILE_DEFS = {
 /* دکمه‌های قابل انتخاب نوار پایین (دکمه وسط «شماره‌های ضروری» همیشه ثابت است) */
 const NAV_DEFS = {
   home:   { label: 'خانه', icon: () => HI.home, act: () => goHome() },
+  lost:   { label: 'گم شده‌ام', icon: () => HI.lost, act: () => openLost() },
   search: { label: 'جستجو', icon: () => HI.search, act: () => openSearch() },
   besat:  { label: 'بعثه', icon: () => `<img src="${escHtml(besatEmblem())}" alt="">`, act: () => openBesat(homeCity().id), has: () => CARAVAN_DATA.cities.some(c => besatVisible(c.id)) },
   more:   { label: 'بیشتر', icon: () => HI.more, act: () => openMore() },
@@ -138,7 +141,9 @@ const DEFAULT_NAV = ['home', 'search', 'besat', 'more'];
 function homeLayout() {
   const L = (CARAVAN_DATA.site || {}).layout || {};
   const saved = (L.tiles || []).filter(t => TILE_DEFS[t.id]);
-  const tiles = saved.concat(Object.keys(TILE_DEFS).filter(id => !saved.some(t => t.id === id)).map(id => ({ id, on: true })));
+  const tiles = saved.slice();
+  /* آیکون تازه‌ای که در چیدمان ذخیره‌شده نیست، سر جای پیش‌فرض خودش اضافه می‌شود */
+  Object.keys(TILE_DEFS).forEach((id, i) => { if (!saved.some(t => t.id === id)) tiles.splice(Math.min(i, tiles.length), 0, { id, on: true }); });
   const nav = (L.nav && L.nav.length ? L.nav : DEFAULT_NAV).filter(id => NAV_DEFS[id]).slice(0, 4);
   return { tiles, nav, autoSlides: L.autoSlides !== false, slides: L.slides || [] };
 }
@@ -288,7 +293,7 @@ function openSos() {
   const c = homeCity();
   const grp = (g, kind, title) => hasContacts(g)
     ? `<div class="sos-grp sec-card k-${kind}"><div class="divider-lbl" style="border-top:none">${escHtml(title || g.title)}</div><div class="contacts" role="list">${g.contacts.map(x => contactHTML(x)).join('')}</div></div>` : '';
-  let html = grp(c && c.hq, 'hq');
+  let html = `<button class="sos-lost" onclick="openLost()"><span style="font-size:26px" aria-hidden="true">🆘</span><span>گم شده‌ام<small>کارت عربی آدرس هتل · فرستادن موقعیت من</small></span></button>` + grp(c && c.hq, 'hq');
   (c ? cityClinics(c) : []).forEach(cl => { html += grp(cl, 'clinic'); });
   html += grp(CARAVAN_DATA.insurance, 'ins') + grp(CARAVAN_DATA.transport, 'transport');
   const bs = besat();

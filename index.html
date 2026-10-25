@@ -691,6 +691,7 @@
     <button class="sheet-btn" onclick="closeMore();shareApp()"><span aria-hidden="true">🔗</span>اشتراک‌گذاری برنامه</button>
     <button class="sheet-btn" onclick="closeMore();showQR()"><span aria-hidden="true">📱</span>QR کد برنامه</button>
     <button class="sheet-btn" onclick="openAbout()"><span aria-hidden="true">ℹ️</span>درباره برنامه</button>
+    <button class="sheet-btn" onclick="closeMore();openLost()"><span aria-hidden="true">🆘</span>گم شده‌ام (کارت آدرس هتل)</button>
     <button class="sheet-btn" onclick="openMyReminders()"><span aria-hidden="true">⏰</span>یادآوری‌های من</button>
     <button class="sheet-btn" id="moreInstall" style="display:none" onclick="closeMore();document.getElementById('installBtn').click()"><span aria-hidden="true">📲</span>نصب روی گوشی</button>
     <button class="modal-close" onclick="closeMore()">بستن</button>
@@ -714,6 +715,7 @@
 <script src="besat.js"></script>
 <script src="reminder.js"></script>
 <script src="home.js"></script>
+<script src="lost.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -956,7 +958,8 @@ function hotelSelect(cityId, hotelId) {
       ${hotelThumb(hotel, 'lg', `onclick="openGallery('${cityId}','${hotel.id.replace(/'/g,"\\'")}')"`)}
       <div class="hotel-detail-name">${hotel.name}</div>
       <span class="badge badge-hotel">${hotel.code ? 'کد ' + faDigits(hotel.code) : 'هتل'}</span>
-    </div>`;
+    </div>
+    ${hotelMineBtn(cityId, hotel.id)}`;
 
   const cityOfHotel = CARAVAN_DATA.cities.find(c => c.id === cityId);
   if (cityOfHotel && cityOfHotel.map && cityOfHotel.map.image) {
