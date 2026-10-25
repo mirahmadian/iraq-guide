@@ -210,6 +210,7 @@ function renderBesatView() {
           ${p.desc ? `<div class="bp-desc">${richText(p.desc)}</div>` : ''}
           ${p.poster ? `<img class="bp-poster" src="${escHtml(p.poster)}" alt="پوستر ${escHtml(p.title)}" loading="lazy" onclick="openPhoto(this.src,'')">` : ''}
           ${mapRowHTML(p.mapNeshanUrl, p.mapGoogleUrl)}
+          ${typeof openReminder === 'function' ? `<button class="bp-rem ${remIsSet(p.id) ? 'set' : ''}" onclick="openReminder('${cid}','${escHtml(p.id)}')">${remIsSet(p.id) ? '✓ یادآوری گذاشته شده' : '⏰ یادآوری'}</button>` : ''}
         </div>
       </div>`;
     }).join('') : `<div class="bv-empty">امروز برنامه‌ای نیست${n ? `<br>برنامه بعدی: <b>${escHtml(n.p.title)}</b> — ${besatWhenHTML(n, cid)}` : ''}</div>`}</div>
