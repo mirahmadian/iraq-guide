@@ -26,6 +26,7 @@ function initLayout() {
     nav: Object.keys(LAYOUT_NAV).map(id => ({ id, on: (L.nav && L.nav.length ? L.nav : LAYOUT_NAV_DEFAULT).includes(id) }))
       .sort((a, b) => { const o = L.nav && L.nav.length ? L.nav : LAYOUT_NAV_DEFAULT; return (o.indexOf(a.id) + 1 || 99) - (o.indexOf(b.id) + 1 || 99); }),
     autoSlides: L.autoSlides !== false,
+    prayer: L.prayer !== false,
     slides: (L.slides || []).map(s => ({ image: s.image || '', title: s.title || '', tag: s.tag || '', action: s.action || '', url: s.url || '', cities: (s.cities || []).slice() }))
   };
   renderLayout();
@@ -52,6 +53,10 @@ function renderLayout() {
         <span class="lay-mv">${mv('tiles', i, -1)}${mv('tiles', i, 1)}</span>
       </div>`;
     }).join('')}
+  </div>
+  <div class="field">
+    <label class="fchk" style="padding:0"><input type="checkbox" ${layoutState.prayer ? 'checked' : ''} onchange="layoutState.prayer=this.checked">
+      <b>🕌 کارت اوقات شرعی (اذان بعدی و شمارش معکوس) در صفحه اول نمایش داده شود</b></label>
   </div>
   <div class="field">
     <div class="field-label">⬇️ دکمه‌های نوار پایین — حداکثر ۴ دکمه (${navOn.toLocaleString('fa')} از ۴ انتخاب شده)</div>
@@ -113,7 +118,7 @@ function layoutOut() {
   const tiles = layoutState.tiles.map(t => ({ id: t.id, on: t.on, ...(t.label.trim() ? { label: t.label.trim() } : {}), ...(t.color ? { color: t.color } : {}) }));
   const slides = layoutState.slides.map(s => ({ image: s.image || (BUILD_PENDING && s.imageData) || '', title: s.title.trim(), tag: s.tag.trim(),
     action: s.action, ...(s.action === 'url' ? { url: s.url.trim() } : {}), cities: s.cities.slice() })).filter(s => s.image);
-  return { layout: { tiles, nav: layoutState.nav.filter(n => n.on).map(n => n.id).slice(0, 4), autoSlides: layoutState.autoSlides, slides } };
+  return { layout: { tiles, nav: layoutState.nav.filter(n => n.on).map(n => n.id).slice(0, 4), autoSlides: layoutState.autoSlides, prayer: layoutState.prayer, slides } };
 }
 async function uploadPendingSlides(token) {
   let any = false;

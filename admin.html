@@ -428,6 +428,18 @@
     <div class="sec-body" style="display:block" id="site-title-fields"></div>
   </div>
 
+  <!-- NOTICES -->
+  <div class="sec-card open">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">📢</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">اطلاعیه‌های کاروان</div>
+        <div class="sec-head-sub">پیام کوتاه بالای صفحه اول — مثلاً ساعت حرکت</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="notice-editor"></div>
+  </div>
+
   <!-- HOME LAYOUT -->
   <div class="sec-card open">
     <div class="sec-card-head no-toggle">
@@ -824,6 +836,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="prayer.js"></script>
 <script src="admin-besat.js"></script>
 <script src="admin-layout.js"></script>
+<script src="admin-notice.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1372,7 +1385,8 @@ function buildData(pending){
       footer:siteState.footer.filter(b=>b.type==='divider'||(b.text||'').trim()).map(b=>({type:b.type,text:b.type==='divider'?'':b.text.trim()})),
       ...siteBannerOut(),
       ...siteIconOut(),
-      ...layoutOut()
+      ...layoutOut(),
+      ...noticesOut()
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
@@ -1829,6 +1843,7 @@ function init(){
   initIcon();
   initBesat();
   initLayout();
+  initNotices();
   fitTabsBar();
 }
 

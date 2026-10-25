@@ -223,12 +223,14 @@ function renderHome() {
   main.innerHTML = `<div class="home">
     <div class="city-chips" role="tablist" aria-label="انتخاب شهر">${homeCities().map(x =>
       `<button class="${x.id === c.id ? 'on' : ''}" role="tab" aria-selected="${x.id === c.id}" onclick="switchTab('${x.id}')">${escHtml(x.name)}${x.hidden ? '<small>پنهان از کاربران</small>' : ''}</button>`).join('')}</div>
+    ${typeof noticesHTML === 'function' ? noticesHTML(c) : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
       <button class="hslide" style="--img:url('${escHtml(encodeURI(x.img))}')" onclick="slideTap(${i})" aria-label="${escHtml(x.t || x.tag || 'اسلاید')}">
         <span class="blur"></span><span class="fit"></span>
         ${x.tag || x.t ? `<span class="cap">${x.tag ? `<small>${escHtml(x.tag)}</small>` : ''}${x.t ? `<b>${escHtml(x.t)}</b>` : ''}</span>` : ''}
       </button>`).join('')}</div>
       ${homeSlideList.length > 1 ? `<div class="hdots" id="hdots">${homeSlideList.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}</div>` : ''}
+    ${typeof azanStripHTML === 'function' ? azanStripHTML(c) : ''}
     ${besatStripHTML(c)}
     <div class="sec-lbl">بخش‌های ${escHtml(c.name)}</div>
     <div class="tiles">${tiles.map(t => tileHTML(t, c)).join('')}</div>

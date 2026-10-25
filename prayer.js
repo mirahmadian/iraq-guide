@@ -17,7 +17,7 @@ function prayerTimes(cityId, y, mo, d, adjust) {
   const key = [cityId, y, mo, d].join('-');
   const r = prayerCache[key] || (prayerCache[key] = prayerRaw(cityId, y, mo, d));
   const a = adjust || {};
-  return { fajr: r.fajr + (+a.fajr || 0), sunrise: r.sunrise, dhuhr: r.dhuhr + (+a.dhuhr || 0), maghrib: r.maghrib + (+a.maghrib || 0) };
+  return { fajr: r.fajr + (+a.fajr || 0), sunrise: r.sunrise, dhuhr: r.dhuhr + (+a.dhuhr || 0), sunset: r.sunset, maghrib: r.maghrib + (+a.maghrib || 0), midnight: r.midnight };
 }
 function prayerRaw(cityId, y, mo, d) {
   const [lat, lng] = PRAYER_COORDS[cityId] || PRAYER_COORDS.najaf;
@@ -40,7 +40,10 @@ function prayerRaw(cityId, y, mo, d) {
   const toMin = h => Math.round((h + IRAQ_TZ - lng / 15) * 60);
   return {
     fajr: toMin(angleTime(17.7, 5 / 24, true)), sunrise: toMin(angleTime(0.833, 6 / 24, true)),
-    dhuhr: toMin(mid(12 / 24)), maghrib: toMin(angleTime(4.5, 18 / 24, false))
+    dhuhr: toMin(mid(12 / 24)), maghrib: toMin(angleTime(4.5, 18 / 24, false)),
+    sunset: toMin(angleTime(0.833, 18 / 24, false)),
+    /* نیمه‌شب شرعی: وسط غروب آفتاب تا اذان صبح فردا (دقیقه بعد از ۲۴:۰۰ هم ممکن است) */
+    midnight: Math.round((toMin(angleTime(0.833, 18 / 24, false)) + 1440 + toMin(angleTime(17.7, 5 / 24, true))) / 2)
   };
 }
 const prayerHM = m => { m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
