@@ -69,6 +69,7 @@
 })();
 
 const HI = {
+  stay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v3l2 1.5"/></svg>',
   currency: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
   lost: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.8"/><path d="M5.6 5.6l3.7 3.7M14.7 14.7l3.7 3.7M18.4 5.6l-3.7 3.7M9.3 14.7l-3.7 3.7"/></svg>',
   hq: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5zm4-13h2v2H8zm6 0h2v2h-2zm-6 4h2v2H8zm6 0h2v2h-2z"/></svg>',
@@ -106,6 +107,7 @@ const hasContacts = g => !!(g && (g.contacts || []).length);
 /* همه آیکون‌های ممکن صفحه اول — ترتیب همین فهرست، پیش‌فرض است */
 const TILE_DEFS = {
   lost:      { label: 'گم شده‌ام', color: 'clinic', has: () => true, open: () => openLost() },
+  stay:      { label: 'تاریخ خروج', color: 'consulate', has: () => typeof openStay === 'function', sub: () => staySub(), open: () => openStay() },
   hq:        { label: 'ستاد', color: 'hq', has: c => !!c.hq, open: c => openPage(c.hq.title, secOf(c, 'hq', '🏢', 'ستاد', { banner: c.hqBanner })) },
   clinic:    { label: 'درمانگاه', color: 'clinic', has: c => cityClinics(c).length > 0,
                open: c => openPage(cityClinics(c)[0].title, secOf(c, 'clinic', RC_ICON, 'درمانگاه') + placeCards(c, 'clinic')) },
@@ -130,6 +132,7 @@ const TILE_DEFS = {
 const NAV_DEFS = {
   home:   { label: 'خانه', icon: () => HI.home, act: () => goHome() },
   lost:   { label: 'گم شده‌ام', icon: () => HI.lost, act: () => openLost() },
+  stay:   { label: 'تاریخ خروج', icon: () => HI.stay, act: () => openStay() },
   search: { label: 'جستجو', icon: () => HI.search, act: () => openSearch() },
   besat:  { label: 'بعثه', icon: () => `<img src="${escHtml(besatEmblem())}" alt="">`, act: () => openBesat(homeCity().id), has: () => CARAVAN_DATA.cities.some(c => besatVisible(c.id)) },
   more:   { label: 'بیشتر', icon: () => HI.more, act: () => openMore() },
@@ -227,6 +230,7 @@ function renderHome() {
     <div class="city-chips" role="tablist" aria-label="انتخاب شهر">${homeCities().map(x =>
       `<button class="${x.id === c.id ? 'on' : ''}" role="tab" aria-selected="${x.id === c.id}" onclick="switchTab('${x.id}')">${escHtml(x.name)}${x.hidden ? '<small>پنهان از کاربران</small>' : ''}</button>`).join('')}</div>
     ${typeof noticesHTML === 'function' ? noticesHTML(c) : ''}
+    ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
       <button class="hslide" style="--img:url('${escHtml(encodeURI(x.img))}')" onclick="slideTap(${i})" aria-label="${escHtml(x.t || x.tag || 'اسلاید')}">
         <span class="blur"></span><span class="fit"></span>

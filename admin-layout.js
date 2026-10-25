@@ -4,16 +4,16 @@
    فهرست شناسه‌ها باید با TILE_DEFS و NAV_DEFS در home.js یکی باشد
 ══════════════════════════════════════════ */
 const LAYOUT_TILES = {
-  lost: ['گم شده‌ام', 'clinic', '🆘'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
+  lost: ['گم شده‌ام', 'clinic', '🆘'], stay: ['تاریخ خروج', 'consulate', '📅'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
   besat: ['برنامه‌های بعثه', 'ziyarat', '📜'], hotel: ['هتل‌ها', 'hotel', '🏨'], map: ['نقشه شهر', 'parking', '🗺️'],
   ins: ['بیمه معلم', 'ins', '📋'], transport: ['ناظر نقل', 'transport', '🚌'], food: ['برنامه غذایی', 'restaurant', '🍽️'], currency: ['تبدیل ارز', 'ins', '💱'],
   ziyarat: ['اماکن زیارتی', 'ziyarat', '🕌'], restaurant: ['رستوران', 'restaurant', '🍴'], parking: ['پارکینگ', 'parking', '🅿️'], other: ['سایر مکان‌ها', 'other', '📍']
 };
 const LAYOUT_COLORS = { hq: ['سبز', '#0E5A44'], clinic: ['قرمز', '#B3261E'], consulate: ['سرمه‌ای', '#3B4592'], hotel: ['قهوه‌ای', '#7E5610'],
   ins: ['آبی', '#1C5C9E'], parking: ['آبی روشن', '#17609E'], transport: ['نارنجی', '#944A04'], ziyarat: ['فیروزه‌ای', '#00695C'], other: ['خاکستری', '#55636B'] };
-const LAYOUT_NAV = { home: '🏠 خانه', lost: '🆘 گم شده‌ام', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', currency: '💱 ارز', food: '🍽️ غذا', hq: '🏢 ستاد' };
+const LAYOUT_NAV = { home: '🏠 خانه', lost: '🆘 گم شده‌ام', stay: '📅 تاریخ خروج', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', currency: '💱 ارز', food: '🍽️ غذا', hq: '🏢 ستاد' };
 const LAYOUT_NAV_DEFAULT = ['home', 'search', 'besat', 'more'];
-const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', lost: 'گم شده‌ام', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
+const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', lost: 'گم شده‌ام', stay: 'تاریخ خروج از عراق', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
   map: 'نقشه شهر', ins: 'بیمه معلم', transport: 'ناظر نقل', food: 'برنامه غذایی', currency: 'تبدیل ارز', ziyarat: 'اماکن زیارتی', url: 'باز کردن یک لینک' };
 let layoutState = { tiles: [], nav: [], autoSlides: true, slides: [] };
 
