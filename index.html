@@ -1144,7 +1144,9 @@ function render() {
 
   // برگرداندن شهر انتخاب‌شده قبلی (مثلاً بعد از بروزرسانی خودکار صفحه)
   try { homeCityId = sessionStorage.getItem('caravan-city') || null; } catch(e) {}
+  cityPicked = !!homeCityId;
   renderHome();
+  cityFromLocation();
 }
 
 const DEFAULT_FOOTER = [
@@ -1249,6 +1251,7 @@ window.addEventListener('load', updateSticky);
 ══════════════════════════════════════════ */
 function switchTab(cityId, silent) {
   homeCityId = cityId;
+  cityPicked = true;
   try { sessionStorage.setItem('caravan-city', cityId); } catch(e) {}
   renderHome();
   if (!silent) window.scrollTo({ top: 0, behavior: 'smooth' });

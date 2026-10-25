@@ -149,6 +149,35 @@ function homeLayout() {
 }
 
 let homeCityId = null;
+let cityPicked = false;   // کاربر در همین نشست خودش شهر را انتخاب کرده؟
+
+/* شهر پیش‌فرض با موقعیت گوشی: نزدیک‌ترین شهر در شعاع ~۴۰ کیلومتر؛ اگر هیچ‌کدام نبود، همان شهر اول (نجف) می‌ماند */
+const CITY_RADIUS_KM = 40;
+function nearestCityId(lat, lng) {
+  let best = null, bd = CITY_RADIUS_KM;
+  homeCities().forEach(c => {
+    const p = PRAYER_COORDS[c.id];
+    if (!p) return;
+    const dy = (lat - p[0]) * 111, dx = (lng - p[1]) * 111 * Math.cos(lat * Math.PI / 180), d = Math.hypot(dx, dy);
+    if (d < bd) { bd = d; best = c.id; }
+  });
+  return best;
+}
+function cityFromLocation() {
+  if (cityPicked || !navigator.geolocation) return;
+  const go = () => navigator.geolocation.getCurrentPosition(pos => {
+    if (cityPicked) return;
+    const id = nearestCityId(pos.coords.latitude, pos.coords.longitude);
+    if (!id || id === homeCity().id) return;
+    homeCityId = id;
+    try { sessionStorage.setItem('caravan-city', id); } catch (e) {}
+    renderHome();
+    showToast('📍 شهر شما: ' + homeCity().name);
+  }, () => {}, { enableHighAccuracy: false, timeout: 20000, maximumAge: 10 * 60000 });
+  if (navigator.permissions && navigator.permissions.query)
+    navigator.permissions.query({ name: 'geolocation' }).then(r => { if (r.state !== 'denied') go(); }, go);
+  else go();
+}
 function homeCities() { return CARAVAN_DATA.cities.filter(c => !c.hidden || SHOW_HIDDEN); }
 function homeCity() { const l = homeCities(); return l.find(c => c.id === homeCityId) || l[0]; }
 
