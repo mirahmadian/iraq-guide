@@ -36,7 +36,8 @@ async function renderReporter() {
   const el = document.getElementById('rate-reporter');
   if (!el) return;
   const [key, mk] = await Promise.all([
-    fetch('rate-key.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok).catch(() => false),
+    /* از خود گیت‌هاب می‌پرسیم (نه سایت)، چون سایت چند دقیقه بعد از ساخت به‌روز می‌شود */
+    (ghToken ? gh('/contents/rate-key.json?t=' + Date.now(), ghToken, { cache: 'no-store' }) : fetch('rate-key.json?t=' + Date.now(), { cache: 'no-store' })).then(r => r.ok).catch(() => false),
     fetch('rate-market.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)]);
   const fa = n => (+n || 0).toLocaleString('fa', { maximumFractionDigits: 0 });
   const last = mk && mk.ts ? `آخرین ثبت: <b>${new Date(mk.ts).toLocaleString('fa-IR', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })}</b>${mk.by ? ' — ' + escH(mk.by) : ''}
@@ -47,8 +48,8 @@ async function renderReporter() {
     <div class="field"><div class="field-label">👤 ثبت‌کننده نرخ بازار عراق</div>
       <div class="empty-msg" style="padding:0;font-style:normal;line-height:1.9">${last}</div></div>
     ${key ? `
-    <div class="field"><div class="empty-msg" style="padding:0;font-style:normal;line-height:1.9">✅ دسترسی ثبت نرخ ساخته شده است. این لینک و رمز را برای ثبت‌کننده بفرستید:<br>
-      <b dir="ltr" style="user-select:all">${escH(NERKH_URL)}</b></div>
+    <div class="field"><div class="empty-msg" style="padding:0;font-style:normal;line-height:1.9">✅ دسترسی ثبت نرخ ساخته شده است. این لینک و رمزی که گذاشتید را برای ثبت‌کننده بفرستید:<br>
+      <a href="${escH(NERKH_URL)}" target="_blank" rel="noopener" dir="ltr" style="font-weight:800;font-size:15px;user-select:all;word-break:break-all">${escH(NERKH_URL)}</a></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
         <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="navigator.clipboard.writeText('${escH(NERKH_URL)}').then(()=>showToast('لینک کپی شد'))">📋 کپی لینک</button>
         <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="document.getElementById('rep-new').style.display='block'">🔑 عوض کردن رمز یا کلید</button>
