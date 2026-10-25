@@ -45,6 +45,74 @@ const CARAVAN_DATA = {
       "mask": "icons/mask-1792870106170.png",
       "apple": "icons/apple-1792870106170.png",
       "bg": "#044e39"
+    },
+    "layout": {
+      "tiles": [
+        {
+          "id": "lost",
+          "on": true
+        },
+        {
+          "id": "hq",
+          "on": true
+        },
+        {
+          "id": "clinic",
+          "on": true
+        },
+        {
+          "id": "consulate",
+          "on": true
+        },
+        {
+          "id": "besat",
+          "on": true
+        },
+        {
+          "id": "hotel",
+          "on": true
+        },
+        {
+          "id": "map",
+          "on": true
+        },
+        {
+          "id": "ins",
+          "on": true
+        },
+        {
+          "id": "transport",
+          "on": true
+        },
+        {
+          "id": "food",
+          "on": true
+        },
+        {
+          "id": "ziyarat",
+          "on": true
+        },
+        {
+          "id": "restaurant",
+          "on": true
+        },
+        {
+          "id": "parking",
+          "on": true
+        },
+        {
+          "id": "other",
+          "on": true
+        }
+      ],
+      "nav": [
+        "home",
+        "search",
+        "besat",
+        "more"
+      ],
+      "autoSlides": true,
+      "slides": []
     }
   },
   "insurance": {
@@ -1738,6 +1806,22 @@ const CARAVAN_DATA = {
       "najaf": "besat/poster-najaf.jpg",
       "karbala": "besat/poster-karbala.jpg"
     },
+    "contacts": {
+      "najaf": [
+        {
+          "role": "نظارت و بازرسی بعثه",
+          "phone": "07848322779",
+          "name": null,
+          "countryCode": "964"
+        },
+        {
+          "role": "حراست بعثه",
+          "phone": "07852615807",
+          "name": null,
+          "countryCode": "964"
+        }
+      ]
+    },
     "emblem": "besat/emblem-1792879999513.png",
     "cities": {
       "najaf": [
@@ -1876,22 +1960,6 @@ const CARAVAN_DATA = {
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=%D8%A7%D9%84%D9%85%D8%AE%D9%8A%D9%85%20%D8%A7%D9%84%D8%AD%D8%B3%D9%8A%D9%86%D9%8A%20%D9%83%D8%B1%D8%A8%D9%84%D8%A7%D8%A1"
         }
       ]
-    },
-    "contacts": {
-      "najaf": [
-        {
-          "role": "نظارت و بازرسی بعثه",
-          "phone": "07848322779",
-          "name": null,
-          "countryCode": "964"
-        },
-        {
-          "role": "حراست بعثه",
-          "phone": "07852615807",
-          "name": null,
-          "countryCode": "964"
-        }
-      ]
     }
   },
   "cities": [
@@ -1922,7 +1990,8 @@ const CARAVAN_DATA = {
             "role": "رئیس ستاد نجف",
             "phone": "07855435901",
             "name": null,
-            "countryCode": "964"
+            "countryCode": "964",
+            "photo": "people/p-1792889048518-d3xpe.jpg"
           },
           {
             "role": "مسئول حراست ستاد نجف",
