@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ثبت نرخ ارز</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{--bg:#FAF6EE;--card:#FFFDF8;--text:#1F1A12;--muted:#6B5E48;--gold:#0E5A44;--brass:#8C6418;--border:#E3D7BF;--red:#B3261E}
+  @media (prefers-color-scheme: dark){:root{--bg:#14110C;--card:#1E1A13;--text:#F3EBDD;--muted:#B9AA8E;--gold:#2E9C77;--brass:#D2AE62;--border:#3A3224}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Vazirmatn',sans-serif;line-height:1.8}
+  main{max-width:480px;margin:0 auto;padding:16px}
+  h1{font-size:20px;margin:8px 0 4px;color:var(--gold)}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+  label{display:block;font-size:13.5px;font-weight:800;color:var(--brass);margin:12px 0 4px}
+  label:first-child{margin-top:0}
+  input{width:100%;min-height:52px;padding:0 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);
+    font-family:inherit;font-size:20px;font-weight:800;direction:ltr;text-align:left}
+  input.txt{direction:rtl;text-align:right;font-size:16px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:2px}
+  button{width:100%;min-height:54px;border:none;border-radius:14px;background:var(--gold);color:#fff;font-family:inherit;font-size:16px;font-weight:900;cursor:pointer;margin-top:14px}
+  button:disabled{opacity:.6}
+  button.link{background:none;color:var(--muted);min-height:36px;font-size:13px;font-weight:700;margin-top:6px}
+  .msg{padding:12px 14px;border-radius:12px;font-size:14px;margin-top:12px;display:none}
+  .msg.show{display:block}
+  .msg.ok{background:rgba(14,90,68,.12);border:1px solid var(--gold)}
+  .msg.err{background:rgba(179,38,30,.10);border:1px solid var(--red)}
+  .msg.wait{background:rgba(140,100,24,.10);border:1px solid var(--brass)}
+  .last{font-size:13px;color:var(--muted)}
+  .last b{color:var(--text)}
+  .check{font-size:13px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px dashed var(--border)}
+</style>
+</head>
+<body>
+<main>
+  <h1>💱 ثبت نرخ ارز بازار عراق</h1>
+  <p class="sub">نرخی که اینجا ثبت می‌کنید، حدود ۲ دقیقه بعد در بخش «تبدیل ارز» برنامه برای همه زائران نمایش داده می‌شود.</p>
+
+  <section class="card" id="login" style="display:none">
+    <label for="pass">رمز ثبت نرخ</label>
+    <input id="pass" type="password" class="txt" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">ورود</button>
+    <div class="msg err" id="loginErr"></div>
+  </section>
+
+  <section id="form" style="display:none">
+    <div class="card last" id="last">…</div>
+    <div class="card">
+      <label for="t1000">🇮🇶→🇮🇷 هر ۱٬۰۰۰ دینار چند تومان؟</label>
+      <input id="t1000" inputmode="numeric" placeholder="مثلاً 172000" oninput="fmt(this);check()">
+      <label for="usdIqd">🇺🇸→🇮🇶 هر ۱ دلار چند دینار؟</label>
+      <input id="usdIqd" inputmode="numeric" placeholder="مثلاً 1480" oninput="fmt(this);check()">
+      <label for="usdT">🇺🇸→🇮🇷 هر ۱ دلار چند تومان؟ (اختیاری)</label>
+      <input id="usdT" inputmode="numeric" placeholder="مثلاً 255000" oninput="fmt(this);check()">
+      <label for="by">نام شما (اختیاری)</label>
+      <input id="by" class="txt" maxlength="40" oninput="try{localStorage.setItem('nerkh-by',this.value)}catch(e){}">
+      <div class="check" id="check">نرخ‌ها را وارد کنید.</div>
+      <button id="send" onclick="send()">ثبت نرخ امروز</button>
+      <div class="msg" id="msg"></div>
+    </div>
+    <button class="link" onclick="logout()">خروج از این گوشی</button>
+  </section>
+</main>
+<script>
+/* این صفحه فقط می‌تواند کار «Market rate from reporter» را در گیت‌هاب اجرا کند (توکن با دسترسی Actions)،
+   و آن کار هم فقط عدد در محدوده معقول را در rate-market.json می‌نویسد. به data.js و بقیه برنامه دسترسی ندارد. */
+const onPages = location.hostname.endsWith('.github.io');
+const REPO = (onPages ? location.hostname.split('.')[0] : 'mirahmadian') + '/' + (onPages ? (location.pathname.split('/')[1] || 'iraq-guide') : 'iraq-guide');
+const TK = 'nerkh-token';
+let token = null;
+try { token = localStorage.getItem(TK); } catch (e) {}
+
+const unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+async function decrypt(blob, pass) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: unb64(blob.salt), iterations: 250000, hash: 'SHA-256' }, base,
+    { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(blob.iv) }, key, unb64(blob.data)));
+}
+const api = (path, opts = {}) => fetch('https://api.github.com/repos/' + REPO + path, { ...opts,
+  headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', ...(opts.headers || {}) } });
+const $ = id => document.getElementById(id);
+const toEn = s => String(s || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const val = id => +toEn($(id).value).replace(/[^\d.]/g, '') || 0;
+const fa = n => (+n || 0).toLocaleString('fa', { maximumFractionDigits: 1 });
+function fmt(el) { const v = toEn(el.value).replace(/[^\d]/g, ''); el.value = v ? (+v).toLocaleString('en') : ''; }
+function msg(text, kind) { const m = $('msg'); m.className = 'msg show ' + kind; m.innerHTML = text; }
+
+async function login() {
+  const err = $('loginErr'); err.className = 'msg err';
+  try {
+    const r = await fetch('rate-key.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('دسترسی ثبت نرخ هنوز در پنل مدیریت ساخته نشده است.');
+    token = await decrypt(await r.json(), $('pass').value).catch(() => { throw new Error('رمز اشتباه است.'); });
+    const t = await api('/actions/workflows/rate-market.yml');
+    if (!t.ok) throw new Error('کلید ثبت نرخ کار نمی‌کند (' + t.status + ') — به مدیر برنامه خبر دهید.');
+    try { localStorage.setItem(TK, token); } catch (e) {}
+    show();
+  } catch (e) { token = null; err.textContent = e.message; err.className = 'msg err show'; }
+}
+function logout() { try { localStorage.removeItem(TK); } catch (e) {} token = null; show(); }
+
+let lastTs = 0;
+async function loadLast() {
+  try {
+    const j = await (await fetch('rate-market.json?t=' + Date.now(), { cache: 'no-store' })).json();
+    lastTs = j.ts || 0;
+    $('last').innerHTML = j.ts ? `آخرین نرخ ثبت‌شده: <b>${new Date(j.ts).toLocaleString('fa-IR', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })}</b>${j.by ? ' — ' + j.by.replace(/</g, '') : ''}<br>
+      ${j.toman_per_1000_iqd ? `هر ۱٬۰۰۰ دینار: <b>${fa(j.toman_per_1000_iqd)} تومان</b> · ` : ''}${j.iqd_per_usd ? `دلار: <b>${fa(j.iqd_per_usd)} دینار</b> · ` : ''}${j.toman_per_usd ? `دلار: <b>${fa(j.toman_per_usd)} تومان</b>` : ''}`
+      : 'هنوز نرخی ثبت نشده است.';
+    if (j.toman_per_1000_iqd && !$('t1000').value) $('t1000').placeholder = 'آخرین: ' + (+j.toman_per_1000_iqd).toLocaleString('en');
+    if (j.iqd_per_usd && !$('usdIqd').value) $('usdIqd').placeholder = 'آخرین: ' + (+j.iqd_per_usd).toLocaleString('en');
+    if (j.toman_per_usd && !$('usdT').value) $('usdT').placeholder = 'آخرین: ' + (+j.toman_per_usd).toLocaleString('en');
+  } catch (e) { $('last').textContent = 'آخرین نرخ ثبت‌شده دریافت نشد.'; }
+}
+/* همان محدوده‌هایی که کار گیت‌هاب می‌پذیرد */
+function problems() {
+  const a = val('t1000'), b = val('usdIqd'), c = val('usdT'), p = [];
+  if (!a && !(b && c)) p.push('نرخ «۱۰۰۰ دینار به تومان» لازم است.');
+  if (a && (a < 20000 || a > 5000000)) p.push('نرخ ۱۰۰۰ دینار به تومان عجیب است — صفرها را بررسی کنید.');
+  if (b && (b < 500 || b > 10000)) p.push('نرخ دلار به دینار عجیب است.');
+  if (c && (c < 10000 || c > 50000000)) p.push('نرخ دلار به تومان عجیب است.');
+  return p;
+}
+function check() {
+  const a = val('t1000'), b = val('usdIqd'), c = val('usdT'), p = problems(), el = $('check');
+  if (!a && !b && !c) { el.textContent = 'نرخ‌ها را وارد کنید.'; return; }
+  const lines = [];
+  if (a) lines.push(`یعنی هر ۱ دینار ≈ <b>${fa(a / 1000)} تومان</b> و هر ۱۰۰٬۰۰۰ تومان ≈ <b>${fa(Math.round(1e8 / a))} دینار</b>`);
+  if (a && b && c) { const d = b * a / 1000; if (Math.abs(d - c) / c > 0.08) lines.push(`⚠️ با این نرخ‌ها، دلار ≈ ${fa(Math.round(d))} تومان می‌شود ولی شما ${fa(c)} نوشته‌اید. درست است؟`); }
+  el.innerHTML = lines.concat(p.map(x => '⚠️ ' + x)).join('<br>');
+}
+async function send() {
+  const p = problems();
+  if (p.length) return msg(p.join('<br>'), 'err');
+  const btn = $('send'); btn.disabled = true;
+  msg('⏳ در حال ارسال…', 'wait');
+  try {
+    const inputs = { t1000: String(val('t1000') || ''), usd_iqd: String(val('usdIqd') || ''), usd_t: String(val('usdT') || ''), by: $('by').value.trim() };
+    const r = await api('/actions/workflows/rate-market.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', inputs }) });
+    if (r.status === 401 || r.status === 403 || r.status === 404) { logout(); throw new Error('کلید ثبت نرخ دیگر کار نمی‌کند — دوباره وارد شوید یا به مدیر خبر دهید.'); }
+    if (!r.ok) throw new Error('ارسال نشد (' + r.status + ')');
+    const before = lastTs, t0 = Date.now();
+    while (Date.now() - t0 < 6 * 60000) {
+      msg(`⏳ ارسال شد؛ در حال ثبت در برنامه… (${fa(Math.round((Date.now() - t0) / 1000))} ثانیه — معمولاً ۱ تا ۲ دقیقه)`, 'wait');
+      await new Promise(r => setTimeout(r, 8000));
+      await loadLast();
+      if (lastTs > before) { msg('✅ نرخ ثبت شد و در برنامه نمایش داده می‌شود. ممنون!', 'ok'); ['t1000', 'usdIqd', 'usdT'].forEach(id => $(id).value = ''); check(); loadLast(); return; }
+    }
+    msg('ارسال شد ولی هنوز در برنامه دیده نمی‌شود. چند دقیقه دیگر صفحه را باز کنید؛ اگر تغییر نکرد، به مدیر خبر دهید.', 'wait');
+  } catch (e) { msg('❌ ' + e.message, 'err'); }
+  finally { btn.disabled = false; }
+}
+function show() {
+  $('login').style.display = token ? 'none' : 'block';
+  $('form').style.display = token ? 'block' : 'none';
+  if (token) { try { $('by').value = localStorage.getItem('nerkh-by') || ''; } catch (e) {} loadLast(); }
+}
+show();
+</script>
+</body>
+</html>

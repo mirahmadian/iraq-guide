@@ -1,0 +1,42 @@
+name: Market rate from reporter
+on:
+  workflow_dispatch:
+    inputs:
+      t1000:
+        description: 'تومان برای ۱۰۰۰ دینار'
+        required: false
+      usd_iqd:
+        description: 'دینار برای ۱ دلار'
+        required: false
+      usd_t:
+        description: 'تومان برای ۱ دلار'
+        required: false
+      by:
+        description: 'نام ثبت‌کننده'
+        required: false
+permissions:
+  contents: write
+  pages: write
+concurrency: rate-market
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and write rate-market.json
+        env:
+          T1000: ${{ inputs.t1000 }}
+          USD_IQD: ${{ inputs.usd_iqd }}
+          USD_T: ${{ inputs.usd_t }}
+          BY: ${{ inputs.by }}
+        run: python3 .github/scripts/rate_market.py
+      - name: Commit and rebuild site
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rate-market.json && git commit -m "Market rate from reporter"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true

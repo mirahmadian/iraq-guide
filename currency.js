@@ -1,7 +1,8 @@
 /* ══════════════════════════════════════════
    CURRENCY — مبدل دینار عراق ↔ تومان ↔ دلار
    نرخ خودکار: rate.json (هر ۳ ساعت با GitHub Actions از tgju.org — .github/workflows/rate.yml)
-   نرخ دستی مدیر (site.rate.manual = تومان برای هر ۱۰۰۰ دینار) اگر وارد شده باشد، اولویت دارد.
+   نرخ بازار عراق: rate-market.json (ثبت‌کننده نرخ از صفحه nerkh.html می‌فرستد) — تا ۳۶ ساعت بعد از ثبت معتبر است.
+   اولویت: نرخ دستی مدیر (site.rate.manual = تومان برای هر ۱۰۰۰ دینار) ← نرخ بازار عراق ← tgju.
    آخرین نرخ روی گوشی هم ذخیره می‌شود تا بدون اینترنت کار کند.
 ══════════════════════════════════════════ */
 (function injectCurrencyCSS() {
@@ -24,15 +25,18 @@
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
 })();
 
-const CX_KEY = 'caravan-rate';
+const CX_KEY = 'caravan-rate', CX_MKEY = 'caravan-rate-market', CX_MARKET_TTL = 36 * 36e5;
 const CX_NOTES = [250, 500, 1000, 5000, 10000, 25000, 50000];
-let cxAuto = null;
-try { cxAuto = JSON.parse(localStorage.getItem(CX_KEY) || 'null'); } catch (e) {}
+let cxAuto = null, cxMarket = null;
+try { cxAuto = JSON.parse(localStorage.getItem(CX_KEY) || 'null'); cxMarket = JSON.parse(localStorage.getItem(CX_MKEY) || 'null'); } catch (e) {}
 
 function cxLoad() {
-  return fetch('rate.json?t=' + Math.floor(Date.now() / 6e5), { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => {
-    if (j && j.iqd_rial > 0) { cxAuto = j; try { localStorage.setItem(CX_KEY, JSON.stringify(j)); } catch (e) {} }
+  const m = fetch('rate-market.json?t=' + Date.now(), { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => {
+    if (j && j.ts) { cxMarket = j; try { localStorage.setItem(CX_MKEY, JSON.stringify(j)); } catch (e) {} }
   }).catch(() => {});
+  return Promise.all([m, fetch('rate.json?t=' + Math.floor(Date.now() / 6e5), { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => {
+    if (j && j.iqd_rial > 0) { cxAuto = j; try { localStorage.setItem(CX_KEY, JSON.stringify(j)); } catch (e) {} }
+  }).catch(() => {})]);
 }
 cxLoad();
 
@@ -41,6 +45,15 @@ function cxRate() {
   const m = +(((CARAVAN_DATA.site || {}).rate || {}).manual) || 0;
   const usd = cxAuto && cxAuto.usd_rial ? cxAuto.usd_rial / 10 : 0;
   if (m > 0) return { iqd: m / 1000, usd, src: 'نرخ اعلام‌شده ستاد' };
+  const k = cxMarket;
+  if (k && k.ts && Date.now() - k.ts < CX_MARKET_TTL) {
+    const iqd = k.toman_per_1000_iqd ? k.toman_per_1000_iqd / 1000 : k.toman_per_usd && k.iqd_per_usd ? k.toman_per_usd / k.iqd_per_usd : 0;
+    if (iqd > 0) {
+      const mu = k.toman_per_usd || (k.iqd_per_usd ? k.iqd_per_usd * iqd : 0) || usd;
+      const ni = iraqNow(new Date(k.ts)), today = iraqNow().d === ni.d;
+      return { iqd, usd: mu, src: `نرخ بازار عراق، ثبت‌شده ${today ? 'امروز' : 'دیروز'} ساعت ${faDigits(prayerHM(ni.min))}` };
+    }
+  }
   if (cxAuto && cxAuto.iqd_rial > 0) return { iqd: cxAuto.iqd_rial / 10, usd, src: 'نرخ بازار آزاد' + (cxAuto.date_fa ? '، ' + cxAuto.date_fa : '') + ' (tgju.org)' };
   return null;
 }
