@@ -46,6 +46,13 @@
     .save-btn:hover{opacity:.88}
 
     /* ── TABS ── */
+    .grp-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+    @media(max-width:560px){.grp-bar{grid-template-columns:repeat(2,1fr)}}
+    .grp-bar button{padding:10px 6px;border-radius:12px;border:1px solid var(--border-s);background:var(--card);color:var(--text);cursor:pointer;
+      font-family:var(--font);font-size:14px;font-weight:800;line-height:1.6}
+    .grp-bar button small{display:block;font-size:11px;font-weight:500;opacity:.75}
+    .grp-bar button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+    #tab-general [data-grp]:not(.grp-on){display:none}
     .tabs-bar{
       position:sticky;top:58px;z-index:90;background:var(--bg);
       padding:10px 20px 0;border-bottom:2px solid var(--border);
@@ -396,8 +403,15 @@
     ۳. حدود ۱ دقیقه بعد کاربران تغییرات را می‌بینند
   </div>
 
+  <div class="grp-bar" role="tablist" aria-label="دسته‌های تب عمومی">
+    <button data-g="news" onclick="showGrp('news')">📢 اطلاع‌رسانی<small>اطلاعیه‌ها · نرخ دینار · تاریخ</small></button>
+    <button data-g="home" onclick="showGrp('home')">🧩 صفحه اول<small>آیکون‌ها · نوار پایین · اسلایدر</small></button>
+    <button data-g="look" onclick="showGrp('look')">🎨 نام و ظاهر<small>عنوان · آیکون برنامه · بنر · درباره</small></button>
+    <button data-g="contacts" onclick="showGrp('contacts')">📞 شماره‌های عمومی<small>بیمه معلم · ناظر نقل</small></button>
+  </div>
+
   <!-- DATE -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📅</div>
       <div class="sec-head-info">
@@ -417,7 +431,7 @@
   </div>
 
   <!-- APP TEXTS -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🏷️</div>
       <div class="sec-head-info">
@@ -429,7 +443,7 @@
   </div>
 
   <!-- NOTICES -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📢</div>
       <div class="sec-head-info">
@@ -441,7 +455,7 @@
   </div>
 
   <!-- RATE -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">💱</div>
       <div class="sec-head-info">
@@ -453,7 +467,7 @@
   </div>
 
   <!-- HOME LAYOUT -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="home">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🧩</div>
       <div class="sec-head-info">
@@ -465,7 +479,7 @@
   </div>
 
   <!-- APP ICON -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📱</div>
       <div class="sec-head-info">
@@ -477,7 +491,7 @@
   </div>
 
   <!-- BANNER -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🖼️</div>
       <div class="sec-head-info">
@@ -489,7 +503,7 @@
   </div>
 
   <!-- FOOTER -->
-  <div class="sec-card open">
+  <div class="sec-card open" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📝</div>
       <div class="sec-head-info">
@@ -508,7 +522,7 @@
   </div>
 
   <!-- INSURANCE -->
-  <div class="sec-card open" id="card-insurance">
+  <div class="sec-card open" data-grp="contacts" id="card-insurance">
     <div class="sec-card-head" onclick="toggleCard('insurance')">
       <div class="sec-head-icon ico-ins">📋</div>
       <div class="sec-head-info">
@@ -525,7 +539,7 @@
   </div>
 
   <!-- TRANSPORT -->
-  <div class="sec-card open" id="card-transport">
+  <div class="sec-card open" data-grp="contacts" id="card-transport">
     <div class="sec-card-head" onclick="toggleCard('transport')">
       <div class="sec-head-icon ico-ins">🚌</div>
       <div class="sec-head-info">
@@ -1781,6 +1795,13 @@ async function publishData() {
   }
 }
 
+/* دسته‌های داخل تب عمومی */
+function showGrp(g){
+  document.querySelectorAll('#tab-general [data-grp]').forEach(el=>el.classList.toggle('grp-on',el.dataset.grp===g));
+  document.querySelectorAll('.grp-bar button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));
+  try{sessionStorage.setItem('admin-grp',g)}catch(e){}
+}
+
 /* ══════════════════════════════════════════
    DEPLOY STATUS — بعد از انتشار، data.js روی خود سایت را چک می‌کند
    تا وقتی دقیقاً همان نسخه منتشرشده بیاید (یعنی گیت‌هاب ساختن سایت را تمام کرده)
@@ -1858,6 +1879,7 @@ function init(){
   initBesat();
   initLayout();
   initNotices();
+  showGrp((()=>{try{return sessionStorage.getItem('admin-grp')}catch(e){}})()||'news');
   initRate();
   fitTabsBar();
 }
