@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v31';
+const CACHE = 'caravan-v32';
 const STATIC = [
   './',
   'index.html',
@@ -15,6 +15,8 @@ const STATIC = [
   'notice.js',
   'currency.js',
   'stay.js',
+  'today.js',
+  'guide.js',
   'rate.json',
   'rate-market.json',
   'besat-logo.png',

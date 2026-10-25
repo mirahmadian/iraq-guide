@@ -391,6 +391,7 @@
   <button class="tab-btn" onclick="switchTab('samarra',this)">🕌 سامراء</button>
   <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
   <button class="tab-btn" onclick="switchTab('besat',this)">📜 بعثه</button>
+  <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -828,6 +829,10 @@
   <div id="besat-admin"></div>
 </div><!-- /tab-besat -->
 
+<div class="page" id="tab-guide" style="max-width:900px">
+  <div id="guide-admin"></div>
+</div><!-- /tab-guide -->
+
 <!-- CALENDAR MODAL -->
 <div class="cal-overlay" id="calModal">
   <div class="cal-box">
@@ -865,6 +870,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-layout.js"></script>
 <script src="admin-notice.js"></script>
 <script src="admin-rate.js"></script>
+<script src="admin-guide.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1421,6 +1427,7 @@ function buildData(pending){
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
     food:getFoodData(),
     besat:getBesatData(),
+    guide:getGuideData(),
     cities:ALL_CITIES.map(id=>({
       id,
       name:cityMeta[id].name.trim()||DEFAULT_CITY[id],
@@ -1878,6 +1885,7 @@ function init(){
   initBanners();
   initIcon();
   initBesat();
+  initGuide();
   initLayout();
   initNotices();
   showGrp((()=>{try{return sessionStorage.getItem('admin-grp')}catch(e){}})()||'news');

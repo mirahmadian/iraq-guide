@@ -22,7 +22,7 @@ function renderNotices() {
   el.innerHTML = `
     <button class="add-row-btn" onclick="addNotice()">+ اطلاعیه جدید</button>
     ${noticeState.map((n, i) => `<div class="lay-slide" style="${noticeExpired(n) ? 'opacity:.55' : ''}">
-      <textarea rows="3" class="input-full" style="resize:vertical;min-height:80px;height:100px;background:#fff;color:#1a1a1a;border:1px solid #cfd8d3;border-radius:10px;padding:10px;font-family:inherit;line-height:1.8"
+      <textarea rows="3" dir="rtl" class="input-full" style="resize:vertical;min-height:80px;height:100px;background:#fff;color:#1a1a1a;border:1px solid #cfd8d3;border-radius:10px;padding:10px;font-family:inherit;line-height:1.8"
         placeholder="مثلاً: به دلیل ازدحام، ورودی باب‌القبله حرم امام حسین (ع) امروز از ساعت ۱۸ تا ۲۲ بسته است."
         oninput="noticeState[${i}].text=this.value">${escH(n.text)}</textarea>
       <div class="field-label" style="margin:4px 0 0">مدت نمایش</div>

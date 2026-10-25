@@ -4,16 +4,16 @@
    فهرست شناسه‌ها باید با TILE_DEFS و NAV_DEFS در home.js یکی باشد
 ══════════════════════════════════════════ */
 const LAYOUT_TILES = {
-  lost: ['گم شده‌ام', 'clinic', '🆘'], stay: ['تاریخ خروج', 'consulate', '📅'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
+  lost: ['گم شده‌ام', 'clinic', '🆘'], stay: ['تاریخ خروج', 'consulate', '📅'], guide: ['راهنمای زائر', 'hotel', '📘'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
   besat: ['برنامه‌های بعثه', 'ziyarat', '📜'], hotel: ['هتل‌ها', 'hotel', '🏨'], map: ['نقشه شهر', 'parking', '🗺️'],
   ins: ['بیمه معلم', 'ins', '📋'], transport: ['ناظر نقل', 'transport', '🚌'], food: ['برنامه غذایی', 'restaurant', '🍽️'], currency: ['تبدیل ارز', 'ins', '💱'],
   ziyarat: ['اماکن زیارتی', 'ziyarat', '🕌'], restaurant: ['رستوران', 'restaurant', '🍴'], parking: ['پارکینگ', 'parking', '🅿️'], other: ['سایر مکان‌ها', 'other', '📍']
 };
 const LAYOUT_COLORS = { hq: ['سبز', '#0E5A44'], clinic: ['قرمز', '#B3261E'], consulate: ['سرمه‌ای', '#3B4592'], hotel: ['قهوه‌ای', '#7E5610'],
   ins: ['آبی', '#1C5C9E'], parking: ['آبی روشن', '#17609E'], transport: ['نارنجی', '#944A04'], ziyarat: ['فیروزه‌ای', '#00695C'], other: ['خاکستری', '#55636B'] };
-const LAYOUT_NAV = { home: '🏠 خانه', lost: '🆘 گم شده‌ام', stay: '📅 تاریخ خروج', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', currency: '💱 ارز', food: '🍽️ غذا', hq: '🏢 ستاد' };
+const LAYOUT_NAV = { home: '🏠 خانه', lost: '🆘 گم شده‌ام', stay: '📅 تاریخ خروج', guide: '📘 راهنما', search: '🔍 جستجو', besat: '📜 بعثه', more: '⋯ بیشتر', map: '🗺️ نقشه', hotel: '🏨 هتل‌ها', currency: '💱 ارز', food: '🍽️ غذا', hq: '🏢 ستاد' };
 const LAYOUT_NAV_DEFAULT = ['home', 'search', 'besat', 'more'];
-const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', lost: 'گم شده‌ام', stay: 'تاریخ خروج از عراق', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
+const SLIDE_ACTIONS = { '': 'فقط بزرگ‌نمایی عکس', lost: 'گم شده‌ام', stay: 'تاریخ خروج از عراق', guide: 'راهنمای زائر', besat: 'برنامه‌های بعثه', hq: 'ستاد', clinic: 'درمانگاه', consulate: 'کنسولگری', hotel: 'هتل‌ها',
   map: 'نقشه شهر', ins: 'بیمه معلم', transport: 'ناظر نقل', food: 'برنامه غذایی', currency: 'تبدیل ارز', ziyarat: 'اماکن زیارتی', url: 'باز کردن یک لینک' };
 let layoutState = { tiles: [], nav: [], autoSlides: true, slides: [] };
 
@@ -27,6 +27,7 @@ function initLayout() {
       .sort((a, b) => { const o = L.nav && L.nav.length ? L.nav : LAYOUT_NAV_DEFAULT; return (o.indexOf(a.id) + 1 || 99) - (o.indexOf(b.id) + 1 || 99); }),
     autoSlides: L.autoSlides !== false,
     prayer: L.prayer !== false,
+    infobar: L.infobar !== false,
     slides: (L.slides || []).map(s => ({ image: s.image || '', title: s.title || '', tag: s.tag || '', action: s.action || '', url: s.url || '', cities: (s.cities || []).slice() }))
   };
   renderLayout();
@@ -55,6 +56,8 @@ function renderLayout() {
     }).join('')}
   </div>
   <div class="field">
+    <label class="fchk" style="padding:0 0 10px"><input type="checkbox" ${layoutState.infobar ? 'checked' : ''} onchange="layoutState.infobar=this.checked">
+      <b>🌤️ نوار هوا و ساعت عراق و ایران بالای صفحه اول نمایش داده شود</b></label>
     <label class="fchk" style="padding:0"><input type="checkbox" ${layoutState.prayer ? 'checked' : ''} onchange="layoutState.prayer=this.checked">
       <b>🕌 کارت اوقات شرعی (اذان بعدی و شمارش معکوس) در صفحه اول نمایش داده شود</b></label>
   </div>
@@ -118,7 +121,7 @@ function layoutOut() {
   const tiles = layoutState.tiles.map(t => ({ id: t.id, on: t.on, ...(t.label.trim() ? { label: t.label.trim() } : {}), ...(t.color ? { color: t.color } : {}) }));
   const slides = layoutState.slides.map(s => ({ image: s.image || (BUILD_PENDING && s.imageData) || '', title: s.title.trim(), tag: s.tag.trim(),
     action: s.action, ...(s.action === 'url' ? { url: s.url.trim() } : {}), cities: s.cities.slice() })).filter(s => s.image);
-  return { layout: { tiles, nav: layoutState.nav.filter(n => n.on).map(n => n.id).slice(0, 4), autoSlides: layoutState.autoSlides, prayer: layoutState.prayer, slides } };
+  return { layout: { tiles, nav: layoutState.nav.filter(n => n.on).map(n => n.id).slice(0, 4), autoSlides: layoutState.autoSlides, prayer: layoutState.prayer, infobar: layoutState.infobar, slides } };
 }
 async function uploadPendingSlides(token) {
   let any = false;
