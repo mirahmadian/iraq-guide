@@ -2038,7 +2038,22 @@ const CARAVAN_DATA = {
         "x": 59,
         "y": 46
       },
-      "hotels": [],
+      "hotels": [
+        {
+          "id": "hotel-karbala-1792889745949-0",
+          "name": "کربلا الدولی",
+          "nameEn": "",
+          "code": "106",
+          "address": "شارع میثم تمار",
+          "cardImage": "hotels/h-1792889930042-u024t.jpg",
+          "images": [
+            "hotels/h-1792889930042-u024t.jpg"
+          ],
+          "mapNeshanUrl": "",
+          "mapGoogleUrl": "https://www.google.com/maps/place/International+Karbala+Hotel/@32.6204115,44.0416497,20z/data=!4m9!3m8!1s0x15596b8a68f5eb4f:0xd6dd94a638e50fee!5m2!4m1!1i2!8m2!3d32.6200942!4d44.0422096!16s%2Fg%2F11g6xqzg9d?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D",
+          "contacts": []
+        }
+      ],
       "hq": {
         "title": "ستاد کربلا",
         "address": "شارع میثم تمار – هتل کربلاالدولی – طبقه هفتم",
