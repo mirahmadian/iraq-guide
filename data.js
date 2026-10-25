@@ -112,8 +112,17 @@ const CARAVAN_DATA = {
         "more"
       ],
       "autoSlides": true,
+      "prayer": true,
       "slides": []
-    }
+    },
+    "notices": [
+      {
+        "id": "nmvn9fpnj",
+        "text": "توصیه های ضروری به زائرین محترم:",
+        "created": 1792898434207,
+        "days": 1
+      }
+    ]
   },
   "insurance": {
     "title": "نماینده بیمه معلم در عراق",
