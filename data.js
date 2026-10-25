@@ -8,7 +8,7 @@
 const CARAVAN_DATA = {
   "lastUpdate": "1405/08/03",
   "site": {
-    "appTitle": "همراه عتبات",
+    "appTitle": "همیار کاروان",
     "appSubtitle": "ستادها، درمانگاه‌ها و شماره‌های تماس",
     "iconName": "همیار کاروان",
     "footer": [
