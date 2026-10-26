@@ -13,10 +13,18 @@
   .tb-w .ic{font-size:20px}
   .tb-w b{font-size:calc(16px * var(--fs,1));font-weight:900}
   .tb-w small{font-size:calc(12px * var(--fs,1));color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis}
-  .tb-c{display:flex;gap:10px;flex-shrink:0;font-size:calc(13px * var(--fs,1))}
-  .tb-c span{display:flex;flex-direction:column;align-items:center;white-space:nowrap;line-height:1.25}
+  .tb-c{display:flex;gap:12px;flex-shrink:0;font-size:calc(13px * var(--fs,1))}
+  .tb-c > span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .tb-c > span > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
   .tb-c b{font-weight:900;direction:ltr;display:inline-block}
   .tb-c small{font-size:calc(10.5px * var(--fs,1));color:var(--muted);font-weight:700}
+  .aclock{flex-shrink:0;color:var(--text)}
+  .aclock .face{fill:var(--card2);stroke:var(--brass-l);stroke-width:3}
+  .aclock .tk{stroke:var(--dim);stroke-width:3;stroke-linecap:round}
+  .aclock .tk.q{stroke:var(--text);stroke-width:5}
+  .aclock .h,.aclock .m{stroke:currentColor;stroke-linecap:round}
+  .aclock .s{stroke:var(--c-clinic);stroke-width:2;stroke-linecap:round}
+  .aclock .hub{fill:var(--c-clinic)}
   .tb-alert{display:block;width:100%;font-size:calc(12.5px * var(--fs,1));color:#9A5C00;margin-top:2px}
   [data-theme="dark"] .tb-alert{color:#F0B04A}
   .tw-now{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--border-s)}
@@ -32,7 +40,8 @@
   .tw-days .t small{color:var(--muted);font-weight:700}
   .tw-clock{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tw-clock div{padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--border-s);text-align:center;font-weight:800;font-size:calc(13px * var(--fs,1));color:var(--muted)}
-  .tw-clock b{display:block;font-size:calc(28px * var(--fs,1));font-weight:900;color:var(--text);direction:ltr}
+  .tw-clock b{display:block;font-size:calc(24px * var(--fs,1));font-weight:900;color:var(--text);direction:ltr}
+  .tw-clock .aclock{display:block;margin:10px auto 4px}
   .tw-warn{margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(199,119,0,.12);border:1px solid #C77700;font-size:calc(13.5px * var(--fs,1));line-height:2}
   .tw-note{font-size:calc(12px * var(--fs,1));color:var(--dim);line-height:1.9;margin:12px 4px 0}
   `;
@@ -44,6 +53,24 @@ const FLAG_SVG = { iq: '<rect width="30" height="20" fill="#fff"/><rect width="3
 function flagSVG(c, h = 12) {
   return `<svg class="flag" viewBox="0 0 30 20" width="${h * 1.5}" height="${h}" aria-hidden="true" style="border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.25);vertical-align:-1px;flex-shrink:0">${FLAG_SVG[c] || ''}</svg>`;
 }
+
+/* ساعت عقربه‌ای زنده (SVG). off = اختلاف با UTC به دقیقه */
+function clockSVG(off, size) {
+  const tk = Array.from({ length: 12 }, (_, i) => `<line class="tk ${i % 3 ? '' : 'q'}" x1="50" y1="${i % 3 ? 9 : 8}" x2="50" y2="${i % 3 ? 15 : 18}" transform="rotate(${i * 30} 50 50)"/>`).join('');
+  return `<svg class="aclock" data-off="${off}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">
+    <circle class="face" cx="50" cy="50" r="46"/>${size >= 60 ? tk : tk.replace(/<line class="tk "[^>]*>/g, '')}
+    <line class="h" x1="50" y1="50" x2="50" y2="28" stroke-width="${size >= 60 ? 6 : 8}"/><line class="m" x1="50" y1="50" x2="50" y2="16" stroke-width="${size >= 60 ? 4 : 6}"/>
+    ${size >= 30 ? '<line class="s" x1="50" y1="58" x2="50" y2="12"/>' : ''}<circle class="hub" cx="50" cy="50" r="${size >= 60 ? 3.5 : 6}"/></svg>`;
+}
+function clockTick() {
+  const now = Date.now();
+  document.querySelectorAll('.aclock').forEach(c => {
+    const t = new Date(now + (+c.dataset.off) * 60000), s = t.getUTCSeconds(), m = t.getUTCMinutes() + s / 60, h = (t.getUTCHours() % 12) + m / 60;
+    const set = (cls, deg) => { const l = c.querySelector('.' + cls); if (l) l.setAttribute('transform', `rotate(${deg} 50 50)`); };
+    set('h', h * 30); set('m', m * 6); set('s', s * 6);
+  });
+}
+setInterval(() => { if (!document.hidden) clockTick(); }, 1000);
 
 const TW_KEY = 'caravan-weather', TW_TTL = 30 * 60000, TW_HOT = 45, TW_DUST = 150;
 let twCache = {};
@@ -107,7 +134,7 @@ function todayBarHTML(c) {
     <span style="flex:1;min-width:0">
       <span style="display:flex;align-items:center;gap:10px">
         <span class="tb-w"><span class="ic" aria-hidden="true">${ic}</span>${w ? `<b>${faDigits(Math.round(w.t))}°</b>` : ''}<small>${escHtml(c.name)}</small></span>
-        <span class="tb-c"><span><b>${twIraq()}</b><small>${flagSVG('iq', 9)} عراق</small></span><span><b>${twIran()}</b><small>${flagSVG('ir', 9)} ایران</small></span></span>
+        <span class="tb-c"><span>${clockSVG(180, 34)}<span><b>${twIraq()}</b><small>${flagSVG('iq', 9)} عراق</small></span></span><span>${clockSVG(210, 34)}<span><b>${twIran()}</b><small>${flagSVG('ir', 9)} ایران</small></span></span></span>
       </span>
       ${al ? `<span class="tb-alert">${al[1]}</span>` : ''}
     </span>
@@ -118,9 +145,10 @@ function todayRefresh() {
   if (!el) return;
   const c = CARAVAN_DATA.cities.find(x => x.id === el.dataset.city);
   if (c) el.outerHTML = todayBarHTML(c);
+  clockTick();
 }
 /* بعد از هر رندر صفحه اول، هوای شهر انتخاب‌شده (در صورت نیاز) گرفته می‌شود */
-function todayFetch(c) { if (c && todayVisible()) twLoad(c.id).then(todayRefresh); }
+function todayFetch(c) { clockTick(); if (c && todayVisible()) twLoad(c.id).then(todayRefresh); }
 setInterval(todayRefresh, 30000);
 
 const TW_WD = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
@@ -131,7 +159,7 @@ function openToday() {
     const al = twAlert(w), [ic, label] = w ? twCode(w.code, w.day) : ['🌡️', ''];
     const ago = w ? Math.round((Date.now() - w.at) / 60000) : 0;
     const body = `
-      <div class="tw-clock"><div>${flagSVG('iq', 14)} ساعت عراق<b>${twIraq()}</b></div><div>${flagSVG('ir', 14)} ساعت ایران<b>${twIran()}</b></div></div>
+      <div class="tw-clock"><div>${flagSVG('iq', 14)} ساعت عراق${clockSVG(180, 120)}<b>${twIraq()}</b></div><div>${flagSVG('ir', 14)} ساعت ایران${clockSVG(210, 120)}<b>${twIran()}</b></div></div>
       <p class="tw-note" style="margin-top:6px;text-align:center">ساعت ایران <b>۳۰ دقیقه جلوتر</b> از عراق است. برنامه‌ها، اذان و حرکت‌ها در عراق به وقت عراق است.</p>
       <div class="sec-lbl">هوای ${escHtml(c.name)}</div>
       ${w ? `<div class="tw-now"><span class="ic" aria-hidden="true">${ic}</span><span><b>${faDigits(Math.round(w.t))}°</b>
@@ -147,6 +175,7 @@ function openToday() {
       <p class="tw-note">منبع: Open-Meteo · به‌روزرسانی ${ago < 2 ? 'همین الان' : faDigits(ago) + ' دقیقه پیش'}${navigator.onLine ? '' : ' (بدون اینترنت — آخرین وضعیت دریافت‌شده)'}</p>`
       : `<div class="sr-empty">${navigator.onLine ? '⏳ در حال دریافت وضعیت هوا…' : 'برای دیدن وضعیت هوا، یک بار با اینترنت برنامه را باز کنید.'}</div>`}`;
     openPage('🌤️ هوا و ساعت — ' + c.name, body);
+    clockTick();
   };
   render(twCache[c.id]);
   twLoad(c.id).then(w => { if (w && document.getElementById('pvTitle')?.textContent.includes(c.name)) render(w); todayRefresh(); });

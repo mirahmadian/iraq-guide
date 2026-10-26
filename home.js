@@ -263,8 +263,12 @@ function startSlider() {
   el.addEventListener('touchstart', () => { sliderHold = Date.now(); }, { passive: true });
   sliderTimer = setInterval(() => {
     if (Date.now() - sliderHold < 8000 || document.hidden || document.querySelector('.page-view.open,.besat-view.open,.food-view.open,.mapv.open')) return;
+    const box = el.getBoundingClientRect();
+    if (box.bottom < 0 || box.top > innerHeight) return;   // وقتی اسلایدر دیده نمی‌شود، عوض نشود
     const n = el.children.length, next = el.children[(slideIndex() + 1) % n];
-    next.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    /* فقط اسلایدر به پهلو می‌رود؛ scrollIntoView کل صفحه را هم بالا می‌برد */
+    const r = next.getBoundingClientRect();
+    el.scrollBy({ left: r.left - box.left - (box.width - r.width) / 2, behavior: 'smooth' });
   }, 5000);
 }
 
