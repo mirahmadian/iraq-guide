@@ -1,0 +1,12 @@
+name = "hamyar-reviews"
+main = "reviews.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hamyar-reviews"
+database_id = "83e811da-280d-4122-918a-62e42a0b1098"

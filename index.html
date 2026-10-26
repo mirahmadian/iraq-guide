@@ -745,6 +745,7 @@
 <script src="stay.js"></script>
 <script src="today.js"></script>
 <script src="guide.js"></script>
+<script src="reviews.js"></script>
 
 <script>
 /* ══════════════════════════════════════════
@@ -922,7 +923,7 @@ function hotelItemsHTML(cityId, list) {
       <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id.replace(/'/g,"\\'")}')">
         ${hotelThumb(h)}
         <div>
-          <div class="hotel-drop-name">${h.name}${h.code ? `<span class="hcode">کد ${faDigits(h.code)}</span>` : ''}</div>
+          <div class="hotel-drop-name">${h.name}${h.code ? `<span class="hcode">کد ${faDigits(h.code)}</span>` : ''}${rvMini(cityId, h.id)}</div>
           ${h.nameEn ? `<div class="hotel-drop-sub">${h.nameEn}</div>` : ''}
         </div>
       </div>`).join('');
@@ -1029,8 +1030,11 @@ function hotelSelect(cityId, hotelId) {
     html += `</div>`;
   }
 
+  html += rvBoxHTML(cityId, hotel.id);
+
   detail.innerHTML = html;
   detail.classList.add('show');
+  rvLoad(cityId, hotel.id);
 }
 
 function hotelClear(cityId) {
