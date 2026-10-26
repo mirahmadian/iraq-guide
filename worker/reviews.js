@@ -9,7 +9,7 @@
 ══════════════════════════════════════════ */
 const REPO = 'mirahmadian/iraq-guide';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-const MAX_LEN = 300, REPORTS_TO_HIDE = 3;
+const MAX_LEN = 300, MAX_NAME = 30, REPORTS_TO_HIDE = 3;
 const H_RE = /^[\w-]{1,40}\/[\w.-]{1,80}$/;
 
 const CORS = {
@@ -102,7 +102,7 @@ async function isAdmin(env, req) {
   return true;
 }
 
-const pub = r => ({ id: r.id, stars: r.stars, text: r.text, ts: r.ts });
+const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, ts: r.ts });
 
 export default {
   async fetch(req, env, ctx) {
@@ -125,12 +125,12 @@ export default {
       if (p === '/list' && req.method === 'GET') {
         const h = url.searchParams.get('h') || '';
         if (!H_RE.test(h)) return err('هتل نامعتبر');
-        const { results } = await env.DB.prepare('SELECT id, dev, stars, text, ts FROM reviews WHERE h = ? AND hidden IS NULL ORDER BY ts DESC LIMIT 200').bind(h).all();
+        const { results } = await env.DB.prepare('SELECT id, dev, name, stars, text, ts FROM reviews WHERE h = ? AND hidden IS NULL ORDER BY ts DESC LIMIT 200').bind(h).all();
         const dist = [0, 0, 0, 0, 0]; let sum = 0;
         results.forEach(r => { dist[r.stars - 1]++; sum += r.stars; });
         let mine = null;
         if (dev) {
-          const m = await env.DB.prepare('SELECT id, stars, text, ts, hidden FROM reviews WHERE h = ? AND dev = ?').bind(h, dev).first();
+          const m = await env.DB.prepare('SELECT id, name, stars, text, ts, hidden FROM reviews WHERE h = ? AND dev = ?').bind(h, dev).first();
           if (m) mine = { ...pub(m), hidden: !!m.hidden };
         }
         const reported = dev ? (await env.DB.prepare('SELECT rid FROM reports r JOIN reviews v ON v.id = r.rid WHERE v.h = ? AND r.dev = ?').bind(h, dev).all()).results.map(r => r.rid) : [];
@@ -142,27 +142,32 @@ export default {
 
       if (p === '/post' && req.method === 'POST') {
         if (!dev) return err('شناسه گوشی نامعتبر');
-        const h = String(body.h || ''), stars = Math.round(+body.stars), text = cleanText(body.text);
+        const h = String(body.h || ''), stars = Math.round(+body.stars), text = cleanText(body.text), name = cleanText(body.name).slice(0, MAX_NAME);
         if (!H_RE.test(h)) return err('هتل نامعتبر');
         if (!(stars >= 1 && stars <= 5)) return err('امتیاز را با ستاره‌ها انتخاب کنید.');
         if (await limited(env, 'post:' + await sha(env.SALT + ip), 15, 3600)) return err('تعداد نظرهای ارسالی از این اینترنت زیاد است. یک ساعت دیگر دوباره امتحان کنید.', 429);
+        if (/[\d۰-۹٠-٩@]/.test(name)) return err('در نام، عدد و علامت @ مجاز نیست.', 422);
+        const badName = name && badReason(name);
+        if (badName) return err(badName === 1 ? 'نامی که نوشتید کلمه نامناسب دارد.' : badName, 422);
         const bad = text && badReason(text);
         if (bad) return err(bad === 1 ? 'نظر شما کلمه نامناسب دارد و ثبت نشد. لطفاً محترمانه بنویسید.' : bad, 422);
+        /* نام و متن با هم به هوش مصنوعی داده می‌شوند */
+        const chk = (name ? 'Reviewer name: ' + name + '\nReview: ' : '') + text;
         let hidden = null, why = null;
-        if (text) {
-          const b = await aiBlocks(env, text);
+        if (text || name) {
+          const b = await aiBlocks(env, chk);
           if (b) { hidden = 'ai'; why = 'تشخیص هوش مصنوعی'; }
           else if (b === null) why = 'ai-pending';
         }
         const now = Date.now();
-        const row = await env.DB.prepare(`INSERT INTO reviews (h, dev, stars, text, ts, hidden, why) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-          ON CONFLICT(h, dev) DO UPDATE SET stars = ?3, text = ?4, ts = ?5, hidden = ?6, why = ?7, reports = 0 RETURNING id`)
-          .bind(h, dev, stars, text, now, hidden, why).first();
+        const row = await env.DB.prepare(`INSERT INTO reviews (h, dev, stars, text, ts, hidden, why, name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+          ON CONFLICT(h, dev) DO UPDATE SET stars = ?3, text = ?4, ts = ?5, hidden = ?6, why = ?7, name = ?8, reports = 0 RETURNING id`)
+          .bind(h, dev, stars, text, now, hidden, why, name).first();
         await env.DB.prepare('DELETE FROM reports WHERE rid = ?').bind(row.id).run();
         /* اگر هوش مصنوعی در دسترس نبود، کمی بعد دوباره بررسی شود */
         if (why === 'ai-pending') ctx.waitUntil((async () => {
           await new Promise(r => setTimeout(r, 15000));
-          const b2 = await aiBlocks(env, text);
+          const b2 = await aiBlocks(env, chk);
           if (b2 !== null) await env.DB.prepare('UPDATE reviews SET hidden = ?, why = ? WHERE id = ? AND ts = ?').bind(b2 ? 'ai' : null, b2 ? 'تشخیص هوش مصنوعی' : null, row.id, now).run();
         })());
         return json({ ok: true, id: row.id, hidden: !!hidden });
@@ -196,7 +201,7 @@ export default {
         if (!await isAdmin(env, req)) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
         if (p === '/admin/list' && req.method === 'GET') {
           const hiddenOnly = url.searchParams.get('mode') !== 'recent';
-          const { results } = await env.DB.prepare(`SELECT id, h, stars, text, ts, hidden, why, reports FROM reviews
+          const { results } = await env.DB.prepare(`SELECT id, h, name, stars, text, ts, hidden, why, reports FROM reviews
             WHERE ${hiddenOnly ? 'hidden IS NOT NULL' : "text != ''"} ORDER BY ts DESC LIMIT 300`).all();
           return json({ items: results });
         }

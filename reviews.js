@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════
    REVIEWS — امتیاز (۱ تا ۵ ستاره) و نظر زائران درباره هتل‌ها
-   سرور: Cloudflare Worker (پوشه worker/) — نظرها بدون نام ثبت می‌شوند و فوراً نمایش داده می‌شوند.
+   سرور: Cloudflare Worker (پوشه worker/) — نوشتن نام اختیاری است؛ نظرها فوراً نمایش داده می‌شوند.
    نظر رکیک ثبت نمی‌شود، نظر نامناسب را هوش مصنوعی پنهان می‌کند، و نظری که ۳ نفر گزارش کنند پنهان می‌شود.
    هر گوشی برای هر هتل یک نظر دارد؛ نظر جدید جای قبلی را می‌گیرد.
 ══════════════════════════════════════════ */
@@ -24,6 +24,10 @@
   .rv-pick{display:flex;gap:4px;justify-content:center;direction:ltr;margin:6px 0 10px}
   .rv-pick button{width:46px;height:46px;border:0;background:none;font-size:34px;line-height:1;cursor:pointer;color:var(--border-s);padding:0;font-family:inherit}
   .rv-pick button.on{color:#e0a100}
+  .rv-form input{width:100%;box-sizing:border-box;min-height:46px;padding:0 12px;margin-bottom:8px;border-radius:12px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);
+    font-family:var(--font);font-size:calc(14px * var(--fs,1))}
+  .rv-form input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+  .rv-who{font-weight:800;color:var(--text)}
   .rv-form textarea{width:100%;box-sizing:border-box;min-height:88px;padding:10px 12px;border-radius:12px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);
     font-family:var(--font);font-size:calc(14px * var(--fs,1));line-height:1.8;resize:vertical}
   .rv-form textarea:focus{outline:2px solid var(--gold);border-color:var(--gold)}
@@ -46,7 +50,7 @@
 })();
 
 const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
-const RV_SUM_KEY = 'caravan-rev-sum', RV_MAX = 300, RV_SHOW = 5;
+const RV_SUM_KEY = 'caravan-rev-sum', RV_NAME_KEY = 'caravan-rev-name', RV_MAX = 300, RV_MAX_NAME = 30, RV_SHOW = 5;
 let rvSum = {}, rvCur = null;
 try { rvSum = JSON.parse(localStorage.getItem(RV_SUM_KEY) || '{}') || {}; } catch (e) {}
 
@@ -118,7 +122,7 @@ function rvRender(msg) {
     </div>` : `<div class="sr-empty" style="padding:4px">هنوز کسی به این هتل امتیاز نداده است. اولین نفر باشید!</div>`;
 
   if (mine && !rvCur.edit) {
-    html += `<div class="rv-mine"><div class="rv-meta"><b style="color:var(--text)">نظر شما</b>${rvStars(mine.stars)}</div>
+    html += `<div class="rv-mine"><div class="rv-meta"><b style="color:var(--text)">نظر شما${mine.name ? ' — ' + escHtml(mine.name) : ''}</b>${rvStars(mine.stars)}</div>
       ${mine.text ? `<p style="margin:6px 0 0;line-height:1.9">${escHtml(mine.text)}</p>` : ''}
       ${mine.hidden ? `<div class="rv-msg err">این نظر برای دیگران نمایش داده نمی‌شود، چون نامناسب تشخیص داده شد. می‌توانید آن را ویرایش کنید.</div>` : ''}
       <div class="rv-row"><button class="rv-link" onclick="rvCur.edit=true;rvRender()">✏️ ویرایش</button><button class="rv-link" style="color:var(--dim)" onclick="rvDelete(${mine.id})">🗑 حذف نظر من</button></div>
@@ -126,6 +130,7 @@ function rvRender(msg) {
   } else {
     html += `<div class="rv-form"><h4>${mine ? 'ویرایش نظر شما' : 'شما به این هتل چند ستاره می‌دهید؟'}</h4>
       <div class="rv-pick" role="radiogroup" aria-label="امتیاز">${[1, 2, 3, 4, 5].map(s => `<button type="button" role="radio" aria-checked="${rvCur.pick === s}" aria-label="${faDigits(s)} ستاره" class="${s <= rvCur.pick ? 'on' : ''}" onclick="rvCur.pick=${s};rvPaintPick()">★</button>`).join('')}</div>
+      <input id="rv-name" maxlength="${RV_MAX_NAME}" autocomplete="nickname" placeholder="نام شما (اختیاری) — مثلاً: حسین از اصفهان" value="${escHtml(rvCur.nameDraft != null ? rvCur.nameDraft : mine ? mine.name : rvSavedName())}" oninput="rvCur.nameDraft=this.value">
       <textarea id="rv-text" maxlength="${RV_MAX}" placeholder="نظر شما (اختیاری) — مثلاً درباره تمیزی، غذا، برخورد کارکنان، فاصله تا حرم…" oninput="rvCount(this)">${escHtml(rvCur.draft != null ? rvCur.draft : mine ? mine.text : '')}</textarea>
       <div class="rv-row"><span id="rv-count"></span>
         <span>${mine ? `<button class="rv-link" onclick="rvCur.edit=false;rvRender()">انصراف</button>` : ''}<button class="rv-btn" id="rv-send" onclick="rvSend()">ثبت نظر</button></span></div>
@@ -137,19 +142,20 @@ function rvRender(msg) {
   const items = d.items || [];
   if (items.length) {
     html += `<div class="rv-list-h">نظر زائران</div>` + items.slice(0, rvCur.all ? items.length : RV_SHOW).map(r => `<div class="rv-item">
-      <div class="rv-meta">${rvStars(r.stars)}<span>${rvDate(r.ts)}</span></div>
+      <div class="rv-meta"><span><span class="rv-who">${r.name ? escHtml(r.name) : 'زائر'}</span> · ${rvDate(r.ts)}</span>${rvStars(r.stars)}</div>
       <p>${escHtml(r.text)}</p>
       <div style="text-align:left">${(d.reported || []).includes(r.id) ? '<span class="rv-rep">گزارش شد ✓</span>' : `<button class="rv-rep" onclick="rvReport(${r.id})">⚑ گزارش نظر نامناسب</button>`}</div>
     </div>`).join('');
     if (!rvCur.all && items.length > RV_SHOW) html += `<button class="rv-link" style="width:100%" onclick="rvCur.all=true;rvRender()">نمایش همه نظرها (${faDigits(items.length)}) ▾</button>`;
   }
-  html += `<p class="rv-note">نظرها بدون نام ثبت می‌شوند. نظرهای توهین‌آمیز یا نامربوط خودکار حذف می‌شوند.</p>`;
+  html += `<p class="rv-note">نوشتن نام اختیاری است؛ بدون نام، «زائر» نمایش داده می‌شود. نظرهای توهین‌آمیز یا نامربوط خودکار حذف می‌شوند.</p>`;
   box.innerHTML = html;
   const t = document.getElementById('rv-text');
   if (t) rvCount(t);
   const sp = document.querySelector('.rv-mini[data-rvh="' + rvCur.h + '"]');
   if (sp) { const [c, h] = rvCur.h.split('/'); sp.outerHTML = rvMini(c, h); }
 }
+function rvSavedName() { try { return localStorage.getItem(RV_NAME_KEY) || ''; } catch (e) { return ''; } }
 function rvPaintPick() {
   document.querySelectorAll('.rv-pick button').forEach((b, i) => { b.classList.toggle('on', i < rvCur.pick); b.setAttribute('aria-checked', i + 1 === rvCur.pick); });
 }
@@ -162,10 +168,12 @@ function rvCount(t) {
 function rvSend() {
   if (!rvCur.pick) { rvRender({ text: 'اول با زدن روی ستاره‌ها امتیاز بدهید.' }); return; }
   const btn = document.getElementById('rv-send'), text = (document.getElementById('rv-text') || {}).value || '';
+  const name = ((document.getElementById('rv-name') || {}).value || '').trim();
+  try { localStorage.setItem(RV_NAME_KEY, name); } catch (e) {}
   if (btn) { btn.disabled = true; btn.textContent = 'در حال ثبت…'; }
   const h = rvCur.h;
-  rvFetch('/post', { h, stars: rvCur.pick, text }).then(res => {
-    rvCur.draft = null; rvCur.edit = false;
+  rvFetch('/post', { h, stars: rvCur.pick, text, name }).then(res => {
+    rvCur.draft = rvCur.nameDraft = null; rvCur.edit = false;
     return rvFetch('/list?h=' + encodeURIComponent(h)).then(d => {
       if (!rvCur || rvCur.h !== h) return;
       rvCur.data = d; rvSum[h] = d.n ? [d.avg, d.n] : undefined;

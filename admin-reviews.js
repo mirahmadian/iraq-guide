@@ -43,7 +43,7 @@ function renderReviewsAdmin() {
     : !rvaItems ? '<div class="empty-msg">در حال دریافت…</div>'
     : !rvaItems.length ? `<div class="empty-msg">${rvaMode === 'hidden' ? 'هیچ نظر پنهان‌شده‌ای نیست 👍' : 'هنوز نظری ثبت نشده است.'}</div>`
     : rvaItems.map(r => `<div class="lay-slide" style="${r.hidden && rvaMode === 'recent' ? 'opacity:.6' : ''}">
-      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><b>🏨 ${escH(rvaHotel(r.h))}</b><span style="color:#e0a100;direction:ltr">${st(r.stars)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><b>🏨 ${escH(rvaHotel(r.h))}${r.name ? ' · 👤 ' + escH(r.name) : ''}</b><span style="color:#e0a100;direction:ltr">${st(r.stars)}</span></div>
       <div style="line-height:1.9;font-size:14px;white-space:pre-wrap">${escH(r.text) || '<i style="color:#999">(فقط امتیاز، بدون متن)</i>'}</div>
       <div style="font-size:12px;color:#888">${new Date(r.ts).toLocaleString('fa-IR')}${r.why ? ' · ' + escH(r.why) : ''}${r.reports > 0 ? ' · ' + r.reports.toLocaleString('fa') + ' گزارش' : ''}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">

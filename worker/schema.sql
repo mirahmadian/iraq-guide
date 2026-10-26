@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   hidden TEXT,                -- null = visible; 'ai' | 'reports' | 'admin'
   why TEXT,
   reports INTEGER NOT NULL DEFAULT 0,
+  name TEXT NOT NULL DEFAULT '',  -- optional display name
   UNIQUE (h, dev)
 );
 CREATE INDEX IF NOT EXISTS reviews_h ON reviews (h, hidden, ts);
