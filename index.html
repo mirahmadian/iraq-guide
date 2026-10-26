@@ -1458,14 +1458,43 @@ function shareApp() {
 let deferredPrompt;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
+/* اندروید با مرورگری غیر از Chrome (یا داخل بله/تلگرام/واتس‌اپ): بسته نصبی بعضی مرورگرها
+   را «سپر ایمنی Play» به‌عنوان «برنامه برای اندروید قدیمی» مسدود می‌کند — پیشنهاد باز کردن در Chrome */
+const ua = navigator.userAgent;
+const androidNotChrome = /Android/i.test(ua) && (!/Chrome\/\d+/.test(ua) || /; wv\)|SamsungBrowser|EdgA|OPR|Opera|Firefox|YaBrowser|MiuiBrowser|XiaoMi|UCBrowser|Vivaldi|DuckDuckGo|HeyTap|Huawei|Bale|Telegram|FBAN|Instagram/i.test(ua));
+function openInChrome() {
+  const u = location.href.split('#')[0];
+  location.href = 'intent://' + u.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(u) + ';end';
+  setTimeout(() => {
+    if (document.hidden) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(
+      () => showToast('آدرس کپی شد — Chrome را باز کنید و آدرس را بچسبانید', 4500),
+      () => showToast('Chrome را باز کنید و این آدرس را وارد کنید: ' + u, 6000));
+  }, 1500);
+}
+if (androidNotChrome && !isStandalone) {
+  let closed = false;
+  try { closed = sessionStorage.getItem('chrome-hint') === '0'; } catch (e) {}
+  if (!closed) {
+    const b = document.getElementById('installBanner');
+    b.querySelector('.install-text').innerHTML = '<strong>برای نصب روی گوشی، با Chrome باز کنید</strong>با این مرورگر ممکن است گوشی جلوی نصب را بگیرد';
+    const btn = document.getElementById('installBtn');
+    btn.textContent = 'باز کردن در Chrome';
+    btn.id = 'chromeBtn';
+    btn.onclick = openInChrome;
+    b.insertAdjacentHTML('beforeend', '<button onclick="this.parentNode.classList.remove(\'show\');try{sessionStorage.setItem(\'chrome-hint\',\'0\')}catch(e){}" aria-label="بستن" style="border:none;background:none;font-size:20px;color:var(--dim);cursor:pointer;padding:0 2px">×</button>');
+    b.classList.add('show');
+  }
+}
+
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  if (isStandalone) return;
+  if (isStandalone || androidNotChrome) return;
   deferredPrompt = e;
   document.getElementById('installBanner').classList.add('show');
 });
 
-document.getElementById('installBtn').addEventListener('click', async () => {
+document.getElementById('installBtn')?.addEventListener('click', async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
