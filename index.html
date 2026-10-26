@@ -544,6 +544,11 @@
     }
     .sheet-btn span{font-size:calc(20px * var(--fs,1))}
     .sheet-btn:active{background:var(--gold-dim)}
+    .vw-lbl{font-size:calc(12.5px * var(--fs,1));font-weight:800;color:var(--brass);margin:14px 4px 8px}
+    .vw-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+    .vw-opts button{min-height:56px;padding:8px 6px;border-radius:14px;border:1.5px solid var(--border-s);background:var(--card);color:var(--text);cursor:pointer;line-height:1.5}
+    .vw-opts button small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+    .vw-opts button.on{border-color:var(--gold);background:var(--gold-dim);color:var(--pri-ink)}
     .modal-close{
       width:100%;min-height:50px;border-radius:14px;border:1px solid var(--border-s);
       background:var(--card);color:var(--muted);font-family:var(--font);
@@ -613,7 +618,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" id="fsBtn" aria-label="تغییر اندازه نوشته" title="اندازه نوشته">Aa</button>
+        <button class="icon-btn" id="fsBtn" aria-label="اندازه و نوع قلم" title="اندازه و نوع قلم">Aa</button>
         <button class="icon-btn" id="themeBtn" aria-label="فعال کردن حالت تیره">🌙</button>
         <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت"
              onerror="this.style.display='none'">
@@ -684,6 +689,18 @@
 </div>
 
 <!-- MORE SHEET -->
+<div class="overlay" id="viewOverlay" role="dialog" aria-modal="true" aria-label="تنظیم نمایش">
+  <div class="modal">
+    <div class="modal-handle" aria-hidden="true"></div>
+    <div class="modal-title">تنظیم نمایش</div>
+    <div class="vw-lbl">اندازه نوشته</div>
+    <div class="vw-opts" id="vwFs"></div>
+    <div class="vw-lbl">نوع قلم</div>
+    <div class="vw-opts" id="vwFont"></div>
+    <button class="modal-close" onclick="closeView()">بستن</button>
+  </div>
+</div>
+
 <div class="overlay" id="moreOverlay" role="dialog" aria-modal="true" aria-label="گزینه‌های بیشتر">
   <div class="modal">
     <div class="modal-handle" aria-hidden="true"></div>
@@ -1250,11 +1267,26 @@ function applyFs() {
   try { localStorage.setItem('caravan-fs', fsIdx); } catch(e) {}
   updateSticky();
 }
-document.getElementById('fsBtn').addEventListener('click', () => {
-  fsIdx = (fsIdx + 1) % FS_LEVELS.length;
-  applyFs();
-  showToast('اندازه نوشته: ' + ['معمولی', 'بزرگ', 'خیلی بزرگ'][fsIdx]);
-});
+/* قلم: وزیرمتن (پیش‌فرض) یا استعداد — هر دو داخل برنامه (fonts/) و بدون اینترنت */
+const FONTS = { vazir: ['وزیر', "'Vazirmatn', sans-serif"], estedad: ['استعداد', "'Estedad', 'Vazirmatn', sans-serif"] };
+let fontId = 'vazir';
+try { if (FONTS[localStorage.getItem('caravan-font')]) fontId = localStorage.getItem('caravan-font'); } catch(e) {}
+function applyFont() {
+  document.documentElement.style.setProperty('--font', FONTS[fontId][1]);
+  try { localStorage.setItem('caravan-font', fontId); } catch(e) {}
+  if (document.fonts) document.fonts.ready.then(updateSticky);
+}
+applyFont();
+function renderView() {
+  document.getElementById('vwFs').innerHTML = ['معمولی', 'بزرگ', 'خیلی بزرگ'].map((l, i) =>
+    `<button class="${i === fsIdx ? 'on' : ''}" onclick="fsIdx=${i};applyFs();renderView()" style="font-family:var(--font);font-size:${14 * FS_LEVELS[i]}px;font-weight:800">${l}</button>`).join('');
+  document.getElementById('vwFont').innerHTML = Object.entries(FONTS).map(([id, [l, fam]]) =>
+    `<button class="${id === fontId ? 'on' : ''}" onclick="fontId='${id}';applyFont();renderView()" style="font-family:${fam.replace(/"/g, '&quot;')}"><b style="font-size:17px">${l}</b><small style="font-family:inherit">همیار کاروان ۱۲۳۴</small></button>`).join('');
+}
+function openView() { renderView(); document.getElementById('viewOverlay').classList.add('open'); }
+function closeView() { document.getElementById('viewOverlay').classList.remove('open'); }
+document.getElementById('viewOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeView(); });
+document.getElementById('fsBtn').addEventListener('click', openView);
 window.addEventListener('resize', updateSticky);
 window.addEventListener('load', updateSticky);
 

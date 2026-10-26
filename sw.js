@@ -1,4 +1,4 @@
-const CACHE = 'caravan-v36';
+const CACHE = 'caravan-v37';
 const STATIC = [
   './',
   'index.html',
@@ -30,7 +30,9 @@ const STATIC = [
   'fonts/fonts.css',
   'fonts/Vazirmatn-arabic.woff2',
   'fonts/Vazirmatn-latin.woff2',
-  'fonts/Vazirmatn-latin-ext.woff2'
+  'fonts/Vazirmatn-latin-ext.woff2',
+  'fonts/Estedad-arabic.woff2',
+  'fonts/Estedad-latin.woff2'
 ];
 
 /* نصب: فایل‌های اصلی و فونت را cache می‌کنیم تا آفلاین هم کار کند */
