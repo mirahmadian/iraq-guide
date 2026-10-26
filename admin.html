@@ -1296,8 +1296,8 @@ function renderHotelPhones(cityId,hotelIdx){
              dir="ltr" oninput="updateHotelPhone('${cityId}',${hotelIdx},${pi},'phone',this.value)">
       <select style="border:1px solid var(--border-s);border-radius:8px;padding:9px 8px;font-family:var(--font);font-size:12px;background:var(--bg)"
               onchange="updateHotelPhone('${cityId}',${hotelIdx},${pi},'countryCode',this.value)">
-        <option value="964" ${p.countryCode==='964'?'selected':''}>🇮🇶 964</option>
-        <option value="98"  ${p.countryCode==='98' ?'selected':''}>🇮🇷 98</option>
+        <option value="964" ${p.countryCode==='964'?'selected':''}>عراق 964</option>
+        <option value="98"  ${p.countryCode==='98' ?'selected':''}>ایران 98</option>
       </select>
       <button class="del-btn" onclick="deleteHotelPhone('${cityId}',${hotelIdx},${pi})">🗑</button>
     </div>`).join('')||`<div class="empty-msg" style="padding:4px 0">شماره‌ای ثبت نشده</div>`;

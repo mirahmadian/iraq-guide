@@ -14,8 +14,9 @@
   .tb-w b{font-size:calc(16px * var(--fs,1));font-weight:900}
   .tb-w small{font-size:calc(12px * var(--fs,1));color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis}
   .tb-c{display:flex;gap:10px;flex-shrink:0;font-size:calc(13px * var(--fs,1))}
-  .tb-c span{white-space:nowrap}
+  .tb-c span{display:flex;flex-direction:column;align-items:center;white-space:nowrap;line-height:1.25}
   .tb-c b{font-weight:900;direction:ltr;display:inline-block}
+  .tb-c small{font-size:calc(10.5px * var(--fs,1));color:var(--muted);font-weight:700}
   .tb-alert{display:block;width:100%;font-size:calc(12.5px * var(--fs,1));color:#9A5C00;margin-top:2px}
   [data-theme="dark"] .tb-alert{color:#F0B04A}
   .tw-now{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--border-s)}
@@ -100,7 +101,7 @@ function todayBarHTML(c) {
     <span style="flex:1;min-width:0">
       <span style="display:flex;align-items:center;gap:10px">
         <span class="tb-w"><span class="ic" aria-hidden="true">${ic}</span>${w ? `<b>${faDigits(Math.round(w.t))}°</b>` : ''}<small>${escHtml(c.name)}</small></span>
-        <span class="tb-c"><span>🇮🇶 <b>${twIraq()}</b></span><span>🇮🇷 <b>${twIran()}</b></span></span>
+        <span class="tb-c"><span><b>${twIraq()}</b><small>عراق</small></span><span><b>${twIran()}</b><small>ایران</small></span></span>
       </span>
       ${al ? `<span class="tb-alert">${al[1]}</span>` : ''}
     </span>
@@ -124,7 +125,7 @@ function openToday() {
     const al = twAlert(w), [ic, label] = w ? twCode(w.code, w.day) : ['🌡️', ''];
     const ago = w ? Math.round((Date.now() - w.at) / 60000) : 0;
     const body = `
-      <div class="tw-clock"><div>🇮🇶 ساعت عراق<b>${twIraq()}</b></div><div>🇮🇷 ساعت ایران<b>${twIran()}</b></div></div>
+      <div class="tw-clock"><div>ساعت عراق<b>${twIraq()}</b></div><div>ساعت ایران<b>${twIran()}</b></div></div>
       <p class="tw-note" style="margin-top:6px;text-align:center">ساعت ایران <b>۳۰ دقیقه جلوتر</b> از عراق است. برنامه‌ها، اذان و حرکت‌ها در عراق به وقت عراق است.</p>
       <div class="sec-lbl">هوای ${escHtml(c.name)}</div>
       ${w ? `<div class="tw-now"><span class="ic" aria-hidden="true">${ic}</span><span><b>${faDigits(Math.round(w.t))}°</b>
