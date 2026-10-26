@@ -39,6 +39,12 @@
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
 })();
 
+/* پرچم‌ها به‌صورت تصویر (SVG): شکلک پرچم در ویندوز به‌شکل دو حرف «IQ / IR» نشان داده می‌شود */
+const FLAG_SVG = { iq: '<rect width="30" height="20" fill="#fff"/><rect width="30" height="6.7" fill="#CE1126"/><rect y="13.3" width="30" height="6.7" fill="#000"/><path fill="#007A3D" d="M8.5 9h3.2v2.2H8.5zM13.4 8.6h3.2v2.6h-3.2zM18.3 9h3.2v2.2h-3.2z"/>', ir: '<rect width="30" height="20" fill="#fff"/><rect width="30" height="6.7" fill="#239F40"/><rect y="13.3" width="30" height="6.7" fill="#DA0000"/><circle cx="15" cy="10" r="2.1" fill="none" stroke="#DA0000" stroke-width="0.9"/><path d="M15 7.6v4.8" stroke="#DA0000" stroke-width="0.9"/>', us: '<rect width="30" height="20" fill="#fff"/><rect y="0.00" width="30" height="1.54" fill="#B22234"/><rect y="3.08" width="30" height="1.54" fill="#B22234"/><rect y="6.15" width="30" height="1.54" fill="#B22234"/><rect y="9.23" width="30" height="1.54" fill="#B22234"/><rect y="12.31" width="30" height="1.54" fill="#B22234"/><rect y="15.38" width="30" height="1.54" fill="#B22234"/><rect y="18.46" width="30" height="1.54" fill="#B22234"/><rect width="13" height="10.77" fill="#3C3B6E"/><g fill="#fff"><circle cx="2.5" cy="2.2" r=".7"/><circle cx="6.5" cy="2.2" r=".7"/><circle cx="10.5" cy="2.2" r=".7"/><circle cx="4.5" cy="5.4" r=".7"/><circle cx="8.5" cy="5.4" r=".7"/><circle cx="2.5" cy="8.6" r=".7"/><circle cx="6.5" cy="8.6" r=".7"/><circle cx="10.5" cy="8.6" r=".7"/></g>' };
+function flagSVG(c, h = 12) {
+  return `<svg class="flag" viewBox="0 0 30 20" width="${h * 1.5}" height="${h}" aria-hidden="true" style="border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.25);vertical-align:-1px;flex-shrink:0">${FLAG_SVG[c] || ''}</svg>`;
+}
+
 const TW_KEY = 'caravan-weather', TW_TTL = 30 * 60000, TW_HOT = 45, TW_DUST = 150;
 let twCache = {};
 try { twCache = JSON.parse(localStorage.getItem(TW_KEY) || '{}'); } catch (e) {}
@@ -101,7 +107,7 @@ function todayBarHTML(c) {
     <span style="flex:1;min-width:0">
       <span style="display:flex;align-items:center;gap:10px">
         <span class="tb-w"><span class="ic" aria-hidden="true">${ic}</span>${w ? `<b>${faDigits(Math.round(w.t))}°</b>` : ''}<small>${escHtml(c.name)}</small></span>
-        <span class="tb-c"><span><b>${twIraq()}</b><small>عراق</small></span><span><b>${twIran()}</b><small>ایران</small></span></span>
+        <span class="tb-c"><span><b>${twIraq()}</b><small>${flagSVG('iq', 9)} عراق</small></span><span><b>${twIran()}</b><small>${flagSVG('ir', 9)} ایران</small></span></span>
       </span>
       ${al ? `<span class="tb-alert">${al[1]}</span>` : ''}
     </span>
@@ -125,7 +131,7 @@ function openToday() {
     const al = twAlert(w), [ic, label] = w ? twCode(w.code, w.day) : ['🌡️', ''];
     const ago = w ? Math.round((Date.now() - w.at) / 60000) : 0;
     const body = `
-      <div class="tw-clock"><div>ساعت عراق<b>${twIraq()}</b></div><div>ساعت ایران<b>${twIran()}</b></div></div>
+      <div class="tw-clock"><div>${flagSVG('iq', 14)} ساعت عراق<b>${twIraq()}</b></div><div>${flagSVG('ir', 14)} ساعت ایران<b>${twIran()}</b></div></div>
       <p class="tw-note" style="margin-top:6px;text-align:center">ساعت ایران <b>۳۰ دقیقه جلوتر</b> از عراق است. برنامه‌ها، اذان و حرکت‌ها در عراق به وقت عراق است.</p>
       <div class="sec-lbl">هوای ${escHtml(c.name)}</div>
       ${w ? `<div class="tw-now"><span class="ic" aria-hidden="true">${ic}</span><span><b>${faDigits(Math.round(w.t))}°</b>

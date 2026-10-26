@@ -73,9 +73,9 @@ function openCurrency() {
       ${r.usd ? `<small>هر ۱ دلار ≈ ${cxFa(cxRound(r.usd))} تومان ≈ ${cxFa(Math.round(r.usd / r.iqd))} دینار</small>` : ''}
       <small>${escHtml(r.src)}</small></div>
     <div class="cx-box">
-      <label for="cxD"><span>دینار عراق</span></label><input id="cxD" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('D')">
-      <label for="cxT"><span>تومان ایران</span></label><input id="cxT" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('T')">
-      ${r.usd ? `<label for="cxU"><span>دلار آمریکا</span></label><input id="cxU" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('U')">` : ''}
+      <label for="cxD"><span>${flagSVG('iq', 13)} دینار عراق</span></label><input id="cxD" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('D')">
+      <label for="cxT"><span>${flagSVG('ir', 13)} تومان ایران</span></label><input id="cxT" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('T')">
+      ${r.usd ? `<label for="cxU"><span>${flagSVG('us', 13)} دلار آمریکا</span></label><input id="cxU" inputmode="decimal" autocomplete="off" placeholder="۰" oninput="cxIn('U')">` : ''}
     </div>
     <div class="sec-lbl">اسکناس‌های عراق به تومان</div>
     <div class="cx-notes">${CX_NOTES.map(d => `<button onclick="cxSet(${d})"><b>${cxFa(d)} دینار</b><span>≈ ${cxFa(cxRound(d * r.iqd))} تومان</span></button>`).join('')}</div>
