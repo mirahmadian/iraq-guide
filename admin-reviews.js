@@ -32,7 +32,7 @@ function renderReviewsAdmin() {
   const el = document.getElementById('reviews-admin');
   if (!el) return;
   const tab = (m, l) => `<button class="add-row-btn" style="margin:0;flex:1;${rvaMode === m ? 'background:var(--gold);color:#fff' : ''}" onclick="rvaLoad('${m}')">${l}</button>`;
-  const st = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const st = n => n ? '★'.repeat(n) + '☆'.repeat(5 - n) : 'بدون امتیاز';
   el.innerHTML = `
   <div class="info-box"><strong>💬 نظر زائران درباره هتل‌ها</strong>
     زائران در صفحه هر هتل ستاره می‌دهند و نظر می‌نویسند. نظرها فوراً نمایش داده می‌شوند و خودکار کنترل می‌شوند:

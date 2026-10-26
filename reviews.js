@@ -21,9 +21,13 @@
   .rv-dist span i{display:block;height:100%;background:#e0a100;border-radius:4px}
   .rv-form{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-s)}
   .rv-form h4{margin:0 0 6px;font-size:calc(14px * var(--fs,1));font-weight:900;color:var(--text)}
-  .rv-pick{display:flex;gap:4px;justify-content:center;direction:ltr;margin:6px 0 10px}
-  .rv-pick button{width:46px;height:46px;border:0;background:none;font-size:34px;line-height:1;cursor:pointer;color:var(--border-s);padding:0;font-family:inherit}
+  .rv-pick{display:flex;gap:4px;justify-content:center;margin:6px 0 0;touch-action:none;user-select:none;-webkit-user-select:none}
+  .rv-pick button{width:48px;height:48px;border:0;background:none;font-size:36px;line-height:1;cursor:pointer;color:var(--border-s);padding:0;font-family:inherit;
+    transition:color .12s,transform .12s;-webkit-tap-highlight-color:transparent}
   .rv-pick button.on{color:#e0a100}
+  .rv-pick button.hot{transform:scale(1.18)}
+  .rv-pick-lbl{text-align:center;min-height:1.9em;margin:2px 0 8px;font-size:calc(13px * var(--fs,1));font-weight:800;color:var(--muted)}
+  .rv-pick-lbl b{color:#b7791f}
   .rv-form input{width:100%;box-sizing:border-box;min-height:46px;padding:0 12px;margin-bottom:8px;border-radius:12px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);
     font-family:var(--font);font-size:calc(14px * var(--fs,1))}
   .rv-form input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
@@ -84,7 +88,8 @@ function rvLoadSummary() {
 }
 rvLoadSummary();
 
-const rvStars = n => `<span class="rv-st" aria-label="${faDigits(n)} از ۵ ستاره">${'★'.repeat(Math.round(n))}<i>${'★'.repeat(5 - Math.round(n))}</i></span>`;
+const RV_LABELS = ['', 'خیلی بد', 'بد', 'متوسط', 'خوب', 'عالی'];
+const rvStars = n => !n ? '' : `<span class="rv-st" aria-label="${faDigits(n)} از ۵ ستاره">${'★'.repeat(Math.round(n))}<i>${'★'.repeat(5 - Math.round(n))}</i></span>`;
 const rvNum = n => faDigits(String(n).replace('.', '٫'));
 function rvDate(ts) {
   const d = Math.floor((Date.now() - ts) / 864e5);
@@ -129,7 +134,8 @@ function rvRender(msg) {
     </div>`;
   } else {
     html += `<div class="rv-form"><h4>${mine ? 'ویرایش نظر شما' : 'شما به این هتل چند ستاره می‌دهید؟'}</h4>
-      <div class="rv-pick" role="radiogroup" aria-label="امتیاز">${[1, 2, 3, 4, 5].map(s => `<button type="button" role="radio" aria-checked="${rvCur.pick === s}" aria-label="${faDigits(s)} ستاره" class="${s <= rvCur.pick ? 'on' : ''}" onclick="rvCur.pick=${s};rvPaintPick()">★</button>`).join('')}</div>
+      <div class="rv-pick" id="rv-pick" role="radiogroup" aria-label="امتیاز">${[1, 2, 3, 4, 5].map(s => `<button type="button" role="radio" data-s="${s}" aria-checked="${rvCur.pick === s}" aria-label="${faDigits(s)} ستاره — ${RV_LABELS[s]}" class="${s <= rvCur.pick ? 'on' : ''}">★</button>`).join('')}</div>
+      <div class="rv-pick-lbl" id="rv-pick-lbl"></div>
       <input id="rv-name" maxlength="${RV_MAX_NAME}" autocomplete="nickname" placeholder="نام شما (اختیاری) — مثلاً: حسین از اصفهان" value="${escHtml(rvCur.nameDraft != null ? rvCur.nameDraft : mine ? mine.name : rvSavedName())}" oninput="rvCur.nameDraft=this.value">
       <textarea id="rv-text" maxlength="${RV_MAX}" placeholder="نظر شما (اختیاری) — مثلاً درباره تمیزی، غذا، برخورد کارکنان، فاصله تا حرم…" oninput="rvCount(this)">${escHtml(rvCur.draft != null ? rvCur.draft : mine ? mine.text : '')}</textarea>
       <div class="rv-row"><span id="rv-count"></span>
@@ -152,12 +158,42 @@ function rvRender(msg) {
   box.innerHTML = html;
   const t = document.getElementById('rv-text');
   if (t) rvCount(t);
+  rvPickInit();
   const sp = document.querySelector('.rv-mini[data-rvh="' + rvCur.h + '"]');
   if (sp) { const [c, h] = rvCur.h.split('/'); sp.outerHTML = rvMini(c, h); }
 }
 function rvSavedName() { try { return localStorage.getItem(RV_NAME_KEY) || ''; } catch (e) { return ''; } }
-function rvPaintPick() {
-  document.querySelectorAll('.rv-pick button').forEach((b, i) => { b.classList.toggle('on', i < rvCur.pick); b.setAttribute('aria-checked', i + 1 === rvCur.pick); });
+/* ستاره‌ها: با حرکت انگشت یا موس روی آن‌ها پررنگ/کم‌رنگ می‌شوند تا جهت درجه‌بندی معلوم باشد؛ رها کردن = انتخاب.
+   زدن دوباره روی همان ستاره، امتیاز را برمی‌دارد (امتیاز اختیاری است). */
+function rvPaintPick(preview) {
+  const n = preview || rvCur.pick;
+  document.querySelectorAll('#rv-pick button').forEach((b, i) => {
+    b.classList.toggle('on', i < n); b.classList.toggle('hot', !!preview && i + 1 === preview);
+    b.setAttribute('aria-checked', i + 1 === rvCur.pick);
+  });
+  const lbl = document.getElementById('rv-pick-lbl');
+  if (lbl) lbl.innerHTML = n ? `<b>${faDigits(n)} ستاره</b> — ${RV_LABELS[n]}` : 'از ۱ ستاره (خیلی بد) تا ۵ ستاره (عالی) — اختیاری';
+}
+function rvPickInit() {
+  const box = document.getElementById('rv-pick');
+  if (!box) return;
+  let down = 0, startPick = 0;
+  const at = e => { const b = document.elementFromPoint(e.clientX, e.clientY); return b && b.closest && b.closest('#rv-pick button') ? +b.closest('button').dataset.s : 0; };
+  box.addEventListener('pointerdown', e => { const s = at(e); if (!s) return; down = s; startPick = rvCur.pick; box.setPointerCapture && box.setPointerCapture(e.pointerId); rvPaintPick(s); });
+  box.addEventListener('pointermove', e => { const s = at(e); if (down) { if (s) down = s; rvPaintPick(down); } else if (e.pointerType === 'mouse') rvPaintPick(s); });
+  box.addEventListener('pointerup', e => {
+    if (!down) return;
+    const s = at(e) || down; down = 0;
+    rvCur.pick = (s === startPick && s === rvCur.pick) ? 0 : s; rvPaintPick();
+  });
+  box.addEventListener('pointercancel', () => { down = 0; rvPaintPick(); });
+  box.addEventListener('pointerleave', e => { if (!down && e.pointerType === 'mouse') rvPaintPick(); });
+  box.addEventListener('keydown', e => {
+    const k = { ArrowLeft: 1, ArrowRight: -1 }[e.key];
+    if (k) { e.preventDefault(); rvCur.pick = Math.min(5, Math.max(0, rvCur.pick + k)); rvPaintPick(); }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.s) { e.preventDefault(); rvCur.pick = +e.target.dataset.s; rvPaintPick(); }
+  });
+  rvPaintPick();
 }
 function rvCount(t) {
   rvCur.draft = t.value.replace(/\s*\n+\s*/g, ' ');
@@ -166,8 +202,8 @@ function rvCount(t) {
   if (el) el.textContent = faDigits(t.value.length) + ' / ' + faDigits(RV_MAX);
 }
 function rvSend() {
-  if (!rvCur.pick) { rvRender({ text: 'اول با زدن روی ستاره‌ها امتیاز بدهید.' }); return; }
   const btn = document.getElementById('rv-send'), text = (document.getElementById('rv-text') || {}).value || '';
+  if (!rvCur.pick && !text.trim()) { rvRender({ text: 'یک امتیاز بدهید یا نظری بنویسید.' }); return; }
   const name = ((document.getElementById('rv-name') || {}).value || '').trim();
   try { localStorage.setItem(RV_NAME_KEY, name); } catch (e) {}
   if (btn) { btn.disabled = true; btn.textContent = 'در حال ثبت…'; }

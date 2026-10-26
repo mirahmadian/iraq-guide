@@ -117,7 +117,7 @@ export default {
     try {
       /* میانگین همه هتل‌ها برای نمایش ستاره در فهرست */
       if (p === '/summary' && req.method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT h, ROUND(AVG(stars), 1) AS a, COUNT(*) AS n FROM reviews WHERE hidden IS NULL GROUP BY h').all();
+        const { results } = await env.DB.prepare('SELECT h, ROUND(AVG(stars), 1) AS a, COUNT(*) AS n FROM reviews WHERE hidden IS NULL AND stars > 0 GROUP BY h').all();
         const out = {}; results.forEach(r => { out[r.h] = [r.a, r.n]; });
         return json(out, 200, { 'Cache-Control': 'public, max-age=60' });
       }
@@ -127,7 +127,8 @@ export default {
         if (!H_RE.test(h)) return err('هتل نامعتبر');
         const { results } = await env.DB.prepare('SELECT id, dev, name, stars, text, ts FROM reviews WHERE h = ? AND hidden IS NULL ORDER BY ts DESC LIMIT 200').bind(h).all();
         const dist = [0, 0, 0, 0, 0]; let sum = 0;
-        results.forEach(r => { dist[r.stars - 1]++; sum += r.stars; });
+        let votes = 0;
+        results.forEach(r => { if (r.stars > 0) { dist[r.stars - 1]++; sum += r.stars; votes++; } });
         let mine = null;
         if (dev) {
           const m = await env.DB.prepare('SELECT id, name, stars, text, ts, hidden FROM reviews WHERE h = ? AND dev = ?').bind(h, dev).first();
@@ -135,16 +136,18 @@ export default {
         }
         const reported = dev ? (await env.DB.prepare('SELECT rid FROM reports r JOIN reviews v ON v.id = r.rid WHERE v.h = ? AND r.dev = ?').bind(h, dev).all()).results.map(r => r.rid) : [];
         return json({
-          n: results.length, avg: results.length ? Math.round(sum / results.length * 10) / 10 : 0, dist, mine, reported,
+          n: votes, avg: votes ? Math.round(sum / votes * 10) / 10 : 0, dist, mine, reported,
           items: results.filter(r => r.text && r.dev !== dev).slice(0, 100).map(pub)
         });
       }
 
       if (p === '/post' && req.method === 'POST') {
         if (!dev) return err('شناسه گوشی نامعتبر');
-        const h = String(body.h || ''), stars = Math.round(+body.stars), text = cleanText(body.text), name = cleanText(body.name).slice(0, MAX_NAME);
+        const h = String(body.h || ''), stars = Math.round(+body.stars) || 0, text = cleanText(body.text), name = cleanText(body.name).slice(0, MAX_NAME);
         if (!H_RE.test(h)) return err('هتل نامعتبر');
-        if (!(stars >= 1 && stars <= 5)) return err('امتیاز را با ستاره‌ها انتخاب کنید.');
+        /* امتیاز و متن هر دو اختیاری‌اند، ولی یکی لازم است (stars = 0 یعنی بدون امتیاز) */
+        if (!(stars >= 0 && stars <= 5)) return err('امتیاز نامعتبر');
+        if (!stars && !text) return err('یک امتیاز بدهید یا نظری بنویسید.');
         if (await limited(env, 'post:' + await sha(env.SALT + ip), 15, 3600)) return err('تعداد نظرهای ارسالی از این اینترنت زیاد است. یک ساعت دیگر دوباره امتحان کنید.', 429);
         if (/[\d۰-۹٠-٩@]/.test(name)) return err('در نام، عدد و علامت @ مجاز نیست.', 422);
         const badName = name && badReason(name);
