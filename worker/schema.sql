@@ -14,3 +14,12 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS reviews_h ON reviews (h, hidden, ts);
 CREATE TABLE IF NOT EXISTS reports (rid INTEGER NOT NULL, dev TEXT NOT NULL, PRIMARY KEY (rid, dev));
 CREATE TABLE IF NOT EXISTS hits (k TEXT PRIMARY KEY, n INTEGER NOT NULL, exp INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS devices (
+  dev TEXT PRIMARY KEY,       -- hash of the device id
+  first INTEGER NOT NULL,     -- first time the app was opened
+  last INTEGER NOT NULL,      -- last heartbeat
+  inst INTEGER NOT NULL DEFAULT 0,  -- ever opened as an installed app
+  inst_first INTEGER,
+  plat TEXT, city TEXT
+);
+CREATE INDEX IF NOT EXISTS devices_last ON devices (last);

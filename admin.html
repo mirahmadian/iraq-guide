@@ -393,6 +393,7 @@
   <button class="tab-btn" onclick="switchTab('besat',this)">📜 بعثه</button>
   <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
   <button class="tab-btn" onclick="switchTab('reviews',this)">💬 نظرها</button>
+  <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -838,6 +839,10 @@
   <div id="reviews-admin"></div>
 </div><!-- /tab-reviews -->
 
+<div class="page" id="tab-stats" style="max-width:900px">
+  <div id="stats-admin"></div>
+</div><!-- /tab-stats -->
+
 <!-- CALENDAR MODAL -->
 <div class="cal-overlay" id="calModal">
   <div class="cal-box">
@@ -877,6 +882,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-rate.js"></script>
 <script src="admin-guide.js"></script>
 <script src="admin-reviews.js"></script>
+<script src="admin-stats.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -887,6 +893,7 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'reviews') rvaLoad();
+  if (id === 'stats') statsLoad();
 }
 
 function toggleCard(key) {

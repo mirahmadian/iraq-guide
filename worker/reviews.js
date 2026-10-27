@@ -199,9 +199,33 @@ export default {
         return json({ ok: true });
       }
 
+      /* آمار: هر گوشی وقتی برنامه باز است هر چند دقیقه یک بار خبر می‌دهد (بدون هیچ اطلاعات شخصی) */
+      if (p === '/ping' && req.method === 'POST') {
+        if (!dev) return err('شناسه گوشی نامعتبر');
+        const now = Date.now(), inst = body.inst ? 1 : 0;
+        const plat = ['android', 'ios', 'desktop', 'other'].includes(body.plat) ? body.plat : 'other';
+        const city = /^[\w-]{1,40}$/.test(body.city || '') ? body.city : '';
+        await env.DB.prepare(`INSERT INTO devices (dev, first, last, inst, inst_first, plat, city) VALUES (?1, ?2, ?2, ?3, CASE WHEN ?3 = 1 THEN ?2 END, ?4, ?5)
+          ON CONFLICT(dev) DO UPDATE SET last = ?2, plat = ?4, city = ?5, inst = MAX(inst, ?3), inst_first = COALESCE(inst_first, CASE WHEN ?3 = 1 THEN ?2 END)`)
+          .bind(dev, now, inst, plat, city).run();
+        return json({ ok: true });
+      }
+
       /* ── مدیر ── */
       if (p.startsWith('/admin/')) {
         if (!await isAdmin(env, req)) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
+        if (p === '/admin/stats' && req.method === 'GET') {
+          const now = Date.now(), M = 6e4, D = 864e5;
+          const q = (sql, ...b) => env.DB.prepare(sql).bind(...b);
+          const [tot, byPlat, byCity, days] = await env.DB.batch([
+            q(`SELECT COUNT(*) total, SUM(inst) inst, SUM(last > ?1) online, SUM(last > ?2) today, SUM(last > ?3) week, SUM(last > ?4) month,
+                 SUM(first > ?2) new_today, SUM(inst_first > ?2) inst_today, SUM(inst = 1 AND last > ?4) inst_active FROM devices`, now - 5 * M, now - D, now - 7 * D, now - 30 * D),
+            q('SELECT plat k, COUNT(*) n FROM devices WHERE last > ? GROUP BY plat ORDER BY n DESC', now - 30 * D),
+            q('SELECT city k, COUNT(*) n, SUM(last > ?1) online FROM devices WHERE last > ?2 AND city != \'\' GROUP BY city ORDER BY n DESC', now - 5 * M, now - D),
+            q(`SELECT (first + 3 * 3600000) / 86400000 d, COUNT(*) n, SUM(inst_first IS NOT NULL) i FROM devices WHERE first > ? GROUP BY d ORDER BY d`, now - 14 * D)
+          ]);
+          return json({ ...tot.results[0], plat: byPlat.results, city: byCity.results, days: days.results, since: (await q('SELECT MIN(first) m FROM devices').first()).m });
+        }
         if (p === '/admin/list' && req.method === 'GET') {
           const hiddenOnly = url.searchParams.get('mode') !== 'recent';
           const { results } = await env.DB.prepare(`SELECT id, h, name, stars, text, ts, hidden, why, reports FROM reviews
