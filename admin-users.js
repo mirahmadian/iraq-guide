@@ -10,6 +10,19 @@ let STAFF = null, PERMS = null;
 try { STAFF = JSON.parse(localStorage.getItem(STAFF_KEY) || 'null'); } catch (e) {}
 if (STAFF) STAFF.perms = new Set(STAFF.perms || []);
 
+/* کد ملی: ۱۰ رقم با رقم کنترل (الگوریتم رسمی کد ملی ایران) */
+const nidDigits = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
+function nidValid(c) {
+  if (!/^\d{10}$/.test(c) || /^(\d)\1{9}$/.test(c)) return false;
+  const r = [...c.slice(0, 9)].reduce((a, d, i) => a + +d * (10 - i), 0) % 11;
+  return +c[9] === (r < 2 ? r : 11 - r);
+}
+function nidHint(el) {
+  const c = nidDigits(el.value), h = el.parentElement.querySelector('.nid-hint');
+  if (h) h.innerHTML = !c ? '' : c.length < 10 ? `<span style="color:#888">${c.length.toLocaleString('fa')} از ۱۰ رقم</span>`
+    : nidValid(c) ? '<span style="color:#1a9a4a">✅ کد ملی معتبر است</span>' : '<span style="color:#c0392b">❌ این کد ملی معتبر نیست</span>';
+  return c;
+}
 function adminAuth() { return STAFF ? 'staff ' + STAFF.token : 'token ' + ghToken; }
 async function loadPerms() {
   if (!PERMS) PERMS = await (await fetch('perms.json?t=' + Date.now(), { cache: 'no-store' })).json();
@@ -45,9 +58,10 @@ function staffApi(path, body) {
 /* ── ورود و خروج همکار ── */
 async function staffLogin() {
   const err = document.getElementById('staffErr'), btn = document.getElementById('staffBtn');
-  const user = document.getElementById('staffUser').value.trim().toLowerCase(), pass = document.getElementById('staffPass').value;
+  const user = nidDigits(document.getElementById('staffUser').value), pass = document.getElementById('staffPass').value;
   err.textContent = '';
-  if (!user || !pass) { err.textContent = 'نام کاربری و رمز را بنویسید.'; return; }
+  if (!user || !pass) { err.textContent = 'کد ملی و رمز را بنویسید.'; return; }
+  if (!nidValid(user)) { err.textContent = 'کد ملی را درست و کامل (۱۰ رقم) بنویسید.'; return; }
   btn.disabled = true; btn.textContent = '... در حال ورود';
   try {
     const r = await adminFetch('/staff/login', { user, key: await staffKey(user, pass) });
@@ -196,8 +210,9 @@ function userEditorHTML() {
     <h3 style="margin:4px 0 10px">${e.isNew ? '➕ همکار جدید' : '✏️ ویرایش ' + escH(e.name)}</h3>
     <div class="field"><div class="field-label">نام (برای خودتان، مثلاً: علی رضایی — ستاد کربلا)</div>
       <input type="text" class="input-full" value="${escH(e.name)}" oninput="uEdit.name=this.value"></div>
-    <div class="field"><div class="field-label">نام کاربری (انگلیسی، مثلاً: ali.karbala)</div>
-      <input type="text" class="input-full" dir="ltr" autocapitalize="none" value="${escH(e.user)}" ${e.isNew ? '' : 'disabled'} oninput="uEdit.user=this.value.trim().toLowerCase()"></div>
+    <div class="field"><div class="field-label">کد ملی همکار (نام کاربری او برای ورود)</div>
+      <input type="text" class="input-full" dir="ltr" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="۱۰ رقم" value="${escH(e.user)}" ${e.isNew ? '' : 'disabled'} oninput="uEdit.user=nidHint(this)">
+      <div class="nid-hint" style="font-size:12.5px;margin-top:4px"></div></div>
     <div class="field"><div class="field-label">${e.isNew ? 'رمز (حداقل ۸ حرف)' : 'رمز جدید (فقط اگر می‌خواهید عوض شود؛ با عوض شدن رمز، همکار از همه دستگاه‌ها خارج می‌شود)'}</div>
       <input type="text" class="input-full" dir="ltr" autocomplete="off" value="${escH(e.pass)}" oninput="uEdit.pass=this.value"></div>
     <div class="field"><label class="fchk" style="padding:0"><input type="checkbox" ${e.active ? 'checked' : ''} onchange="uEdit.active=this.checked;renderUsers()">
@@ -223,14 +238,14 @@ function renderUsers() {
   const ago = t => t ? new Date(t).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }) : 'هنوز وارد نشده';
   el.innerHTML = `
   <div class="info-box"><strong>👥 همکاران پنل مدیریت</strong>
-    برای هر همکار نام کاربری و رمز بسازید و بخش‌هایی را که اجازه دارد ویرایش کند تیک بزنید — مثلاً فقط «هتل‌های کربلا» یا فقط «اطلاعیه‌ها».
+    برای هر همکار کد ملی (به‌عنوان نام کاربری) و رمز بگذارید و بخش‌هایی را که اجازه دارد ویرایش کند تیک بزنید — مثلاً فقط «هتل‌های کربلا» یا فقط «اطلاعیه‌ها».
     همکار از همین صفحه (admin.html) با «👥 ورود همکاران» وارد می‌شود. رمز مدیریت شما و کلید GitHub هیچ‌وقت به همکار داده نمی‌شود.</div>
   ${uEdit ? userEditorHTML() : `
   <button class="add-row-btn" onclick="userNew()">➕ همکار جدید</button>
   ${usersErr ? `<div class="empty-msg" style="color:var(--red)">${escH(usersErr)}</div>` : !usersList ? '<div class="empty-msg">در حال دریافت…</div>'
     : !usersList.length ? '<div class="empty-msg">هنوز همکاری نساخته‌اید.</div>'
     : usersList.map(u => `<div class="lay-slide" style="${u.active ? '' : 'opacity:.6'}">
-      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${u.active ? '👤' : '⛔'} ${escH(u.name)}</b><span dir="ltr" style="color:#666">${escH(u.user)}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${u.active ? '👤' : '⛔'} ${escH(u.name)}</b><span dir="ltr" style="color:#666">🪪 ${escH(u.user)}</span></div>
       <div style="font-size:12.5px;color:#555;line-height:1.9">${u.perms.length ? u.perms.map(k => escH(uPermLabel(k))).join(' · ') : '<i>بدون دسترسی</i>'}</div>
       <div style="font-size:12px;color:#888">آخرین ورود: ${ago(u.last_login)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -241,13 +256,13 @@ function renderUsers() {
 async function userSave() {
   const e = uEdit, err = document.getElementById('userErr'), btn = document.getElementById('userSaveBtn');
   err.textContent = '';
-  if (!/^[a-z0-9_.-]{3,30}$/.test(e.user)) { err.textContent = 'نام کاربری باید ۳ تا ۳۰ حرف انگلیسی، عدد، نقطه یا خط تیره باشد.'; return; }
+  if (!nidValid(e.user)) { err.textContent = 'کد ملی معتبر نیست. ۱۰ رقم کد ملی همکار را درست بنویسید.'; return; }
   if ((e.isNew || e.pass) && e.pass.length < 8) { err.textContent = 'رمز حداقل ۸ حرف باشد.'; return; }
   btn.disabled = true; btn.textContent = '... در حال ذخیره';
   try {
     await adminFetch('/admin/users', { isNew: e.isNew, user: e.user, name: e.name.trim(), active: e.active, perms: [...e.perms],
       ...(e.pass ? { key: await staffKey(e.user, e.pass) } : {}) }, adminAuth());
-    showToast(e.pass ? `ذخیره شد ✅ — نام کاربری «${e.user}» و رمز را به همکار بدهید` : 'ذخیره شد ✅');
+    showToast(e.pass ? `ذخیره شد ✅ — همکار با کد ملی «${e.user}» و همین رمز وارد می‌شود` : 'ذخیره شد ✅');
     uEdit = null; usersLoad();
   } catch (x) { err.textContent = x.message; btn.disabled = false; btn.textContent = '💾 ذخیره همکار'; }
 }

@@ -19,6 +19,13 @@ export function permDefs(cities) {
   return out;
 }
 
+/* کد ملی ایران: ۱۰ رقم، رقم آخر رقم کنترل است */
+export function nidValid(c) {
+  if (!/^\d{10}$/.test(c) || /^(\d)\1{9}$/.test(c)) return false;
+  const r = [...c.slice(0, 9)].reduce((a, d, i) => a + +d * (10 - i), 0) % 11;
+  return +c[9] === (r < 2 ? r : 11 - r);
+}
+
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 async function sha(s) { return hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))); }
 function randHex(n) { return hex(crypto.getRandomValues(new Uint8Array(n))); }
@@ -111,9 +118,10 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
 
   if (p === '/staff/login' && req.method === 'POST') {
     const user = String(body.user || '').trim().toLowerCase(), key = String(body.key || '');
+    if (!nidValid(user)) return err('کد ملی یا رمز اشتباه است.', 401);
     if (await limited(env, 'login:' + await sha(env.SALT + ip), 20, 900)) return err('تعداد تلاش‌ها زیاد است. ۱۵ دقیقه دیگر دوباره امتحان کنید.', 429);
     const u = await env.DB.prepare('SELECT * FROM staff WHERE user = ?').bind(user).first();
-    if (!u || !/^[0-9a-f]{64}$/.test(key) || await sha(u.salt + key) !== u.hash) return err('نام کاربری یا رمز اشتباه است.', 401);
+    if (!u || !/^[0-9a-f]{64}$/.test(key) || await sha(u.salt + key) !== u.hash) return err('کد ملی یا رمز اشتباه است.', 401);
     if (!u.active) return err('دسترسی این کاربر غیرفعال شده است.', 403);
     const tok = randHex(32);
     await env.DB.batch([
@@ -183,7 +191,7 @@ export async function handleUsers(p, req, env, body, json, err) {
   }
   if (p === '/admin/users' && req.method === 'POST') {
     const user = String(body.user || '').trim().toLowerCase();
-    if (!/^[a-z0-9_.-]{3,30}$/.test(user)) return err('نام کاربری باید ۳ تا ۳۰ حرف انگلیسی یا عدد باشد.');
+    if (!nidValid(user)) return err('کد ملی معتبر نیست.');
     const name = String(body.name || '').trim().slice(0, 60) || user;
     const perms = (Array.isArray(body.perms) ? body.perms : []).filter(k => valid.has(k));
     const active = body.active === false ? 0 : 1;

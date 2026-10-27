@@ -346,13 +346,13 @@
       <div class="lock-err" id="unlockErr"></div>
       <button class="save-btn" style="width:100%" onclick="doUnlock()">ورود</button>
       <button class="lock-link" onclick="showSetup()">رمز را فراموش کرده‌ام / می‌خواهم دوباره تنظیم کنم</button>
-      <button class="lock-link" style="display:block;margin-top:14px;font-weight:800" onclick="lockShow('lockStaff')">👥 ورود همکاران (با نام کاربری)</button>
+      <button class="lock-link" style="display:block;margin-top:14px;font-weight:800" onclick="lockShow('lockStaff')">👥 ورود همکاران (با کد ملی)</button>
     </div>
 
     <div id="lockStaff" style="display:none">
       <h2>👥 ورود همکاران</h2>
-      <p>نام کاربری و رمزی را که مدیر برایتان ساخته وارد کنید.</p>
-      <div class="field"><input type="text" id="staffUser" dir="ltr" autocomplete="username" autocapitalize="none" placeholder="نام کاربری"></div>
+      <p>کد ملی خود و رمزی را که مدیر برایتان گذاشته وارد کنید.</p>
+      <div class="field"><input type="text" id="staffUser" dir="ltr" inputmode="numeric" maxlength="12" autocomplete="username" placeholder="کد ملی (۱۰ رقم)"></div>
       <div class="field"><input type="password" id="staffPass" autocomplete="current-password" placeholder="رمز" onkeydown="if(event.key==='Enter')staffLogin()"></div>
       <div class="lock-err" id="staffErr"></div>
       <button class="save-btn" style="width:100%" id="staffBtn" onclick="staffLogin()">ورود</button>
