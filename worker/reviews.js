@@ -227,6 +227,7 @@ export default {
         const staff = sm ? await staffSession(env, sm[1]) : null;
         const owner = !sm && await isAdmin(env, req);
         if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
+        if (staff && staff.mustChange) return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
         const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : 'owner';
         if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
         if (p === '/admin/gh-register' && req.method === 'POST') {

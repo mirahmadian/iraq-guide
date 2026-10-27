@@ -70,9 +70,9 @@ async function ghPut(env, path, b64, message, sha) {
 /* ── ورود همکار ── */
 export async function staffSession(env, tok) {
   if (!/^[0-9a-f]{64}$/.test(tok)) return null;
-  const s = await env.DB.prepare('SELECT s.user, s.exp, u.name, u.perms, u.active FROM sessions s JOIN staff u ON u.user = s.user WHERE s.tok = ?').bind(await sha(env.SALT + tok)).first();
+  const s = await env.DB.prepare('SELECT s.user, s.exp, u.name, u.perms, u.active, u.must_change FROM sessions s JOIN staff u ON u.user = s.user WHERE s.tok = ?').bind(await sha(env.SALT + tok)).first();
   if (!s || s.exp < Date.now() || !s.active) return null;
-  return { user: s.user, name: s.name, perms: new Set(JSON.parse(s.perms || '[]')) };
+  return { user: s.user, name: s.name, perms: new Set(JSON.parse(s.perms || '[]')), mustChange: !!s.must_change };
 }
 
 const dataObj = text => JSON.parse(text.slice(text.indexOf('{', text.indexOf('CARAVAN_DATA')), text.lastIndexOf('}') + 1));
@@ -116,6 +116,15 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
   const cities = ['najaf', 'karbala', 'kadhimiya', 'samarra'];
   const defs = permDefs(cities);
 
+  /* فراموشی رمز: درخواست برای مدیر ثبت می‌شود (پیام یکسان، تا معلوم نشود این کد ملی همکار هست یا نه) */
+  if (p === '/staff/forgot' && req.method === 'POST') {
+    const user = String(body.user || '').trim();
+    if (!nidValid(user)) return err('کد ملی را درست و کامل بنویسید.');
+    if (await limited(env, 'forgot:' + await sha(env.SALT + ip), 5, 3600)) return err('تعداد درخواست‌ها زیاد است. بعداً امتحان کنید.', 429);
+    await env.DB.prepare('UPDATE staff SET reset_req = ? WHERE user = ? AND active = 1').bind(Date.now(), user).run();
+    return json({ ok: true });
+  }
+
   if (p === '/staff/login' && req.method === 'POST') {
     const user = String(body.user || '').trim().toLowerCase(), key = String(body.key || '');
     if (!nidValid(user)) return err('کد ملی یا رمز اشتباه است.', 401);
@@ -129,14 +138,27 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
       env.DB.prepare('UPDATE staff SET last_login = ? WHERE user = ?').bind(Date.now(), user),
       env.DB.prepare('DELETE FROM sessions WHERE exp < ?').bind(Date.now())
     ]);
-    return json({ token: tok, name: u.name, user, perms: JSON.parse(u.perms || '[]') });
+    return json({ token: tok, name: u.name, user, perms: JSON.parse(u.perms || '[]'), mustChange: !!u.must_change });
   }
 
   const auth = (req.headers.get('Authorization') || '').match(/^staff\s+(\S+)$/i);
   const s = auth && await staffSession(env, auth[1]);
   if (!s) return err('نشست شما تمام شده است. دوباره وارد شوید.', 401);
 
-  if (p === '/staff/me') return json({ name: s.name, user: s.user, perms: [...s.perms] });
+  if (p === '/staff/me') return json({ name: s.name, user: s.user, perms: [...s.perms], mustChange: s.mustChange });
+  /* تغییر رمز توسط خود همکار (با رمز فعلی) — بقیه دستگاه‌هایش خارج می‌شوند */
+  if (p === '/staff/password' && req.method === 'POST') {
+    const u = await env.DB.prepare('SELECT salt, hash FROM staff WHERE user = ?').bind(s.user).first();
+    if (!u || !/^[0-9a-f]{64}$/.test(body.old || '') || await sha(u.salt + body.old) !== u.hash) return err('رمز فعلی اشتباه است.');
+    if (!/^[0-9a-f]{64}$/.test(body.key || '') || body.key === body.old) return err('رمز جدید باید با رمز فعلی فرق داشته باشد.');
+    const salt = randHex(16), cur = await sha(env.SALT + auth[1]);
+    await env.DB.batch([
+      env.DB.prepare('UPDATE staff SET salt = ?, hash = ?, must_change = 0, reset_req = NULL WHERE user = ?').bind(salt, await sha(salt + body.key), s.user),
+      env.DB.prepare('DELETE FROM sessions WHERE user = ? AND tok != ?').bind(s.user, cur)
+    ]);
+    return json({ ok: true });
+  }
+  if (s.mustChange && p !== '/staff/logout') return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
   if (p === '/staff/logout') {
     await env.DB.prepare('DELETE FROM sessions WHERE tok = ?').bind(await sha(env.SALT + auth[1])).run();
     return json({ ok: true });
@@ -186,7 +208,7 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
 export async function handleUsers(p, req, env, body, json, err) {
   const defs = permDefs(['najaf', 'karbala', 'kadhimiya', 'samarra']), valid = new Set(defs.map(d => d.key));
   if (p === '/admin/users' && req.method === 'GET') {
-    const { results } = await env.DB.prepare('SELECT user, name, perms, active, created, last_login FROM staff ORDER BY created').all();
+    const { results } = await env.DB.prepare('SELECT user, name, perms, active, created, last_login, must_change, reset_req FROM staff ORDER BY reset_req IS NULL, created').all();
     return json({ users: results.map(u => ({ ...u, perms: JSON.parse(u.perms || '[]') })) });
   }
   if (p === '/admin/users' && req.method === 'POST') {
@@ -200,14 +222,16 @@ export async function handleUsers(p, req, env, body, json, err) {
     if (!ex && !body.key) return err('برای کاربر جدید رمز بگذارید.');
     if (ex && body.isNew) return err('این نام کاربری قبلاً ساخته شده است.');
     const salt = body.key ? randHex(16) : null, hash = body.key ? await sha(salt + body.key) : null;
+    /* رمزی که مدیر می‌گذارد موقت است: همکار در اولین ورود باید عوضش کند (مگر مدیر خلافش را بخواهد) */
+    const mc = body.mustChange === false ? 0 : 1;
     if (ex) {
-      await env.DB.prepare('UPDATE staff SET name = ?, perms = ?, active = ?' + (hash ? ', salt = ?, hash = ?' : '') + ' WHERE user = ?')
-        .bind(...[name, JSON.stringify(perms), active, ...(hash ? [salt, hash] : []), user]).run();
+      await env.DB.prepare('UPDATE staff SET name = ?, perms = ?, active = ?' + (hash ? ', salt = ?, hash = ?, must_change = ?, reset_req = NULL' : '') + ' WHERE user = ?')
+        .bind(...[name, JSON.stringify(perms), active, ...(hash ? [salt, hash, mc] : []), user]).run();
       /* با تغییر رمز یا غیرفعال شدن، همه ورودهای قبلی باطل می‌شود */
       if (hash || !active) await env.DB.prepare('DELETE FROM sessions WHERE user = ?').bind(user).run();
     } else {
-      await env.DB.prepare('INSERT INTO staff (user, name, salt, hash, perms, active, created) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(user, name, salt, hash, JSON.stringify(perms), active, Date.now()).run();
+      await env.DB.prepare('INSERT INTO staff (user, name, salt, hash, perms, active, created, must_change) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(user, name, salt, hash, JSON.stringify(perms), active, Date.now(), mc).run();
     }
     return json({ ok: true });
   }

@@ -356,7 +356,29 @@
       <div class="field"><input type="password" id="staffPass" autocomplete="current-password" placeholder="رمز" onkeydown="if(event.key==='Enter')staffLogin()"></div>
       <div class="lock-err" id="staffErr"></div>
       <button class="save-btn" style="width:100%" id="staffBtn" onclick="staffLogin()">ورود</button>
-      <button class="lock-link" onclick="lockShow('lockUnlock')">ورود مدیر اصلی (با رمز مدیریت)</button>
+      <button class="lock-link" onclick="lockShow('lockForgot')">رمز را فراموش کرده‌ام</button>
+      <button class="lock-link" style="display:block" onclick="lockShow('lockUnlock')">ورود مدیر اصلی (با رمز مدیریت)</button>
+    </div>
+
+    <div id="lockForgot" style="display:none">
+      <h2>🔑 فراموشی رمز</h2>
+      <p>کد ملی خود را بنویسید. درخواست شما برای مدیر فرستاده می‌شود و او یک <b>رمز موقت</b> به شما می‌دهد. با رمز موقت وارد شوید؛ برنامه از شما می‌خواهد رمز تازه‌ای بگذارید.</p>
+      <div class="field"><input type="text" id="forgotUser" dir="ltr" inputmode="numeric" maxlength="12" placeholder="کد ملی (۱۰ رقم)" onkeydown="if(event.key==='Enter')staffForgot()"></div>
+      <div class="lock-err" id="forgotErr"></div>
+      <div id="forgotOk" style="display:none;padding:10px 12px;border-radius:10px;background:#e6f4ec;color:#1f6f50;line-height:1.9;margin-bottom:10px"></div>
+      <button class="save-btn" style="width:100%" id="forgotBtn" onclick="staffForgot()">ارسال درخواست به مدیر</button>
+      <button class="lock-link" onclick="lockShow('lockStaff')">بازگشت به ورود</button>
+    </div>
+
+    <div id="lockChange" style="display:none">
+      <h2>🔑 تغییر رمز</h2>
+      <p id="changeWhy">رمز فعلی و رمز تازه را بنویسید.</p>
+      <div class="field"><input type="password" id="chOld" autocomplete="current-password" placeholder="رمز فعلی (یا رمز موقتی که مدیر داده)"></div>
+      <div class="field"><input type="password" id="chNew" autocomplete="new-password" placeholder="رمز تازه (حداقل ۸ حرف)"></div>
+      <div class="field"><input type="password" id="chNew2" autocomplete="new-password" placeholder="تکرار رمز تازه" onkeydown="if(event.key==='Enter')staffChangePass()"></div>
+      <div class="lock-err" id="changeErr"></div>
+      <button class="save-btn" style="width:100%" id="changeBtn" onclick="staffChangePass()">ذخیره رمز تازه</button>
+      <button class="lock-link" id="changeCancel" onclick="lockHide()">انصراف</button>
     </div>
 
     <div id="lockSetup" style="display:none">
@@ -390,6 +412,7 @@
   <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
   <button class="save-btn hide-sm" data-perm="owner" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
   <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
+  <button class="lock-btn" id="staffPassBtn" style="display:none" onclick="staffChangeOpen(false)" title="تغییر رمز">🔑</button>
   <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
 </div>
 
@@ -1746,7 +1769,7 @@ async function syncLatestData() {
 }
 
 function lockShow(which) {
-  ['lockLoading','lockUnlock','lockSetup','lockStaff'].forEach(id => document.getElementById(id).style.display = id === which ? 'block' : 'none');
+  ['lockLoading','lockUnlock','lockSetup','lockStaff','lockForgot','lockChange'].forEach(id => document.getElementById(id).style.display = id === which ? 'block' : 'none');
   document.getElementById('lockOverlay').classList.add('show');
 }
 function showSetup() { lockShow('lockSetup'); }

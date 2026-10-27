@@ -65,7 +65,7 @@ async function staffLogin() {
   btn.disabled = true; btn.textContent = '... در حال ورود';
   try {
     const r = await adminFetch('/staff/login', { user, key: await staffKey(user, pass) });
-    STAFF = { token: r.token, name: r.name, user: r.user, perms: new Set(r.perms) };
+    STAFF = { token: r.token, name: r.name, user: r.user, perms: new Set(r.perms), mustChange: r.mustChange };
     staffSave();
     document.getElementById('staffPass').value = '';
     staffResume();
@@ -81,19 +81,59 @@ function staffLogout() {
   try { localStorage.removeItem(STAFF_KEY); } catch (e) {}
   const st = document.getElementById('staff-perm-css');
   if (st) st.remove();
+  const pb = document.getElementById('staffPassBtn');
+  if (pb) pb.style.display = 'none';
 }
 async function staffResume() {
   lockShow('lockLoading');
   try {
     await loadPerms();
     const me = await staffApi('/staff/me');
-    STAFF.name = me.name; STAFF.perms = new Set(me.perms); staffSave();
+    STAFF.name = me.name; STAFF.perms = new Set(me.perms); STAFF.mustChange = me.mustChange; staffSave();
   } catch (e) {
     if (!STAFF) return;
     showToast('⚠️ ارتباط با سرور برقرار نشد — اینترنت را بررسی کنید');
   }
   applyStaffPerms();
+  if (STAFF.mustChange) { staffChangeOpen(true); return; }
   syncLatestData();
+}
+
+/* ── فراموشی و تغییر رمز همکار ── */
+async function staffForgot() {
+  const err = document.getElementById('forgotErr'), ok = document.getElementById('forgotOk'), btn = document.getElementById('forgotBtn');
+  const user = nidDigits(document.getElementById('forgotUser').value);
+  err.textContent = ''; ok.style.display = 'none';
+  if (!nidValid(user)) { err.textContent = 'کد ملی را درست و کامل (۱۰ رقم) بنویسید.'; return; }
+  btn.disabled = true;
+  try {
+    await adminFetch('/staff/forgot', { user });
+    ok.innerHTML = '✅ درخواست ثبت شد. به مدیر خبر دهید تا در «👥 کاربران» برایتان رمز موقت بسازد و آن را به شما بدهد.';
+    ok.style.display = 'block';
+  } catch (e) { err.textContent = e.message; }
+  finally { btn.disabled = false; }
+}
+function staffChangeOpen(forced) {
+  ['chOld', 'chNew', 'chNew2'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('changeErr').textContent = '';
+  document.getElementById('changeWhy').textContent = forced ? 'رمزی که با آن وارد شدید موقت است. برای ادامه، یک رمز تازه که فقط خودتان می‌دانید بگذارید.' : 'رمز فعلی و رمز تازه را بنویسید.';
+  document.getElementById('changeCancel').style.display = forced ? 'none' : '';
+  lockShow('lockChange');
+}
+async function staffChangePass() {
+  const v = id => document.getElementById(id).value, err = document.getElementById('changeErr'), btn = document.getElementById('changeBtn');
+  err.textContent = '';
+  if (v('chNew').length < 8) { err.textContent = 'رمز تازه حداقل ۸ حرف باشد.'; return; }
+  if (v('chNew') !== v('chNew2')) { err.textContent = 'رمز تازه و تکرارش یکی نیستند.'; return; }
+  btn.disabled = true; btn.textContent = '... در حال ذخیره';
+  try {
+    await staffApi('/staff/password', { old: await staffKey(STAFF.user, v('chOld')), key: await staffKey(STAFF.user, v('chNew')) });
+    const was = STAFF.mustChange;
+    STAFF.mustChange = false; staffSave();
+    showToast('رمز تازه ذخیره شد ✅');
+    if (was) syncLatestData(); else lockHide();
+  } catch (e) { err.textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = 'ذخیره رمز تازه'; }
 }
 
 /* فقط بخش‌های مجاز نمایش داده می‌شود (بقیه را سرور هم قبول نمی‌کند) */
@@ -123,6 +163,7 @@ function applyStaffPerms() {
   if (first && (!act || act.style.display === 'none')) first.click();
   const sub = document.querySelector('.topbar-sub');
   if (sub) sub.textContent = '👤 ' + STAFF.name + ' (همکار)';
+  document.getElementById('staffPassBtn').style.display = '';
   if (!first) showToast('هنوز هیچ دسترسی‌ای به شما داده نشده است. با مدیر تماس بگیرید.');
 }
 
@@ -153,7 +194,22 @@ function ownerRegister() {
 /* ══════════════════════════════════════════
    تب «👥 کاربران» (فقط مدیر اصلی)
 ══════════════════════════════════════════ */
-let usersList = null, usersErr = '', uEdit = null;
+let usersList = null, usersErr = '', uEdit = null, uTemp = null;
+/* رمز موقت خوانا (بدون حروف شبیه هم مثل l/1 و O/0) */
+function tempPass() {
+  const A = 'abcdefghjkmnpqrstuvwxyz23456789', r = crypto.getRandomValues(new Uint8Array(8));
+  return [...r].map(x => A[x % A.length]).join('');
+}
+async function userTempPass(u) {
+  const x = usersList.find(y => y.user === u);
+  if (!confirm(`برای «${x.name}» رمز موقت ساخته شود؟ رمز قبلی‌اش دیگر کار نمی‌کند.`)) return;
+  const pass = tempPass();
+  try {
+    await adminFetch('/admin/users', { user: x.user, name: x.name, active: !!x.active, perms: x.perms, key: await staffKey(x.user, pass), mustChange: true }, adminAuth());
+    uTemp = { user: x.user, name: x.name, pass };
+    usersLoad();
+  } catch (e) { alert(e.message); }
+}
 async function usersLoad() {
   usersErr = ''; usersList = null; renderUsers();
   try {
@@ -176,6 +232,15 @@ function userEdit(u) {
   const x = usersList.find(y => y.user === u);
   uEdit = { isNew: false, user: x.user, name: x.name, pass: '', active: !!x.active, perms: new Set(x.perms) };
   renderUsers();
+}
+/* با نوشتن اولین حرف رمز، گزینه «تغییر رمز در اولین ورود» ظاهر می‌شود */
+function uPassIn(el) {
+  const toggled = !uEdit.pass !== !el.value;
+  uEdit.pass = el.value;
+  if (!toggled) return;
+  renderUsers();
+  const i = document.getElementById('uPass');
+  i.focus(); i.setSelectionRange(i.value.length, i.value.length);
 }
 function uSet(keys, on) { keys.forEach(k => on ? uEdit.perms.add(k) : uEdit.perms.delete(k)); renderUsers(); }
 /* چک‌باکس «همه»: تیک (همه)، خالی (هیچ)، نیمه (بعضی) */
@@ -214,7 +279,9 @@ function userEditorHTML() {
       <input type="text" class="input-full" dir="ltr" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="۱۰ رقم" value="${escH(e.user)}" ${e.isNew ? '' : 'disabled'} oninput="uEdit.user=nidHint(this)">
       <div class="nid-hint" style="font-size:12.5px;margin-top:4px"></div></div>
     <div class="field"><div class="field-label">${e.isNew ? 'رمز (حداقل ۸ حرف)' : 'رمز جدید (فقط اگر می‌خواهید عوض شود؛ با عوض شدن رمز، همکار از همه دستگاه‌ها خارج می‌شود)'}</div>
-      <input type="text" class="input-full" dir="ltr" autocomplete="off" value="${escH(e.pass)}" oninput="uEdit.pass=this.value"></div>
+      <input type="text" class="input-full" dir="ltr" autocomplete="off" value="${escH(e.pass)}" id="uPass" oninput="uPassIn(this)"></div>
+    ${e.pass ? `<div class="field"><label class="fchk" style="padding:0"><input type="checkbox" ${e.mustChange !== false ? 'checked' : ''} onchange="uEdit.mustChange=this.checked">
+      همکار در اولین ورود این رمز را به رمز دلخواه خودش تغییر دهد (پیشنهاد می‌شود)</label></div>` : ''}
     <div class="field"><label class="fchk" style="padding:0"><input type="checkbox" ${e.active ? 'checked' : ''} onchange="uEdit.active=this.checked;renderUsers()">
       <b>${e.active ? '✅ فعال — می‌تواند وارد شود' : '⛔ غیرفعال — نمی‌تواند وارد شود'}</b></label></div>
     <div class="field-label" style="padding:0 16px">دسترسی‌ها — ${e.perms.size.toLocaleString('fa')} از ${all.length.toLocaleString('fa')} مورد</div>
@@ -241,15 +308,25 @@ function renderUsers() {
     برای هر همکار کد ملی (به‌عنوان نام کاربری) و رمز بگذارید و بخش‌هایی را که اجازه دارد ویرایش کند تیک بزنید — مثلاً فقط «هتل‌های کربلا» یا فقط «اطلاعیه‌ها».
     همکار از همین صفحه (admin.html) با «👥 ورود همکاران» وارد می‌شود. رمز مدیریت شما و کلید GitHub هیچ‌وقت به همکار داده نمی‌شود.</div>
   ${uEdit ? userEditorHTML() : `
+  ${uTemp ? `<div class="lay-slide" style="border:2px solid #2e8b63;background:#eef8f2">
+    <b>🔑 رمز موقت «${escH(uTemp.name)}»</b>
+    <div style="font-size:26px;font-weight:900;letter-spacing:3px;direction:ltr;text-align:center;padding:8px;background:#fff;border-radius:10px;user-select:all">${escH(uTemp.pass)}</div>
+    <div style="font-size:13px;line-height:1.9">این رمز را به همکار بدهید. او با کد ملی <b dir="ltr">${escH(uTemp.user)}</b> و این رمز وارد می‌شود و برنامه از او می‌خواهد رمز تازه‌ای بگذارد. این رمز فقط همین‌جا نمایش داده می‌شود.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="add-row-btn" style="margin:0;flex:1" onclick="navigator.clipboard.writeText('${escH(uTemp.pass)}').then(()=>showToast('کپی شد 📋'))">📋 کپی رمز</button>
+      <button class="add-row-btn" style="margin:0;flex:1" onclick="uTemp=null;renderUsers()">بستن</button>
+    </div></div>` : ''}
   <button class="add-row-btn" onclick="userNew()">➕ همکار جدید</button>
   ${usersErr ? `<div class="empty-msg" style="color:var(--red)">${escH(usersErr)}</div>` : !usersList ? '<div class="empty-msg">در حال دریافت…</div>'
     : !usersList.length ? '<div class="empty-msg">هنوز همکاری نساخته‌اید.</div>'
     : usersList.map(u => `<div class="lay-slide" style="${u.active ? '' : 'opacity:.6'}">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${u.active ? '👤' : '⛔'} ${escH(u.name)}</b><span dir="ltr" style="color:#666">🪪 ${escH(u.user)}</span></div>
       <div style="font-size:12.5px;color:#555;line-height:1.9">${u.perms.length ? u.perms.map(k => escH(uPermLabel(k))).join(' · ') : '<i>بدون دسترسی</i>'}</div>
-      <div style="font-size:12px;color:#888">آخرین ورود: ${ago(u.last_login)}</div>
+      <div style="font-size:12px;color:#888">آخرین ورود: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
+      ${u.reset_req ? `<div style="padding:8px 10px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:13px;font-weight:800">🔑 درخواست فراموشی رمز — ${ago(u.reset_req)}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="userEdit('${escH(u.user)}')">✏️ ویرایش دسترسی‌ها / رمز</button>
+        <button class="add-row-btn" style="margin:0;width:auto;${u.reset_req ? 'background:#2e8b63;color:#fff' : ''}" onclick="userTempPass('${escH(u.user)}')">🔑 ساخت رمز موقت</button>
         <button class="del-btn" style="width:auto;height:auto;min-height:40px;padding:0 12px" onclick="userDelete('${escH(u.user)}')">🗑 حذف</button>
       </div></div>`).join('')}`}`;
 }
@@ -261,7 +338,7 @@ async function userSave() {
   btn.disabled = true; btn.textContent = '... در حال ذخیره';
   try {
     await adminFetch('/admin/users', { isNew: e.isNew, user: e.user, name: e.name.trim(), active: e.active, perms: [...e.perms],
-      ...(e.pass ? { key: await staffKey(e.user, e.pass) } : {}) }, adminAuth());
+      ...(e.pass ? { key: await staffKey(e.user, e.pass), mustChange: e.mustChange !== false } : {}) }, adminAuth());
     showToast(e.pass ? `ذخیره شد ✅ — همکار با کد ملی «${e.user}» و همین رمز وارد می‌شود` : 'ذخیره شد ✅');
     uEdit = null; usersLoad();
   } catch (x) { err.textContent = x.message; btn.disabled = false; btn.textContent = '💾 ذخیره همکار'; }

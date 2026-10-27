@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS devices (
 CREATE INDEX IF NOT EXISTS devices_last ON devices (last);
 CREATE TABLE IF NOT EXISTS staff (
   user TEXT PRIMARY KEY, name TEXT NOT NULL, salt TEXT NOT NULL, hash TEXT NOT NULL,
-  perms TEXT NOT NULL DEFAULT '[]', active INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, last_login INTEGER
+  perms TEXT NOT NULL DEFAULT '[]', active INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, last_login INTEGER,
+  must_change INTEGER NOT NULL DEFAULT 0,  -- temporary password set by the owner
+  reset_req INTEGER                       -- «forgot password» request time
 );
 CREATE TABLE IF NOT EXISTS sessions (tok TEXT PRIMARY KEY, user TEXT NOT NULL, exp INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS config (k TEXT PRIMARY KEY, v TEXT NOT NULL);
