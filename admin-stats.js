@@ -7,7 +7,7 @@ const ST_PLAT = { android: '🤖 اندروید', ios: '🍎 آیفون', deskto
 
 function statsLoad() {
   clearInterval(stTimer);
-  if (!ghToken) { stErr = 'اول وارد پنل شوید.'; renderStats(); return; }
+  if (!ghToken && !STAFF) { stErr = 'اول وارد پنل شوید.'; renderStats(); return; }
   const go = () => {
     if (!document.getElementById('tab-stats').classList.contains('active')) { clearInterval(stTimer); return; }
     rvaApi('/admin/stats').then(d => { stData = d; stErr = ''; renderStats(); }).catch(e => { stErr = e.message; renderStats(); });

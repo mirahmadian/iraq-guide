@@ -1,0 +1,40 @@
+{
+  "note": "فهرست دسترسی‌های همکاران پنل مدیریت. هم پنل (admin-users.js) و هم سرور (worker/staff.js) از همین فایل استفاده می‌کنند. p = بخش‌هایی از data.js که با این دسترسی تغییر می‌کند؛ files = پوشه‌هایی که می‌تواند در آن‌ها عکس بگذارد.",
+  "groups": [
+    { "id": "news", "label": "📢 اطلاع‌رسانی", "items": [
+      { "k": "notices", "label": "اطلاعیه‌های عمومی", "p": ["site.notices"] },
+      { "k": "rate", "label": "نرخ دستی دینار", "p": ["site.rate"] },
+      { "k": "date", "label": "تاریخ بروزرسانی", "p": ["lastUpdate"] }
+    ]},
+    { "id": "home", "label": "🧩 صفحه اول", "items": [
+      { "k": "layout", "label": "چیدمان آیکون‌ها، نوار پایین و اسلایدر", "p": ["site.layout"], "files": ["slides/"] }
+    ]},
+    { "id": "look", "label": "🎨 نام و ظاهر", "items": [
+      { "k": "title", "label": "عنوان و نام برنامه", "p": ["site.appTitle", "site.appSubtitle", "site.iconName"] },
+      { "k": "icon", "label": "آیکون برنامه", "p": ["site.icon"], "files": ["icons/"] },
+      { "k": "banner", "label": "بنر اصلی برنامه", "p": ["site.banner"], "files": ["banners/site-"] },
+      { "k": "footer", "label": "متن «درباره برنامه»", "p": ["site.footer"] }
+    ]},
+    { "id": "contacts", "label": "📞 شماره‌های عمومی", "items": [
+      { "k": "insurance", "label": "بیمه معلم", "p": ["insurance"], "files": ["people/"] },
+      { "k": "transport", "label": "ناظر نقل", "p": ["transport"], "files": ["people/"] }
+    ]},
+    { "id": "city", "label": "🕌 شهر", "perCity": true, "items": [
+      { "k": "info", "label": "نام شهر، نمایش/پنهان و عکس عنوان", "p": ["name", "arabic", "icon", "hidden", "heroImage", "heroFocus"], "files": ["cities/"] },
+      { "k": "map", "label": "نقشه شهر", "p": ["map"], "files": ["maps/"] },
+      { "k": "hqBanner", "label": "بنر ستاد", "p": ["hqBanner"], "files": ["banners/hq-"] },
+      { "k": "hq", "label": "ستاد", "p": ["hq"], "files": ["people/"], "noSamarra": true },
+      { "k": "clinic", "label": "درمانگاه", "p": ["clinic"], "files": ["people/"], "noSamarra": true },
+      { "k": "consulate", "label": "کنسولگری", "p": ["consulate"], "files": ["people/"], "noSamarra": true },
+      { "k": "places", "label": "مکان‌ها (رستوران، پارکینگ و ...)", "p": ["places"] },
+      { "k": "hotels", "label": "هتل‌ها", "p": ["hotels"], "files": ["hotels/", "people/"], "noSamarra": true }
+    ]},
+    { "id": "other", "label": "📚 سایر بخش‌ها", "items": [
+      { "k": "food", "label": "برنامه غذایی", "p": ["food"] },
+      { "k": "besat", "label": "بعثه", "p": ["besat"], "files": ["besat/"] },
+      { "k": "guide", "label": "راهنمای زائر", "p": ["guide"] },
+      { "k": "reviews", "label": "بررسی نظرهای هتل‌ها (نمایش/پنهان/حذف)", "p": [] },
+      { "k": "stats", "label": "دیدن آمار کاربران", "p": [] }
+    ]}
+  ]
+}

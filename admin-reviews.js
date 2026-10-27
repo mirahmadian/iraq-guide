@@ -6,7 +6,7 @@ const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
 let rvaMode = 'hidden', rvaItems = null, rvaErr = '';
 
 function rvaApi(path, body) {
-  return fetch(RV_API + path, { method: body ? 'POST' : 'GET', headers: { Authorization: 'token ' + ghToken, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
+  return fetch(RV_API + path, { method: body ? 'POST' : 'GET', headers: { Authorization: adminAuth(), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' })
     .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok) throw new Error(j.error || 'خطا در ارتباط با سرور نظرها'); return j; }));
 }
 function rvaHotel(h) {
@@ -17,7 +17,7 @@ function rvaHotel(h) {
 function rvaLoad(mode) {
   if (mode) rvaMode = mode;
   rvaItems = null; rvaErr = ''; renderReviewsAdmin();
-  if (!ghToken) { rvaErr = 'اول وارد پنل شوید.'; renderReviewsAdmin(); return; }
+  if (!ghToken && !STAFF) { rvaErr = 'اول وارد پنل شوید.'; renderReviewsAdmin(); return; }
   rvaApi('/admin/list?mode=' + rvaMode).then(d => { rvaItems = d.items || []; renderReviewsAdmin(); })
     .catch(e => { rvaErr = e.message; renderReviewsAdmin(); });
 }

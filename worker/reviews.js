@@ -7,6 +7,8 @@
    مدیر با همان کلید GitHub پنل مدیریت شناسایی می‌شود (دسترسی push به مخزن).
    استقرار: cd worker && npx wrangler deploy
 ══════════════════════════════════════════ */
+import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
+
 const REPO = 'mirahmadian/iraq-guide';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const MAX_LEN = 300, MAX_NAME = 30, REPORTS_TO_HIDE = 3;
@@ -100,6 +102,11 @@ async function isAdmin(env, req) {
   if (!(d.permissions && (d.permissions.push || d.permissions.admin))) return false;
   await env.DB.prepare('INSERT OR REPLACE INTO hits (k, n, exp) VALUES (?, 1, ?)').bind(k, now + 600).run();
   return true;
+}
+
+async function sha256Full(s) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, ts: r.ts });
@@ -211,9 +218,25 @@ export default {
         return json({ ok: true });
       }
 
-      /* ── مدیر ── */
+      /* ── همکاران پنل (ورود با نام کاربری) ── */
+      if (p.startsWith('/staff/')) return await handleStaff(p, req, env, body, json, err, limited, ip);
+
+      /* ── مدیر: مدیر اصلی (کلید GitHub) یا همکار با دسترسی همان بخش ── */
       if (p.startsWith('/admin/')) {
-        if (!await isAdmin(env, req)) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
+        const sm = (req.headers.get('Authorization') || '').match(/^staff\s+(\S+)$/i);
+        const staff = sm ? await staffSession(env, sm[1]) : null;
+        const owner = !sm && await isAdmin(env, req);
+        if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
+        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : 'owner';
+        if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
+        if (p === '/admin/gh-register' && req.method === 'POST') {
+          /* کلید GitHub مدیر اصلی برای انتشارهای همکاران (رمزگذاری‌شده) */
+          const tok = (req.headers.get('Authorization') || '').replace(/^(token|Bearer)\s+/i, '').trim();
+          if (await ghTokenHash(env) !== await sha256Full(env.SALT + tok)) await saveGhToken(env, tok);
+          return json({ ok: true });
+        }
+        const u = await handleUsers(p, req, env, body, json, err);
+        if (u) return u;
         if (p === '/admin/stats' && req.method === 'GET') {
           const now = Date.now(), M = 6e4, D = 864e5;
           const q = (sql, ...b) => env.DB.prepare(sql).bind(...b);

@@ -346,6 +346,17 @@
       <div class="lock-err" id="unlockErr"></div>
       <button class="save-btn" style="width:100%" onclick="doUnlock()">ورود</button>
       <button class="lock-link" onclick="showSetup()">رمز را فراموش کرده‌ام / می‌خواهم دوباره تنظیم کنم</button>
+      <button class="lock-link" style="display:block;margin-top:14px;font-weight:800" onclick="lockShow('lockStaff')">👥 ورود همکاران (با نام کاربری)</button>
+    </div>
+
+    <div id="lockStaff" style="display:none">
+      <h2>👥 ورود همکاران</h2>
+      <p>نام کاربری و رمزی را که مدیر برایتان ساخته وارد کنید.</p>
+      <div class="field"><input type="text" id="staffUser" dir="ltr" autocomplete="username" autocapitalize="none" placeholder="نام کاربری"></div>
+      <div class="field"><input type="password" id="staffPass" autocomplete="current-password" placeholder="رمز" onkeydown="if(event.key==='Enter')staffLogin()"></div>
+      <div class="lock-err" id="staffErr"></div>
+      <button class="save-btn" style="width:100%" id="staffBtn" onclick="staffLogin()">ورود</button>
+      <button class="lock-link" onclick="lockShow('lockUnlock')">ورود مدیر اصلی (با رمز مدیریت)</button>
     </div>
 
     <div id="lockSetup" style="display:none">
@@ -377,7 +388,7 @@
     </div>
   </div>
   <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
-  <button class="save-btn hide-sm" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
+  <button class="save-btn hide-sm" data-perm="owner" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
   <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
   <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
 </div>
@@ -394,6 +405,7 @@
   <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
   <button class="tab-btn" onclick="switchTab('reviews',this)">💬 نظرها</button>
   <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
+  <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)">👥 کاربران</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -414,7 +426,7 @@
   </div>
 
   <!-- DATE -->
-  <div class="sec-card open" data-grp="news">
+  <div class="sec-card open" data-perm="date" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📅</div>
       <div class="sec-head-info">
@@ -434,7 +446,7 @@
   </div>
 
   <!-- APP TEXTS -->
-  <div class="sec-card open" data-grp="look">
+  <div class="sec-card open" data-perm="title" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🏷️</div>
       <div class="sec-head-info">
@@ -446,7 +458,7 @@
   </div>
 
   <!-- NOTICES -->
-  <div class="sec-card open" data-grp="news">
+  <div class="sec-card open" data-perm="notices" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📢</div>
       <div class="sec-head-info">
@@ -458,7 +470,7 @@
   </div>
 
   <!-- RATE -->
-  <div class="sec-card open" data-grp="news">
+  <div class="sec-card open" data-perm="rate" data-grp="news">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">💱</div>
       <div class="sec-head-info">
@@ -467,11 +479,11 @@
       </div>
     </div>
     <div class="sec-body" style="display:block" id="rate-editor"></div>
-    <div class="sec-body" style="display:block;border-top:1px dashed var(--border-s)" id="rate-reporter"></div>
+    <div class="sec-body" style="display:block;border-top:1px dashed var(--border-s)" id="rate-reporter" data-perm="owner"></div>
   </div>
 
   <!-- HOME LAYOUT -->
-  <div class="sec-card open" data-grp="home">
+  <div class="sec-card open" data-perm="layout" data-grp="home">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🧩</div>
       <div class="sec-head-info">
@@ -483,7 +495,7 @@
   </div>
 
   <!-- APP ICON -->
-  <div class="sec-card open" data-grp="look">
+  <div class="sec-card open" data-perm="icon" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📱</div>
       <div class="sec-head-info">
@@ -495,7 +507,7 @@
   </div>
 
   <!-- BANNER -->
-  <div class="sec-card open" data-grp="look">
+  <div class="sec-card open" data-perm="banner" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🖼️</div>
       <div class="sec-head-info">
@@ -507,7 +519,7 @@
   </div>
 
   <!-- FOOTER -->
-  <div class="sec-card open" data-grp="look">
+  <div class="sec-card open" data-perm="footer" data-grp="look">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">📝</div>
       <div class="sec-head-info">
@@ -526,7 +538,7 @@
   </div>
 
   <!-- INSURANCE -->
-  <div class="sec-card open" data-grp="contacts" id="card-insurance">
+  <div class="sec-card open" data-perm="insurance" data-grp="contacts" id="card-insurance">
     <div class="sec-card-head" onclick="toggleCard('insurance')">
       <div class="sec-head-icon ico-ins">📋</div>
       <div class="sec-head-info">
@@ -543,7 +555,7 @@
   </div>
 
   <!-- TRANSPORT -->
-  <div class="sec-card open" data-grp="contacts" id="card-transport">
+  <div class="sec-card open" data-perm="transport" data-grp="contacts" id="card-transport">
     <div class="sec-card-head" onclick="toggleCard('transport')">
       <div class="sec-head-icon ico-ins">🚌</div>
       <div class="sec-head-info">
@@ -560,7 +572,7 @@
   </div>
 
   <!-- OUTPUT -->
-  <div class="output-card" id="outputWrap" style="display:none">
+  <div class="output-card" data-perm="owner" id="outputWrap" style="display:none">
     <button class="copy-btn" onclick="copyOutput()">📋 کپی همه</button>
     <h3>متن data.js (فقط برای کپی دستی؛ معمولاً لازم نیست):</h3>
     <textarea id="outputArea" readonly spellcheck="false"></textarea>
@@ -572,7 +584,7 @@
 <div class="page" id="tab-najaf">
   <div id="citymeta-najaf"></div>
   <!-- HQ -->
-  <div class="sec-card open" id="card-najaf-hq">
+  <div class="sec-card open" id="card-najaf-hq" data-perm="city.najaf.hq">
     <div class="sec-card-head" onclick="toggleCard('najaf-hq')">
       <div class="sec-head-icon ico-hq">🏢</div>
       <div class="sec-head-info">
@@ -588,7 +600,7 @@
     </div>
   </div>
   <!-- CLINIC -->
-  <div class="sec-card" id="card-najaf-clinic">
+  <div class="sec-card" id="card-najaf-clinic" data-perm="city.najaf.clinic">
     <div class="sec-card-head" onclick="toggleCard('najaf-clinic')">
       <div class="sec-head-icon ico-clinic">🏥</div>
       <div class="sec-head-info">
@@ -604,7 +616,7 @@
     </div>
   </div>
   <!-- CONSULATE -->
-  <div class="sec-card" id="card-najaf-consulate">
+  <div class="sec-card" id="card-najaf-consulate" data-perm="city.najaf.consulate">
     <div class="sec-card-head" onclick="toggleCard('najaf-consulate')">
       <div class="sec-head-icon ico-consulate">🏛️</div>
       <div class="sec-head-info">
@@ -620,7 +632,7 @@
     </div>
   </div>
   <!-- PLACES -->
-  <div class="sec-card" id="card-places-najaf">
+  <div class="sec-card" id="card-places-najaf" data-perm="city.najaf.places">
     <div class="sec-card-head" onclick="toggleCard('places-najaf')">
       <div class="sec-head-icon ico-gen">📍</div>
       <div class="sec-head-info">
@@ -632,7 +644,7 @@
     <div class="sec-body"><div id="places-najaf"></div></div>
   </div>
   <!-- HOTELS -->
-  <div class="sec-card" id="card-hotel-najaf">
+  <div class="sec-card" id="card-hotel-najaf" data-perm="city.najaf.hotels">
     <div class="sec-card-head" onclick="toggleCard('hotel-najaf')">
       <div class="sec-head-icon ico-hotel">🏨</div>
       <div class="sec-head-info">
@@ -651,7 +663,7 @@
 <div class="page" id="tab-karbala">
   <div id="citymeta-karbala"></div>
   <!-- HQ -->
-  <div class="sec-card open" id="card-karbala-hq">
+  <div class="sec-card open" id="card-karbala-hq" data-perm="city.karbala.hq">
     <div class="sec-card-head" onclick="toggleCard('karbala-hq')">
       <div class="sec-head-icon ico-hq">🏢</div>
       <div class="sec-head-info">
@@ -667,7 +679,7 @@
     </div>
   </div>
   <!-- CLINIC -->
-  <div class="sec-card" id="card-karbala-clinic">
+  <div class="sec-card" id="card-karbala-clinic" data-perm="city.karbala.clinic">
     <div class="sec-card-head" onclick="toggleCard('karbala-clinic')">
       <div class="sec-head-icon ico-clinic">🏥</div>
       <div class="sec-head-info">
@@ -683,7 +695,7 @@
     </div>
   </div>
   <!-- CONSULATE -->
-  <div class="sec-card" id="card-karbala-consulate">
+  <div class="sec-card" id="card-karbala-consulate" data-perm="city.karbala.consulate">
     <div class="sec-card-head" onclick="toggleCard('karbala-consulate')">
       <div class="sec-head-icon ico-consulate">🏛️</div>
       <div class="sec-head-info">
@@ -699,7 +711,7 @@
     </div>
   </div>
   <!-- PLACES -->
-  <div class="sec-card" id="card-places-karbala">
+  <div class="sec-card" id="card-places-karbala" data-perm="city.karbala.places">
     <div class="sec-card-head" onclick="toggleCard('places-karbala')">
       <div class="sec-head-icon ico-gen">📍</div>
       <div class="sec-head-info">
@@ -711,7 +723,7 @@
     <div class="sec-body"><div id="places-karbala"></div></div>
   </div>
   <!-- HOTELS -->
-  <div class="sec-card open" id="card-hotel-karbala">
+  <div class="sec-card open" id="card-hotel-karbala" data-perm="city.karbala.hotels">
     <div class="sec-card-head" onclick="toggleCard('hotel-karbala')">
       <div class="sec-head-icon ico-hotel">🏨</div>
       <div class="sec-head-info">
@@ -730,7 +742,7 @@
 <div class="page" id="tab-kadhimiya">
   <div id="citymeta-kadhimiya"></div>
   <!-- HQ -->
-  <div class="sec-card open" id="card-kadhimiya-hq">
+  <div class="sec-card open" id="card-kadhimiya-hq" data-perm="city.kadhimiya.hq">
     <div class="sec-card-head" onclick="toggleCard('kadhimiya-hq')">
       <div class="sec-head-icon ico-hq">🏢</div>
       <div class="sec-head-info">
@@ -746,7 +758,7 @@
     </div>
   </div>
   <!-- CLINIC -->
-  <div class="sec-card" id="card-kadhimiya-clinic">
+  <div class="sec-card" id="card-kadhimiya-clinic" data-perm="city.kadhimiya.clinic">
     <div class="sec-card-head" onclick="toggleCard('kadhimiya-clinic')">
       <div class="sec-head-icon ico-clinic">🏥</div>
       <div class="sec-head-info">
@@ -762,7 +774,7 @@
     </div>
   </div>
   <!-- CONSULATE -->
-  <div class="sec-card" id="card-kadhimiya-consulate">
+  <div class="sec-card" id="card-kadhimiya-consulate" data-perm="city.kadhimiya.consulate">
     <div class="sec-card-head" onclick="toggleCard('kadhimiya-consulate')">
       <div class="sec-head-icon ico-consulate">🏛️</div>
       <div class="sec-head-info">
@@ -778,7 +790,7 @@
     </div>
   </div>
   <!-- PLACES -->
-  <div class="sec-card" id="card-places-kadhimiya">
+  <div class="sec-card" id="card-places-kadhimiya" data-perm="city.kadhimiya.places">
     <div class="sec-card-head" onclick="toggleCard('places-kadhimiya')">
       <div class="sec-head-icon ico-gen">📍</div>
       <div class="sec-head-info">
@@ -790,7 +802,7 @@
     <div class="sec-body"><div id="places-kadhimiya"></div></div>
   </div>
   <!-- HOTELS -->
-  <div class="sec-card" id="card-hotel-kadhimiya">
+  <div class="sec-card" id="card-hotel-kadhimiya" data-perm="city.kadhimiya.hotels">
     <div class="sec-card-head" onclick="toggleCard('hotel-kadhimiya')">
       <div class="sec-head-icon ico-hotel">🏨</div>
       <div class="sec-head-info">
@@ -809,7 +821,7 @@
 <div class="page" id="tab-samarra">
   <div id="citymeta-samarra"></div>
   <!-- PLACES -->
-  <div class="sec-card open" id="card-places-samarra">
+  <div class="sec-card open" id="card-places-samarra" data-perm="city.samarra.places">
     <div class="sec-card-head" onclick="toggleCard('places-samarra')">
       <div class="sec-head-icon ico-gen">📍</div>
       <div class="sec-head-info">
@@ -842,6 +854,10 @@
 <div class="page" id="tab-stats" style="max-width:900px">
   <div id="stats-admin"></div>
 </div><!-- /tab-stats -->
+
+<div class="page" id="tab-users" style="max-width:1000px">
+  <div id="users-admin"></div>
+</div><!-- /tab-users -->
 
 <!-- CALENDAR MODAL -->
 <div class="cal-overlay" id="calModal">
@@ -883,6 +899,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-guide.js"></script>
 <script src="admin-reviews.js"></script>
 <script src="admin-stats.js"></script>
+<script src="admin-users.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -894,6 +911,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
   if (id === 'reviews') rvaLoad();
   if (id === 'stats') statsLoad();
+  if (id === 'users') usersLoad();
 }
 
 function toggleCard(key) {
@@ -1531,25 +1549,25 @@ function renderCityMeta(id){
       <div class="sec-head-info"><div class="sec-head-title">نام شهر</div><div class="sec-head-sub">عنوان بالای صفحه شهر</div></div>
     </div>
     <div class="sec-body" style="display:block">
-      <div class="field">
+      <div class="field" data-perm="city.${id}.info">
         <label class="fchk" style="padding:0">
           <input type="checkbox" ${cityMeta[id].hidden?'':'checked'} onchange="cityMeta['${id}'].hidden=!this.checked;renderCityMeta('${id}')">
           <b>${cityMeta[id].hidden?'⛔ این شهر فعلاً برای کاربران پنهان است (فقط شما در پیش‌نمایش می‌بینید)':'✅ این شهر برای کاربران نمایش داده می‌شود'}</b>
         </label>
       </div>
-      <div class="field"><div class="field-label">نام فارسی</div>
+      <div class="field" data-perm="city.${id}.info"><div class="field-label">نام فارسی</div>
         <input type="text" class="input-full" value="${escH(cityMeta[id].name)}" oninput="cityMeta['${id}'].name=this.value"></div>
-      <div class="field"><div class="field-label">نام عربی · نام حرم (با نقطه وسط «·» جدا کنید)</div>
+      <div class="field" data-perm="city.${id}.info"><div class="field-label">نام عربی · نام حرم (با نقطه وسط «·» جدا کنید)</div>
         <input type="text" class="input-full" value="${escH(cityMeta[id].arabic)}" oninput="cityMeta['${id}'].arabic=this.value"></div>
-      <div class="field">
+      <div class="field" data-perm="city.${id}.info">
         <div class="field-label">🖼️ عکس پس‌زمینه عنوان شهر (مثلاً عکس حرم) — برنامه خودش متناسب با هر صفحه برش می‌دهد</div>
         ${heroPickerHTML(id)}
       </div>
-      <div class="field">
+      <div class="field" data-perm="city.${id}.map">
         <div class="field-label">🗺️ نقشه شهر (فایل PDF نقشه رسمی یا عکس) — کاربر آن را با دو انگشت بزرگ‌نمایی می‌کند</div>
         ${mapPickerHTML(id)}
       </div>
-      <div class="field">
+      <div class="field" data-perm="city.${id}.hqBanner">
         <div class="field-label">🏢 بنر ستاد این شهر (مثلاً بنر «ستاد کربلای معلی») — بالای کارت ستاد نمایش داده می‌شود</div>
         ${hqBannerPickerHTML(id)}
       </div>
@@ -1676,6 +1694,10 @@ async function verifyToken(token) {
   if (!j.permissions || !j.permissions.push) throw new Error('توکن اجازه نوشتن ندارد. Contents را روی Read and write بگذارید.');
 }
 async function putFile(path, text, message, token, rawB64) {
+  if (STAFF) {
+    if (!rawB64) throw new Error('این کار فقط برای مدیر اصلی است.');
+    return staffApi('/staff/file', { path, b64: rawB64 });
+  }
   let sha;
   const cur = await gh('/contents/' + path + '?t=' + Date.now(), token, {cache:'no-store'});
   if (cur.ok) sha = (await cur.json()).sha;
@@ -1693,6 +1715,10 @@ async function putFile(path, text, message, token, rawB64) {
 ══════════════════════════════════════════ */
 let dataSha = null;
 async function fetchLatestData(token) {
+  if (STAFF) {
+    const j = await staffApi('/staff/data');
+    return { sha: j.sha, data: new Function(j.text + '\n;return CARAVAN_DATA;')() };
+  }
   const r = await gh('/contents/data.js?ref=main&t=' + Date.now(), token, {cache:'no-store'});
   if (!r.ok) throw new Error('(' + r.status + ')');
   const j = await r.json();
@@ -1704,6 +1730,7 @@ async function syncLatestData() {
   document.querySelector('#lockLoading p').textContent = 'در حال دریافت آخرین نسخه اطلاعات...';
   try {
     const { sha, data } = await fetchLatestData(ghToken);
+    if (!STAFF) ownerRegister();
     dataSha = sha;
     if (JSON.stringify(data) !== LOADED_DATA_JSON && !sessionStorage.getItem('admin-fresh-reloaded')) {
       sessionStorage.setItem('admin-fresh-data', JSON.stringify(data));
@@ -1719,14 +1746,15 @@ async function syncLatestData() {
 }
 
 function lockShow(which) {
-  ['lockLoading','lockUnlock','lockSetup'].forEach(id => document.getElementById(id).style.display = id === which ? 'block' : 'none');
+  ['lockLoading','lockUnlock','lockSetup','lockStaff'].forEach(id => document.getElementById(id).style.display = id === which ? 'block' : 'none');
   document.getElementById('lockOverlay').classList.add('show');
 }
 function showSetup() { lockShow('lockSetup'); }
 function lockHide() { document.getElementById('lockOverlay').classList.remove('show'); }
 
 async function authInit() {
-  if (ghToken) { syncLatestData(); return; }
+  if (ghToken) { if (STAFF) staffLogout(); syncLatestData(); return; }
+  if (STAFF) { staffResume(); return; }
   lockShow('lockLoading');
   try {
     const r = await fetch(KEY_FILE + '?t=' + Date.now(), {cache:'no-store'});
@@ -1772,6 +1800,7 @@ function forgetDevice() {
   if (!confirm('از این دستگاه خارج می‌شوید؟ دفعه بعد باید رمز را وارد کنید.')) return;
   try { localStorage.removeItem(TOKEN_KEY); } catch(e) {}
   ghToken = null;
+  staffLogout();
   document.getElementById('unlockPass').value = '';
   authInit();
 }
@@ -1790,6 +1819,7 @@ async function updateManifest(token) {
 }
 
 async function publishData() {
+  if (STAFF) { staffPublish(); return; }
   if (!ghToken) { authInit(); return; }
   const btn = document.getElementById('pubBtn');
   btn.disabled = true; btn.textContent = '... در حال انتشار';
