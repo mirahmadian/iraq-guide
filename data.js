@@ -1983,7 +1983,6 @@ const CARAVAN_DATA = {
         "id": "security",
         "icon": "🛡️",
         "title": "توصیه‌های امنیتی",
-        "hidden": true,
         "items": [
           {
             "t": "گذرنامه و مدارک",
@@ -2023,7 +2022,6 @@ const CARAVAN_DATA = {
         "id": "medical",
         "icon": "🩺",
         "title": "توصیه‌های پزشکی",
-        "hidden": true,
         "items": [
           {
             "t": "داروهای شخصی",
@@ -2059,7 +2057,6 @@ const CARAVAN_DATA = {
         "id": "banned",
         "icon": "🚫",
         "title": "وسایل ممنوع در عراق و پرواز",
-        "hidden": true,
         "items": [
           {
             "t": "بار دستی هواپیما",
@@ -2080,7 +2077,6 @@ const CARAVAN_DATA = {
         "icon": "🗣️",
         "title": "جملات کاربردی عربی",
         "type": "phrases",
-        "hidden": true,
         "items": [
           {
             "g": "احوالپرسی",

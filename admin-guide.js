@@ -25,15 +25,18 @@ function renderGuide() {
   </div></div>
   ${S.map((s, i) => {
     const ph = s.type === 'phrases';
-    return `<div class="sec-card open" style="${s.hidden ? 'opacity:.8' : ''}">
+    return `<div class="sec-card open" style="${s.hidden ? 'opacity:.8;border-right:5px solid #c0392b' : 'border-right:5px solid #1f8a55'}">
     <div class="sec-body" style="display:block">
       <div class="field" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" class="input-full" style="width:56px;text-align:center;font-size:20px" value="${escH(s.icon || '')}" oninput="guideState.sections[${i}].icon=this.value" aria-label="شکلک">
         <div style="flex:1;min-width:160px">${gH(s.title, `guideState.sections[${i}].title=this.value`, 'عنوان بخش')}</div>
       </div>
       <div class="field" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <label class="fchk" style="padding:0;flex:1"><input type="checkbox" ${s.hidden ? '' : 'checked'} onchange="guideState.sections[${i}].hidden=!this.checked;renderGuide()">
-          <b>${s.hidden ? '🙈 پنهان از کاربران' : '👁 برای کاربران نمایش داده شود'}</b></label>
+        <div style="flex:1;display:flex;gap:6px;min-width:220px" role="radiogroup" aria-label="نمایش برای کاربران">
+          ${[[false, '👁 نمایش برای کاربران', '#1f8a55'], [true, '🙈 پنهان از کاربران', '#c0392b']].map(([h, l, c]) => `<button type="button" role="radio" aria-checked="${!!s.hidden === h}"
+            style="flex:1;min-height:40px;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;${!!s.hidden === h ? `background:${c};color:#fff;border:2px solid ${c}` : 'background:#fff;color:#888;border:1px solid #cfd8d3'}"
+            onclick="guideState.sections[${i}].hidden=${h};renderGuide()">${l}</button>`).join('')}
+        </div>
         ${gBtn('▲', `guideMove(${i},-1)`)}${gBtn('▼', `guideMove(${i},1)`)}${gBtn('🗑 حذف بخش', `if(confirm('بخش «${escH(s.title || '')}» با همه مطالبش حذف شود؟')){guideState.sections.splice(${i},1);renderGuide()}`, 1)}
       </div>
       <div class="field-label" style="padding:0 16px">${ph ? 'جمله‌ها (گروه، معنی فارسی، متن عربی، تلفظ)' : 'مطالب'} — ${(s.items || []).length.toLocaleString('fa')} مورد</div>
