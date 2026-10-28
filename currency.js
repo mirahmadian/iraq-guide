@@ -1,7 +1,8 @@
 /* ══════════════════════════════════════════
    CURRENCY — مبدل دینار عراق ↔ تومان ↔ دلار
    نرخ خودکار: rate.json (هر ۳ ساعت با GitHub Actions از tgju.org — .github/workflows/rate.yml)
-   نرخ بازار عراق: rate-market.json (ثبت‌کننده نرخ از صفحه nerkh.html می‌فرستد) — تا ۳۶ ساعت بعد از ثبت معتبر است.
+   نرخ بازار عراق: rate-market.json (ثبت‌کننده نرخ از صفحه nerkh.html می‌فرستد) — فقط همان روز (به وقت عراق) معتبر است؛
+   از روز بعد، تا ثبت نرخ تازه، نرخ خودکار tgju نمایش داده می‌شود.
    اولویت: نرخ دستی مدیر (site.rate.manual = تومان برای هر ۱۰۰۰ دینار) ← نرخ بازار عراق ← tgju.
    آخرین نرخ روی گوشی هم ذخیره می‌شود تا بدون اینترنت کار کند.
 ══════════════════════════════════════════ */
@@ -25,7 +26,9 @@
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
 })();
 
-const CX_KEY = 'caravan-rate', CX_MKEY = 'caravan-rate-market', CX_MARKET_TTL = 36 * 36e5;
+const CX_KEY = 'caravan-rate', CX_MKEY = 'caravan-rate-market';
+/* آیا زمان ts امروز (به وقت عراق) است؟ */
+const cxIsToday = ts => { const a = iraqNow(new Date(ts)), b = iraqNow(); return a.y === b.y && a.mo === b.mo && a.d === b.d; };
 const CX_NOTES = [250, 500, 1000, 5000, 10000, 25000, 50000];
 let cxAuto = null, cxMarket = null;
 try { cxAuto = JSON.parse(localStorage.getItem(CX_KEY) || 'null'); cxMarket = JSON.parse(localStorage.getItem(CX_MKEY) || 'null'); } catch (e) {}
@@ -46,15 +49,18 @@ function cxRate() {
   const usd = cxAuto && cxAuto.usd_rial ? cxAuto.usd_rial / 10 : 0;
   if (m > 0) return { iqd: m / 1000, usd, src: 'نرخ اعلام‌شده ستاد' };
   const k = cxMarket;
-  if (k && k.ts && Date.now() - k.ts < CX_MARKET_TTL) {
+  if (k && k.ts && cxIsToday(k.ts)) {
     const iqd = k.toman_per_1000_iqd ? k.toman_per_1000_iqd / 1000 : k.toman_per_usd && k.iqd_per_usd ? k.toman_per_usd / k.iqd_per_usd : 0;
     if (iqd > 0) {
       const mu = k.toman_per_usd || (k.iqd_per_usd ? k.iqd_per_usd * iqd : 0) || usd;
-      const ni = iraqNow(new Date(k.ts)), today = iraqNow().d === ni.d;
-      return { iqd, usd: mu, src: `نرخ بازار عراق، ثبت‌شده ${today ? 'امروز' : 'دیروز'} ساعت ${faDigits(prayerHM(ni.min))}` };
+      return { iqd, usd: mu, src: `نرخ بازار عراق، ثبت‌شده امروز ساعت ${faDigits(prayerHM(iraqNow(new Date(k.ts)).min))}` };
     }
   }
-  if (cxAuto && cxAuto.iqd_rial > 0) return { iqd: cxAuto.iqd_rial / 10, usd, src: 'نرخ بازار آزاد' + (cxAuto.date_fa ? '، ' + cxAuto.date_fa : '') + ' (tgju.org)' };
+  /* تاریخ tgju فقط اگر امروز باشد نوشته می‌شود (tgju نرخ دینار را هر روز به‌روز نمی‌کند) */
+  if (cxAuto && cxAuto.iqd_rial > 0) {
+    const n = iraqNow(), today = `${n.y}-${String(n.mo + 1).padStart(2, '0')}-${String(n.d).padStart(2, '0')}`;
+    return { iqd: cxAuto.iqd_rial / 10, usd, src: 'نرخ بازار آزاد' + (cxAuto.date === today && cxAuto.date_fa ? '، امروز ' + cxAuto.date_fa : '') + ' (tgju.org)' };
+  }
   return null;
 }
 const cxFa = (n, dec = 0) => (+n || 0).toLocaleString('fa', { maximumFractionDigits: dec });

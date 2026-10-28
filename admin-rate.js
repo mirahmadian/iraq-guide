@@ -24,6 +24,8 @@ function renderRate(auto) {
         oninput="rateManual=this.value">
       <div class="empty-msg" style="padding:6px 0 0">فقط اگر می‌خواهید نرخ دیگری (مثلاً نرخ صرافی‌های عراق) نشان داده شود پر کنید. تا وقتی پر باشد، نرخ خودکار استفاده نمی‌شود.</div></div>`;
 }
+/* نرخ بازار فقط همان روز (به وقت عراق) معتبر است — مثل currency.js */
+const rtIsToday = ts => { const a = iraqNow(new Date(ts)), b = iraqNow(); return a.y === b.y && a.mo === b.mo && a.d === b.d; };
 function rateOut() {
   const m = +toEnA(rateManual).replace(/[^\d.]/g, '') || 0;
   return m > 0 ? { rate: { manual: m } } : {};
@@ -42,7 +44,7 @@ async function renderReporter() {
   const fa = n => (+n || 0).toLocaleString('fa', { maximumFractionDigits: 0 });
   const last = mk && mk.ts ? `آخرین ثبت: <b>${new Date(mk.ts).toLocaleString('fa-IR', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })}</b>${mk.by ? ' — ' + escH(mk.by) : ''}
     ${mk.toman_per_1000_iqd ? ` · هر ۱٬۰۰۰ دینار: <b>${fa(mk.toman_per_1000_iqd)} تومان</b>` : ''}${mk.iqd_per_usd ? ` · دلار: ${fa(mk.iqd_per_usd)} دینار` : ''}
-    <br>${Date.now() - mk.ts < 36 * 36e5 ? '✅ همین نرخ الان در برنامه نمایش داده می‌شود (تا ۳۶ ساعت بعد از ثبت).' : '⏸ از ثبت گذشته؛ برنامه نرخ خودکار tgju را نشان می‌دهد.'}`
+    <br>${rtIsToday(mk.ts) ? '✅ همین نرخ امروز در برنامه نمایش داده می‌شود (تا پایان امروز به وقت عراق).' : '⏸ این نرخ برای امروز نیست؛ برنامه نرخ خودکار tgju را نشان می‌دهد تا نرخ امروز ثبت شود.'}`
     : 'هنوز نرخی ثبت نشده است.';
   el.innerHTML = `
     <div class="field"><div class="field-label">👤 ثبت‌کننده نرخ بازار عراق</div>
