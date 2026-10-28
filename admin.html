@@ -1227,7 +1227,7 @@ function getInitialHotels(cityId){
     id:h.id,name:h.name||'',nameEn:h.nameEn||'',code:h.code?String(h.code):'',
     address:h.address||'',addressAr:h.addressAr||'',
     imgs:(h.images&&h.images.length?h.images:(h.cardImage?[h.cardImage]:[])).map(path=>({path})),
-    mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',
+    mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',hidden:!!h.hidden,
     contacts:(h.contacts||[]).map(c=>({...c}))
   }));
 }
@@ -1239,9 +1239,15 @@ function initHotels(){
   });
 }
 
+function showAllHotels(cityId){
+  const n=hotelState[cityId].filter(h=>h.hidden).length;
+  if(!confirm(n+' هتل پنهان این شهر برای کاربران نمایش داده شود؟\n(برای ثبت، بعد «انتشار» را بزنید)')) return;
+  hotelState[cityId].forEach(h=>{h.hidden=false;});
+  renderHotels(cityId);
+}
 function updateHotelCount(cityId){
   const el=document.getElementById('hotel-count-'+cityId);
-  if(el){const n=hotelState[cityId].length;el.textContent=n+' هتل';}
+  if(el){const n=hotelState[cityId].length,hd=hotelState[cityId].filter(h=>h.hidden).length;el.textContent=n+' هتل'+(hd?' · '+hd+' پنهان (منتظر تأیید)':'');}
 }
 
 function renderHotels(cityId){
@@ -1254,6 +1260,7 @@ function renderHotels(cityId){
       ${hotels.length>4?`<input type="text" placeholder="🔍 جستجوی هتل..." oninput="filterHotels('${cityId}',this.value)">`:''}
       <button class="add-row-btn" onclick="addHotel('${cityId}')">+ هتل جدید</button>
       <button class="add-row-btn" onclick="toggleHotelBulk('${cityId}')">📥 افزودن گروهی</button>
+      ${hotels.some(h=>h.hidden)?`<button class="add-row-btn" onclick="showAllHotels('${cityId}')">👁 نمایش همه پنهان‌ها</button>`:''}
     </div>`+hotelBulkHTML(cityId);
   if(!hotels.length){el.innerHTML=tools+`<div class="empty-msg">هتلی ثبت نشده</div>`;return;}
   el.innerHTML=tools+hotels.map((h,i)=>`
@@ -1263,7 +1270,7 @@ function renderHotels(cityId){
         ${(h.imgs[0]&&(h.imgs[0].data||h.imgs[0].preview||h.imgs[0].path))?`<img class="hotel-thumb-a" src="${escH(h.imgs[0].data||h.imgs[0].preview||h.imgs[0].path)}" alt="">`:'<div class="hotel-thumb-a">🏨</div>'}
         <div style="flex:1;min-width:0">
           <div class="hotel-entry-name" id="hn-${cityId}-${i}">${escH(h.name)||'هتل جدید'}</div>
-          <div class="hotel-meta">${h.code?'کد '+escH(h.code)+' · ':''}${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
+          <div class="hotel-meta">${h.hidden?'<b style="color:#c0392b">🙈 پنهان — منتظر تأیید</b> · ':''}${h.code?'کد '+escH(h.code)+' · ':''}${h.imgs.length} تصویر · ${h.contacts.length} شماره</div>
         </div>
         <div class="hotel-ctl" onclick="event.stopPropagation()">
           <button title="بالاتر" onclick="moveHotel('${cityId}',${i},-1)">▲</button>
@@ -1273,6 +1280,11 @@ function renderHotels(cityId){
         <span class="hotel-chev">▼</span>
       </div>
       <div class="hotel-body">
+      <div style="display:flex;gap:6px;padding:10px 12px 0" role="radiogroup" aria-label="نمایش برای کاربران">
+        ${[[false,'👁 نمایش برای کاربران','#1f8a55'],[true,'🙈 پنهان از کاربران','#c0392b']].map(([v,l,c])=>`<button type="button" role="radio" aria-checked="${!!h.hidden===v}"
+          style="flex:1;min-height:40px;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;${!!h.hidden===v?`background:${c};color:#fff;border:2px solid ${c}`:'background:#fff;color:#888;border:1px solid #cfd8d3'}"
+          onclick="hotelState['${cityId}'][${i}].hidden=${v};renderHotels('${cityId}')">${l}</button>`).join('')}
+      </div>
       <div class="hotel-fields">
         <div>
           <div class="field-label">نام فارسی *</div>
@@ -1451,7 +1463,7 @@ function hotelsData(cityId){
     id:h.id,name:h.name,nameEn:h.nameEn,...((h.code||'').trim()?{code:toEnA(h.code).trim()}:{}),address:h.address,...((h.addressAr||'').trim()?{addressAr:h.addressAr.trim()}:{}),
     cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
     images:h.imgs.map(imgSrc).filter(Boolean),
-    mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,
+    mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,...(h.hidden?{hidden:true}:{}),
     contacts:h.contacts.filter(c=>c.phone.trim()).map(c=>{
       const o={role:c.role||'',phone:c.phone.trim(),name:c.name&&c.name.trim()?c.name.trim():null,countryCode:c.countryCode||'964'};
       {const ph=c.photo||(BUILD_PENDING&&c.photoData)||'';if(ph) o.photo=ph;}

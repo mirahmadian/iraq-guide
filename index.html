@@ -756,6 +756,8 @@ const PREVIEW = new URLSearchParams(location.search).has('preview');
 let IS_ADMIN_DEVICE = false;
 try { IS_ADMIN_DEVICE = !!localStorage.getItem('caravan-admin-token'); } catch (e) {}
 const SHOW_HIDDEN = PREVIEW || IS_ADMIN_DEVICE;
+/* هتل‌های پنهان (مثلاً واردشده و هنوز تأییدنشده) فقط برای مدیر و پیش‌نمایش */
+if (!SHOW_HIDDEN) CARAVAN_DATA.cities.forEach(c => { if (c.hotels) c.hotels = c.hotels.filter(h => !h.hidden); });
 if (PREVIEW) {
   try {
     const draft = JSON.parse(localStorage.getItem('caravan-draft') || 'null');
@@ -924,7 +926,7 @@ function hotelItemsHTML(cityId, list) {
       <div class="hotel-drop-item" onclick="hotelSelect('${cityId}','${h.id.replace(/'/g,"\\'")}')">
         ${hotelThumb(h)}
         <div>
-          <div class="hotel-drop-name">${h.name}${h.code ? `<span class="hcode">کد ${faDigits(h.code)}</span>` : ''}${rvMini(cityId, h.id)}</div>
+          <div class="hotel-drop-name">${h.name}${h.code ? `<span class="hcode">کد ${faDigits(h.code)}</span>` : ''}${h.hidden ? '<span class="hcode" style="color:#c0392b;border-color:#c0392b">پنهان</span>' : ''}${rvMini(cityId, h.id)}</div>
           ${h.nameEn ? `<div class="hotel-drop-sub">${h.nameEn}</div>` : ''}
         </div>
       </div>`).join('');
