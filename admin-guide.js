@@ -2,6 +2,7 @@
    GUIDE — ویرایش «راهنمای زائر» (توصیه‌ها، وسایل ممنوع، جملات عربی)
 ══════════════════════════════════════════ */
 let guideState = { title: '', sections: [] };
+const guideOpen = new Set(); /* بخش‌های باز (بقیه جمع‌شده‌اند) */
 
 function initGuide() {
   const g = CARAVAN_DATA.guide || {};
@@ -23,10 +24,21 @@ function renderGuide() {
   <div class="sec-card open"><div class="sec-body" style="display:block">
     <div class="field"><div class="field-label">عنوان صفحه</div>${gH(guideState.title, 'guideState.title=this.value', 'راهنمای زائر')}</div>
   </div></div>
+  ${S.length > 1 ? `<div style="display:flex;gap:8px;margin-bottom:10px">
+    ${gBtn('▾ باز کردن همه', 'guideAll(true)')}${gBtn('▴ بستن همه', 'guideAll(false)')}</div>` : ''}
   ${S.map((s, i) => {
     const ph = s.type === 'phrases';
-    return `<div class="sec-card open" style="${s.hidden ? 'opacity:.8;border-right:5px solid #c0392b' : 'border-right:5px solid #1f8a55'}">
-    <div class="sec-body" style="display:block">
+    const open = guideOpen.has(s.id), n = (s.items || []).length;
+    return `<div class="sec-card ${open ? 'open' : ''}" style="${s.hidden ? 'border-right:5px solid #c0392b' : 'border-right:5px solid #1f8a55'}">
+    <div class="sec-card-head" onclick="guideToggle('${s.id}')" role="button" aria-expanded="${open}" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();guideToggle('${s.id}')}">
+      <div class="sec-head-icon ico-gen">${escH(s.icon || '📄')}</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">${escH(s.title || 'بخش بدون عنوان')}</div>
+        <div class="sec-head-sub">${n.toLocaleString('fa')} ${ph ? 'جمله' : 'مطلب'} · <b style="color:${s.hidden ? '#c0392b' : '#1f8a55'}">${s.hidden ? '🙈 پنهان از کاربران' : '👁 نمایش برای کاربران'}</b></div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    ${!open ? '' : `<div class="sec-body" style="display:block">
       <div class="field" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" class="input-full" style="width:56px;text-align:center;font-size:20px" value="${escH(s.icon || '')}" oninput="guideState.sections[${i}].icon=this.value" aria-label="شکلک">
         <div style="flex:1;min-width:160px">${gH(s.title, `guideState.sections[${i}].title=this.value`, 'عنوان بخش')}</div>
@@ -50,13 +62,15 @@ function renderGuide() {
         <div style="display:flex;gap:6px;justify-content:flex-end">${gBtn('▲', `guideItemMove(${i},${k},-1)`)}${gBtn('▼', `guideItemMove(${i},${k},1)`)}${gBtn('🗑', `guideState.sections[${i}].items.splice(${k},1);renderGuide()`, 1)}</div>
       </div>`).join('')}
       <div style="padding:0 16px 12px">${gBtn(ph ? '+ جمله جدید' : '+ مطلب جدید', `guideAddItem(${i})`)}</div>
-    </div></div>`;
+    </div>`}</div>`;
   }).join('')}
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="add-row-btn" style="flex:1" onclick="guideState.sections.push({id:'s'+Date.now().toString(36),icon:'📄',title:'',hidden:true,items:[{t:'',d:''}]});renderGuide()">+ بخش جدید (متن)</button>
-    <button class="add-row-btn" style="flex:1" onclick="guideState.sections.push({id:'p'+Date.now().toString(36),icon:'🗣️',title:'جملات کاربردی',type:'phrases',hidden:true,items:[{g:'',fa:'',ar:'',pr:''}]});renderGuide()">+ بخش جدید (جملات)</button>
+    <button class="add-row-btn" style="flex:1" onclick="const nid='s'+Date.now().toString(36);guideOpen.add(nid);guideState.sections.push({id:nid,icon:'📄',title:'',hidden:true,items:[{t:'',d:''}]});renderGuide()">+ بخش جدید (متن)</button>
+    <button class="add-row-btn" style="flex:1" onclick="const nid='p'+Date.now().toString(36);guideOpen.add(nid);guideState.sections.push({id:nid,icon:'🗣️',title:'جملات کاربردی',type:'phrases',hidden:true,items:[{g:'',fa:'',ar:'',pr:''}]});renderGuide()">+ بخش جدید (جملات)</button>
   </div>`;
 }
+function guideToggle(id) { guideOpen.has(id) ? guideOpen.delete(id) : guideOpen.add(id); renderGuide(); }
+function guideAll(on) { guideState.sections.forEach(s => on ? guideOpen.add(s.id) : guideOpen.delete(s.id)); renderGuide(); }
 function guideMove(i, d) {
   const a = guideState.sections, j = i + d;
   if (j < 0 || j >= a.length) return;
