@@ -3090,6 +3090,7 @@ const CARAVAN_DATA = {
           "id": "hotel-karbala-m001",
           "name": "فندق عشتار",
           "nameEn": "ESHTAR KARBlA",
+          "code": "415",
           "address": "کربلا پشت هتل کربلا الدولی باب بغداد روبروی مدیریت آب کربلا",
           "addressAr": "کربلا باب بغداد مقابل اساله الماء",
           "cardImage": "hotels/h-1793277356336-7lsph.jpg",
