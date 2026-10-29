@@ -3089,14 +3089,44 @@ const CARAVAN_DATA = {
         {
           "id": "hotel-karbala-m001",
           "name": "فندق عشتار",
-          "nameEn": "",
-          "address": "",
-          "cardImage": "",
-          "images": [],
-          "mapNeshanUrl": "",
+          "nameEn": "ESHTAR KARBlA",
+          "address": "کربلا پشت هتل کربلا الدولی باب بغداد روبروی مدیریت آب کربلا",
+          "addressAr": "کربلا باب بغداد مقابل اساله الماء",
+          "cardImage": "hotels/h-1793277356336-7lsph.jpg",
+          "images": [
+            "hotels/h-1793277356336-7lsph.jpg",
+            "hotels/h-1793277360529-5vioa.jpg",
+            "hotels/h-1793277366152-az785.jpg",
+            "hotels/h-1793277369481-m87zs.jpg",
+            "hotels/h-1793277373454-uoun9.jpg",
+            "hotels/h-1793277379050-m9m4v.jpg",
+            "hotels/h-1793277384685-xqmh2.jpg",
+            "hotels/h-1793277390958-nhx0v.jpg",
+            "hotels/h-1793277395138-j6lss.jpg",
+            "hotels/h-1793277404359-su9tl.jpg"
+          ],
+          "mapNeshanUrl": "https://nshn.ir/ferbZlBQIA2czs",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=32.620254,44.041129",
-          "hidden": true,
-          "contacts": []
+          "contacts": [
+            {
+              "role": "",
+              "phone": "07704102487",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07800414042",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07704737663",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         },
         {
           "id": "hotel-karbala-m002",
