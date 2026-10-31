@@ -34,7 +34,7 @@ const CARAVAN_DATA = {
       }
     ],
     "banner": {
-      "image": "banners/site-1792740814429.jpg",
+      "image": "banners/site-1793489086688.jpg",
       "title": "دفتر نمایندگی حج و زیارت در عراق",
       "splash": true,
       "top": true
