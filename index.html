@@ -732,6 +732,7 @@
 
 <!-- DATA FILE (must come before main script) -->
 <script src="data.js"></script>
+<script src="version.js"></script>
 <script src="food.js"></script>
 <script src="map-viewer.js"></script>
 <script src="banner.js"></script>
@@ -1203,11 +1204,16 @@ function richText(t) {
   return escHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }
 
+/* نسخه و تاریخ بروزرسانی را GitHub Action در version.js می‌نویسد (دستی نیست) */
+const verFa = s => String(s).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+function appUpdated() { const v = window.APP_VERSION; return v && v.date ? verFa(v.date) : (CARAVAN_DATA.lastUpdate || '—'); }
+function appVersion() { const v = window.APP_VERSION; return v && v.version ? verFa(v.version) : ''; }
+
 /* پایین صفحه فقط یک خط؛ متن کامل در صفحه «درباره برنامه» */
 function footerHTML() {
   return `
   <footer class="foot-mini" role="contentinfo">
-    <span><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></span>
+    <span><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(appUpdated())}</strong></span>
     <span aria-hidden="true">·</span>
     <button type="button" onclick="openAbout()">درباره برنامه ${CHEV_FWD}</button>
   </footer>`;
@@ -1228,7 +1234,7 @@ function aboutHTML() {
       ${site.appSubtitle ? `<div class="about-sub">${escHtml(site.appSubtitle)}</div>` : ''}
     </div>
     ${body ? `<div class="footer">${body}
-      <div class="footer-update"><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(CARAVAN_DATA.lastUpdate || '—')}</strong></div></div>` : ''}
+      <div class="footer-update"><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(appUpdated())}</strong>${appVersion() ? ` · نسخه <strong>${escHtml(appVersion())}</strong>` : ''}</div></div>` : ''}
     <div class="about-acts">
       <button class="sheet-btn" onclick="closeAbout();shareApp()"><span aria-hidden="true">🔗</span>اشتراک‌گذاری</button>
       <button class="sheet-btn" onclick="closeAbout();showQR()"><span aria-hidden="true">📱</span>QR کد</button>

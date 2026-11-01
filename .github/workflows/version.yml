@@ -1,0 +1,30 @@
+name: Update version
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['version.js', 'rate.json', 'rate-market.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency: version
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python3 .github/scripts/version.py
+      - name: Commit if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- version.js sw.js; then echo "version unchanged"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.js sw.js && git commit -m "Update version"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          # ساخت دوباره سایت (push با GITHUB_TOKEN خودش ساخت سایت را شروع نمی‌کند)
+          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true
