@@ -16,6 +16,7 @@ const main = () => document.getElementById('main');
 function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  main().innerHTML = '<div class="empty">در حال بارگذاری…</div>';
   ({ regions: loadRegions, users: loadUsers, account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const roleName = r => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r === 'super' ? 'مدیر سامانه' : r;
@@ -28,7 +29,7 @@ function tempHTML(list) {
 const wireTemp = m => { const x = m.querySelector('#tmp-x'); if (x) x.onclick = () => { U.temp = null; go(U.tab); }; };
 
 /* ═════════ regions ═════════ */
-async function loadRegions() { try { U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderRegions(); }
+async function loadRegions() { try { U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } if (U.tab === 'regions') renderRegions(); }
 function renderRegions() {
   const m = main(), R = U.O.regions;
   const tot = k => R.reduce((a, r) => a + (r[k] || 0), 0);
@@ -77,6 +78,7 @@ function wireNewUser(m) {
 /* ═════════ all users ═════════ */
 async function loadUsers() {
   try { if (!U.O) U.O = await api('/api/super/overview'); U.users = await api('/api/super/users' + (U.region ? '?region=' + U.region : '')); } catch (e) { return toast(e.message, true); }
+  if (U.tab !== 'users') return;
   renderUsers();
 }
 function renderUsers() {

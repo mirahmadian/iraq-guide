@@ -21,17 +21,37 @@ const kb = b => b > 1048576 ? faS((b / 1048576).toFixed(1)) + ' مگ' : fa(Math.
 const RESULT = { fixed: ['رفع شد', '✅', 'ok'], follow: ['در حال پیگیری', '⏳', 'warn'], open: ['رفع نشد', '❌', 'bad'] };
 const RATING = [{ v: 'great', l: 'عالی', em: '😍', c: 'g' }, { v: 'good', l: 'خوب', em: '🙂', c: 'g' }, { v: 'mid', l: 'متوسط', em: '😐', c: 'm' }, { v: 'poor', l: 'ضعیف', em: '☹️', c: 'b' }];
 
+/* اینترنت عراق تا سرور گاهی بسته‌ها را گم می‌کند و یک درخواست گیر می‌کند:
+   هر درخواست مهلت دارد و دوباره (با اتصال تازه) فرستاده می‌شود؛ خواندنی‌ها یک دقیقه نگه داشته می‌شوند تا جابه‌جایی بین تب‌ها فوری باشد. */
+const GETC = new Map(), INFLIGHT = new Map();
 async function api(path, opt = {}) {
   if (HR.viewRegion && path.startsWith('/api/admin/')) path += (path.includes('?') ? '&' : '?') + 'region=' + HR.viewRegion;
   const h = { ...(HR.token ? { Authorization: 'Bearer ' + HR.token } : {}), ...(opt.headers || {}) };
   let body = opt.body;
   if (body !== undefined && !(body instanceof Blob) && !(body instanceof ArrayBuffer)) { body = JSON.stringify(body); h['Content-Type'] = 'application/json'; }
-  let r;
-  try { r = await fetch(HR_API + path, { method: opt.method || (body !== undefined ? 'POST' : 'GET'), headers: h, body, cache: 'no-store' }); }
-  catch (e) { throw Object.assign(new Error('اینترنت وصل نیست یا سرور در دسترس نیست.'), { offline: true }); }
+  const method = opt.method || (body !== undefined ? 'POST' : 'GET'), get = method === 'GET' && !opt.raw;
+  if (method !== 'GET') GETC.clear();
+  if (get && !opt.fresh) { const c = GETC.get(path); if (c && Date.now() - c.t < 60000) return JSON.parse(c.text); }
+  const tries = get || opt.retry ? 3 : 1, wait = opt.timeout || (get ? 20000 : 45000);
+  let run = get && !opt.fresh && INFLIGHT.get(path);
+  if (!run) run = (async () => {
+    let r;
+    for (let i = 1; ; i++) {
+      const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait * i);
+      try { r = await fetch(HR_API + path, { method, headers: h, body, cache: 'no-store', signal: ac.signal }); if (!opt.raw) r = { ok: r.ok, status: r.status, text: await r.text() }; clearTimeout(t); break; }
+      catch (e) {
+        clearTimeout(t);
+        if (i >= tries) throw Object.assign(new Error(e.name === 'AbortError' ? 'ارتباط با سرور خیلی کند است. چند لحظه بعد دوباره امتحان کنید.' : 'اینترنت وصل نیست یا سرور در دسترس نیست.'), { offline: true });
+      }
+    }
+    return r;
+  })();
+  if (get && !INFLIGHT.has(path)) { INFLIGHT.set(path, run); run.catch(() => {}).finally(() => INFLIGHT.delete(path)); }
+  const r = await run;
   if (opt.raw && r.ok) return r;
-  let j = {}; try { j = await r.json(); } catch (e) {}
+  let j = {}; try { j = JSON.parse(opt.raw ? await r.text() : r.text); } catch (e) {}
   if (!r.ok) throw Object.assign(new Error(j.error || 'خطا ' + r.status), { status: r.status });
+  if (get) GETC.set(path, { t: Date.now(), text: r.text });
   return j;
 }
 async function download(path, fallbackName) {
@@ -112,7 +132,7 @@ function upload(url, blob, headers, onProgress) {
     const x = new XMLHttpRequest(); x.open('PUT', HR_API + url); x.setRequestHeader('Authorization', 'Bearer ' + HR.token);
     Object.entries(headers || {}).forEach(([k, v]) => x.setRequestHeader(k, v));
     x.upload.onprogress = e => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
-    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} x.status < 300 ? resolve(j) : reject(new Error(j.error || 'ارسال ناموفق بود.')); };
+    x.onload = () => { GETC.clear(); let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} x.status < 300 ? resolve(j) : reject(new Error(j.error || 'ارسال ناموفق بود.')); };
     x.onerror = () => reject(new Error('اینترنت قطع شد. دوباره امتحان کنید.'));
     x.send(blob);
   });

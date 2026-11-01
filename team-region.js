@@ -26,6 +26,7 @@ function go(tab) {
   if (A.tab === 'form' && tab !== 'form' && A.formDirty && !confirmLeave()) return;
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
+  main().innerHTML = '<div class="empty">در حال بارگذاری…</div>';
   ({ dash: loadDash, import: renderImport, form: loadForm, users: loadUsers, account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
 }
 let leaveSure = false;
@@ -35,6 +36,7 @@ const main = () => document.getElementById('main');
 /* ═════════ dashboard ═════════ */
 async function loadDash(week) {
   try { A.D = await api('/api/admin/dashboard' + (week ? '?week=' + week : '')); } catch (e) { return toast(e.message, true); }
+  if (A.tab !== 'dash') return;
   renderDash();
 }
 const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
@@ -132,6 +134,7 @@ async function wireDetail(d) {
 async function renderImport() {
   const m = main(); let weeks = [];
   try { weeks = await api('/api/admin/weeks'); } catch (e) { toast(e.message, true); }
+  if (A.tab !== 'import') return;
   const I = A.imp;
   m.innerHTML = `<div class="card"><div class="card-h"><h2>بارگذاری اکسل هفتگی</h2></div>
       <p class="hint">همان فایل گزارش هفتگی را انتخاب کنید. شیت اصلی (جدول همه‌ی ورودی‌ها) و شیت هر مدیر ثابت (Nargesi، Sobhani و …) خودکار پیدا می‌شوند.<br>
@@ -146,7 +149,7 @@ async function renderImport() {
   m.querySelector('#xl').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     const msg = m.querySelector('#xl-msg'); msg.textContent = 'در حال خواندن…'; A.temp = null;
-    try { const r = await api('/api/admin/import?name=' + encodeURIComponent(file.name), { method: 'POST', body: file, headers: { 'Content-Type': 'application/octet-stream' } }); A.imp = { preview: r }; renderImport(); }
+    try { const r = await api('/api/admin/import?name=' + encodeURIComponent(file.name), { method: 'POST', body: file, headers: { 'Content-Type': 'application/octet-stream' }, retry: true, timeout: 40000 }); A.imp = { preview: r }; renderImport(); }
     catch (x) { msg.textContent = x.message; msg.className = 'err'; }
   };
   m.querySelectorAll('[data-wdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api('/api/admin/weeks/' + b.dataset.wdel, { method: 'DELETE' }); renderImport(); } catch (e) { toast(e.message, true); } });
@@ -183,7 +186,7 @@ function wireImport(p) {
     if (bad) { err.textContent = `شیت «${bad[0]}»: ${!bad[1].name ? 'نام را بنویسید.' : 'کد ملی معتبر نیست.'}`; return; }
     const b = m.querySelector('#im-go'); b.disabled = true; b.textContent = 'در حال ثبت…';
     try {
-      const r = await api('/api/admin/import/commit', { body: { token: p.token, title: m.querySelector('#im-title').value, map } });
+      const r = await api('/api/admin/import/commit', { body: { token: p.token, title: m.querySelector('#im-title').value, map }, timeout: 90000 });
       A.imp = null; A.temp = r.created.length ? r.created : null;
       toast(`«${r.title}» ثبت شد: ${fa(r.assigned)} ورودی به مدیران ثابت سپرده شد.`); renderImport();
     } catch (e) { err.textContent = e.message; b.disabled = false; b.textContent = 'ثبت این هفته'; }
@@ -200,6 +203,7 @@ document.addEventListener('click', e => { if (e.target.id === 'tmp-x') { A.temp 
 /* ═════════ form builder ═════════ */
 async function loadForm() {
   if (!A.form || !A.formDirty) { try { A.form = await api('/api/admin/form'); A.formDirty = false; } catch (e) { return toast(e.message, true); } }
+  if (A.tab !== 'form') return;
   renderForm();
 }
 const allQ = () => A.form.sections.flatMap(s => s.questions.map(q => ({ q, s })));
@@ -282,7 +286,7 @@ function wireForm(cur) {
 }
 
 /* ═════════ fixed managers ═════════ */
-async function loadUsers() { try { A.users = await api('/api/admin/users'); } catch (e) { return toast(e.message, true); } renderUsers(); }
+async function loadUsers() { try { A.users = await api('/api/admin/users'); } catch (e) { return toast(e.message, true); } if (A.tab === 'users') renderUsers(); }
 function renderUsers() {
   const m = main();
   m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز موقت') : ''}

@@ -39,7 +39,7 @@ async function renderHome() {
   const wk = app.querySelector('#wk'); if (wk) wk.onchange = () => { S.hotel = ''; loadHome(+wk.value); };
   app.querySelectorAll('[data-hf]').forEach(b => b.onclick = () => { S.hotel = b.dataset.hf; renderHome(); });
   app.querySelectorAll('[data-entry]').forEach(b => b.onclick = () => openEntry(+b.dataset.entry));
-  const bo = app.querySelector('#bio-on'); if (bo) bo.onclick = async () => { try { await bioRegister(); S.me = await api('/api/me'); toast('ورود با اثر انگشت روشن شد.'); renderHome(); } catch (e) { toast(bioErr(e), true); } };
+  const bo = app.querySelector('#bio-on'); if (bo) bo.onclick = async () => { try { await bioRegister(); S.me = await api('/api/me', { fresh: true }); toast('ورود با اثر انگشت روشن شد.'); renderHome(); } catch (e) { toast(bioErr(e), true); } };
   const bn = app.querySelector('#bio-no'); if (bn) bn.onclick = () => { try { localStorage.setItem('hr-bio-hint', 'no'); } catch (e) {} renderHome(); };
   const bk = app.querySelector('#bulk');
   if (bk) bk.onclick = async () => {
@@ -167,7 +167,7 @@ async function sendMedia(qid, file, kind) {
 async function pollMedia(E, id) {
   for (let i = 0; i < 120 && S.E === E; i++) {
     await new Promise(r => setTimeout(r, 5000));
-    try { const m = await api('/api/fm/media/' + id); if (m.status !== 'processing') { const k = E.media.findIndex(x => x.id === id); if (k >= 0) E.media[k] = m; if (S.E === E) renderEntry(); return; } } catch (e) { return; }
+    try { const m = await api('/api/fm/media/' + id, { fresh: true }); if (m.status !== 'processing') { const k = E.media.findIndex(x => x.id === id); if (k >= 0) E.media[k] = m; if (S.E === E) renderEntry(); return; } } catch (e) { return; }
   }
 }
 async function save() {
