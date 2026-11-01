@@ -85,7 +85,7 @@ function bioErr(e) {
   if (e && e.name === 'InvalidStateError') return 'اثر انگشت این گوشی قبلاً ثبت شده است.';
   return e && e.message || 'ورود با اثر انگشت ناموفق بود.';
 }
-async function bioRegister() {
+async function bioRegister(me) {
   const o = await api('/api/passkey/reg-options', { body: {} });
   const cred = await navigator.credentials.create({ publicKey: { ...o, challenge: u2b(o.challenge), user: { ...o.user, id: u2b(o.user.id) },
     excludeCredentials: (o.excludeCredentials || []).map(c => ({ ...c, id: u2b(c.id) })) } });
@@ -93,11 +93,13 @@ async function bioRegister() {
   if (!r.getPublicKey || !r.getAuthenticatorData) throw new Error('مرورگر این گوشی قدیمی است. Chrome یا Safari را به‌روز کنید.');
   const ua = navigator.userAgent, label = /iPhone|iPad/.test(ua) ? 'آیفون' : /Android/.test(ua) ? 'اندروید' : /Mac/.test(ua) ? 'مک' : /Windows/.test(ua) ? 'ویندوز' : 'دستگاه';
   await api('/api/passkey/register', { body: { id: cred.id, clientDataJSON: b2u(r.clientDataJSON), authenticatorData: b2u(r.getAuthenticatorData()), publicKey: b2u(r.getPublicKey()), alg: r.getPublicKeyAlgorithm(), label } });
-  try { localStorage.setItem('hr-bio', '1'); localStorage.setItem('hr-bio-id', cred.id); } catch (e) {}
+  try { localStorage.setItem('hr-bio', '1'); localStorage.setItem('hr-bio-id', cred.id); if (me) { localStorage.setItem('hr-bio-nid', me.nid); localStorage.setItem('hr-bio-name', me.name); } } catch (e) {}
 }
 async function bioLogin(nid) {
   const o = await api('/api/passkey/login-options', { body: { nid: nid || '' } });
-  const cred = await navigator.credentials.get({ publicKey: { ...o, challenge: u2b(o.challenge), allowCredentials: (o.allowCredentials || []).map(c => ({ ...c, id: u2b(c.id) })) } });
+  let mine = ''; try { mine = localStorage.getItem('hr-bio-id') || ''; } catch (e) {}
+  let allow = o.allowCredentials || []; if (mine && allow.some(c => c.id === mine)) allow = allow.filter(c => c.id === mine);
+  const cred = await navigator.credentials.get({ publicKey: { ...o, challenge: u2b(o.challenge), allowCredentials: allow.map(c => ({ ...c, id: u2b(c.id) })) } });
   const r = cred.response;
   const j = await api('/api/passkey/login', { body: { id: cred.id, clientDataJSON: b2u(r.clientDataJSON), authenticatorData: b2u(r.authenticatorData), signature: b2u(r.signature) } });
   setToken(j.token, j.me);
@@ -165,9 +167,35 @@ function openStaffPanel(j) {
   location.href = 'admin.html';
 }
 const nidLatin = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
-async function renderLogin(root, onDone) {
+const FP_SVG = `<svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+  <path d="M14 26a18 18 0 0 1 36 0"/><path d="M10 38c2-3 3-7 3-12"/><path d="M51 26c0 6-1 12-3 17"/>
+  <path d="M20 26a12 12 0 0 1 24 0c0 8-2 16-6 23"/><path d="M18 44c2-5 2-11 2-18"/>
+  <path d="M26 26a6 6 0 0 1 12 0c0 10-3 19-8 26"/><path d="M24 50c4-7 6-15 6-24"/><path d="M32 26c0 8-2 16-5 22"/></svg>`;
+/* گوشی‌ای که اثر انگشت رویش روشن است: صفحه‌ی ساده با نشان بزرگ اثر انگشت پایین صفحه (همان جای حسگر)، و برگه‌ی تأیید خود گوشی خودکار باز می‌شود */
+async function renderBioLogin(root, onDone) {
+  let name = '', nid = ''; try { name = localStorage.getItem('hr-bio-name') || ''; nid = localStorage.getItem('hr-bio-nid') || lastNid(); } catch (e) {}
+  root.innerHTML = `<div class="fp-wrap">
+    <div class="fp-top"><a class="hbtn" href="./" style="text-decoration:none">→ برنامه</a><div class="hi">همیار کاروان · ورود همکاران</div>
+      <h1>${name ? 'سلام، ' + esc(name) : 'ورود با اثر انگشت'}</h1><p>برای ورود، انگشتتان را روی حسگر اثر انگشت گوشی بگذارید.</p></div>
+    <div class="fp-bottom"><button type="button" class="fp-btn" id="fp-go" aria-label="ورود با اثر انگشت">${FP_SVG}</button>
+      <span class="fp-msg" id="fp-msg" role="alert">برای ورود لمس کنید</span>
+      <button type="button" class="fp-alt" id="fp-pw">ورود با کد ملی و رمز</button></div></div>`;
+  const msg = root.querySelector('#fp-msg'), go = root.querySelector('#fp-go');
+  const tryBio = async () => {
+    if (go.disabled) return; go.disabled = true; go.classList.add('on'); msg.textContent = 'منتظر تأیید اثر انگشت…';
+    try { await bioLogin(nid); onDone(); }
+    catch (x) { go.disabled = false; go.classList.remove('on'); msg.textContent = x && x.name === 'NotAllowedError' ? 'برای ورود دوباره لمس کنید' : bioErr(x); }
+  };
+  go.onclick = tryBio;
+  root.querySelector('#fp-pw').onclick = () => renderLogin(root, onDone, true);
+  /* right after «خروج» (e.g. to sign in as someone else) the sheet waits for a tap */
+  let out = false; try { out = sessionStorage.getItem('hr-out') === '1'; sessionStorage.removeItem('hr-out'); } catch (e) {}
+  if (!out) tryBio();
+}
+async function renderLogin(root, onDone, withPassword) {
   const nid = lastNid(), bio = await bioAvailable();
   let hasBio = false; try { hasBio = localStorage.getItem('hr-bio') === '1'; } catch (e) {}
+  if (bio && hasBio && !withPassword) return renderBioLogin(root, onDone);
   root.innerHTML = `<div class="login-wrap"><form class="login-card" id="lg" novalidate>
     <div class="login-head"><a class="hbtn" href="./" style="float:left;text-decoration:none">→ برنامه</a><div class="hi">همیار کاروان</div><h1>👥 ورود همکاران</h1></div>
     <div class="login-body">
@@ -231,7 +259,7 @@ document.addEventListener('click', e => {
   const c = e.target.closest('[data-copy]');
   if (c) (navigator.clipboard ? navigator.clipboard.writeText(c.dataset.copy) : Promise.reject()).then(() => toast('کپی شد.'), () => toast('کپی نشد؛ رمز را از روی صفحه بنویسید.', true));
 });
-async function logout() { try { await api('/api/logout', { body: {} }); } catch (e) {} setToken(''); location.hash = ''; location.reload(); }
+async function logout() { try { await api('/api/logout', { body: {} }); } catch (e) {} setToken(''); try { sessionStorage.setItem('hr-out', '1'); } catch (e) {} location.hash = ''; location.reload(); }
 
 /* ── settings: password + fingerprint ── */
 async function renderAccount(root, me, onBack) {
@@ -253,13 +281,13 @@ async function renderAccount(root, me, onBack) {
   root.querySelector('#ac-back').onclick = onBack;
   root.querySelector('#ac-out').onclick = logout;
   const b = root.querySelector('#ac-bio');
-  if (b) b.onclick = async () => { b.disabled = true; try { await bioRegister(); toast('ورود با اثر انگشت روشن شد.'); Object.assign(me, await api('/api/me', { fresh: true })); renderAccount(root, me, onBack); } catch (e) { b.disabled = false; toast(bioErr(e), true); } };
+  if (b) b.onclick = async () => { b.disabled = true; try { await bioRegister(me); toast('ورود با اثر انگشت روشن شد.'); Object.assign(me, await api('/api/me', { fresh: true })); renderAccount(root, me, onBack); } catch (e) { b.disabled = false; toast(bioErr(e), true); } };
   root.querySelectorAll('[data-pk]').forEach(x => x.onclick = async () => {
     const k = me.passkeys.find(k => k.id === x.dataset.pk), mineK = k && here(k);
     if (!confirm(mineK ? 'ورود با اثر انگشت روی این گوشی خاموش شود؟\nاز این به بعد با کد ملی و رمز وارد می‌شوید و هر وقت خواستید دوباره روشنش می‌کنید.' : 'ورود با اثر انگشت روی «' + (k ? k.label : '') + '» خاموش شود؟')) return;
     x.disabled = true;
     try { await api('/api/passkeys/' + x.dataset.pk, { method: 'DELETE' }); } catch (e) { x.disabled = false; return toast(e.message, true); }
-    if (mineK) try { localStorage.removeItem('hr-bio'); localStorage.removeItem('hr-bio-id'); } catch (e) {}
+    if (mineK) try { ['hr-bio', 'hr-bio-id', 'hr-bio-nid', 'hr-bio-name'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
     me.passkeys = me.passkeys.filter(p => p.id !== x.dataset.pk); toast('ورود با اثر انگشت خاموش شد.'); renderAccount(root, me, onBack);
   });
   root.querySelector('#ac-pw').onsubmit = async e => {
