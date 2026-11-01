@@ -3846,7 +3846,7 @@ const CARAVAN_DATA = {
         "contacts": [
           {
             "role": "نماینده سازمان در کاظمین",
-            "phone": "07736395692",
+            "phone": "07854815544",
             "name": "آقای صمد عبداللهی",
             "countryCode": "964",
             "photo": "people/p-1792668527068-yicql.jpg"
