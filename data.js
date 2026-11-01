@@ -3069,6 +3069,7 @@ const CARAVAN_DATA = {
         "x": 59,
         "y": 46
       },
+      "hqBanner": "banners/hq-karbala-1793516194003.jpg",
       "hotels": [
         {
           "id": "hotel-karbala-1792889745949-0",
