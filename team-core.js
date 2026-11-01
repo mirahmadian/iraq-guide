@@ -222,6 +222,7 @@ function renderChangePw(root, me, onDone) {
   };
   root.querySelector('#cp-out').onclick = logout;
 }
+document.addEventListener('click', e => { if (e.target.closest('[data-logout]')) logout(); });
 async function logout() { try { await api('/api/logout', { body: {} }); } catch (e) {} setToken(''); location.hash = ''; location.reload(); }
 
 /* ── settings: password + fingerprint ── */

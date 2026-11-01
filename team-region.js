@@ -15,7 +15,7 @@ const TABS = [['dash', '📊 داشبورد'], ['import', '📄 اکسل هفت�
 const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account') : TABS;
 function shell() {
   const sup = !!A.opts.region;
-  app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? 'مدیر سامانه (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div></div>
+  app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? 'مدیر سامانه (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
     <nav class="tabs" role="tablist">${tabs().map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="false">${l}</button>`).join('')}</nav></div></header><main class="wrap" id="main"></main>`;
   app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
   const bs = app.querySelector('#back-super'); if (bs) bs.onclick = () => { if (A.formDirty && !confirmLeave()) return; A.formDirty = false; window.onbeforeunload = null; HR.viewRegion = 0; location.hash = ''; A.opts.onBack(); };

@@ -8,7 +8,7 @@ const tabs = () => U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS;
 
 window.startSuper = me => { app = document.getElementById('app'); U.me = me; HR.viewRegion = 0; shell(); go(U.tab); };
 function shell() {
-  app.innerHTML = `<header class="top"><div class="in"><div class="brand"><a class="btn small ghost" href="${U.me.owner ? 'admin.html' : './'}" style="text-decoration:none">${U.me.owner ? '→ پنل مدیریت' : '→ برنامه'}</a><div><h1>مدیر سامانه · پایش خدمات هتل‌ها</h1><p>${esc(U.me.name)}</p></div></div>
+  app.innerHTML = `<header class="top"><div class="in"><div class="brand"><a class="btn small ghost" href="${U.me.owner ? 'admin.html' : './'}" style="text-decoration:none">${U.me.owner ? '→ پنل مدیریت' : '→ برنامه'}</a><div><h1>مدیر سامانه · پایش خدمات هتل‌ها</h1><p>${esc(U.me.name)}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
     <nav class="tabs" role="tablist">${tabs().map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="false">${l}</button>`).join('')}</nav></div></header><main class="wrap" id="main"></main>`;
   app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
 }
