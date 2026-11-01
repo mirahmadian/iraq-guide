@@ -24,7 +24,7 @@ const statusPill = u => !u.active ? '<span class="pill bad">غیرفعال</span
 function tempHTML(list) {
   return `<div class="card temp-pw"><div class="card-h"><h2>رمز ساخته شد</h2><button class="btn small ghost" id="tmp-x">بستن</button></div>
     <p class="hint">این رمز فقط همین یک بار نشان داده می‌شود. رمز «موقت» با اولین ورود باید عوض شود.</p>
-    <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی (نام کاربری)</th><th>رمز</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${faS(c.nid)}</td><td><b class="num">${esc(faS(c.password))}</b>${c.temporary ? ' <span class="dim">(موقت)</span>' : ''}</td></tr>`).join('')}</tbody></table></div></div>`;
+    <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی (نام کاربری)</th><th>رمز</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${faS(c.nid)}</td><td><b dir="ltr" style="font-family:monospace;font-size:16px;letter-spacing:1px">${esc(c.password)}</b> <button type="button" class="btn small ghost" data-copy="${esc(c.password)}">📋 کپی</button>${c.temporary ? ' <span class="dim">(موقت)</span>' : ''}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
 const wireTemp = m => { const x = m.querySelector('#tmp-x'); if (x) x.onclick = () => { U.temp = null; go(U.tab); }; };
 
@@ -70,9 +70,10 @@ function newUserForm(R, role) {
 }
 function wireNewUser(m) {
   const f = m.querySelector('#nu'); if (!f) return;
-  f.onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'); err.textContent = '';
+  f.onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'), sb = f.querySelector('[type=submit]'); err.textContent = '';
+    if (sb.disabled) return; sb.disabled = true;
     try { U.temp = [await api('/api/super/users', { body: { role: m.querySelector('#nu-role').value, region_id: +m.querySelector('#nu-region').value, name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, password: m.querySelector('#nu-pw').value } })]; go(U.tab); }
-    catch (x) { err.textContent = x.message; } };
+    catch (x) { sb.disabled = false; err.textContent = x.message; } };
 }
 
 /* ═════════ all users ═════════ */
@@ -99,7 +100,7 @@ function renderUsers() {
   m.querySelector('#fr').onchange = e => { U.region = +e.target.value; loadUsers(); };
   const sure = b => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return false; };
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.act}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });
-  m.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { U.temp = [await api(`/api/super/users/${b.dataset.reset}/reset`, { body: { password: m.querySelector(`[data-pw="${b.dataset.reset}"]`).value } })]; loadUsers(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { if (!sure(b)) return; b.disabled = true; try { U.temp = [await api(`/api/super/users/${b.dataset.reset}/reset`, { body: { password: m.querySelector(`[data-pw="${b.dataset.reset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; toast(e.message, true); } });
   m.querySelectorAll('[data-pk]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { await api(`/api/super/users/${b.dataset.pk}/passkeys`, { body: {} }); loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { await api(`/api/super/users/${b.dataset.del}/delete`, { body: {} }); toast('حذف شد.'); loadUsers(); } catch (e) { toast(e.message, true); } });
 }

@@ -209,7 +209,7 @@ function wireImport(p) {
 function tempHTML(list, title) {
   return `<div class="card temp-pw"><div class="card-h"><h2>${esc(title)}</h2><button class="btn small ghost" id="tmp-x">بستن</button></div>
     <p class="hint">این رمزها فقط همین یک بار نشان داده می‌شوند؛ برای هر نفر بفرستید. رمز «موقت» با اولین ورود باید عوض شود.</p>
-    <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی (نام کاربری)</th><th>رمز</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${faS(c.nid)}</td><td><b class="num">${esc(faS(c.password))}</b>${c.temporary === false ? '' : ' <span class="dim">(موقت)</span>'}</td></tr>`).join('')}</tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی (نام کاربری)</th><th>رمز</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${faS(c.nid)}</td><td><b dir="ltr" style="font-family:monospace;font-size:16px;letter-spacing:1px">${esc(c.password)}</b> <button type="button" class="btn small ghost" data-copy="${esc(c.password)}">📋 کپی</button>${c.temporary === false ? '' : ' <span class="dim">(موقت)</span>'}</td></tr>`).join('')}</tbody></table></div>
     <p class="hint">ورود: در برنامه‌ی همیار کاروان ← «درباره برنامه» ← <b>«👥 ورود همکاران»</b></p></div>`;
 }
 document.addEventListener('click', e => { if (e.target.id === 'tmp-x') { A.temp = null; A.tab === 'users' ? renderUsers() : renderImport(); } });
@@ -320,11 +320,12 @@ function renderUsers() {
       <span class="err" id="nu-err"></span></form>`;
   const saveEdit = async id => { const name = m.querySelector(`[data-uname="${id}"]`).value, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast('ذخیره شد.'); } catch (e) { toast(e.message, true); } };
   m.querySelectorAll('[data-uname],[data-usheet]').forEach(i => i.onchange = () => saveEdit(i.dataset.uname || i.dataset.usheet));
-  m.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { A.temp = [await api(`/api/admin/users/${b.dataset.ureset}/reset`, { body: { password: m.querySelector(`[data-upw="${b.dataset.ureset}"]`).value } })]; loadUsers(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } b.disabled = true; b.textContent = '…'; try { A.temp = [await api(`/api/admin/users/${b.dataset.ureset}/reset`, { body: { password: m.querySelector(`[data-upw="${b.dataset.ureset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; b.textContent = 'تعیین رمز'; toast(e.message, true); } });
   m.querySelectorAll('[data-uact]').forEach(b => b.onclick = async () => { try { await api(`/api/admin/users/${b.dataset.uact}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-uclr]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api(`/api/admin/users/${b.dataset.uclr}/passkeys`, { body: {} }); loadUsers(); } catch (e) { toast(e.message, true); } });
-  m.querySelector('#nu').onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'); err.textContent = '';
-    try { A.temp = [await api('/api/admin/users', { body: { name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, sheet: m.querySelector('#nu-sheet').value, password: m.querySelector('#nu-pw').value } })]; loadUsers(); } catch (x) { err.textContent = x.message; } };
+  m.querySelector('#nu').onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'), sb = m.querySelector('#nu [type=submit]'); err.textContent = '';
+    if (sb.disabled) return; sb.disabled = true;
+    try { A.temp = [await api('/api/admin/users', { body: { name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, sheet: m.querySelector('#nu-sheet').value, password: m.querySelector('#nu-pw').value } })]; loadUsers(); } catch (x) { sb.disabled = false; err.textContent = x.message; } };
 }
 
 })();

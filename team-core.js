@@ -225,7 +225,11 @@ function renderChangePw(root, me, onDone) {
   };
   root.querySelector('#cp-out').onclick = logout;
 }
-document.addEventListener('click', e => { if (e.target.closest('[data-logout]')) logout(); });
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-logout]')) logout();
+  const c = e.target.closest('[data-copy]');
+  if (c) (navigator.clipboard ? navigator.clipboard.writeText(c.dataset.copy) : Promise.reject()).then(() => toast('کپی شد.'), () => toast('کپی نشد؛ رمز را از روی صفحه بنویسید.', true));
+});
 async function logout() { try { await api('/api/logout', { body: {} }); } catch (e) {} setToken(''); location.hash = ''; location.reload(); }
 
 /* ── settings: password + fingerprint ── */
