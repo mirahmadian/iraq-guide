@@ -93,7 +93,7 @@ async function bioRegister() {
   if (!r.getPublicKey || !r.getAuthenticatorData) throw new Error('مرورگر این گوشی قدیمی است. Chrome یا Safari را به‌روز کنید.');
   const ua = navigator.userAgent, label = /iPhone|iPad/.test(ua) ? 'آیفون' : /Android/.test(ua) ? 'اندروید' : /Mac/.test(ua) ? 'مک' : /Windows/.test(ua) ? 'ویندوز' : 'دستگاه';
   await api('/api/passkey/register', { body: { id: cred.id, clientDataJSON: b2u(r.clientDataJSON), authenticatorData: b2u(r.getAuthenticatorData()), publicKey: b2u(r.getPublicKey()), alg: r.getPublicKeyAlgorithm(), label } });
-  try { localStorage.setItem('hr-bio', '1'); } catch (e) {}
+  try { localStorage.setItem('hr-bio', '1'); localStorage.setItem('hr-bio-id', cred.id); } catch (e) {}
 }
 async function bioLogin(nid) {
   const o = await api('/api/passkey/login-options', { body: { nid: nid || '' } });
@@ -236,10 +236,15 @@ async function logout() { try { await api('/api/logout', { body: {} }); } catch 
 /* ── settings: password + fingerprint ── */
 async function renderAccount(root, me, onBack) {
   const bio = await bioAvailable();
-  root.innerHTML = `<div class="card"><div class="card-h"><h2>☝️ ورود با اثر انگشت</h2></div>
-      ${bio ? `<p class="hint">با روشن کردن این گزینه، روی همین گوشی بدون رمز و با اثر انگشت یا تشخیص چهره وارد می‌شوید. اثر انگشت شما از گوشی خارج نمی‌شود.</p>
-        <div class="block">${me.passkeys.map(k => `<div class="row" style="justify-content:space-between"><span>📱 ${esc(k.label || 'دستگاه')} <span class="dim" style="font-size:12px">· ثبت ${fmtTs(k.created)}${k.last_used ? ' · آخرین ورود ' + fmtTs(k.last_used) : ''}</span></span><button class="btn small danger" data-pk="${esc(k.id)}">حذف</button></div>`).join('') || '<span class="dim">هنوز برای هیچ دستگاهی روشن نشده است.</span>'}</div>
-        <button class="btn" id="ac-bio">روشن کردن برای این گوشی</button>` : '<p class="hint">این گوشی یا مرورگر ورود با اثر انگشت را پشتیبانی نمی‌کند. Chrome یا Safari به‌روز لازم است و گوشی باید قفل صفحه (اثر انگشت، چهره یا رمز) داشته باشد.</p>'}</div>
+  /* کدام کلید مال همین گوشی است؟ (گوشی‌هایی که پیش از این نسخه روشن شده‌اند شناسه را نگه نداشته‌اند) */
+  let mine = '', flag = false; try { mine = localStorage.getItem('hr-bio-id') || ''; flag = localStorage.getItem('hr-bio') === '1'; } catch (e) {}
+  const here = k => k.id === mine || (!mine && flag && me.passkeys.length === 1);
+  const onHere = me.passkeys.some(here);
+  root.innerHTML = `<div class="card"><div class="card-h"><h2>☝️ ورود با اثر انگشت</h2>${onHere ? '<span class="pill ok">روی این گوشی روشن است</span>' : ''}</div>
+      ${!bio ? '<p class="hint">این گوشی یا مرورگر ورود با اثر انگشت را پشتیبانی نمی‌کند. Chrome یا Safari به‌روز لازم است و گوشی باید قفل صفحه (اثر انگشت، چهره یا رمز) داشته باشد.</p>'
+        : onHere ? '<p class="hint">روی این گوشی بدون رمز و با اثر انگشت یا تشخیص چهره وارد می‌شوید. اگر گوشی را عوض کردید یا نمی‌خواهید دیگر با اثر انگشت وارد شوید، «خاموش کردن» را بزنید؛ بعد از آن با کد ملی و رمز وارد می‌شوید و هر وقت خواستید دوباره روشنش می‌کنید.</p>'
+        : '<p class="hint">با روشن کردن این گزینه، روی همین گوشی بدون رمز و با اثر انگشت یا تشخیص چهره وارد می‌شوید. اثر انگشت شما از گوشی خارج نمی‌شود.</p><button class="btn" id="ac-bio">☝️ روشن کردن برای این گوشی</button>'}
+      ${me.passkeys.length ? `<div class="block"><span class="label">دستگاه‌هایی که اثر انگشت رویشان روشن است</span>${me.passkeys.map(k => `<div class="row" style="justify-content:space-between"><span>📱 ${esc(k.label || 'دستگاه')}${here(k) ? ' <b>(همین گوشی)</b>' : ''} <span class="dim" style="font-size:12px">· روشن‌شده ${fmtTs(k.created)}${k.last_used ? ' · آخرین ورود ' + fmtTs(k.last_used) : ''}</span></span><button class="btn small ghost" data-pk="${esc(k.id)}">🚫 خاموش کردن اثر انگشت${here(k) ? '' : ' آن دستگاه'}</button></div>`).join('')}</div>` : ''}</div>
     <form class="card" id="ac-pw" novalidate><div class="card-h"><h2>🔑 تغییر رمز</h2></div>
       <div class="field"><label class="label" for="ac-old">رمز فعلی</label><input id="ac-old" type="password" autocomplete="current-password"></div>
       <div class="field"><label class="label" for="ac-new">رمز جدید</label><input id="ac-new" type="password" autocomplete="new-password"></div>
@@ -248,8 +253,15 @@ async function renderAccount(root, me, onBack) {
   root.querySelector('#ac-back').onclick = onBack;
   root.querySelector('#ac-out').onclick = logout;
   const b = root.querySelector('#ac-bio');
-  if (b) b.onclick = async () => { try { await bioRegister(); toast('ورود با اثر انگشت روشن شد.'); const me2 = await api('/api/me'); Object.assign(me, me2); renderAccount(root, me, onBack); } catch (e) { toast(bioErr(e), true); } };
-  root.querySelectorAll('[data-pk]').forEach(x => x.onclick = async () => { await api('/api/passkeys/' + x.dataset.pk, { method: 'DELETE' }); me.passkeys = me.passkeys.filter(k => k.id !== x.dataset.pk); renderAccount(root, me, onBack); });
+  if (b) b.onclick = async () => { b.disabled = true; try { await bioRegister(); toast('ورود با اثر انگشت روشن شد.'); Object.assign(me, await api('/api/me', { fresh: true })); renderAccount(root, me, onBack); } catch (e) { b.disabled = false; toast(bioErr(e), true); } };
+  root.querySelectorAll('[data-pk]').forEach(x => x.onclick = async () => {
+    const k = me.passkeys.find(k => k.id === x.dataset.pk), mineK = k && here(k);
+    if (!confirm(mineK ? 'ورود با اثر انگشت روی این گوشی خاموش شود؟\nاز این به بعد با کد ملی و رمز وارد می‌شوید و هر وقت خواستید دوباره روشنش می‌کنید.' : 'ورود با اثر انگشت روی «' + (k ? k.label : '') + '» خاموش شود؟')) return;
+    x.disabled = true;
+    try { await api('/api/passkeys/' + x.dataset.pk, { method: 'DELETE' }); } catch (e) { x.disabled = false; return toast(e.message, true); }
+    if (mineK) try { localStorage.removeItem('hr-bio'); localStorage.removeItem('hr-bio-id'); } catch (e) {}
+    me.passkeys = me.passkeys.filter(p => p.id !== x.dataset.pk); toast('ورود با اثر انگشت خاموش شد.'); renderAccount(root, me, onBack);
+  });
   root.querySelector('#ac-pw').onsubmit = async e => {
     e.preventDefault(); const err = root.querySelector('#ac-err'); err.textContent = '';
     try { await api('/api/password', { body: { old: root.querySelector('#ac-old').value, new: root.querySelector('#ac-new').value } }); toast('رمز عوض شد.'); root.querySelector('#ac-pw').reset(); } catch (x) { err.textContent = x.message; }
