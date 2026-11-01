@@ -34,16 +34,16 @@ const CARAVAN_DATA = {
       }
     ],
     "banner": {
-      "image": "banners/site-1793495482308.jpg",
+      "image": "banners/site-1793495803578.jpg",
       "title": "دفتر نمایندگی حج و زیارت در عراق",
       "splash": true,
       "top": true
     },
     "icon": {
-      "i192": "icons/i192-1793495484933.png",
-      "i512": "icons/i512-1793495484933.png",
-      "mask": "icons/mask-1793495484933.png",
-      "apple": "icons/apple-1793495484933.png",
+      "i192": "icons/i192-1793495806371.png",
+      "i512": "icons/i512-1793495806371.png",
+      "mask": "icons/mask-1793495806371.png",
+      "apple": "icons/apple-1793495806371.png",
       "bg": "#044e39"
     },
     "layout": {
