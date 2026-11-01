@@ -2301,6 +2301,7 @@ const CARAVAN_DATA = {
         "x": 64,
         "y": 32
       },
+      "hqBanner": "banners/hq-najaf-1793517164514.jpg",
       "hotels": [
         {
           "id": "hotel-najaf-m001",
