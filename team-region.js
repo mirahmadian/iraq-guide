@@ -162,7 +162,11 @@ async function renderImport() {
     }
     catch (x) { msg.textContent = x.message; msg.className = 'err'; }
   };
-  m.querySelectorAll('[data-wdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api('/api/admin/weeks/' + b.dataset.wdel, { method: 'DELETE' }); renderImport(); } catch (e) { toast(e.message, true); } });
+  /* حذف هفته فقط با پرسش صریح (دو ضربه‌ی پشت‌سرهم روی اینترنت کند، هفته را ناخواسته پاک کرده بود) */
+  m.querySelectorAll('[data-wdel]').forEach(b => b.onclick = async () => {
+    const w = weeks.find(x => x.id === +b.dataset.wdel);
+    if (!confirm(`هفته‌ی «${w ? w.title : ''}» با ${fa(w ? w.entries : 0)} ورودی پاک شود؟\nمدیران ثابت دیگر این ورودی‌ها را نمی‌بینند.`)) return;
+    try { await api('/api/admin/weeks/' + b.dataset.wdel, { method: 'DELETE' }); renderImport(); } catch (e) { toast(e.message, true); } });
   if (I && I.preview) wireImport(I.preview);
 }
 function importPreviewHTML(p) {
