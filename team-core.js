@@ -263,6 +263,12 @@ function openZoom(src, cap) {
 async function teamBoot() {
   const app = document.getElementById('app');
   HR.viewRegion = 0;
+  if (location.hash === '#owner') {
+    /* from admin.html: the main owner's unlocked GitHub key makes them a system manager */
+    history.replaceState(null, '', location.pathname);
+    let gh = ''; try { gh = localStorage.getItem('caravan-admin-token') || ''; } catch (e) {}
+    if (gh) try { setToken((await api('/api/owner-login', { body: { gh } })).token); } catch (e) { toast(e.message, true); }
+  }
   if (!HR.token) return renderLogin(app, teamBoot);
   let me;
   try { me = await api('/api/me'); }

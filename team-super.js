@@ -4,11 +4,12 @@
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
 const TABS = [['regions', '🗺️ مناطق'], ['users', '👥 همه‌ی کاربران'], ['account', '🔐 حساب من']];
+const tabs = () => U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS;
 
 window.startSuper = me => { app = document.getElementById('app'); U.me = me; HR.viewRegion = 0; shell(); go(U.tab); };
 function shell() {
-  app.innerHTML = `<header class="top"><div class="in"><div class="brand"><a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a><div><h1>مدیر سامانه · پایش خدمات هتل‌ها</h1><p>${esc(U.me.name)}</p></div></div>
-    <nav class="tabs" role="tablist">${TABS.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="false">${l}</button>`).join('')}</nav></div></header><main class="wrap" id="main"></main>`;
+  app.innerHTML = `<header class="top"><div class="in"><div class="brand"><a class="btn small ghost" href="${U.me.owner ? 'admin.html' : './'}" style="text-decoration:none">${U.me.owner ? '→ پنل مدیریت' : '→ برنامه'}</a><div><h1>مدیر سامانه · پایش خدمات هتل‌ها</h1><p>${esc(U.me.name)}</p></div></div>
+    <nav class="tabs" role="tablist">${tabs().map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="false">${l}</button>`).join('')}</nav></div></header><main class="wrap" id="main"></main>`;
   app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
 }
 const main = () => document.getElementById('main');
@@ -17,7 +18,7 @@ function go(tab) {
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   ({ regions: loadRegions, users: loadUsers, account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
-const roleName = r => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r;
+const roleName = r => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r === 'super' ? 'مدیر سامانه' : r;
 const statusPill = u => !u.active ? '<span class="pill bad">غیرفعال</span>' : u.must_change ? '<span class="pill warn">هنوز وارد نشده</span>' : '<span class="pill ok">فعال</span>';
 function tempHTML(list) {
   return `<div class="card temp-pw"><div class="card-h"><h2>رمز ساخته شد</h2><button class="btn small ghost" id="tmp-x">بستن</button></div>
@@ -59,7 +60,7 @@ function renderRegions() {
 function newUserForm(R, role) {
   return `<form class="card" id="nu" novalidate><div class="card-h"><h2>➕ کاربر جدید</h2></div>
     <div class="row" style="align-items:flex-end">
-      <div class="field" style="flex:1 1 140px"><label class="label" for="nu-role">نقش</label><select id="nu-role"><option value="region" ${role === 'region' ? 'selected' : ''}>مدیر منطقه</option><option value="fm" ${role === 'fm' ? 'selected' : ''}>مدیر ثابت</option></select></div>
+      <div class="field" style="flex:1 1 140px"><label class="label" for="nu-role">نقش</label><select id="nu-role"><option value="region" ${role === 'region' ? 'selected' : ''}>مدیر منطقه</option><option value="fm" ${role === 'fm' ? 'selected' : ''}>مدیر ثابت</option><option value="super">مدیر سامانه (همه‌ی مناطق)</option></select></div>
       <div class="field" style="flex:1 1 160px"><label class="label" for="nu-region">منطقه</label><select id="nu-region">${R.map(r => `<option value="${r.id}" ${U.region === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></div>
       <div class="field" style="flex:1 1 200px"><label class="label" for="nu-name">نام و نام خانوادگی</label><input id="nu-name" maxlength="80"></div>
       <div class="field" style="flex:1 1 150px"><label class="label" for="nu-nid">کد ملی</label><input id="nu-nid" inputmode="numeric" maxlength="12"></div>
