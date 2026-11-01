@@ -3541,6 +3541,7 @@ const CARAVAN_DATA = {
         "x": 72,
         "y": 49
       },
+      "hqBanner": "banners/hq-kadhimiya-1793518191643.jpg",
       "hotels": [
         {
           "id": "hotel-kadhimiya-1792045499598",
