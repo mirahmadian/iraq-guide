@@ -149,7 +149,17 @@ async function renderImport() {
   m.querySelector('#xl').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     const msg = m.querySelector('#xl-msg'); msg.textContent = 'در حال خواندن…'; A.temp = null;
-    try { const r = await api('/api/admin/import?name=' + encodeURIComponent(file.name), { method: 'POST', body: file, headers: { 'Content-Type': 'application/octet-stream' }, retry: true, timeout: 40000 }); A.imp = { preview: r }; renderImport(); }
+    /* in 8KB pieces: on a weak line a lost piece is resent alone instead of the whole file */
+    try {
+      const PART = 8192, of = Math.max(1, Math.ceil(file.size / PART)), up = Math.random().toString(16).slice(2);
+      let r;
+      for (let i = 0; i < of; i++) {
+        msg.textContent = of > 1 ? `در حال ارسال… ${fa(Math.round(i / of * 100))}٪` : 'در حال ارسال…';
+        r = await api(`/api/admin/import?name=${encodeURIComponent(file.name)}&up=${up}&i=${i}&of=${of}`, { method: 'POST', body: file.slice(i * PART, (i + 1) * PART), headers: { 'Content-Type': 'application/octet-stream' }, retry: true, timeout: 15000 });
+      }
+      if (!r.token) throw new Error('ارسال کامل نشد. دوباره فایل را انتخاب کنید.');
+      A.imp = { preview: r }; renderImport();
+    }
     catch (x) { msg.textContent = x.message; msg.className = 'err'; }
   };
   m.querySelectorAll('[data-wdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api('/api/admin/weeks/' + b.dataset.wdel, { method: 'DELETE' }); renderImport(); } catch (e) { toast(e.message, true); } });
