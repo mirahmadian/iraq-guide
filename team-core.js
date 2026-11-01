@@ -6,7 +6,10 @@ const HR_API = 'https://188-121-118-223.nip.io';
 const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
 const HR = { token: '', viewRegion: 0 };
 try { HR.token = localStorage.getItem('hr-token') || ''; } catch (e) {}
-function setToken(t) { HR.token = t || ''; try { t ? localStorage.setItem('hr-token', t) : localStorage.removeItem('hr-token'); } catch (e) {} }
+function setToken(t, me) {
+  HR.token = t || ''; try { t ? localStorage.setItem('hr-token', t) : localStorage.removeItem('hr-token'); } catch (e) {}
+  GETC.clear(); if (t && me) GETC.set('/api/me', { t: Date.now(), text: JSON.stringify(me) });  /* ورود، «من کیستم» را هم آورده: یک رفت‌وبرگشت کمتر */
+}
 const fa = n => Number(n || 0).toLocaleString('fa-IR');
 const faS = s => String(s ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -35,7 +38,7 @@ async function api(path, opt = {}) {
   const href = HR_API + teamUrl(path, method);
   if (method !== 'GET') GETC.clear();
   if (get && !opt.fresh) { const c = GETC.get(path); if (c && Date.now() - c.t < 60000) return JSON.parse(c.text); }
-  const tries = get || opt.retry ? 3 : 1, wait = opt.timeout || (get ? 20000 : 45000);
+  const tries = get || opt.retry ? 3 : 1, wait = opt.timeout || (get ? 8000 : 45000);
   let run = get && !opt.fresh && INFLIGHT.get(path);
   if (!run) run = (async () => {
     let r;
@@ -97,7 +100,7 @@ async function bioLogin(nid) {
   const cred = await navigator.credentials.get({ publicKey: { ...o, challenge: u2b(o.challenge), allowCredentials: (o.allowCredentials || []).map(c => ({ ...c, id: u2b(c.id) })) } });
   const r = cred.response;
   const j = await api('/api/passkey/login', { body: { id: cred.id, clientDataJSON: b2u(r.clientDataJSON), authenticatorData: b2u(r.authenticatorData), signature: b2u(r.signature) } });
-  setToken(j.token);
+  setToken(j.token, j.me);
 }
 
 /* ── voice typing (Persian) ── */
@@ -190,11 +193,11 @@ async function renderLogin(root, onDone) {
     b.disabled = false; b.textContent = 'ورود'; remember();
     if (hr.status === 'fulfilled' && st.status === 'fulfilled') {
       root.querySelector('#lg-pick').hidden = false; b.hidden = true;
-      root.querySelector('#lg-hr').onclick = () => { setToken(hr.value.token); onDone(); };
+      root.querySelector('#lg-hr').onclick = () => { setToken(hr.value.token, hr.value.me); onDone(); };
       root.querySelector('#lg-st').onclick = () => openStaffPanel(st.value);
       return;
     }
-    if (hr.status === 'fulfilled') { setToken(hr.value.token); return onDone(); }
+    if (hr.status === 'fulfilled') { setToken(hr.value.token, hr.value.me); return onDone(); }
     if (st.status === 'fulfilled') return openStaffPanel(st.value);
     const why = [hr.reason, st.reason].find(x => x && x.status === 429) || (hr.reason && hr.reason.offline && !(st.reason && st.reason.status) ? hr.reason : null);
     err.textContent = why ? why.message : 'کد ملی یا رمز درست نیست.';
@@ -293,7 +296,7 @@ async function teamBoot() {
     /* from admin.html: the main owner's unlocked GitHub key makes them a system manager */
     history.replaceState(null, '', location.pathname);
     let gh = ''; try { gh = localStorage.getItem('caravan-admin-token') || ''; } catch (e) {}
-    if (gh) try { setToken((await api('/api/owner-login', { body: { gh } })).token); } catch (e) { toast(e.message, true); }
+    if (gh) try { { const j = await api('/api/owner-login', { body: { gh } }); setToken(j.token, j.me); } } catch (e) { toast(e.message, true); }
   }
   if (!HR.token) return renderLogin(app, teamBoot);
   let me;
