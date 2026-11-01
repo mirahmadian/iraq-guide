@@ -1,6 +1,6 @@
 'use strict';
 /* ورود همکاران — مشترک بین صفحه مدیر ثابت، مدیر منطقه و مدیر سامانه (team.html)
-   داده‌ها روی سرور «نواقص هتل‌ها» است و با توکن (Authorization) صدا زده می‌شود.
+   داده‌ها روی سرور «نواقص هتل‌ها» است و با توکن (در نشانی، _t) صدا زده می‌شود.
    همکاران پنل ادمین برنامه (Cloudflare) هم از همین فرم وارد می‌شوند و به admin.html می‌روند. */
 const HR_API = 'https://188-121-118-223.nip.io';
 const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
@@ -24,12 +24,15 @@ const RATING = [{ v: 'great', l: 'عالی', em: '😍', c: 'g' }, { v: 'good', 
 /* اینترنت عراق تا سرور گاهی بسته‌ها را گم می‌کند و یک درخواست گیر می‌کند:
    هر درخواست مهلت دارد و دوباره (با اتصال تازه) فرستاده می‌شود؛ خواندنی‌ها یک دقیقه نگه داشته می‌شوند تا جابه‌جایی بین تب‌ها فوری باشد. */
 const GETC = new Map(), INFLIGHT = new Map();
+const teamUrl = (path, method) => path + (path.includes('?') ? '&' : '?') + (HR.token ? '_t=' + HR.token : '') + (method === 'PUT' || method === 'DELETE' ? '&_m=' + method : '');
 async function api(path, opt = {}) {
   if (HR.viewRegion && path.startsWith('/api/admin/')) path += (path.includes('?') ? '&' : '?') + 'region=' + HR.viewRegion;
-  const h = { ...(HR.token ? { Authorization: 'Bearer ' + HR.token } : {}), ...(opt.headers || {}) };
   let body = opt.body;
-  if (body !== undefined && !(body instanceof Blob) && !(body instanceof ArrayBuffer)) { body = JSON.stringify(body); h['Content-Type'] = 'application/json'; }
+  if (body !== undefined && !(body instanceof Blob) && !(body instanceof ArrayBuffer)) body = JSON.stringify(body);
   const method = opt.method || (body !== undefined ? 'POST' : 'GET'), get = method === 'GET' && !opt.raw;
+  /* «ساده» برای مرورگر (بی‌سرآیند، فقط GET/POST): پرسش اجازه‌ی جداگانه (preflight) پیش از هر درخواست حذف می‌شود */
+  const h = body !== undefined ? { 'Content-Type': 'text/plain;charset=UTF-8' } : {};
+  const href = HR_API + teamUrl(path, method);
   if (method !== 'GET') GETC.clear();
   if (get && !opt.fresh) { const c = GETC.get(path); if (c && Date.now() - c.t < 60000) return JSON.parse(c.text); }
   const tries = get || opt.retry ? 3 : 1, wait = opt.timeout || (get ? 20000 : 45000);
@@ -38,7 +41,7 @@ async function api(path, opt = {}) {
     let r;
     for (let i = 1; ; i++) {
       const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait * i);
-      try { r = await fetch(HR_API + path, { method, headers: h, body, cache: 'no-store', signal: ac.signal }); if (!opt.raw) r = { ok: r.ok, status: r.status, text: await r.text() }; clearTimeout(t); break; }
+      try { r = await fetch(href, { method: method === 'GET' ? 'GET' : 'POST', headers: h, body, cache: 'no-store', signal: ac.signal }); if (!opt.raw) r = { ok: r.ok, status: r.status, text: await r.text() }; clearTimeout(t); break; }
       catch (e) {
         clearTimeout(t);
         if (i >= tries) throw Object.assign(new Error(e.name === 'AbortError' ? 'ارتباط با سرور خیلی کند است. چند لحظه بعد دوباره امتحان کنید.' : 'اینترنت وصل نیست یا سرور در دسترس نیست.'), { offline: true });
@@ -118,7 +121,7 @@ async function compressImage(file) {
   let bmp;
   try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
   catch (e) { bmp = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('این عکس باز نشد.')); i.src = URL.createObjectURL(file); }); }
-  const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight, k = Math.min(1, 2560 / Math.max(w, h));
+  const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight, k = Math.min(1, 1920 / Math.max(w, h));
   const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
   c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
   let blob = await new Promise(r => c.toBlob(r, 'image/webp', .82));
@@ -127,15 +130,17 @@ async function compressImage(file) {
   if (blob.size >= file.size && /^image\/(jpeg|png|webp)$/.test(file.type)) return file;
   return blob;
 }
-function upload(url, blob, headers, onProgress) {
-  return new Promise((resolve, reject) => {
-    const x = new XMLHttpRequest(); x.open('PUT', HR_API + url); x.setRequestHeader('Authorization', 'Bearer ' + HR.token);
-    Object.entries(headers || {}).forEach(([k, v]) => x.setRequestHeader(k, v));
-    x.upload.onprogress = e => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
-    x.onload = () => { GETC.clear(); let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} x.status < 300 ? resolve(j) : reject(new Error(j.error || 'ارسال ناموفق بود.')); };
-    x.onerror = () => reject(new Error('اینترنت قطع شد. دوباره امتحان کنید.'));
-    x.send(blob);
-  });
+/* عکس و فیلم در تکه‌های ۱۲۸ کیلوبایتی و به ترتیب؛ تکه‌ای که گیر کند به‌تنهایی دوباره فرستاده می‌شود */
+async function upload(url, blob, opt, onProgress) {
+  const PART = 131072, of = Math.max(1, Math.ceil(blob.size / PART)), up = Math.random().toString(16).slice(2);
+  const base = url + (url.includes('?') ? '&' : '?') + `orig=${opt && opt.orig || blob.size}&up=${up}&of=${of}`;
+  let r;
+  for (let i = 0; i < of; i++) {
+    r = await api(base + '&i=' + i, { method: 'PUT', body: blob.slice(i * PART, (i + 1) * PART), retry: true, timeout: 30000 });
+    onProgress && onProgress((i + 1) / of);
+  }
+  if (!r || !r.id) throw new Error('ارسال کامل نشد. دوباره امتحان کنید.');
+  return r;
 }
 
 /* ── login / password screens ── */

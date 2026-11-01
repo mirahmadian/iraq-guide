@@ -155,7 +155,7 @@ async function sendMedia(qid, file, kind) {
       if (dur > 61) throw new Error(`فیلم ${fa(Math.round(dur))} ثانیه است. حداکثر ۶۰ ثانیه.`);
     }
     if (S.E === E) renderEntry();
-    const m = await upload(`/api/fm/media?entry=${E.id}&qid=${encodeURIComponent(qid)}&kind=${kind}`, blob, { 'Content-Type': blob.type || 'application/octet-stream', 'x-orig-size': String(file.size) },
+    const m = await upload(`/api/fm/media?entry=${E.id}&qid=${encodeURIComponent(qid)}&kind=${kind}`, blob, { orig: file.size },
       p => { up.p = p; const bar = document.getElementById('up-' + up.k); if (bar) bar.style.width = Math.round(p * 100) + '%'; });
     E.media.push(m); E.uploads.splice(E.uploads.indexOf(up), 1);
     if (up.preview) URL.revokeObjectURL(up.preview);

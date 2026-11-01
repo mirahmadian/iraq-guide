@@ -155,7 +155,7 @@ async function renderImport() {
       let r;
       for (let i = 0; i < of; i++) {
         msg.textContent = of > 1 ? `در حال ارسال… ${fa(Math.round(i / of * 100))}٪` : 'در حال ارسال…';
-        r = await api(`/api/admin/import?name=${encodeURIComponent(file.name)}&up=${up}&i=${i}&of=${of}`, { method: 'POST', body: file.slice(i * PART, (i + 1) * PART), headers: { 'Content-Type': 'application/octet-stream' }, retry: true, timeout: 15000 });
+        r = await api(`/api/admin/import?name=${encodeURIComponent(file.name)}&up=${up}&i=${i}&of=${of}`, { method: 'POST', body: file.slice(i * PART, (i + 1) * PART), retry: true, timeout: 15000 });
       }
       if (!r.token) throw new Error('ارسال کامل نشد. دوباره فایل را انتخاب کنید.');
       A.imp = { preview: r }; renderImport();
