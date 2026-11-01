@@ -9,14 +9,15 @@
   --shadow:0 2px 12px rgba(90,64,20,.08);
   --font:'Vazirmatn',Tahoma,'Segoe UI',sans-serif; --r:16px;
 }
-@media (prefers-color-scheme:dark){:root{
+/* same theme as the app (🌙 button, saved in caravan-theme); light by default */
+:root[data-theme="dark"]{
   --bg:#14110C; --surface:#1E1A13; --card:#221D15; --card2:#2A241A;
   --ink:#F2EAD8; --muted:#CDBE9C; --dim:#A8987A; --line:#3A3122; --line-s:#4A3F2C;
   --pri:#147358; --pri-ink:#6FD1AC; --pri-soft:rgba(26,133,102,.18);
   --brass:#D9B45F; --ok:#5BC48C; --ok-soft:rgba(91,196,140,.14); --warn:#E8B04A; --warn-soft:rgba(232,176,74,.14);
   --bad:#F07A70; --bad-soft:rgba(240,122,112,.14); --info:#7FB3EA; --info-soft:rgba(127,179,234,.14);
   --shadow:0 2px 14px rgba(0,0,0,.35); color-scheme:dark;
-}}
+}
 *{box-sizing:border-box}
 html{direction:rtl;-webkit-text-size-adjust:100%}
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.7;font-size:14px}
