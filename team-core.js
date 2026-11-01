@@ -168,7 +168,7 @@ async function renderLogin(root, onDone) {
       <div class="field"><label class="label" for="lg-pw">رمز</label><input id="lg-pw" type="password" autocomplete="current-password" placeholder="رمزی که مدیرتان داده است"></div>
       <span class="err" id="lg-err" role="alert"></span>
       <div id="lg-pick" hidden class="block"><span class="label">با این کد ملی به دو بخش دسترسی دارید. کدام را باز کنم؟</span>
-        <button type="button" class="btn" id="lg-hr">🏨 نواقص هتل‌ها</button><button type="button" class="btn ghost" id="lg-st">⚙️ پنل ادمین برنامه</button></div>
+        <button type="button" class="btn" id="lg-hr">🏨 گزارشات مدیران ثابت</button><button type="button" class="btn ghost" id="lg-st">⚙️ پنل ادمین برنامه</button></div>
       <button class="btn" id="lg-go" type="submit">ورود</button>
       <p class="hint">سامانه خودش تشخیص می‌دهد شما مدیر ثابت، مدیر منطقه، مدیر سامانه یا همکار پنل ادمین هستید.<br>رمز را فراموش کرده‌اید؟ به مدیرتان بگویید تا رمز تازه بدهد.</p>
       <a class="hint" href="admin.html" style="text-align:center">ورود مدیر اصلی برنامه (با رمز مدیریت)</a>
