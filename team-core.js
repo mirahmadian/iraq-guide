@@ -221,7 +221,8 @@ function renderChangePw(root, me, onDone) {
     e.preventDefault(); const err = root.querySelector('#cp-err'); err.textContent = '';
     const n = root.querySelector('#cp-new').value;
     if (n !== root.querySelector('#cp-new2').value) { err.textContent = 'رمز جدید و تکرارش یکی نیستند.'; return; }
-    try { await api('/api/password', { body: { old: root.querySelector('#cp-old').value, new: n } }); onDone(); } catch (x) { err.textContent = x.message; }
+    const sb = root.querySelector('#cp [type=submit]'); if (sb.disabled) return; sb.disabled = true;
+    try { await api('/api/password', { body: { old: root.querySelector('#cp-old').value, new: n } }); onDone(); } catch (x) { sb.disabled = false; err.textContent = x.message; }
   };
   root.querySelector('#cp-out').onclick = logout;
 }

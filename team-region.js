@@ -181,7 +181,7 @@ function importPreviewHTML(p) {
       <td>${p.codes.length ? `<select class="sel" data-pick="${i}"><option value="">—</option>${codeOpts}</select>` : ''}</td>
       <td><input data-name="${i}" value="${esc(s.guess?.name || '')}" placeholder="نام"></td><td><input data-nid="${i}" value="${esc(s.guess?.nid || '')}" inputmode="numeric" placeholder="۱۰ رقم" maxlength="12"></td></tr>`).join('')}
     </tbody></table></div>
-    <p class="hint">شیتی که کد ملی ندارد به کسی سپرده نمی‌شود. برای کسی که حساب ندارد، حساب با رمز موقت ساخته می‌شود.</p>
+    <p class="hint">شیتی که کد ملی ندارد به کسی سپرده نمی‌شود. برای کسی که حساب ندارد، حساب با یک رمز تصادفی ساخته می‌شود.</p>
     <span class="err" id="im-err"></span>
     <div class="row"><button class="btn" id="im-go">ثبت این هفته</button><button class="btn ghost" id="im-cancel">انصراف</button></div></div>`;
 }
@@ -208,7 +208,7 @@ function wireImport(p) {
 }
 function tempHTML(list, title) {
   return `<div class="card temp-pw"><div class="card-h"><h2>${esc(title)}</h2><button class="btn small ghost" id="tmp-x">بستن</button></div>
-    <p class="hint">این رمزها فقط همین یک بار نشان داده می‌شوند؛ برای هر نفر بفرستید. رمز «موقت» با اولین ورود باید عوض شود.</p>
+    <p class="hint">این رمزها فقط همین یک بار نشان داده می‌شوند؛ برای هر نفر بفرستید. مدیر ثابت با همین رمز وارد می‌شود و لازم نیست عوضش کند.</p>
     <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی (نام کاربری)</th><th>رمز</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${faS(c.nid)}</td><td><b dir="ltr" style="font-family:monospace;font-size:16px;letter-spacing:1px">${esc(c.password)}</b> <button type="button" class="btn small ghost" data-copy="${esc(c.password)}">📋 کپی</button>${c.temporary === false ? '' : ' <span class="dim">(موقت)</span>'}</td></tr>`).join('')}</tbody></table></div>
     <p class="hint">ورود: در برنامه‌ی همیار کاروان ← «درباره برنامه» ← <b>«👥 ورود همکاران»</b></p></div>`;
 }
@@ -303,7 +303,7 @@ function wireForm(cur) {
 async function loadUsers() { try { A.users = await api('/api/admin/users'); } catch (e) { return toast(e.message, true); } if (A.tab === 'users') renderUsers(); }
 function renderUsers() {
   const m = main();
-  m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز موقت') : ''}
+  m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز ساخته شد') : ''}
     <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.length)})</h2></div>
       <p class="hint">حساب‌ها معمولاً هنگام وارد کردن اکسل هفتگی خودکار ساخته می‌شوند. «شیت» همان نام شیت این نفر در اکسل است تا هفته‌های بعد خودکار شناخته شود.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی</th><th>شیت</th><th>وضعیت</th><th>اثر انگشت</th><th>گزارش</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
@@ -315,8 +315,8 @@ function renderUsers() {
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 200px"><label class="label" for="nu-name">نام و نام خانوادگی</label><input id="nu-name" maxlength="80"></div>
         <div class="field" style="flex:1 1 160px"><label class="label" for="nu-nid">کد ملی</label><input id="nu-nid" inputmode="numeric" maxlength="12"></div>
         <div class="field" style="flex:1 1 120px"><label class="label" for="nu-sheet">نام شیت (اختیاری)</label><input id="nu-sheet" maxlength="60" dir="ltr"></div>
-        <div class="field" style="flex:1 1 150px"><label class="label" for="nu-pw">رمز (خالی = رمز موقت تصادفی)</label><input id="nu-pw" maxlength="60" autocomplete="new-password"></div><button class="btn" type="submit">افزودن</button></div>
-      <p class="hint">نام کاربری هر نفر کد ملی اوست. اگر رمز را خودتان بنویسید (دست‌کم ۶ کاراکتر)، همان می‌ماند؛ اگر خالی بگذارید، رمز موقت ساخته می‌شود و با اولین ورود عوض می‌شود.</p>
+        <div class="field" style="flex:1 1 150px"><label class="label" for="nu-pw">رمز (خالی = رمز تصادفی)</label><input id="nu-pw" maxlength="60" autocomplete="new-password"></div><button class="btn" type="submit">افزودن</button></div>
+      <p class="hint">نام کاربری هر نفر کد ملی اوست. اگر رمز را خودتان بنویسید (دست‌کم ۶ کاراکتر)، همان می‌ماند؛ اگر خالی بگذارید، یک رمز تصادفی ساخته می‌شود. مدیر ثابت با همین رمز وارد می‌شود و لازم نیست عوضش کند.</p>
       <span class="err" id="nu-err"></span></form>`;
   const saveEdit = async id => { const name = m.querySelector(`[data-uname="${id}"]`).value, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast('ذخیره شد.'); } catch (e) { toast(e.message, true); } };
   m.querySelectorAll('[data-uname],[data-usheet]').forEach(i => i.onchange = () => saveEdit(i.dataset.uname || i.dataset.usheet));
