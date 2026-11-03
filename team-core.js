@@ -2,7 +2,11 @@
 /* ورود همکاران — مشترک بین صفحه مدیر ثابت، مدیر منطقه و مدیر سامانه (team.html)
    داده‌ها روی سرور «نواقص هتل‌ها» است و با توکن (در نشانی، _t) صدا زده می‌شود.
    همکاران پنل ادمین برنامه (Cloudflare) هم از همین فرم وارد می‌شوند و به admin.html می‌روند. */
-const HR_API = 'https://188-121-118-223.nip.io';
+/* دو راه به سرور: واسطه رایگان Cloudflare (worker/team-proxy — وقتی اینترنت کاربر مستقیم به سرور نمی‌رسد) و نشانی مستقیم.
+   اگر یکی وصل نشد، خودکار با دیگری امتحان می‌شود و راهی که جواب داد روی گوشی به خاطر سپرده می‌شود. */
+const HR_APIS = ['https://hamyar-team.hamyar-karevan.workers.dev', 'https://188-121-118-223.nip.io'];
+let HR_API = HR_APIS[0];
+try { const s = localStorage.getItem('hr-api'); if (HR_APIS.includes(s)) HR_API = s; } catch (e) {}
 const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
 const HR = { token: '', viewRegion: 0 };
 try { HR.token = localStorage.getItem('hr-token') || ''; } catch (e) {}
@@ -35,18 +39,24 @@ async function api(path, opt = {}) {
   const method = opt.method || (body !== undefined ? 'POST' : 'GET'), get = method === 'GET' && !opt.raw;
   /* «ساده» برای مرورگر (بی‌سرآیند، فقط GET/POST): پرسش اجازه‌ی جداگانه (preflight) پیش از هر درخواست حذف می‌شود */
   const h = body !== undefined ? { 'Content-Type': 'text/plain;charset=UTF-8' } : {};
-  const href = HR_API + teamUrl(path, method);
   if (method !== 'GET') GETC.clear();
   if (get && !opt.fresh) { const c = GETC.get(path); if (c && Date.now() - c.t < 60000) return JSON.parse(c.text); }
   const tries = get || opt.retry ? 3 : 1, wait = opt.timeout || (get ? 8000 : 45000);
   let run = get && !opt.fresh && INFLIGHT.get(path);
   if (!run) run = (async () => {
-    let r;
+    let r, switched = false;
     for (let i = 1; ; i++) {
-      const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait * i);
+      const ac = new AbortController(), t = setTimeout(() => ac.abort(), wait * i), href = HR_API + teamUrl(path, method);
       try { r = await fetch(href, { method: method === 'GET' ? 'GET' : 'POST', headers: h, body, cache: 'no-store', signal: ac.signal }); if (!opt.raw) r = { ok: r.ok, status: r.status, text: await r.text() }; clearTimeout(t); break; }
       catch (e) {
         clearTimeout(t);
+        /* راه دیگر: برای خواندنی‌ها همیشه؛ برای ثبت‌ها فقط وقتی اصلاً وصل نشده (نه دیر جواب داده) تا چیزی دو بار ثبت نشود */
+        if (!switched && (get || e.name !== 'AbortError')) {
+          switched = true;
+          HR_API = HR_APIS.find(b => b !== HR_API);
+          try { localStorage.setItem('hr-api', HR_API); } catch (x) {}
+          continue;
+        }
         if (i >= tries) throw Object.assign(new Error(e.name === 'AbortError' ? 'ارتباط با سرور خیلی کند است. چند لحظه بعد دوباره امتحان کنید.' : 'اینترنت وصل نیست یا سرور در دسترس نیست.'), { offline: true });
       }
     }
