@@ -302,7 +302,7 @@ function renderUsers() {
   const el = document.getElementById('users-admin');
   if (!el) return;
   if (!ghToken) { el.innerHTML = '<div class="empty-msg">این بخش فقط برای مدیر اصلی است.</div>'; return; }
-  const ago = t => t ? new Date(t).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }) : 'هنوز وارد نشده';
+  const ago = t => t ? new Date(t).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }) : 'هنوز وارد پنل ادمین نشده';
   el.innerHTML = `
   <div class="info-box"><strong>👥 همکاران پنل مدیریت</strong>
     برای هر همکار کد ملی (به‌عنوان نام کاربری) و رمز بگذارید و بخش‌هایی را که اجازه دارد ویرایش کند تیک بزنید — مثلاً فقط «هتل‌های کربلا» یا فقط «اطلاعیه‌ها».
@@ -322,7 +322,7 @@ function renderUsers() {
     : usersList.map(u => `<div class="lay-slide" style="${u.active ? '' : 'opacity:.6'}">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${u.active ? '👤' : '⛔'} ${escH(u.name)}</b><span dir="ltr" style="color:#666">🪪 ${escH(u.user)}</span></div>
       <div style="font-size:12.5px;color:#555;line-height:1.9">${u.perms.length ? u.perms.map(k => escH(uPermLabel(k))).join(' · ') : '<i>بدون دسترسی</i>'}</div>
-      <div style="font-size:12px;color:#888">آخرین ورود: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
+      <div style="font-size:12px;color:#888">آخرین ورود به پنل ادمین: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
       ${u.reset_req ? `<div style="padding:8px 10px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:13px;font-weight:800">🔑 درخواست فراموشی رمز — ${ago(u.reset_req)}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="userEdit('${escH(u.user)}')">✏️ ویرایش دسترسی‌ها / رمز</button>
