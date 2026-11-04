@@ -4,6 +4,7 @@ const STATIC = [
   'index.html',
   'data.js',
   'version.js',
+  'icons.js',
   'food.js',
   'map-viewer.js',
   'banner.js',

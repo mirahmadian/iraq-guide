@@ -6,14 +6,15 @@
 (function injectBesatCSS() {
   const css = `
   .besat-strip{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:10px 12px;border-radius:var(--r);
-    border:1px solid var(--brass-l,#C9A24B);background:var(--card);box-shadow:var(--shadow);cursor:pointer;font-family:var(--font);color:var(--text);text-align:right}
-  .besat-strip .bs-logo{width:46px;height:46px;border-radius:12px;background:#fff center/72% no-repeat;flex-shrink:0;border:1px solid var(--border)}
+    border:1px solid var(--border);background:var(--card);cursor:pointer;font-family:var(--font);color:var(--text);text-align:right}
+  .besat-strip .bs-logo{width:44px;height:44px;border-radius:13px;background:#fff center/72% no-repeat;flex-shrink:0;box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--brass-l)}
   .besat-strip .bs-txt{flex:1;min-width:0}
   .besat-strip .bs-when{display:flex;align-items:center;gap:6px;font-size:calc(12px * var(--fs,1));font-weight:800;color:var(--brass);line-height:1.6}
   .besat-strip .bs-title{display:block;font-size:calc(14.5px * var(--fs,1));font-weight:900;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .besat-strip .bs-place{display:block;font-size:calc(12px * var(--fs,1));color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .besat-strip .bs-place{display:flex;align-items:center;gap:3px;font-size:calc(12px * var(--fs,1));color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .besat-strip .bs-all{display:flex;align-items:center;gap:2px;flex-shrink:0;font-size:calc(11.5px * var(--fs,1));font-weight:800;color:var(--pri-ink)}
   .besat-strip .chev{width:15px;height:15px}
+  .besat-strip .bs-place .ico{width:14px;height:14px}
   .bs-live{display:inline-flex;align-items:center;gap:5px;padding:0 8px;border-radius:100px;background:var(--c-clinic);color:#fff;font-size:calc(11px * var(--fs,1))}
   .bs-live::before{content:'';width:7px;height:7px;border-radius:50%;background:#fff;animation:bsPulse 1.4s infinite}
   @keyframes bsPulse{50%{opacity:.3}}
@@ -133,7 +134,7 @@ function besatStripHTML(city) {
     <span class="bs-txt">
       <span class="bs-when">${besatWhenHTML(n, city.id)}${besat().enabled ? '' : '<span class="bs-hidden">پنهان از کاربران</span>'}</span>
       <span class="bs-title">${escHtml(n.p.title)}</span>
-      ${n.p.place ? `<span class="bs-place">📍 ${escHtml(n.p.place)}</span>` : ''}
+      ${n.p.place ? `<span class="bs-place">${ico('pin')}<span style="overflow:hidden;text-overflow:ellipsis">${escHtml(n.p.place)}</span></span>` : ''}
     </span>
     <span class="bs-all">همه برنامه‌ها${CHEV_FWD}</span>
   </button>`;

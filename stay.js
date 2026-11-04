@@ -39,10 +39,12 @@
   .st-more{margin-top:12px;border-radius:14px;background:var(--card);border:1px solid var(--border-s);padding:0 12px}
   .st-more summary{min-height:46px;display:flex;align-items:center;cursor:pointer;font-weight:800;color:var(--pri-ink);font-size:calc(14px * var(--fs,1))}
   .st-tips{font-size:calc(12.5px * var(--fs,1));color:var(--muted);line-height:2;margin:12px 4px 0;padding-inline-start:18px}
-  .stay-alert{display:flex;gap:10px;align-items:center;width:100%;margin-top:12px;padding:12px 14px;border-radius:16px;cursor:pointer;text-align:right;font-family:var(--font);
+  .stay-alert{display:flex;gap:10px;align-items:center;width:100%;margin-top:12px;padding:12px 14px;border-radius:var(--r);cursor:pointer;text-align:right;font-family:var(--font);
     border:1px solid #C77700;background:rgba(199,119,0,.12);color:var(--text);font-size:calc(14px * var(--fs,1));font-weight:800;line-height:1.8}
   .stay-alert.bad{border-color:#B3261E;background:rgba(179,38,30,.12)}
-  .stay-alert span:first-child{font-size:24px}
+  .stay-alert > .ico{width:26px;height:26px;color:#C77700}
+  .stay-alert.bad > .ico{color:var(--c-clinic)}
+  [data-theme="dark"] .stay-alert.bad > .ico{color:var(--i-clinic)}
   `;
   document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');
 })();
@@ -117,7 +119,7 @@ function stayAlertHTML() {
   const msg = s.left > 1 ? `فقط <b>${faDigits(s.left)} روز</b> تا پایان مهلت اقامت در عراق مانده — آخرین روز: ${stJText(s.last)}`
     : s.left === 1 ? '<b>امروز آخرین روز مجاز اقامت شما در عراق است.</b>'
     : '<b>مهلت اقامت شما در عراق تمام شده است.</b> هرچه زودتر با ستاد تماس بگیرید.';
-  return `<button class="stay-alert ${bad ? 'bad' : ''}" onclick="openStay()"><span aria-hidden="true">⚠️</span><span>${msg}</span></button>`;
+  return `<button class="stay-alert ${bad ? 'bad' : ''}" onclick="openStay()">${ico('alert')}<span>${msg}</span></button>`;
 }
 
 /* ── صفحه محاسبه ── */

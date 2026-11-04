@@ -5,18 +5,20 @@
 ══════════════════════════════════════════ */
 (function injectTodayCSS() {
   const css = `
-  .today-bar{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:9px 14px;border-radius:14px;cursor:pointer;text-align:right;font-family:var(--font);
-    background:var(--card);border:1px solid var(--border-s);color:var(--text);font-size:calc(13.5px * var(--fs,1));font-weight:800}
+  .today-bar{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;padding:10px 14px;border-radius:var(--r);cursor:pointer;text-align:right;font-family:var(--font);
+    background:var(--card);border:1px solid var(--border);color:var(--text);font-size:calc(13.5px * var(--fs,1));font-weight:800}
+  .tb-row{display:flex;align-items:center;gap:12px}
+  .tb-sep{width:1px;align-self:stretch;background:var(--border)}
+  .tb-w .ico{width:24px;height:24px;color:var(--brass)}
   .today-bar.hot{background:rgba(199,119,0,.12);border-color:#C77700}
   .today-bar.dust{background:rgba(140,100,24,.12);border-color:var(--brass)}
   .tb-w{display:flex;align-items:center;gap:6px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tb-w .ic{font-size:20px}
   .tb-w b{font-size:calc(16px * var(--fs,1));font-weight:900}
   .tb-w small{font-size:calc(12px * var(--fs,1));color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis}
-  .tb-c{display:flex;gap:12px;flex-shrink:0;font-size:calc(13px * var(--fs,1))}
+  .tb-c{display:flex;gap:18px;flex-shrink:0;font-size:calc(13px * var(--fs,1))}
   .tb-c > span{display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .tb-c > span > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
-  .tb-c b{font-weight:900;direction:ltr;display:inline-block}
+  .tb-c > span > span{display:flex;flex-direction:column;align-items:center;line-height:1.3}
+  .tb-c b{font-weight:900;direction:ltr;display:inline-block;font-size:calc(15.5px * var(--fs,1))}
   .tb-c small{font-size:calc(10.5px * var(--fs,1));color:var(--muted);font-weight:700}
   .aclock{flex-shrink:0;color:var(--text)}
   .aclock .face{fill:var(--card2);stroke:var(--brass-l);stroke-width:3}
@@ -25,17 +27,18 @@
   .aclock .h,.aclock .m{stroke:currentColor;stroke-linecap:round}
   .aclock .s{stroke:var(--c-clinic);stroke-width:2;stroke-linecap:round}
   .aclock .hub{fill:var(--c-clinic)}
-  .tb-alert{display:block;width:100%;font-size:calc(12.5px * var(--fs,1));color:#9A5C00;margin-top:2px}
+  .tb-alert{display:flex;align-items:center;gap:6px;width:100%;margin-top:6px;font-size:calc(12.5px * var(--fs,1));color:#9A5C00;margin-top:2px}
   [data-theme="dark"] .tb-alert{color:#F0B04A}
   .tw-now{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--border-s)}
-  .tw-now .ic{font-size:52px;line-height:1}
+  .tw-now .ico{width:54px;height:54px;color:var(--brass)}
+  .tb-alert .ico{width:16px;height:16px}
   .tw-now b{display:block;font-size:calc(34px * var(--fs,1));font-weight:900;line-height:1.2}
   .tw-now small{display:block;font-size:calc(13px * var(--fs,1));color:var(--muted);font-weight:700;line-height:1.8}
   .tw-days{background:var(--card);border:1px solid var(--border-s);border-radius:16px;overflow:hidden}
   .tw-days div{display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:calc(14.5px * var(--fs,1));font-weight:800}
   .tw-days div + div{border-top:1px solid var(--border)}
   .tw-days .d{flex:1}
-  .tw-days .ic{font-size:22px}
+  .tw-days .ico{width:24px;height:24px;color:var(--brass)}
   .tw-days .t{direction:ltr;min-width:84px;text-align:left}
   .tw-days .t small{color:var(--muted);font-weight:700}
   .tw-clock{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -80,17 +83,17 @@ function todayVisible() { return ((CARAVAN_DATA.site || {}).layout || {}).infoba
 
 /* کد وضعیت هوای WMO ← شکلک و نام فارسی */
 function twCode(c, day = true) {
-  if (c === 0) return [day ? '☀️' : '🌙', 'صاف'];
-  if (c === 1) return [day ? '🌤️' : '🌙', 'کمی ابری'];
-  if (c === 2) return ['⛅', 'نیمه‌ابری'];
-  if (c === 3) return ['☁️', 'ابری'];
-  if (c === 45 || c === 48) return ['🌫️', 'مه'];
-  if (c >= 51 && c <= 57) return ['🌦️', 'نم‌نم باران'];
-  if (c >= 61 && c <= 67) return ['🌧️', 'باران'];
-  if (c >= 71 && c <= 77 || c === 85 || c === 86) return ['❄️', 'برف'];
-  if (c >= 80 && c <= 82) return ['🌦️', 'رگبار'];
-  if (c >= 95) return ['⛈️', 'رعدوبرق'];
-  return ['🌡️', ''];
+  if (c === 0) return [day ? 'w_sun' : 'w_moon', 'صاف'];
+  if (c === 1) return [day ? 'w_part' : 'w_moon', 'کمی ابری'];
+  if (c === 2) return ['w_part', 'نیمه‌ابری'];
+  if (c === 3) return ['w_cloud', 'ابری'];
+  if (c === 45 || c === 48) return ['w_fog', 'مه'];
+  if (c >= 51 && c <= 57) return ['w_rain', 'نم‌نم باران'];
+  if (c >= 61 && c <= 67) return ['w_rain', 'باران'];
+  if (c >= 71 && c <= 77 || c === 85 || c === 86) return ['w_snow', 'برف'];
+  if (c >= 80 && c <= 82) return ['w_rain', 'رگبار'];
+  if (c >= 95) return ['w_storm', 'رعدوبرق'];
+  return ['w_temp', ''];
 }
 
 /* ساعت به وقت یک منطقه (دقیقه اختلاف با UTC) */
@@ -122,21 +125,22 @@ function twLoad(cityId, force) {
 function twAlert(w) {
   if (!w) return '';
   const max = Math.max(w.t, (w.days[0] || {}).max || -99);
-  if (max >= TW_HOT) return ['hot', `⚠️ گرمای شدید (تا ${faDigits(Math.round(max))}°) — از ساعت ۱۲ تا ۱۶ بیرون نروید و آب همراه داشته باشید`];
-  if (w.dust != null && w.dust >= TW_DUST) return ['dust', '🌪️ گردوغبار — ماسک بزنید؛ بیماران تنفسی کمتر بیرون بروند'];
+  if (max >= TW_HOT) return ['hot', `گرمای شدید (تا ${faDigits(Math.round(max))}°) — از ساعت ۱۲ تا ۱۶ بیرون نروید و آب همراه داشته باشید`];
+  if (w.dust != null && w.dust >= TW_DUST) return ['dust', 'گردوغبار — ماسک بزنید؛ بیماران تنفسی کمتر بیرون بروند'];
   return '';
 }
 
 function todayBarHTML(c) {
   if (!todayVisible()) return '';
-  const w = twCache[c.id], [ic] = w ? twCode(w.code, w.day) : ['🌡️'], al = twAlert(w);
+  const w = twCache[c.id], [ic] = w ? twCode(w.code, w.day) : ['w_temp'], al = twAlert(w);
   return `<button class="today-bar ${al ? al[0] : ''}" id="todayBar" data-city="${c.id}" onclick="openToday()" aria-label="هوا و ساعت">
     <span style="flex:1;min-width:0">
-      <span style="display:flex;align-items:center;gap:10px">
-        <span class="tb-w"><span class="ic" aria-hidden="true">${ic}</span>${w ? `<b>${faDigits(Math.round(w.t))}°</b>` : ''}<small>${escHtml(c.name)}</small></span>
-        <span class="tb-c"><span>${clockSVG(180, 34)}<span><b>${twIraq()}</b><small>${flagSVG('iq', 9)} عراق</small></span></span><span>${clockSVG(210, 34)}<span><b>${twIran()}</b><small>${flagSVG('ir', 9)} ایران</small></span></span></span>
+      <span class="tb-row">
+        <span class="tb-w">${ico(ic)}${w ? `<b>${faDigits(Math.round(w.t))}°</b>` : ''}<small>${escHtml(c.name)}</small></span>
+        <span class="tb-sep"></span>
+        <span class="tb-c"><span><span><b>${twIraq()}</b><small>عراق</small></span></span><span><span><b>${twIran()}</b><small>ایران</small></span></span></span>
       </span>
-      ${al ? `<span class="tb-alert">${al[1]}</span>` : ''}
+      ${al ? `<span class="tb-alert">${ico(al[0] === 'hot' ? 'w_temp' : 'w_dust')}<span>${al[1]}</span></span>` : ''}
     </span>
   </button>`;
 }
@@ -156,25 +160,25 @@ function openToday() {
   const c = homeCity();
   if (!c) return;
   const render = w => {
-    const al = twAlert(w), [ic, label] = w ? twCode(w.code, w.day) : ['🌡️', ''];
+    const al = twAlert(w), [ic, label] = w ? twCode(w.code, w.day) : ['w_temp', ''];
     const ago = w ? Math.round((Date.now() - w.at) / 60000) : 0;
     const body = `
       <div class="tw-clock"><div>${flagSVG('iq', 14)} ساعت عراق${clockSVG(180, 120)}<b>${twIraq()}</b></div><div>${flagSVG('ir', 14)} ساعت ایران${clockSVG(210, 120)}<b>${twIran()}</b></div></div>
       <p class="tw-note" style="margin-top:6px;text-align:center">ساعت ایران <b>۳۰ دقیقه جلوتر</b> از عراق است. برنامه‌ها، اذان و حرکت‌ها در عراق به وقت عراق است.</p>
       <div class="sec-lbl">هوای ${escHtml(c.name)}</div>
-      ${w ? `<div class="tw-now"><span class="ic" aria-hidden="true">${ic}</span><span><b>${faDigits(Math.round(w.t))}°</b>
+      ${w ? `<div class="tw-now">${ico(ic)}<span><b>${faDigits(Math.round(w.t))}°</b>
         <small>${label}${w.feel != null ? ` · دمای احساسی ${faDigits(Math.round(w.feel))}°` : ''}</small>
         <small>رطوبت ${faDigits(Math.round(w.hum || 0))}٪ · باد ${faDigits(Math.round(w.wind || 0))} کیلومتر بر ساعت</small></span></div>
       ${al ? `<div class="tw-warn">${al[1]}${al[0] === 'hot' ? '<br>• آب زیاد بنوشید، حتی اگر تشنه نیستید<br>• کلاه یا چتر داشته باشید<br>• اگر سردرد، سرگیجه یا تهوع داشتید، فوراً به سایه بروید و به درمانگاه خبر دهید' : ''}</div>` : ''}
       <div class="sec-lbl">۳ روز آینده</div>
       <div class="tw-days">${w.days.map((d, i) => {
         const [di, dl] = twCode(d.code), wd = TW_WD[new Date(d.date + 'T12:00:00Z').getUTCDay()];
-        return `<div><span class="d">${i === 0 ? 'امروز' : i === 1 ? 'فردا' : wd}</span><span class="ic" aria-hidden="true">${di}</span><span style="font-size:calc(12.5px * var(--fs,1));color:var(--muted)">${dl}</span>
+        return `<div><span class="d">${i === 0 ? 'امروز' : i === 1 ? 'فردا' : wd}</span>${ico(di)}<span style="font-size:calc(12.5px * var(--fs,1));color:var(--muted)">${dl}</span>
           <span class="t">${faDigits(Math.round(d.max))}° <small>/ ${faDigits(Math.round(d.min))}°</small></span></div>`;
       }).join('')}</div>
       <p class="tw-note">منبع: Open-Meteo · به‌روزرسانی ${ago < 2 ? 'همین الان' : faDigits(ago) + ' دقیقه پیش'}${navigator.onLine ? '' : ' (بدون اینترنت — آخرین وضعیت دریافت‌شده)'}</p>`
       : `<div class="sr-empty">${navigator.onLine ? '⏳ در حال دریافت وضعیت هوا…' : 'برای دیدن وضعیت هوا، یک بار با اینترنت برنامه را باز کنید.'}</div>`}`;
-    openPage('🌤️ هوا و ساعت — ' + c.name, body);
+    openPage('هوا و ساعت — ' + c.name, body);
     clockTick();
   };
   render(twCache[c.id]);

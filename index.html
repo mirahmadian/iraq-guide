@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>راهنمای کاروان | عراق</title>
   <meta name="description" content="راهنمای دیجیتال مدیران کاروان در عراق – ستادها، درمانگاه‌ها، شماره‌های تماس">
-  <meta name="theme-color" content="#0E5A44">
+  <meta name="theme-color" content="#FAF6EE">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="کاروان عراق">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="app-icon-192.png">
@@ -22,7 +22,7 @@
     :root {
       --bg:        #FAF6EE;
       --surface:   #F3ECDD;
-      --card:      #FFFDF8;
+      --card:      #FFFFFF;
       --card2:     #F7F0E2;
       --gold:      #0E5A44;   /* رنگ اصلی (سبز زمردی) — نام قدیمی برای سازگاری */
       --gold-l:    #147358;
@@ -44,9 +44,11 @@
       --text:      #2A2116;
       --muted:     #5E4F3A;
       --dim:       #75664D;
-      --border:    #E6DAC2;
-      --border-s:  #D9C9A8;
-      --shadow:    0 2px 10px rgba(90,64,20,0.08);
+      --border:    #ECE5D5;
+      --border-s:  #E0D6C1;
+      --shadow:    0 1px 2px rgba(90,64,20,0.05);
+      --seg:       rgba(120,96,48,0.09);
+      --hdr-glass: rgba(250,246,238,0.88);
       --r:         18px;
       --r-sm:      12px;
       --font:      'Vazirmatn', sans-serif;
@@ -75,9 +77,11 @@
       --text:      #F4EBDA;
       --muted:     #C2B293;
       --dim:       #A39375;
-      --border:    #3A3122;
-      --border-s:  #4A3F2C;
-      --shadow:    0 4px 18px rgba(0,0,0,0.45);
+      --border:    #342C1F;
+      --border-s:  #43392A;
+      --shadow:    0 1px 2px rgba(0,0,0,0.3);
+      --seg:       rgba(255,240,210,0.07);
+      --hdr-glass: rgba(20,17,12,0.88);
       --pat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23C9A24B' stroke-opacity='.16' stroke-width='1'%3E%3Cpath d='M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Crect x='14' y='14' width='20' height='20' transform='rotate(45 24 24)'/%3E%3C/g%3E%3C/svg%3E");
     }
 
@@ -108,30 +112,32 @@
     /* ── HEADER ── */
     .header{
       position:sticky;top:0;z-index:100;
-      background:var(--hdr-bg) var(--pat);background-size:48px 48px;
-      color:var(--hdr-ink);box-shadow:0 2px 12px rgba(0,0,0,.12);
+      background:var(--hdr-glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+      color:var(--text);border-bottom:1px solid var(--border);
     }
     .header-inner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
     .header-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
     .brand-icon{
       width:40px;height:40px;border-radius:12px;flex-shrink:0;
       background:var(--app-icon,url(app-icon-192.png)) center/cover,#0B3B2D;
-      box-shadow:0 0 0 2px rgba(201,162,75,.6);font-size:0;color:transparent;
+      box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--brass-l);font-size:0;color:transparent;
     }
     .brand-text{min-width:0}
-    .brand-text h1{font-size:calc(17px * var(--fs,1));font-weight:900;color:var(--hdr-ink);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .brand-text p{font-size:calc(11.5px * var(--fs,1));color:#E8CF8F;font-weight:500;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .brand-text h1{font-size:calc(17px * var(--fs,1));font-weight:900;color:var(--text);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .brand-text p{font-size:calc(11.5px * var(--fs,1));color:var(--muted);font-weight:500;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .header-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
     .icon-btn{
-      width:42px;height:42px;border:1px solid rgba(201,162,75,.55);
-      border-radius:12px;background:rgba(255,255,255,.08);color:var(--hdr-ink);font-family:var(--font);font-weight:800;
+      width:42px;height:42px;border:1px solid var(--border-s);
+      border-radius:12px;background:var(--card);color:var(--muted);font-family:var(--font);font-weight:800;
       cursor:pointer;display:flex;align-items:center;justify-content:center;
       font-size:calc(14px * var(--fs,1));transition:background .15s;
     }
-    .icon-btn:active{background:rgba(255,255,255,.18)}
+    .icon-btn:active{background:var(--card2)}
+    .icon-btn .ico{width:20px;height:20px}
+    .ico{flex-shrink:0}
     .hajj-logo{
       width:42px;height:42px;border-radius:12px;object-fit:contain;
-      background:#FFF8E6;border:1px solid rgba(201,162,75,.55);padding:5px;flex-shrink:0;
+      background:#FFF8E6;border:1px solid var(--border-s);padding:5px;flex-shrink:0;
     }
 
     /* ── SEARCH ── */
@@ -505,7 +511,7 @@
       position:fixed;bottom:0;left:50%;transform:translateX(-50%);
       width:100%;max-width:480px;z-index:100;
       padding:10px 12px max(10px,env(safe-area-inset-bottom));
-      background:var(--card);border-top:1px solid var(--border-s);box-shadow:0 -6px 20px rgba(60,40,10,.10);
+      background:var(--hdr-glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--border);
     }
     .bot-inner{display:flex;gap:8px}
     .bot-btn{
@@ -574,6 +580,8 @@
     .foot-mini button{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 6px;border:none;background:none;cursor:pointer;
       font-family:var(--font);font-size:calc(13px * var(--fs,1));font-weight:800;color:var(--pri-ink)}
     .foot-mini .chev{width:15px;height:15px}
+    .foot-mini .fm-up{display:inline-flex;align-items:center;gap:5px}
+    .foot-mini .fm-up .ico{width:15px;height:15px}
 
     /* ── ABOUT (درباره برنامه) ── */
     .about{max-height:90vh;overflow-y:auto;text-align:center;overscroll-behavior:contain}
@@ -619,7 +627,7 @@
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="fsBtn" aria-label="اندازه و نوع قلم" title="اندازه و نوع قلم">Aa</button>
-        <button class="icon-btn" id="themeBtn" aria-label="فعال کردن حالت تیره">🌙</button>
+        <button class="icon-btn" id="themeBtn" aria-label="فعال کردن حالت تیره"></button>
         <img src="hajj-logo.png" class="hajj-logo" alt="سازمان حج و زیارت" title="سازمان حج و زیارت"
              onerror="this.style.display='none'">
       </div>
@@ -733,6 +741,7 @@
 <!-- DATA FILE (must come before main script) -->
 <script src="data.js"></script>
 <script src="version.js"></script>
+<script src="icons.js"></script>
 <script src="food.js"></script>
 <script src="map-viewer.js"></script>
 <script src="banner.js"></script>
@@ -790,7 +799,8 @@ let dark = savedTheme ? savedTheme === 'dark' : false;
 function applyTheme(isDark) {
   dark = isDark;
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  themeBtn.textContent = dark ? '☀️' : '🌙';
+  themeBtn.innerHTML = ico(dark ? 'sun' : 'moon');
+  const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = dark ? '#14110C' : '#FAF6EE';
   themeBtn.setAttribute('aria-label', dark ? 'فعال کردن حالت روشن' : 'فعال کردن حالت تیره');
   localStorage.setItem('caravan-theme', dark ? 'dark' : 'light');
 }
@@ -1214,7 +1224,7 @@ function appVersion() { const v = window.APP_VERSION; return v && v.version ? ve
 function footerHTML() {
   return `
   <footer class="foot-mini" role="contentinfo">
-    <span><span aria-hidden="true">🕐</span> آخرین بروزرسانی: <strong>${escHtml(appUpdated())}</strong></span>
+    <span class="fm-up">${ico('clock')} آخرین بروزرسانی: <strong>${escHtml(appUpdated())}</strong></span>
     <span aria-hidden="true">·</span>
     <button type="button" onclick="openAbout()">درباره برنامه ${CHEV_FWD}</button>
   </footer>`;

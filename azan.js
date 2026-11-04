@@ -4,16 +4,17 @@
 ══════════════════════════════════════════ */
 (function injectAzanCSS() {
   const css = `
-  .azan-strip{display:block;width:100%;margin:12px 0 0;padding:12px 14px;border-radius:18px;cursor:pointer;text-align:right;font-family:var(--font);color:var(--text);
-    background:var(--card);border:1px solid var(--border-s);box-shadow:0 2px 10px rgba(0,0,0,.04)}
+  .azan-strip{display:block;width:100%;margin:12px 0 0;padding:12px 14px;border-radius:var(--r);cursor:pointer;text-align:right;font-family:var(--font);color:var(--text);
+    background:var(--card);border:1px solid var(--border)}
   .az-top{display:flex;align-items:center;gap:10px}
-  .az-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:rgba(var(--rgb-ziyarat),.12);color:var(--i-ziyarat);font-size:20px}
+  .az-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:rgba(var(--rgb-ziyarat),.10);color:var(--i-ziyarat);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--brass-l)}
+  .az-ic .ico{width:23px;height:23px}
   .az-next{flex:1;min-width:0}
   .az-next b{display:block;font-size:calc(15px * var(--fs,1));font-weight:900;line-height:1.5}
   .az-next small{display:block;font-size:calc(12.5px * var(--fs,1));color:var(--brass);font-weight:800}
   .az-more{display:flex;align-items:center;gap:2px;flex-shrink:0;font-size:calc(11.5px * var(--fs,1));font-weight:800;color:var(--pri-ink)}
   .az-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
-  .az-row span{border-radius:10px;background:var(--card2);padding:5px 2px;text-align:center;font-size:calc(11px * var(--fs,1));color:var(--muted);font-weight:700;line-height:1.6}
+  .az-row span{border-radius:10px;background:var(--bg);padding:5px 2px;text-align:center;font-size:calc(11px * var(--fs,1));color:var(--muted);font-weight:700;line-height:1.6}
   .az-row span b{display:block;font-size:calc(14px * var(--fs,1));color:var(--text);font-weight:900}
   .az-row span.on{background:var(--gold);color:#fff}
   .az-row span.on b{color:#fff}
@@ -55,7 +56,7 @@ function azanStripHTML(c) {
   const cells = [['fajr', 'صبح'], ['dhuhr', 'ظهر'], ['maghrib', 'مغرب'], ['midnight', 'نیمه‌شب']];
   return `<button class="azan-strip" data-city="${c.id}" onclick="openAzan()" aria-label="اوقات شرعی ${escHtml(c.name)}">
     <span class="az-top">
-      <span class="az-ic" aria-hidden="true">🕌</span>
+      <span class="az-ic" aria-hidden="true">${ico('mosque')}</span>
       <span class="az-next"><small>${n.left <= 0 ? 'وقت' : 'تا'} ${label}${n.tomorrow ? ' فردا' : ''} · ساعت ${azanFa(n.at)}</small><b>${azanLeft(n.left)}</b></span>
       <span class="az-more">اوقات شرعی${CHEV_FWD}</span>
     </span>
@@ -70,7 +71,7 @@ function openAzan() {
   const tm = azanTimes(c.id, iraqNow(new Date(now.getTime() + 864e5)));
   const tbl = (tt, hi) => `<div class="az-tbl">${AZAN_ROWS.map(([k, l, sub]) =>
     `<div class="${sub ? 'sub' : ''} ${hi && k === n.k ? 'on' : ''}"><span>${l}</span><b>${azanFa(tt[k])}</b></div>`).join('')}</div>`;
-  openPage('🕌 اوقات شرعی ' + c.name, `
+  openPage('اوقات شرعی ' + c.name, `
     <div class="sec-lbl">امروز</div>${tbl(t, !n.tomorrow)}
     <div class="sec-lbl">فردا</div>${tbl(tm, false)}
     <p class="az-note">همه ساعت‌ها <b>به وقت عراق</b> است (نیم ساعت عقب‌تر از ساعت ایران). محاسبه به روش مؤسسه ژئوفیزیک دانشگاه تهران و بدون اینترنت انجام می‌شود؛ ممکن است با اذان حرم یکی دو دقیقه فرق داشته باشد.</p>`);

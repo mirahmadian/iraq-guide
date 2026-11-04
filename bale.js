@@ -13,14 +13,14 @@ function baleStripHTML() {
   let first = 0; try { first = +localStorage.getItem('caravan-first-open') || 0; if (!first) localStorage.setItem('caravan-first-open', Date.now()); } catch (e) {}
   if (!first || Date.now() - first < 864e5) return '';
   return `<div class="notices"><div class="ntc" role="button" style="cursor:pointer" onclick="openBale()">
-    <span class="ntc-ic" aria-hidden="true">📩</span>
+    <span class="ntc-ic" aria-hidden="true">${ico('bell')}</span>
     <div class="ntc-body"><b>اطلاعیه‌های فوری را در «بله» بگیرید</b><div class="ntc-meta"><span>هشدارها، تغییر ساعت‌ها و یادآوری‌های سفر</span></div></div>
-    <button class="ntc-x" onclick="event.stopPropagation();baleSet('no');this.closest('.notices').remove()" aria-label="بستن">×</button></div></div>`;
+    <button class="ntc-x" onclick="event.stopPropagation();baleSet('no');this.closest('.notices').remove()" aria-label="بستن">${ico('x')}</button></div></div>`;
 }
 function openBale() {
   if (typeof closeMore === 'function') closeMore();
   const on = baleState() === '1';
-  openPage('📩 اطلاعیه‌ها در بله', `
+  openPage('اطلاعیه‌ها در بله', `
     <div class="cx-rate" style="line-height:2">
       ${on ? '✅ <b>شما عضو هستید.</b> اطلاعیه‌های مهم همیار کاروان را در بله دریافت می‌کنید.' : `با عضویت در بازوی بله <b dir="ltr">@HamyarKaravan_Bot</b>، اطلاعیه‌های مهم سفر را مستقیم در پیام‌رسان بله می‌گیرید:
       <br>• هشدارها و بسته شدن مسیرها و ورودی‌ها
