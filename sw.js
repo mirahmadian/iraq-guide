@@ -12,6 +12,7 @@ const STATIC = [
   'besat.js',
   'reminder.js',
   'home.js',
+  'emergency.js',
   'lost.js',
   'azan.js',
   'notice.js',

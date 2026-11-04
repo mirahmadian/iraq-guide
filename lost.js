@@ -97,6 +97,7 @@ function openLost() {
     <p class="lost-p">اگر راه را گم کردید، این کارت را به <b>راننده تاکسی، پلیس یا خادمان حرم</b> نشان دهید. به عربی نوشته شده است.</p>
     ${lostCardHTML(c)}
     ${h && (h.mapNeshanUrl || h.mapGoogleUrl) ? `<div class="sec-lbl">🧭 مسیر تا هتل</div>${mapRowHTML(h.mapNeshanUrl, h.mapGoogleUrl)}` : ''}
+    ${typeof emergHTML === 'function' ? `<div class="sec-lbl">شماره‌های اضطراری عراق</div>${emergHTML(false)}` : ''}
     <div class="sec-lbl">📍 فرستادن موقعیت من</div>
     <p class="lost-p">جای فعلی‌تان را برای مسئول کاروان یا همراهتان بفرستید تا پیدایتان کنند. مکان‌یاب (GPS) گوشی باید روشن باشد.</p>
     <button class="lost-btn red" onclick="lostLocate()">📍 پیدا کردن و فرستادن موقعیت من</button>

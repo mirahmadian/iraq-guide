@@ -749,6 +749,7 @@
 <script src="besat.js"></script>
 <script src="reminder.js"></script>
 <script src="home.js"></script>
+<script src="emergency.js"></script>
 <script src="lost.js"></script>
 <script src="azan.js"></script>
 <script src="notice.js"></script>
@@ -1429,10 +1430,11 @@ searchInput.addEventListener('input', () => {
     c.cityName.includes(q) || c.sectionTitle.includes(q)
   );
 
+  const em = typeof emergSearch === 'function' ? emergSearch(q) : '';
   if (!results.length) {
-    srBody.innerHTML = `<div class="sr-empty">نتیجه‌ای پیدا نشد</div>`;
+    srBody.innerHTML = em || `<div class="sr-empty">نتیجه‌ای پیدا نشد</div>`;
   } else {
-    srBody.innerHTML = results.map(c => {
+    srBody.innerHTML = em + results.map(c => {
       const intl = buildPhone(c.phone, c.countryCode);
       return `
       <div class="c-item">

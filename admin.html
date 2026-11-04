@@ -554,6 +554,24 @@
     </div>
   </div>
 
+  <!-- EMERGENCY -->
+  <div class="sec-card open" data-perm="emergency" data-grp="contacts" id="card-emergency">
+    <div class="sec-card-head" onclick="toggleCard('emergency')">
+      <div class="sec-head-icon ico-ins">🚨</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">شماره‌های اضطراری عراق</div>
+        <div class="sec-head-sub">پلیس، اورژانس، هلال احمر، آتش‌نشانی — مشترک همه شهرها</div>
+      </div>
+      <span class="sec-chevron">▼</span>
+    </div>
+    <div class="sec-body">
+      <div class="empty-msg" style="padding:0 0 6px">این شماره‌ها بالای صفحه «شماره‌های ضروری» (دکمه قرمز پایین برنامه)، در صفحه «گم شده‌ام» و در جستجو نمایش داده می‌شوند. با لمس هر کدام، صفحه شماره‌گیر گوشی باز می‌شود.</div>
+      <div id="emerg-editor"></div>
+      <button class="add-row-btn" onclick="emergAdd()">+ افزودن شماره جدید</button>
+      <button class="lock-link" onclick="emergReset()">بازگرداندن به شماره‌های پیش‌فرض</button>
+    </div>
+  </div>
+
   <!-- OUTPUT -->
   <div class="output-card" data-perm="owner" id="outputWrap" style="display:none">
     <button class="copy-btn" onclick="copyOutput()">📋 کپی همه</button>
@@ -863,6 +881,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-besat.js"></script>
 <script src="icons.js"></script>
 <script src="admin-layout.js"></script>
+<script src="admin-emergency.js"></script>
 <script src="admin-notice.js"></script>
 <script src="admin-rate.js"></script>
 <script src="admin-guide.js"></script>
@@ -1388,6 +1407,7 @@ function buildData(pending){
     },
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
+    ...emergOut(),
     food:getFoodData(),
     besat:getBesatData(),
     guide:getGuideData(),
@@ -1861,6 +1881,7 @@ function init(){
   initBesat();
   initGuide();
   initLayout();
+  initEmerg();
   initNotices();
   showGrp((()=>{try{return sessionStorage.getItem('admin-grp')}catch(e){}})()||'news');
   initRate();

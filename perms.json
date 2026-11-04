@@ -17,7 +17,8 @@
     ]},
     { "id": "contacts", "label": "📞 شماره‌های عمومی", "items": [
       { "k": "insurance", "label": "بیمه معلم", "p": ["insurance"], "files": ["people/"] },
-      { "k": "transport", "label": "ناظر نقل", "p": ["transport"], "files": ["people/"] }
+      { "k": "transport", "label": "ناظر نقل", "p": ["transport"], "files": ["people/"] },
+      { "k": "emergency", "label": "شماره‌های اضطراری عراق (پلیس، اورژانس، ...)", "p": ["emergency"] }
     ]},
     { "id": "city", "label": "🕌 شهر", "perCity": true, "items": [
       { "k": "info", "label": "نام شهر، نمایش/پنهان و عکس عنوان", "p": ["name", "arabic", "icon", "hidden", "heroImage", "heroFocus"], "files": ["cities/"] },

@@ -332,10 +332,10 @@ function openSos() {
   const c = homeCity();
   const grp = (g, kind, title) => hasContacts(g)
     ? `<div class="sos-grp sec-card k-${kind}"><div class="divider-lbl" style="border-top:none">${escHtml(title || g.title)}</div><div class="contacts" role="list">${g.contacts.map(x => contactHTML(x)).join('')}</div></div>` : '';
-  let html = `<button class="sos-lost" onclick="openLost()"><span style="font-size:26px" aria-hidden="true">🆘</span><span>گم شده‌ام<small>کارت عربی آدرس هتل · فرستادن موقعیت من</small></span></button>` + grp(c && c.hq, 'hq');
+  let html = `<button class="sos-lost" onclick="openLost()"><span style="font-size:26px" aria-hidden="true">🆘</span><span>گم شده‌ام<small>کارت عربی آدرس هتل · فرستادن موقعیت من</small></span></button>` + (typeof emergHTML === 'function' ? emergHTML() : '') + grp(c && c.hq, 'hq');
   (c ? cityClinics(c) : []).forEach(cl => { html += grp(cl, 'clinic'); });
   html += grp(CARAVAN_DATA.insurance, 'ins') + grp(CARAVAN_DATA.transport, 'transport');
   const bs = besat();
   if (c && bs && (bs.enabled || SHOW_HIDDEN) && ((bs.contacts || {})[c.id] || []).length) html += grp({ contacts: bs.contacts[c.id] }, 'ziyarat', 'بعثه');
-  openPage('📞 شماره‌های ضروری' + (c ? ' — ' + c.name : ''), html || '<div class="sr-empty">شماره‌ای ثبت نشده است</div>');
+  openPage('شماره‌های ضروری' + (c ? ' — ' + c.name : ''), html || '<div class="sr-empty">شماره‌ای ثبت نشده است</div>');
 }
