@@ -718,6 +718,7 @@
     <button class="sheet-btn" onclick="openAbout()"><span aria-hidden="true">ℹ️</span>درباره برنامه</button>
     <button class="sheet-btn" onclick="closeMore();openNotices()"><span aria-hidden="true">📢</span>اطلاعیه‌ها</button>
     <button class="sheet-btn" onclick="openBale()"><span aria-hidden="true">📩</span>اطلاعیه‌ها در بله</button>
+    <button class="sheet-btn" id="moreZy" onclick="openZyarat()"><span aria-hidden="true">📿</span>زیارت‌نامه‌ها</button>
     <button class="sheet-btn" onclick="closeMore();openAzan()"><span aria-hidden="true">🕌</span>اوقات شرعی</button>
     <button class="sheet-btn" onclick="closeMore();openGuide()"><span aria-hidden="true">📘</span>راهنمای زائر</button>
     <button class="sheet-btn" onclick="closeMore();openToday()"><span aria-hidden="true">🌤️</span>هوا و ساعت</button>
@@ -750,6 +751,7 @@
 <script src="reminder.js"></script>
 <script src="home.js"></script>
 <script src="emergency.js"></script>
+<script src="zyarat.js"></script>
 <script src="lost.js"></script>
 <script src="azan.js"></script>
 <script src="notice.js"></script>
@@ -1336,6 +1338,7 @@ function handleTabKey(e, cityId) {
 
 function openMore() {
   document.getElementById('moreInstall').style.display = deferredPrompt ? 'flex' : 'none';
+  document.getElementById('moreZy').style.display = typeof zyVisible === 'function' && zyVisible() ? 'flex' : 'none';
   document.getElementById('moreOverlay').classList.add('open');
 }
 function closeMore() { document.getElementById('moreOverlay').classList.remove('open'); }

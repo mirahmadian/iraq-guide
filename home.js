@@ -95,6 +95,7 @@ const TILE_DEFS = {
   lost:      { label: 'گم شده‌ام', color: 'clinic', has: () => true, open: () => openLost() },
   stay:      { label: 'تاریخ خروج', color: 'consulate', has: () => typeof openStay === 'function', sub: () => staySub(), open: () => openStay() },
   guide:     { label: 'راهنمای زائر', color: 'hotel', has: () => typeof guideVisible === 'function' && guideVisible(), hidden: () => !guideSections().some(s => !s.hidden), open: () => openGuide() },
+  zyarat:    { label: 'زیارت‌نامه‌ها', color: 'ziyarat', has: () => typeof zyVisible === 'function' && zyVisible(), open: () => openZyarat() },
   hq:        { label: 'ستاد', color: 'hq', has: c => !!c.hq, open: c => openPage(c.hq.title, secOf(c, 'hq', '🏢', 'ستاد', { banner: c.hqBanner })) },
   clinic:    { label: 'درمانگاه', color: 'clinic', has: c => cityClinics(c).length > 0,
                open: c => openPage(cityClinics(c)[0].title, secOf(c, 'clinic', RC_ICON, 'درمانگاه') + placeCards(c, 'clinic')) },
@@ -225,6 +226,7 @@ function renderHome() {
       `<button class="${x.id === c.id ? 'on' : ''}" role="tab" aria-selected="${x.id === c.id}" onclick="switchTab('${x.id}')">${escHtml(x.name)}${x.hidden ? '<small>پنهان از کاربران</small>' : ''}</button>`).join('')}</div>
     ${typeof todayBarHTML === 'function' ? todayBarHTML(c) : ''}
     ${typeof noticesHTML === 'function' ? noticesHTML(c) : ''}
+    ${typeof zyStripHTML === 'function' ? zyStripHTML() : ''}
     ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
     ${typeof baleStripHTML === 'function' ? baleStripHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
@@ -242,6 +244,7 @@ function renderHome() {
   renderNav();
   startSlider();
   if (typeof todayFetch === 'function') todayFetch(c);
+  if (typeof zyWatch === 'function' && !zyTimer) zyWatch();
 }
 
 /* اسلایدر: هر ۵ ثانیه ورق می‌خورد؛ با لمس کاربر چند ثانیه صبر می‌کند */
@@ -291,8 +294,8 @@ function openPage(title, html) {
   restoreSearch();
   document.getElementById('pvTitle').textContent = title;
   document.getElementById('pvBody').innerHTML = html;
-  v.scrollTop = 0;
   v.classList.add('open');
+  v.scrollTop = 0;
   document.documentElement.style.overflow = 'hidden';
   if (!(history.state && history.state.page)) history.pushState({ page: 1 }, '');
 }

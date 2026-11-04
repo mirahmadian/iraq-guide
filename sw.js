@@ -13,6 +13,7 @@ const STATIC = [
   'reminder.js',
   'home.js',
   'emergency.js',
+  'zyarat.js',
   'lost.js',
   'azan.js',
   'notice.js',

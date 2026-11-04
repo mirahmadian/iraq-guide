@@ -145,7 +145,7 @@ function applyStaffPerms() {
   if (!st) { st = document.createElement('style'); st.id = 'staff-perm-css'; document.head.appendChild(st); }
   st.textContent = css.join(',') + '{display:none!important}';
 
-  const GEN = ['notices', 'rate', 'layout', 'title', 'icon', 'banner', 'footer', 'insurance', 'transport'];
+  const GEN = ['notices', 'rate', 'bale', 'layout', 'title', 'icon', 'banner', 'footer', 'insurance', 'transport', 'emergency'];
   const tabOk = id => id === 'general' ? GEN.some(has) : STAFF_CITIES.includes(id) ? [...P].some(k => k.startsWith(`city.${id}.`)) : id === 'users' ? false : has(id);
   let first = null;
   document.querySelectorAll('.tab-btn').forEach(b => {

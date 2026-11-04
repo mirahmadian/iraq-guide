@@ -396,6 +396,7 @@
   <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
   <button class="tab-btn" onclick="switchTab('besat',this)">📜 بعثه</button>
   <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
+  <button class="tab-btn" onclick="switchTab('zyarat',this)">📿 زیارت‌نامه‌ها</button>
   <button class="tab-btn" onclick="switchTab('reviews',this)">💬 نظرها</button>
   <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
   <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)">👥 کاربران</button>
@@ -849,6 +850,10 @@
   <div id="guide-admin"></div>
 </div><!-- /tab-guide -->
 
+<div class="page" id="tab-zyarat" style="max-width:900px">
+  <div id="zyarat-admin"></div>
+</div><!-- /tab-zyarat -->
+
 <div class="page" id="tab-reviews" style="max-width:900px">
   <div id="reviews-admin"></div>
 </div><!-- /tab-reviews -->
@@ -883,6 +888,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="icons.js"></script>
 <script src="admin-layout.js"></script>
 <script src="admin-emergency.js"></script>
+<script src="admin-zyarat.js"></script>
 <script src="admin-notice.js"></script>
 <script src="admin-rate.js"></script>
 <script src="admin-guide.js"></script>
@@ -1412,6 +1418,7 @@ function buildData(pending){
     food:getFoodData(),
     besat:getBesatData(),
     guide:getGuideData(),
+    ...zyOut(),
     cities:ALL_CITIES.map(id=>({
       id,
       name:cityMeta[id].name.trim()||DEFAULT_CITY[id],
@@ -1883,6 +1890,7 @@ function init(){
   initGuide();
   initLayout();
   initEmerg();
+  initZyarat();
   initNotices();
   showGrp((()=>{try{return sessionStorage.getItem('admin-grp')}catch(e){}})()||'news');
   initRate();
