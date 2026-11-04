@@ -435,3 +435,62 @@ async function userDelete(u) {
   try { await adminFetch('/admin/users/delete', { user: u }, adminAuth()); showToast('حذف شد'); usersLoad(); }
   catch (e) { alert(e.message); }
 }
+
+/* ══════════════════════════════════════════
+   CODESPACE — خاموش کردن Codespace (محیط توسعه) با یک دکمه، تا ساعت رایگان GitHub مصرف نشود
+   با همان کلید GitHub پنل؛ کلید باید اجازه Codespaces را داشته باشد (اگر نداشت، راهنما نشان داده می‌شود)
+══════════════════════════════════════════ */
+async function csApi(path, opts = {}) {
+  return fetch('https://api.github.com' + path, { ...opts, headers: { 'Authorization': 'Bearer ' + ghToken, 'Accept': 'application/vnd.github+json', ...(opts.headers || {}) } });
+}
+function csHelp() {
+  const fine = String(ghToken || '').startsWith('github_pat_');
+  return `<div style="font-size:13px;line-height:2;text-align:right">کلید GitHub پنل اجازه خاموش کردن Codespace را ندارد. یک بار این کار را انجام دهید:<br>
+    ${fine ? `۱. این صفحه را باز کنید: <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a><br>
+    ۲. روی کلید پنل بزنید ← <b>Edit</b><br>
+    ۳. در <b>Repository permissions</b>: <b>Codespaces</b> = Read-only و <b>Codespaces lifecycle admin</b> = Read and write<br>
+    ۴. پایین صفحه <b>Update</b> را بزنید و دوباره این دکمه را امتحان کنید.`
+    : `۱. این صفحه را باز کنید: <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a><br>
+    ۲. روی کلید پنل بزنید، تیک <b>codespace</b> را بزنید و <b>Update token</b> را بزنید.<br>
+    ۳. دوباره این دکمه را امتحان کنید.`}<br>
+    راه دستی: <a href="https://github.com/codespaces" target="_blank" rel="noopener">github.com/codespaces</a> ← سه‌نقطه کنار Codespace ← <b>Stop codespace</b></div>`;
+}
+function csDialog(html) {
+  let d = document.getElementById('csDlg');
+  if (!d) {
+    document.body.insertAdjacentHTML('beforeend', `<div id="csDlg" style="position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#fff;color:#222;border-radius:16px;max-width:460px;width:100%;padding:18px;max-height:90vh;overflow:auto">
+      <b style="font-size:16px">💻 خاموش کردن Codespace</b><div id="csBody" style="margin-top:10px"></div>
+      <button class="add-row-btn" style="margin:12px 0 0;width:100%" onclick="document.getElementById('csDlg').remove()">بستن</button></div></div>`);
+  }
+  document.getElementById('csBody').innerHTML = html;
+}
+const CS_STATE = { Available: '🟢 روشن', Starting: '🟡 در حال روشن شدن', ShuttingDown: '🟠 در حال خاموش شدن', Shutdown: '⚪ خاموش', Rebuilding: '🟡 در حال ساخت' };
+async function csOpen() {
+  if (STAFF || !ghToken) return showToast('این کار فقط برای مدیر اصلی است');
+  csDialog('در حال بررسی…');
+  try {
+    let r = await csApi(`/repos/${GH.owner}/${GH.repo}/codespaces`);
+    if (!r.ok) r = await csApi('/user/codespaces');
+    if (r.status === 401 || r.status === 403 || r.status === 404) return csDialog(csHelp());
+    if (!r.ok) throw new Error('پاسخ GitHub: ' + r.status);
+    const list = (await r.json()).codespaces || [];
+    if (!list.length) return csDialog('هیچ Codespaceی پیدا نشد.');
+    csDialog(list.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee">
+      <div style="flex:1;font-size:13px;line-height:1.8"><b>${escH(c.display_name || c.name)}</b><br>${CS_STATE[c.state] || escH(c.state)}
+        ${c.idle_timeout_minutes ? ` · خاموشی خودکار بعد از ${c.idle_timeout_minutes.toLocaleString('fa')} دقیقه بیکاری` : ''}</div>
+      ${c.state === 'Available' || c.state === 'Starting' ? `<button class="pub-btn" style="background:#B3261E" onclick="csStop('${escH(c.name)}',this)">⏻ خاموش کن</button>` : ''}
+    </div>`).join('') + `<div style="font-size:12px;color:#666;line-height:1.9;margin-top:8px">خاموش کردن چیزی را پاک نمی‌کند؛ هر وقت لازم شد از github.com/codespaces دوباره روشنش کنید. اگر الان با Claude در حال کار هستید، آن کار قطع می‌شود.</div>`);
+  } catch (e) { csDialog('❌ ' + escH(e.message) + '<br><br>' + csHelp()); }
+}
+async function csStop(name, btn) {
+  if (!confirm('Codespace خاموش شود؟ اگر کار توسعه‌ای در جریان است، قطع می‌شود.')) return;
+  btn.disabled = true; btn.textContent = '... در حال خاموش کردن';
+  try {
+    const r = await csApi('/user/codespaces/' + encodeURIComponent(name) + '/stop', { method: 'POST' });
+    if (r.status === 401 || r.status === 403 || r.status === 404) return csDialog(csHelp());
+    if (!r.ok) throw new Error('پاسخ GitHub: ' + r.status);
+    btn.outerHTML = '<b style="color:#0E5A44">✅ خاموش شد</b>';
+    showToast('✅ Codespace خاموش شد — ساعت شما دیگر مصرف نمی‌شود');
+  } catch (e) { btn.disabled = false; btn.textContent = '⏻ خاموش کن'; showToast('❌ ' + e.message); }
+}
