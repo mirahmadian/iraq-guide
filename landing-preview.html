@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طرح‌های صفحه اول</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* ── صفحه نمایش طرح‌ها ── */
+:root{--pg-bg:#E9ECEA;--pg-card:#fff;--pg-text:#18211C;--pg-muted:#56635B;--pg-line:#D3DAD5;--pg-pri:#14644A}
+body.pg-dark{--pg-bg:#0C0F0D;--pg-card:#161B18;--pg-text:#E8EEEA;--pg-muted:#9FAEA5;--pg-line:#28302B;--pg-pri:#6CCBA3}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Vazirmatn',sans-serif;background:var(--pg-bg);color:var(--pg-text);line-height:1.8;padding:16px}
+.pg-head{max-width:1280px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.pg-head h1{font-size:22px;font-weight:900}
+.pg-head p{color:var(--pg-muted);font-size:14px}
+.pg-tg{display:flex;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:100px;padding:4px}
+.pg-tg button{border:0;background:none;font:inherit;font-size:14px;font-weight:800;color:var(--pg-muted);padding:6px 16px;border-radius:100px;cursor:pointer}
+.pg-tg button.on{background:var(--pg-pri);color:#fff}
+body.pg-dark .pg-tg button.on{color:#0C0F0D}
+.cols{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:22px;justify-items:center}
+.col{width:100%;max-width:400px}
+.col h2{font-size:18px;font-weight:900}
+.col .why{font-size:13.5px;color:var(--pg-muted);margin:2px 0 10px;min-height:72px}
+.phone{width:100%;max-width:390px;height:780px;border-radius:34px;overflow:hidden;border:8px solid #1B1F1D;box-shadow:0 18px 40px rgba(0,0,0,.18);position:relative;background:#fff}
+.scr{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none}
+.scr::-webkit-scrollbar{display:none}
+.note{max-width:1280px;margin:20px auto 0;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:16px;padding:14px 18px;font-size:14px}
+.note b{font-weight:900}
+.note ul{padding-right:20px;margin-top:6px}
+
+/* ── آیکون‌ها ── */
+.i{width:22px;height:22px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ════════ مشترک بین طرح‌ها ════════ */
+.app{font-family:'Vazirmatn',sans-serif;background:var(--bg);color:var(--tx);min-height:100%;padding-bottom:96px;position:relative}
+.app button{font-family:inherit;color:inherit;cursor:pointer}
+.ltr{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:5;height:78px;display:flex;align-items:center;justify-content:space-around;padding:0 6px 8px;background:var(--nav);border-top:1px solid var(--ln);backdrop-filter:blur(10px)}
+.nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--mu);min-height:52px;justify-content:center}
+.nav button.on{color:var(--pri)}
+.nav .sos{flex:0 0 auto;color:var(--red)}
+.nav .sos span{width:52px;height:52px;border-radius:18px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 6px 16px rgba(196,43,32,.35)}
+.slide{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0d2a20}
+.slide .bl{position:absolute;inset:-20px;background:var(--img) center/cover;filter:blur(14px) brightness(.7)}
+.slide .ft{position:absolute;inset:0;background:var(--img) center/contain no-repeat}
+.slide::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.7))}
+.slide .cap{position:absolute;right:14px;left:14px;bottom:12px;z-index:1;color:#fff;font-weight:800;font-size:14.5px}
+.slide .cap small{display:block;font-size:11px;font-weight:700;opacity:.85}
+.dots{position:absolute;left:14px;bottom:16px;z-index:2;display:flex;gap:4px}
+.dots i{width:6px;height:6px;border-radius:9px;background:rgba(255,255,255,.5)}
+.dots i.on{width:16px;background:#fff}
+
+/* ════════ طرح الف: روشن و آرام ════════ */
+.dA{--bg:#F6F7F6;--sf:#FFFFFF;--tx:#16201B;--mu:#5B6760;--ln:#E3E7E4;--pri:#14644A;--pri-s:#E7F1EC;--red:#C42B20;--nav:rgba(255,255,255,.92)}
+body.pg-dark .dA{--bg:#0F1311;--sf:#181D1A;--tx:#ECF1EE;--mu:#A3B0A8;--ln:#262D29;--pri:#5CC398;--pri-s:#1C2B24;--red:#E0574B;--nav:rgba(20,25,22,.92)}
+.dA .hd{display:flex;align-items:center;gap:10px;padding:14px 16px 6px}
+.dA .hd img.lg{width:38px;height:38px;border-radius:11px}
+.dA .hd .t{flex:1;min-width:0}
+.dA .hd b{display:block;font-size:17px;font-weight:900;line-height:1.4}
+.dA .hd small{display:block;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dA .ib{width:40px;height:40px;border-radius:12px;border:1px solid var(--ln);background:var(--sf);display:flex;align-items:center;justify-content:center;color:var(--mu)}
+.dA .ib .i{width:19px;height:19px}
+.dA .seg{margin:10px 16px 0;display:flex;background:var(--ln);border-radius:14px;padding:4px;gap:2px}
+.dA .seg button{flex:1;border:0;background:none;border-radius:11px;min-height:40px;font-size:13px;font-weight:800;color:var(--mu)}
+.dA .seg button.on{background:var(--sf);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.dA .card{margin:12px 16px 0;background:var(--sf);border:1px solid var(--ln);border-radius:18px}
+.dA .today{display:flex;align-items:center;padding:12px 14px;gap:12px}
+.dA .today .w{display:flex;align-items:center;gap:6px;font-weight:900;font-size:18px}
+.dA .today .w .i{color:var(--mu)}
+.dA .today .sep{width:1px;align-self:stretch;background:var(--ln)}
+.dA .today .tm{flex:1;display:flex;justify-content:space-around;text-align:center;font-size:11px;color:var(--mu);font-weight:600}
+.dA .today .tm b{display:block;font-size:16px;color:var(--tx);font-weight:800;line-height:1.3}
+.dA .row{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.dA .row .ic{width:40px;height:40px;border-radius:12px;background:var(--pri-s);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dA .row .tx{flex:1;min-width:0;font-size:13.5px;font-weight:800;line-height:1.5}
+.dA .row .tx small{display:block;font-size:12px;color:var(--mu);font-weight:500}
+.dA .row .chev{color:var(--mu);width:18px;height:18px}
+.dA .row .x{border:0;background:none;color:var(--mu);width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.dA .slider{margin:12px 16px 0;border-radius:18px;overflow:hidden}
+.dA .pr{padding:12px 14px}
+.dA .pr .top{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800}
+.dA .pr .top span{color:var(--mu);font-weight:600;font-size:12px}
+.dA .pr .top a{color:var(--pri);font-size:12.5px;display:flex;align-items:center;gap:2px;text-decoration:none}
+.dA .pr .ts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;text-align:center}
+.dA .pr .ts div{border-radius:11px;padding:6px 0;font-size:11px;color:var(--mu);background:var(--bg)}
+.dA .pr .ts b{display:block;font-size:14.5px;color:var(--tx);font-weight:800;line-height:1.4}
+.dA .pr .ts .on{background:var(--pri);color:rgba(255,255,255,.8)}
+.dA .pr .ts .on b{color:#fff}
+body.pg-dark .dA .pr .ts .on b,body.pg-dark .dA .pr .ts .on{color:#0F1311}
+.dA .live{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--red);font-weight:800}
+.dA .live::before{content:'';width:6px;height:6px;border-radius:9px;background:var(--red)}
+.dA .h2{margin:20px 18px 8px;font-size:14px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline}
+.dA .h2 span{font-size:12px;color:var(--mu);font-weight:600}
+.dA .grid{margin:0 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px;background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:16px 8px}
+.dA .tl{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11.5px;font-weight:700;line-height:1.35;text-align:center;min-height:76px}
+.dA .tl span{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:var(--k);background:color-mix(in srgb,var(--k) 11%,transparent)}
+body.pg-dark .dA .tl span,body.pg-dark .dC .li .i{color:color-mix(in srgb,var(--k) 55%,#fff)}
+.dA .ft{margin:18px 16px 0;text-align:center;font-size:11.5px;color:var(--mu)}
+
+/* ════════ طرح ب: سبز شیک ════════ */
+.dB{--bg:#F4F3EF;--sf:#FFFFFF;--tx:#1A1F1C;--mu:#646B66;--ln:#E5E3DC;--pri:#0F4C3A;--gold:#B8913F;--red:#C42B20;--nav:rgba(255,255,255,.94);--hero:#0F3D2F}
+body.pg-dark .dB{--bg:#0E1210;--sf:#171C19;--tx:#EEF0EC;--mu:#A2ABA5;--ln:#262C28;--pri:#7FCBAA;--gold:#D9B970;--red:#E0574B;--nav:rgba(18,22,20,.94);--hero:#0A2A20}
+.dB .hero{background:var(--hero);color:#fff;padding:14px 16px 46px;position:relative}
+.dB .hd{display:flex;align-items:center;gap:10px}
+.dB .hd img{width:36px;height:36px;border-radius:10px}
+.dB .hd b{flex:1;font-size:16.5px;font-weight:900}
+.dB .hd button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center}
+.dB .hd .i{width:18px;height:18px}
+.dB .cities{display:flex;gap:18px;margin-top:16px;font-size:14px;font-weight:700;overflow-x:auto;scrollbar-width:none}
+.dB .cities button{border:0;background:none;color:rgba(255,255,255,.6) !important;padding:4px 0;white-space:nowrap;position:relative}
+.dB .cities button.on{color:#fff !important;font-weight:900}
+.dB .cities button.on::after{content:'';position:absolute;right:0;left:0;bottom:-2px;height:2px;border-radius:2px;background:var(--gold)}
+.dB .big{display:flex;align-items:flex-end;justify-content:space-between;margin-top:18px}
+.dB .big .c{font-size:12px;opacity:.75}
+.dB .big .c b{display:block;font-size:30px;font-weight:900;opacity:1;line-height:1.3;letter-spacing:-.5px}
+.dB .big .w{text-align:left;font-size:12px;opacity:.85;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.dB .big .w b{font-size:20px;font-weight:800;display:flex;align-items:center;gap:6px}
+.dB .pills{display:flex;gap:6px;margin-top:14px}
+.dB .pills div{flex:1;text-align:center;border-radius:12px;padding:5px 0;font-size:10.5px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7)}
+.dB .pills b{display:block;font-size:13.5px;color:#fff;font-weight:800;line-height:1.4}
+.dB .pills .on{background:rgba(255,255,255,.95);color:var(--hero)}
+.dB .pills .on b{color:var(--hero)}
+.dB .sheet{background:var(--bg);border-radius:26px 26px 0 0;margin-top:-28px;position:relative;padding-top:16px}
+.dB .slider{margin:0 16px;border-radius:20px;overflow:hidden}
+.dB .strip{margin:12px 16px 0;display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--sf);border-radius:16px;font-size:13px;font-weight:800;line-height:1.5}
+.dB .strip .ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--pri);border:1px solid var(--ln);flex-shrink:0}
+.dB .strip small{display:block;font-size:11.5px;color:var(--mu);font-weight:500}
+.dB .strip .grow{flex:1;min-width:0}
+.dB .strip .chev{width:18px;height:18px;color:var(--mu)}
+.dB .h2{margin:22px 20px 10px;font-size:13px;font-weight:800;color:var(--mu);display:flex;align-items:center;gap:8px}
+.dB .h2::after{content:'';flex:1;height:1px;background:var(--ln)}
+.dB .grid{margin:0 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dB .tl{border:0;background:var(--sf);border-radius:18px;display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:14px 12px 12px;font-size:12.5px;font-weight:800;text-align:right;min-height:92px}
+.dB .tl .i{width:24px;height:24px;color:var(--pri);stroke-width:1.6}
+.dB .ft{margin:18px 16px 0;text-align:center;font-size:11.5px;color:var(--mu)}
+
+/* ════════ طرح ج: اول کارهای مهم ════════ */
+.dC{--bg:#FFFFFF;--sf:#F4F6F5;--tx:#111814;--mu:#5E6A63;--ln:#E6EAE8;--pri:#136B4E;--red:#C42B20;--nav:rgba(255,255,255,.94)}
+body.pg-dark .dC{--bg:#0B0E0C;--sf:#161B18;--tx:#EDF2EF;--mu:#A0ADA6;--ln:#232A26;--pri:#62C79D;--red:#E0574B;--nav:rgba(13,16,14,.94)}
+.dC .hd{display:flex;align-items:center;gap:8px;padding:14px 16px 0}
+.dC .hd .city{flex:1;border:0;background:none;display:flex;align-items:center;gap:4px;font-size:20px;font-weight:900;padding:0}
+.dC .hd .city .i{width:18px;height:18px;color:var(--mu)}
+.dC .hd .sub{font-size:12px;color:var(--mu);padding:0 16px;display:flex;gap:10px;align-items:center}
+.dC .hd button.ib{width:40px;height:40px;border-radius:50%;border:0;background:var(--sf);display:flex;align-items:center;justify-content:center;color:var(--tx)}
+.dC .hd button.ib .i{width:19px;height:19px}
+.dC .meta{display:flex;gap:6px;padding:4px 16px 0;font-size:12px;color:var(--mu);align-items:center}
+.dC .meta .dot{width:3px;height:3px;border-radius:9px;background:var(--mu)}
+.dC .urg{margin:14px 16px 0;border-radius:22px;background:var(--red);color:#fff;padding:14px}
+.dC .urg .t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900}
+.dC .urg .t small{font-weight:600;opacity:.85;font-size:12px;margin-inline-start:auto}
+.dC .urg .bt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.dC .urg .bt button{border:0;border-radius:14px;background:rgba(255,255,255,.16);color:#fff;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:800}
+.dC .urg .bt .i{width:19px;height:19px}
+.dC .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 16px 0}
+.dC .two button{border:0;background:var(--sf);border-radius:20px;padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:16px;text-align:right;font-size:14px;font-weight:900;line-height:1.4}
+.dC .two button small{display:block;font-size:11.5px;color:var(--mu);font-weight:600}
+.dC .two .i{width:26px;height:26px;color:var(--pri)}
+.dC .pr{margin:10px 16px 0;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--ln);border-radius:18px;font-size:13px;font-weight:800}
+.dC .pr .i{color:var(--pri)}
+.dC .pr .g{flex:1}
+.dC .pr small{display:block;font-size:11.5px;color:var(--mu);font-weight:600}
+.dC .pr .n{font-size:20px;font-weight:900}
+.dC .slider{margin:10px 16px 0;border-radius:20px;overflow:hidden}
+.dC .h2{margin:22px 18px 6px;font-size:15px;font-weight:900}
+.dC .list{margin:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.dC .li{border:0;background:none;display:flex;align-items:center;gap:10px;min-height:54px;border-bottom:1px solid var(--ln);font-size:13px;font-weight:700;text-align:right}
+.dC .li .i{color:var(--k);width:21px;height:21px}
+.dC .bale{margin:14px 16px 0;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mu);font-weight:600;padding:10px 12px;border-radius:14px;background:var(--sf)}
+.dC .bale b{color:var(--tx)}
+.dC .bale .i{width:18px;height:18px;color:var(--pri)}
+.dC .ft{margin:18px 16px 0;text-align:center;font-size:11.5px;color:var(--mu)}
+</style>
+</head>
+<body>
+<div class="pg-head">
+  <div>
+    <h1>سه طرح برای صفحه اول همیار کاروان</h1>
+    <p>هر سه طرح ساده و بدون ایموجی‌اند و آیکون‌های خطی یک‌دست دارند. داخل هر گوشی می‌توانید بالا و پایین بروید. ساعت‌ها و اعداد نمونه‌اند.</p>
+  </div>
+  <div class="pg-tg"><button class="on" onclick="pgTheme(0,this)">روشن</button><button onclick="pgTheme(1,this)">تیره</button></div>
+</div>
+
+<div class="cols">
+  <div class="col"><h2>طرح الف — روشن و آرام</h2><p class="why">زمینه سفید و خاکستری روشن، بدون نقش و قاب طلایی. شهرها مثل یک دکمه چندتکه کنار هم‌اند. ساعت، هوا و اذان در یک ردیف جمع شده‌اند. بخش‌ها در یک جعبه، چهارتا در هر ردیف.</p>
+    <div class="phone"><div class="scr" id="A"></div></div></div>
+  <div class="col"><h2>طرح ب — سبز شیک</h2><p class="why">بالای صفحه یک بخش سبز تیره است با ساعت بزرگ و اوقات شرعی، و بقیه صفحه روی یک برگه روشن. طلایی فقط به اندازه یک خط باریک. شبیه برنامه‌های رسمی و باکلاس.</p>
+    <div class="phone"><div class="scr" id="B"></div></div></div>
+  <div class="col"><h2>طرح ج — اول کارهای مهم</h2><p class="why">کارهای ضروری اول می‌آیند: یک کارت قرمز با تماس فوری با ستاد، درمانگاه و «گم شده‌ام»، بعد هتل‌ها و نقشه. بقیه بخش‌ها یک فهرست ساده دوستونی‌اند. شهر از عنوان بالا عوض می‌شود.</p>
+    <div class="phone"><div class="scr" id="C"></div></div></div>
+</div>
+
+<div class="note">
+  <b>در هر سه طرح:</b>
+  <ul>
+    <li>همه ایموجی‌ها (ابر، ماه، پاکت نامه، مسجد، پرچم و ...) با آیکون‌های خطی یک‌دست عوض می‌شوند. این تغییر در صفحه‌های داخلی هم انجام می‌شود.</li>
+    <li>نقش‌های تزئینی پس‌زمینه، قاب‌های طلایی دور هر کارت و حلقه‌های دور آیکون‌ها حذف می‌شوند.</li>
+    <li>هیچ امکانی حذف نمی‌شود. اسلایدر، بعثه، اوقات شرعی، نوار بله، چیدمان از پنل ادمین، حالت تیره و بزرگ‌کردن قلم همه سر جایشان می‌مانند.</li>
+    <li>آرم بعثه و بیمه را فعلاً به شکل آیکون خطی نشان داده‌ام. اگر بخواهید، می‌شود همان آرم رنگی‌شان باقی بماند.</li>
+  </ul>
+</div>
+
+<script src="data.js"></script>
+<script>
+const P = {
+  lost:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M5.6 5.6l3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/>',
+  stay:'<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18M12 13.5v3l2 1"/>',
+  guide:'<path d="M2.5 4.5h6a3.5 3.5 0 013.5 3.5v12.5a2.6 2.6 0 00-2.6-2.6H2.5zM21.5 4.5h-6A3.5 3.5 0 0012 8v12.5a2.6 2.6 0 012.6-2.6h6.9z"/>',
+  hq:'<rect x="4.5" y="2.5" width="15" height="19" rx="2"/><path d="M9.5 21.5v-4h5v4M9 7h.01M12 7h.01M15 7h.01M9 10.5h.01M12 10.5h.01M15 10.5h.01M9 14h.01M12 14h.01M15 14h.01"/>',
+  clinic:'<path d="M15.6 4.4a8.3 8.3 0 1 0 0 15.2 6.6 6.6 0 1 1 0-15.2z"/>',
+  consulate:'<path d="M3 21.5h18M5.5 18v-7M10 18v-7M14 18v-7M18.5 18v-7M12 2.5l9 5.5H3z"/>',
+  besat:'<path d="M12 2.5l2.3 3.2 3.9-.6-.6 3.9 3.2 2.3-3.2 2.3.6 3.9-3.9-.6L12 20.1l-2.3-3.2-3.9.6.6-3.9L3.2 11.3l3.2-2.3-.6-3.9 3.9.6z"/><circle cx="12" cy="11.3" r="2.6"/>',
+  hotel:'<path d="M3 6v14M3 16h18v4M21 16v-3.5a3 3 0 00-3-3h-7.5V16"/><circle cx="6.8" cy="12.3" r="1.8"/>',
+  map:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/>',
+  ins:'<path d="M12 21.5s7.5-3.6 7.5-9.5V5.2L12 2.5 4.5 5.2V12c0 5.9 7.5 9.5 7.5 9.5z"/><path d="M9 12l2 2 4-4"/>',
+  transport:'<rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 10.5h16M7.5 21v-4M16.5 21v-4M8 13.8h.01M16 13.8h.01"/>',
+  food:'<path d="M4 2.5v6.5a2.5 2.5 0 002.5 2.5h1A2.5 2.5 0 0010 9V2.5M7 2.5v19M20 15V2.5a4.5 4.5 0 00-4.5 4.5v6a2 2 0 002 2H20zm0 0v6.5"/>',
+  currency:'<path d="M7 3.5L3 7.5l4 4M3 7.5h14M17 20.5l4-4-4-4M21 16.5H7"/>',
+  ziyarat:'<path d="M12 3.5c-3.3 1.8-6 4-6 8h12c0-4-2.7-6.2-6-8zM12 1.5v2M4.5 11.5h15M5.5 11.5v10h13v-10M10 21.5v-3.5a2 2 0 014 0v3.5"/>',
+  restaurant:'<circle cx="12" cy="13" r="7.5"/><circle cx="12" cy="13" r="3.5"/><path d="M8 2.5h8"/>',
+  parking:'<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9.5 17V7h3.5a3 3 0 010 6H9.5"/>',
+  other:'<path d="M19.5 10c0 5.8-7.5 11.5-7.5 11.5S4.5 15.8 4.5 10a7.5 7.5 0 0115 0z"/><circle cx="12" cy="10" r="2.8"/>',
+  home:'<path d="M3 10.2l9-7 9 7v9.3a2 2 0 01-2 2h-4v-6.5H9v6.5H5a2 2 0 01-2-2z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20.5 20.5l-4.5-4.5"/>',
+  more:'<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+  phone:'<path d="M21.5 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 011.6 4.2 2 2 0 013.6 2h3a2 2 0 012 1.7c.1.9.4 1.8.7 2.7a2 2 0 01-.5 2.1L7.5 9.8a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.7.7a2 2 0 011.7 2z"/>',
+  moon:'<path d="M20.5 14.2A8.5 8.5 0 119.8 3.5a6.6 6.6 0 0010.7 10.7z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  cloud:'<path d="M17.5 19H8a5.5 5.5 0 111.2-10.9A6.5 6.5 0 0121 11.5a4 4 0 01-3.5 7.5z"/>',
+  type:'<path d="M3 19.5l5-14 5 14M4.8 14.5h6.4M15 19.5l3-8 3 8M15.9 17h4.2"/>',
+  bell:'<path d="M18 8.5a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/>',
+  chev:'<path d="M14.5 6l-6 6 6 6"/>',
+  down:'<path d="M6 9.5l6 6 6-6"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  mosque:'<path d="M12 3.5c-3 1.6-5 3.6-5 7h10c0-3.4-2-5.4-5-7zM12 1.5v2M5 10.5v11h14v-11M3 21.5h18M10 21.5v-3a2 2 0 014 0v3M2.5 8v13.5M21.5 8v13.5"/>',
+  live:'<circle cx="12" cy="12" r="3"/><path d="M6.3 6.3a8 8 0 000 11.4M17.7 6.3a8 8 0 010 11.4"/>'
+};
+const I = (k, c = '') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[k] || P.other}</svg>`;
+
+const D = CARAVAN_DATA, S = D.site || {};
+const city = D.cities.find(c => c.id === 'najaf') || D.cities[0];
+const cities = D.cities.filter(c => !c.hidden);
+const LBL = { lost:'گم شده‌ام', stay:'تاریخ خروج', guide:'راهنمای زائر', hq:'ستاد', clinic:'درمانگاه', consulate:'کنسولگری', besat:'برنامه‌های بعثه', hotel:'هتل‌ها', map:'نقشه شهر', ins:'بیمه معلم', transport:'ناظر نقل', food:'برنامه غذایی', currency:'تبدیل ارز', ziyarat:'اماکن زیارتی', restaurant:'رستوران', parking:'پارکینگ', other:'سایر مکان‌ها' };
+const KC = { lost:'#C42B20', stay:'#3D4FB0', guide:'#14644A', hq:'#14644A', clinic:'#C42B20', consulate:'#3D4FB0', besat:'#8A6A1F', hotel:'#14644A', map:'#1F6FA8', ins:'#1F6FA8', transport:'#A3561B', food:'#A3561B', currency:'#1F6FA8', ziyarat:'#8A6A1F', restaurant:'#A3561B', parking:'#1F6FA8', other:'#5B6760' };
+const order = ((S.layout || {}).tiles || []).filter(t => t.on !== false && LBL[t.id]).map(t => t.id);
+const tiles = order.length ? order : Object.keys(LBL);
+const icon = (S.icon && S.icon.i192) || 'app-icon-192.png';
+const title = S.appTitle || 'همیار کاروان', sub = S.appSubtitle || '';
+const banner = (S.banner || {}).image, slides = [banner && { img: banner, tag: 'اطلاعیه', t: (S.banner || {}).title || '' }, city.heroImage && { img: city.heroImage, tag: 'خوش آمدید', t: city.name }].filter(Boolean);
+const fa = n => n.toLocaleString('fa');
+const PT = [['صبح', '۰۵:۰۰'], ['ظهر', '۱۱:۴۶'], ['مغرب', '۱۷:۲۹'], ['نیمه‌شب', '۲۳:۰۶']];
+const slider = () => slides.length ? `<div class="slide" style="--img:url('${encodeURI(slides[0].img)}')"><span class="bl"></span><span class="ft"></span>
+  <span class="cap"><small>${slides[0].tag}</small>${slides[0].t}</span>${slides.length > 1 ? `<span class="dots">${slides.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</span>` : ''}</div>` : '';
+const nav = () => `<nav class="nav"><button class="on">${I('home')}خانه</button><button>${I('search')}جستجو</button>
+  <button class="sos"><span>${I('phone')}</span>تماس ضروری</button><button>${I('besat')}بعثه</button><button>${I('more')}بیشتر</button></nav>`;
+
+/* ── الف ── */
+document.getElementById('A').innerHTML = `<div class="app dA">
+  <div class="hd"><img class="lg" src="${icon}" alt=""><div class="t"><b>${title}</b><small>${sub}</small></div>
+    <button class="ib" aria-label="اندازه قلم">${I('type')}</button><button class="ib" aria-label="حالت تیره">${I('moon')}</button></div>
+  <div class="seg">${cities.map(c => `<button class="${c.id === city.id ? 'on' : ''}">${c.name.split(' ')[0]}</button>`).join('')}</div>
+  <div class="card today"><div class="w">${I('cloud')}<span class="ltr">۲۱°</span></div><div class="sep"></div>
+    <div class="tm"><div><b class="ltr">۰۶:۰۶</b>عراق</div><div><b class="ltr">۰۶:۳۶</b>ایران</div></div></div>
+  <div class="card row"><span class="ic">${I('bell')}</span><span class="tx">اطلاعیه‌های فوری را در «بله» بگیرید<small>هشدارها، تغییر ساعت‌ها و یادآوری‌ها</small></span><button class="x" aria-label="بستن">${I('x')}</button></div>
+  <div class="slider">${slider()}</div>
+  <div class="card pr"><div class="top"><div>اذان ظهر · <span>۵ ساعت و ۴۰ دقیقه دیگر</span></div><a href="#">اوقات شرعی${I('chev', 'chev')}</a></div>
+    <div class="ts">${PT.map((p, i) => `<div class="${i === 1 ? 'on' : ''}">${p[0]}<b class="ltr">${p[1]}</b></div>`).join('')}</div></div>
+  <div class="card row"><span class="ic">${I('besat')}</span><span class="tx"><span class="live">هم‌اکنون</span> سخنرانی و مدیحه‌سرایی<small>صحن حرم امیرالمؤمنین علی (ع)</small></span>${I('chev', 'chev')}</div>
+  <div class="h2">بخش‌های ${city.name}<span>${fa(tiles.length)} بخش</span></div>
+  <div class="grid">${tiles.map(k => `<button class="tl" style="--k:${KC[k]}"><span>${I(k)}</span>${LBL[k]}</button>`).join('')}</div>
+  <div class="ft">آخرین به‌روزرسانی: ۱۴۰۵/۰۸/۱۳ · درباره برنامه</div>
+</div>`;
+
+/* ── ب ── */
+document.getElementById('B').innerHTML = `<div class="app dB">
+  <div class="hero">
+    <div class="hd"><img src="${icon}" alt=""><b>${title}</b><button aria-label="اندازه قلم">${I('type')}</button><button aria-label="حالت تیره">${I('moon')}</button></div>
+    <div class="cities">${cities.map(c => `<button class="${c.id === city.id ? 'on' : ''}">${c.name}</button>`).join('')}</div>
+    <div class="big"><div class="c">ساعت عراق<b class="ltr">۰۶:۰۶</b>ایران <span class="ltr">۰۶:۳۶</span></div>
+      <div class="w"><b>${I('cloud')}<span class="ltr">۲۱°</span></b>اذان ظهر تا ۵:۴۰ دیگر</div></div>
+    <div class="pills">${PT.map((p, i) => `<div class="${i === 1 ? 'on' : ''}">${p[0]}<b class="ltr">${p[1]}</b></div>`).join('')}</div>
+  </div>
+  <div class="sheet">
+    <div class="slider">${slider()}</div>
+    <div class="strip"><span class="ic">${I('live')}</span><span class="grow">سخنرانی و مدیحه‌سرایی<small>هم‌اکنون · صحن حرم امیرالمؤمنین (ع)</small></span>${I('chev', 'chev')}</div>
+    <div class="strip"><span class="ic">${I('bell')}</span><span class="grow">اطلاعیه‌های فوری در «بله»<small>هشدارها و یادآوری‌های سفر</small></span>${I('chev', 'chev')}</div>
+    <div class="h2">بخش‌های ${city.name}</div>
+    <div class="grid">${tiles.map(k => `<button class="tl">${I(k)}${LBL[k]}</button>`).join('')}</div>
+    <div class="ft">آخرین به‌روزرسانی: ۱۴۰۵/۰۸/۱۳ · درباره برنامه</div>
+  </div>
+</div>`;
+
+/* ── ج ── */
+const rest = tiles.filter(k => !['lost', 'hq', 'clinic', 'hotel', 'map'].includes(k));
+document.getElementById('C').innerHTML = `<div class="app dC">
+  <div class="hd"><button class="city">${city.name}${I('down')}</button><button class="ib" aria-label="اندازه قلم">${I('type')}</button><button class="ib" aria-label="حالت تیره">${I('moon')}</button></div>
+  <div class="meta">${I('cloud')}<span class="ltr">۲۱°</span><span class="dot"></span>عراق <span class="ltr">۰۶:۰۶</span><span class="dot"></span>ایران <span class="ltr">۰۶:۳۶</span></div>
+  <div class="urg"><div class="t">${I('phone')}تماس فوری<small>بدون اینترنت هم کار می‌کند</small></div>
+    <div class="bt"><button>${I('hq')}ستاد</button><button>${I('clinic')}درمانگاه</button><button>${I('lost')}گم شده‌ام</button></div></div>
+  <div class="two"><button>${I('hotel')}<span>هتل‌ها<small>${fa((city.hotels || []).length)} هتل در ${city.name}</small></span></button>
+    <button>${I('map')}<span>نقشه شهر<small>پیدا کردن هتل با کد</small></span></button></div>
+  <div class="pr">${I('mosque')}<div class="g">اذان ظهر<small>۵ ساعت و ۴۰ دقیقه دیگر</small></div><span class="n ltr">۱۱:۴۶</span></div>
+  <div class="slider">${slider()}</div>
+  <div class="h2">همه بخش‌ها</div>
+  <div class="list">${rest.map(k => `<button class="li" style="--k:${KC[k]}">${I(k)}${LBL[k]}</button>`).join('')}</div>
+  <div class="bale">${I('bell')}<span><b>اطلاعیه‌ها در بله</b> — هشدارها و یادآوری‌های سفر</span></div>
+  <div class="ft">آخرین به‌روزرسانی: ۱۴۰۵/۰۸/۱۳ · درباره برنامه</div>
+</div>`;
+
+['A','B','C'].forEach(id => { const el = document.getElementById(id); el.insertAdjacentHTML('afterend', nav()); el.parentNode.lastElementChild.className += ' ' + el.firstElementChild.className.split(' ')[1]; });
+function pgTheme(d, b) { document.body.classList.toggle('pg-dark', !!d); document.querySelectorAll('.pg-tg button').forEach(x => x.classList.toggle('on', x === b)); }
+</script>
+</body>
+</html>
