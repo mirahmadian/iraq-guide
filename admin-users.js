@@ -445,7 +445,7 @@ async function csApi(path, opts = {}) {
 }
 function csHelp() {
   const fine = String(ghToken || '').startsWith('github_pat_');
-  return `<div style="font-size:13px;line-height:2;text-align:right">کلید GitHub پنل اجازه خاموش کردن Codespace را ندارد. یک بار این کار را انجام دهید:<br>
+  return `<div style="font-size:13px;line-height:2;text-align:right">برای اینکه این دکمه کار کند، یک بار به کلید GitHub پنل اجازه Codespace بدهید:<br>
     ${fine ? `۱. این صفحه را باز کنید: <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a><br>
     ۲. روی کلید پنل بزنید ← <b>Edit</b><br>
     ۳. در <b>Repository permissions</b>: <b>Codespaces</b> = Read-only و <b>Codespaces lifecycle admin</b> = Read and write<br>
@@ -470,12 +470,16 @@ async function csOpen() {
   if (STAFF || !ghToken) return showToast('این کار فقط برای مدیر اصلی است');
   csDialog('در حال بررسی…');
   try {
-    let r = await csApi(`/repos/${GH.owner}/${GH.repo}/codespaces`);
-    if (!r.ok) r = await csApi('/user/codespaces');
-    if (r.status === 401 || r.status === 403 || r.status === 404) return csDialog(csHelp());
-    if (!r.ok) throw new Error('پاسخ GitHub: ' + r.status);
-    const list = (await r.json()).codespaces || [];
-    if (!list.length) return csDialog('هیچ Codespaceی پیدا نشد.');
+    /* کلید بدون اجازه Codespaces گاهی خطا نمی‌دهد و فقط فهرست خالی برمی‌گرداند؛ پس هر دو مسیر امتحان می‌شود */
+    let list = [], denied = false;
+    for (const path of [`/repos/${GH.owner}/${GH.repo}/codespaces`, '/user/codespaces']) {
+      const r = await csApi(path);
+      if (r.status === 401 || r.status === 403 || r.status === 404) { denied = true; continue; }
+      if (!r.ok) continue;
+      list = (await r.json()).codespaces || [];
+      if (list.length) break;
+    }
+    if (!list.length) return csDialog(`<div style="font-size:13px;line-height:2;margin-bottom:8px"><b>GitHub هیچ Codespaceی به این کلید نشان نداد.</b>${denied ? '' : ' معمولاً یعنی کلید پنل هنوز اجازه دیدن Codespaceها را ندارد.'}</div>` + csHelp());
     csDialog(list.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee">
       <div style="flex:1;font-size:13px;line-height:1.8"><b>${escH(c.display_name || c.name)}</b><br>${CS_STATE[c.state] || escH(c.state)}
         ${c.idle_timeout_minutes ? ` · خاموشی خودکار بعد از ${c.idle_timeout_minutes.toLocaleString('fa')} دقیقه بیکاری` : ''}</div>
