@@ -313,6 +313,7 @@
       <button class="lock-link" onclick="showSetup()">رمز را فراموش کرده‌ام / می‌خواهم دوباره تنظیم کنم</button>
       <button class="lock-link" style="display:block;margin-top:14px;font-weight:800" onclick="lockShow('lockStaff')">👥 ورود همکاران (با کد ملی)</button>
       <a class="lock-link" style="display:block;margin-top:10px;font-weight:800;text-decoration:none" href="team.html">🏨 گزارشات مدیران ثابت (مدیر ثابت، مدیر منطقه، مدیر سامانه)</a>
+      <a class="lock-link" style="display:block;margin-top:10px;text-decoration:none" href="./">🏠 بازگشت به برنامه</a>
     </div>
 
     <div id="lockStaff" style="display:none">
@@ -375,6 +376,7 @@
       <div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div>
     </div>
   </div>
+  <a class="view-btn app-btn" href="./" onclick="return leaveAdmin()" title="بازگشت به برنامه همیار کاروان">🏠 بازگشت به برنامه</a>
   <a class="view-btn" data-perm="owner" href="team.html#owner" style="text-decoration:none" title="مدیر سامانه: مناطق، مدیران منطقه و همه‌ی کاربران">🏨 گزارشات مدیران ثابت</a>
   <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
   <button class="save-btn hide-sm" data-perm="owner" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
@@ -1765,6 +1767,7 @@ async function publishData() {
     const res = await putFile('data.js', out, 'Update data.js from admin panel', ghToken);
     if (res && res.content) dataSha = res.content.sha;
     await updateManifest(ghToken);
+    adminDirty=false;
     showToast('ذخیره شد ✅ — سایت در حال به‌روزرسانی است');
     watchDeploy(out);
   } catch(e) {
@@ -1883,6 +1886,12 @@ function saveDraft(){
 }
 function queueDraft(){ clearTimeout(draftTimer); draftTimer=setTimeout(saveDraft,900); }
 ['input','change','click'].forEach(ev=>document.addEventListener(ev,queueDraft,true));
+/* تغییر منتشرنشده: با هر ویرایش در محتوای پنل روشن و بعد از انتشار موفق خاموش می‌شود */
+let adminDirty=false;
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{ if(adminReady && !e.target.closest('.topbar,.lock-overlay,#lockOverlay')) adminDirty=true; },true));
+function leaveAdmin(){
+  return !adminDirty || confirm('تغییراتی دارید که هنوز منتشر نشده‌اند و با خروج از پنل از بین می‌روند.\n\nبدون انتشار به برنامه برمی‌گردید؟');
+}
 function openPreview(){
   saveDraft();
   window.open('index.html?preview=1','caravan-preview');

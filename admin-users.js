@@ -175,7 +175,8 @@ async function staffPublish() {
     btn.textContent = '... در حال انتشار';
     const r = await staffApi('/staff/publish', { data: buildData(false),
       manifest: { name: siteState.appTitle.trim() || DEFAULT_SITE.appTitle, short_name: siteState.iconName.trim() || DEFAULT_SITE.iconName, icons: iconManifestList() } });
-    if (!r.changed.length) { showToast('در بخش‌های شما تغییری برای انتشار نبود'); return; }
+    if (!r.changed.length) { adminDirty = false; showToast('در بخش‌های شما تغییری برای انتشار نبود'); return; }
+    adminDirty = false;
     showToast('ذخیره شد ✅ — ' + r.changed.join('، '));
     watchDeploy(r.text);
   } catch (e) {
