@@ -209,12 +209,14 @@ export default {
       /* آمار: هر گوشی وقتی برنامه باز است هر چند دقیقه یک بار خبر می‌دهد (بدون هیچ اطلاعات شخصی) */
       if (p === '/ping' && req.method === 'POST') {
         if (!dev) return err('شناسه گوشی نامعتبر');
-        const now = Date.now(), inst = body.inst ? 1 : 0;
+        const now = Date.now(), inst = body.inst ? 1 : 0, day = Math.floor((now + 3 * 36e5) / 864e5); /* روز به وقت عراق */
         const plat = ['android', 'ios', 'desktop', 'other'].includes(body.plat) ? body.plat : 'other';
         const city = /^[\w-]{1,40}$/.test(body.city || '') ? body.city : '';
-        await env.DB.prepare(`INSERT INTO devices (dev, first, last, inst, inst_first, plat, city) VALUES (?1, ?2, ?2, ?3, CASE WHEN ?3 = 1 THEN ?2 END, ?4, ?5)
-          ON CONFLICT(dev) DO UPDATE SET last = ?2, plat = ?4, city = ?5, inst = MAX(inst, ?3), inst_first = COALESCE(inst_first, CASE WHEN ?3 = 1 THEN ?2 END)`)
-          .bind(dev, now, inst, plat, city).run();
+        /* days = چند روز مختلف برنامه را باز کرده؛ inst_evt = لحظه‌ای که مرورگر خبر نصب داد (appinstalled) */
+        await env.DB.prepare(`INSERT INTO devices (dev, first, last, inst, inst_first, plat, city, days, lastday, inst_evt) VALUES (?1, ?2, ?2, ?3, CASE WHEN ?3 = 1 THEN ?2 END, ?4, ?5, 1, ?6, CASE WHEN ?7 = 1 THEN ?2 END)
+          ON CONFLICT(dev) DO UPDATE SET last = ?2, plat = ?4, city = ?5, inst = MAX(inst, ?3), inst_first = COALESCE(inst_first, CASE WHEN ?3 = 1 THEN ?2 END),
+            days = days + (COALESCE(lastday, 0) != ?6), lastday = ?6, inst_evt = COALESCE(inst_evt, CASE WHEN ?7 = 1 THEN ?2 END)`)
+          .bind(dev, now, inst, plat, city, day, body.evt ? 1 : 0).run();
         return json({ ok: true });
       }
 
@@ -243,10 +245,12 @@ export default {
           const q = (sql, ...b) => env.DB.prepare(sql).bind(...b);
           const [tot, byPlat, byCity, days] = await env.DB.batch([
             q(`SELECT COUNT(*) total, SUM(inst) inst, SUM(last > ?1) online, SUM(last > ?2) today, SUM(last > ?3) week, SUM(last > ?4) month,
-                 SUM(first > ?2) new_today, SUM(inst_first > ?2) inst_today, SUM(inst = 1 AND last > ?4) inst_active FROM devices`, now - 5 * M, now - D, now - 7 * D, now - 30 * D),
+                 SUM(first > ?2) new_today, SUM(inst_first > ?2) inst_today, SUM(inst = 1 AND last > ?4) inst_active,
+                 SUM(days >= 2) real_users, SUM(days >= 2 AND last > ?3) real_week, SUM(inst = 1 AND days >= 2) inst_real, SUM(inst_evt IS NOT NULL) inst_evt,
+                 SUM(inst = 1 AND days = 1 AND last - COALESCE(inst_first, first) < 600000) inst_once FROM devices`, now - 5 * M, now - D, now - 7 * D, now - 30 * D),
             q('SELECT plat k, COUNT(*) n FROM devices WHERE last > ? GROUP BY plat ORDER BY n DESC', now - 30 * D),
             q('SELECT city k, COUNT(*) n, SUM(last > ?1) online FROM devices WHERE last > ?2 AND city != \'\' GROUP BY city ORDER BY n DESC', now - 5 * M, now - D),
-            q(`SELECT (first + 3 * 3600000) / 86400000 d, COUNT(*) n, SUM(inst_first IS NOT NULL) i FROM devices WHERE first > ? GROUP BY d ORDER BY d`, now - 14 * D)
+            q(`SELECT (first + 3 * 3600000) / 86400000 d, COUNT(*) n, SUM(inst_first IS NOT NULL) i, SUM(days >= 2) back FROM devices WHERE first > ? GROUP BY d ORDER BY d`, now - 14 * D)
           ]);
           return json({ ...tot.results[0], plat: byPlat.results, city: byCity.results, days: days.results, since: (await q('SELECT MIN(first) m FROM devices').first()).m });
         }

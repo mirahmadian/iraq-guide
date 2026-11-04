@@ -20,7 +20,10 @@ CREATE TABLE IF NOT EXISTS devices (
   last INTEGER NOT NULL,      -- last heartbeat
   inst INTEGER NOT NULL DEFAULT 0,  -- ever opened as an installed app
   inst_first INTEGER,
-  plat TEXT, city TEXT
+  plat TEXT, city TEXT,
+  days INTEGER NOT NULL DEFAULT 1,  -- number of different (Iraq) days the app was opened
+  lastday INTEGER,                 -- last such day number
+  inst_evt INTEGER                 -- time of the browser «appinstalled» event
 );
 CREATE INDEX IF NOT EXISTS devices_last ON devices (last);
 CREATE TABLE IF NOT EXISTS staff (

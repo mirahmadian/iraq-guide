@@ -25,15 +25,23 @@ function renderStats() {
     <b style="min-width:44px;text-align:left">${stN(r.n)}</b></div>`).join(''); };
   el.innerHTML = `
   <div class="info-box"><strong>📊 آمار کاربران</strong>
-    هر گوشی که برنامه را باز کند یک کاربر حساب می‌شود (بدون نام یا شماره). «نصب‌شده» یعنی برنامه را به صفحه گوشی اضافه کرده و از آنجا باز کرده است.
+    هر گوشی یا رایانه‌ای که برنامه را باز کند یک «بازدیدکننده» حساب می‌شود (بدون نام یا شماره). «نصب‌شده» یعنی برنامه را به صفحه گوشی اضافه کرده و از آنجا باز کرده است.
+    «کاربر واقعی» یعنی دست‌کم در دو روز مختلف برنامه را باز کرده — دقیق‌ترین عدد برای کسانی که واقعاً از برنامه استفاده می‌کنند.
+    یک نفر با دو دستگاه (یا بعد از پاک کردن حافظه مرورگر) دو بار شمرده می‌شود، و پاک کردن برنامه از گوشی معلوم نمی‌شود.
     «آنلاین» یعنی در ۵ دقیقه اخیر برنامه روی صفحه‌اش باز بوده. این صفحه هر ۳۰ ثانیه خودش به‌روز می‌شود.
     ${d && d.since ? `<br>شمارش از ${new Date(d.since).toLocaleDateString('fa-IR')} شروع شده؛ کاربرانی که قبل از آن برنامه را داشتند، با اولین باز کردن دوباره شمرده می‌شوند.` : ''}</div>
   ${stErr ? `<div class="empty-msg" style="color:var(--red)">${escH(stErr)}</div>` : !d ? '<div class="empty-msg">در حال دریافت…</div>' : `
   <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
     ${box('🟢 ' + stN(d.online), 'الان آنلاین', '#1a9a4a')}
+    ${box(stN(d.real_users), 'کاربر واقعی (دست‌کم ۲ روز مختلف)', '#1f6f50')}
+    ${box(stN(d.inst_real), 'نصب کرده و دوباره برگشته')}
     ${box(stN(d.inst), 'نصب‌شده (کل)')}
-    ${box(stN(d.inst_active), 'نصب‌شده و فعال در ۳۰ روز اخیر')}
-    ${box(stN(d.total), 'همه کاربران (نصب‌شده یا از مرورگر)')}
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
+    ${box(stN(d.total), 'همه بازدیدکننده‌ها (نصب‌شده یا از مرورگر)', '#555')}
+    ${box(stN(d.inst_active), 'نصب‌شده و فعال در ۳۰ روز اخیر', '#555')}
+    ${box(stN(d.inst_once), 'نصب کرده، فقط چند دقیقه همان روز', '#999')}
+    ${box(stN(d.real_week), 'کاربر واقعی فعال در ۷ روز اخیر', '#555')}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
     ${box(stN(d.today), 'کاربر در ۲۴ ساعت اخیر', '#555')}
@@ -43,6 +51,7 @@ function renderStats() {
   </div>
   ${d.city.length ? `<div class="field-label">شهر انتخاب‌شده کاربران (۲۴ ساعت اخیر)</div>${bars(d.city, r => escH(cityName(r.k)) + (r.online ? ` <small style="color:#1a9a4a">(${stN(r.online)} آنلاین)</small>` : ''))}` : ''}
   ${d.plat.length ? `<div class="field-label" style="margin-top:14px">نوع گوشی (۳۰ روز اخیر)</div>${bars(d.plat, r => ST_PLAT[r.k] || r.k)}` : ''}
-  ${d.days.length ? `<div class="field-label" style="margin-top:14px">کاربران جدید در ۱۴ روز اخیر</div>${bars(d.days.slice().reverse(), r => new Date(r.d * 864e5).toLocaleDateString('fa-IR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + (r.i ? ` <small style="color:#1f6f50">(${stN(r.i)} نصب)</small>` : ''))}` : ''}`}
+  ${d.days.length ? `<div class="field-label" style="margin-top:14px">کاربران جدید در ۱۴ روز اخیر</div>${bars(d.days.slice().reverse(), r => new Date(r.d * 864e5).toLocaleDateString('fa-IR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + ` <small style="color:#1f6f50">(${stN(r.i || 0)} نصب، ${stN(r.back || 0)} برگشته)</small>`)}` : ''}
+  ${d.inst_evt ? `<div class="empty-msg" style="padding:6px 0">نصب‌هایی که مرورگر لحظه‌اش را خبر داده (از امروز به بعد): ${stN(d.inst_evt)}</div>` : ''}`}
   <button class="add-row-btn" onclick="statsLoad()">🔄 به‌روزرسانی</button>`;
 }

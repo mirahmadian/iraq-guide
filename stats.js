@@ -11,16 +11,18 @@ function stPlat() {
   return /android/i.test(u) ? 'android' : /iphone|ipad|ipod/i.test(u) || (/macintosh/i.test(u) && navigator.maxTouchPoints > 1) ? 'ios'
     : /windows|macintosh|linux|cros/i.test(u) ? 'desktop' : 'other';
 }
-function stPing() {
+function stPing(force) {
   if (typeof PREVIEW !== 'undefined' && PREVIEW) return;
   if (/^(localhost|127\.)/.test(location.hostname) || document.visibilityState !== 'visible' || navigator.onLine === false) return;
-  if (Date.now() - stLastPing < ST_PING_MS - 5000) return;
+  if (!force && Date.now() - stLastPing < ST_PING_MS - 5000) return;
   stLastPing = Date.now();
-  const inst = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const inst = force === 'evt' || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   let city = '';
   try { city = (homeCity() || {}).id || ''; } catch (e) {}
-  fetch(RV_API + '/ping', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Dev': rvDev() }, body: JSON.stringify({ inst: inst ? 1 : 0, plat: stPlat(), city }), keepalive: true }).catch(() => {});
+  fetch(RV_API + '/ping', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Dev': rvDev() }, body: JSON.stringify({ inst: inst ? 1 : 0, plat: stPlat(), city, ...(force === 'evt' ? { evt: 1 } : {}) }), keepalive: true }).catch(() => {});
 }
 setTimeout(stPing, 3000);
 setInterval(stPing, ST_PING_MS);
 document.addEventListener('visibilitychange', () => setTimeout(stPing, 1000));
+/* لحظه نصب (کروم اندروید و کامپیوتر خبر می‌دهد) دقیق ثبت می‌شود */
+window.addEventListener('appinstalled', () => stPing('evt'));
