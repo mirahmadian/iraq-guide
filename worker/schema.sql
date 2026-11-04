@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS devices (
   plat TEXT, city TEXT,
   days INTEGER NOT NULL DEFAULT 1,  -- number of different (Iraq) days the app was opened
   lastday INTEGER,                 -- last such day number
-  inst_evt INTEGER                 -- time of the browser «appinstalled» event
+  inst_evt INTEGER,                -- time of the browser «appinstalled» event
+  geo_first TEXT, geo_last TEXT, geo_inst TEXT  -- approximate «country|region|city» from Cloudflare (no IP stored)
 );
 CREATE INDEX IF NOT EXISTS devices_last ON devices (last);
 CREATE TABLE IF NOT EXISTS staff (
