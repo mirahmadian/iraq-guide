@@ -54,7 +54,9 @@ const CARAVAN_DATA = {
         },
         {
           "id": "stay",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-stay-1793778237333.png",
+          "iconFull": true
         },
         {
           "id": "guide",
@@ -150,6 +152,34 @@ const CARAVAN_DATA = {
         "name": "آقای علی گریطی",
         "countryCode": "964",
         "photo": "people/p-1792007308924-kqnoa.jpg"
+      }
+    ]
+  },
+  "emergency": {
+    "list": [
+      {
+        "name": "پلیس عراق",
+        "ar": "الشرطة",
+        "phone": "104",
+        "icon": "police"
+      },
+      {
+        "name": "اورژانس (آمبولانس)",
+        "ar": "الإسعاف · الطوارئ",
+        "phone": "122",
+        "icon": "ambulance"
+      },
+      {
+        "name": "هلال احمر عراق",
+        "ar": "الهلال الأحمر",
+        "phone": "112",
+        "icon": "clinic"
+      },
+      {
+        "name": "آتش‌نشانی",
+        "ar": "الدفاع المدني",
+        "phone": "911",
+        "icon": "flame"
       }
     ]
   },
