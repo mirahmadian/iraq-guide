@@ -48,7 +48,9 @@ const CARAVAN_DATA = {
       "tiles": [
         {
           "id": "lost",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-lost-1793764247151.png",
+          "iconFull": true
         },
         {
           "id": "stay",
