@@ -308,6 +308,7 @@ function renderUsers() {
     برای هر همکار کد ملی (به‌عنوان نام کاربری) و رمز بگذارید و بخش‌هایی را که اجازه دارد ویرایش کند تیک بزنید — مثلاً فقط «هتل‌های کربلا» یا فقط «اطلاعیه‌ها».
     همکار از همین صفحه (admin.html) با «👥 ورود همکاران» وارد می‌شود. رمز مدیریت شما و کلید GitHub هیچ‌وقت به همکار داده نمی‌شود.</div>
   ${uEdit ? userEditorHTML() : `
+  ${ownerCardHTML()}
   ${uTemp ? `<div class="lay-slide" style="border:2px solid #2e8b63;background:#eef8f2">
     <b>🔑 رمز موقت «${escH(uTemp.name)}»</b>
     <div style="font-size:26px;font-weight:900;letter-spacing:3px;direction:ltr;text-align:center;padding:8px;background:#fff;border-radius:10px;user-select:all">${escH(uTemp.pass)}</div>
@@ -319,16 +320,101 @@ function renderUsers() {
   <button class="add-row-btn" onclick="userNew()">➕ همکار جدید</button>
   ${usersErr ? `<div class="empty-msg" style="color:var(--red)">${escH(usersErr)}</div>` : !usersList ? '<div class="empty-msg">در حال دریافت…</div>'
     : !usersList.length ? '<div class="empty-msg">هنوز همکاری نساخته‌اید.</div>'
-    : usersList.map(u => `<div class="lay-slide" style="${u.active ? '' : 'opacity:.6'}">
-      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${u.active ? '👤' : '⛔'} ${escH(u.name)}</b><span dir="ltr" style="color:#666">🪪 ${escH(u.user)}</span></div>
-      <div style="font-size:12.5px;color:#555;line-height:1.9">${u.perms.length ? u.perms.map(k => escH(uPermLabel(k))).join(' · ') : '<i>بدون دسترسی</i>'}</div>
-      <div style="font-size:12px;color:#888">آخرین ورود به پنل ادمین: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
+    : `<div class="u-list">${usersList.map(u => userRowHTML(u, ago)).join('')}</div>`}`}`;
+}
+const U_CSS = `<style>
+  .u-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .u-row{border:1px solid #d7e2dc;border-radius:12px;background:#fff;overflow:hidden}
+  .u-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;flex-wrap:wrap}
+  .u-head:hover{background:#f6faf8}
+  .u-name{font-weight:900;flex:1;min-width:140px}
+  .u-meta{font-size:12px;color:#777}
+  .u-pill{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .u-ok{background:#e3f4ea;color:#1f8a55}.u-warn{background:#fff4e0;color:#8a5a00}.u-bad{background:#fde8e6;color:#c0392b}
+  .u-body{border-top:1px solid #e3ebe6;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:#fbfdfc}
+  .u-perms{font-size:12.5px;color:#444;line-height:1.9}
+  .u-perms b{color:#1f6f50}
+</style>`;
+let uOpen = '';
+/* خلاصه دسترسی‌ها، گروه به گروه (به‌جای فهرست بلند همه موارد) */
+function uPermSummary(perms) {
+  const has = new Set(perms), all = permKeys();
+  if (all.every(k => has.has(k))) return '<b>همه دسترسی‌ها</b>';
+  return PERMS.groups.map(g => {
+    if (g.perCity) {
+      const rows = g.items.map(it => {
+        const cs = STAFF_CITIES.filter(c => !(it.noSamarra && c === 'samarra'));
+        const on = cs.filter(c => has.has(`city.${c}.${it.k}`));
+        return !on.length ? '' : escH(it.label) + ' (' + (on.length === cs.length ? 'همه شهرها' : on.map(uCityName).map(escH).join('، ')) + ')';
+      }).filter(Boolean);
+      return rows.length ? `<div><b>${escH(g.label)}:</b> ${rows.join(' · ')}</div>` : '';
+    }
+    const on = g.items.filter(it => has.has(it.k));
+    return on.length ? `<div><b>${escH(g.label)}:</b> ${on.length === g.items.length ? 'همه' : on.map(it => escH(it.label)).join('، ')}</div>` : '';
+  }).join('') || '<i>بدون دسترسی</i>';
+}
+function userRowHTML(u, ago) {
+  const open = uOpen === u.user, n = u.perms.length, tot = permKeys().length;
+  const pill = !u.active ? '<span class="u-pill u-bad">⛔ غیرفعال</span>' : u.reset_req ? '<span class="u-pill u-warn">🔑 رمز را فراموش کرده</span>'
+    : !u.last_login ? '<span class="u-pill u-warn">هنوز وارد نشده</span>' : '<span class="u-pill u-ok">فعال</span>';
+  return `<div class="u-row" style="${u.active ? '' : 'opacity:.65'}">
+    <div class="u-head" onclick="uOpen=uOpen==='${escH(u.user)}'?'':'${escH(u.user)}';renderUsers()" role="button" aria-expanded="${open}">
+      <span class="u-name">👤 ${escH(u.name)}</span>
+      ${pill}
+      <span class="u-meta">${n === tot ? 'همه دسترسی‌ها' : n.toLocaleString('fa') + ' دسترسی'}</span>
+      <span class="u-meta" dir="ltr">${escH(u.user)}</span>
+      <span class="u-meta">${open ? '▴' : '▾'}</span>
+    </div>
+    ${!open ? '' : `<div class="u-body">
+      <div class="u-perms">${uPermSummary(u.perms)}</div>
+      <div class="u-meta">آخرین ورود به پنل ادمین: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
       ${u.reset_req ? `<div style="padding:8px 10px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:13px;font-weight:800">🔑 درخواست فراموشی رمز — ${ago(u.reset_req)}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="userEdit('${escH(u.user)}')">✏️ ویرایش دسترسی‌ها / رمز</button>
-        <button class="add-row-btn" style="margin:0;width:auto;${u.reset_req ? 'background:#2e8b63;color:#fff' : ''}" onclick="userTempPass('${escH(u.user)}')">🔑 ساخت رمز موقت</button>
+        <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="userEdit('${escH(u.user)}')">✏️ ویرایش دسترسی‌ها</button>
+        <button class="add-row-btn" style="margin:0;width:auto;${u.reset_req ? 'background:#2e8b63;color:#fff' : ''}" onclick="userTempPass('${escH(u.user)}')">🔑 رمز موقت</button>
         <button class="del-btn" style="width:auto;height:auto;min-height:40px;padding:0 12px" onclick="userDelete('${escH(u.user)}')">🗑 حذف</button>
-      </div></div>`).join('')}`}`;
+      </div></div>`}
+  </div>`;
+}
+
+/* ── مدیر اصلی (شما): ورود فقط با «رمز مدیریت»، دسترسی کامل؛ جزو همکاران نیست ── */
+let ownerPwOpen = false;
+function ownerCardHTML() {
+  return U_CSS + `<div class="lay-slide" style="border:2px solid #b7791f;background:#fffaf0">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+      <b>👑 مدیر اصلی (شما)</b><span class="u-pill u-ok">دسترسی کامل</span></div>
+    <div style="font-size:13px;line-height:1.9;color:#555">با «رمز مدیریت» وارد می‌شود (بدون کد ملی). این حساب فقط دست خودتان باشد؛ برای دیگران «همکار» بسازید.</div>
+    ${!ownerPwOpen ? `<button class="add-row-btn" style="margin:0" onclick="ownerPwOpen=true;renderUsers()">🔐 تغییر رمز مدیریت</button>` : `
+    <div class="field" style="margin:0"><input type="password" class="input-full" id="opOld" autocomplete="current-password" placeholder="رمز مدیریت فعلی"></div>
+    <div class="field" style="margin:0"><input type="password" class="input-full" id="opNew" autocomplete="new-password" placeholder="رمز مدیریت تازه (حداقل ۱۰ حرف)"></div>
+    <div class="field" style="margin:0"><input type="password" class="input-full" id="opNew2" autocomplete="new-password" placeholder="تکرار رمز تازه"></div>
+    <div class="lock-err" id="opErr"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="pub-btn" style="flex:2" id="opBtn" onclick="ownerChangePass()">ذخیره رمز تازه</button>
+      <button class="add-row-btn" style="margin:0;flex:1" onclick="ownerPwOpen=false;renderUsers()">انصراف</button>
+    </div>
+    <div style="font-size:12.5px;line-height:1.9;color:#8a5a00;background:#fff4e0;border-radius:10px;padding:8px 10px">
+      ⚠️ دستگاه‌هایی که قبلاً با رمز مدیریت وارد شده‌اند، با عوض شدن رمز بیرون نمی‌روند. برای بیرون کردن <b>همه</b> آن‌ها باید کلید GitHub را عوض کنید:
+      <button class="lock-link" style="display:inline;padding:0" onclick="if(confirm('کلید GitHub تازه می‌سازید؟ بعد از ثبت کلید تازه، کلید قبلی را در GitHub حذف (Delete) کنید تا همه دستگاه‌های دیگر بیرون بروند.'))showSetup()">تنظیم کلید GitHub تازه</button></div>`}
+  </div>`;
+}
+async function ownerChangePass() {
+  const v = id => document.getElementById(id).value, err = document.getElementById('opErr'), btn = document.getElementById('opBtn');
+  err.textContent = '';
+  if (v('opNew').length < 10) { err.textContent = 'رمز تازه حداقل ۱۰ حرف باشد.'; return; }
+  if (v('opNew') !== v('opNew2')) { err.textContent = 'رمز تازه و تکرارش یکی نیستند.'; return; }
+  btn.disabled = true; btn.textContent = '... در حال ذخیره';
+  try {
+    /* رمز فعلی را با باز کردن admin-key.json (آخرین نسخه، از GitHub) می‌سنجیم */
+    const r = await gh('/contents/' + KEY_FILE + '?ref=main&t=' + Date.now(), ghToken, { cache: 'no-store' });
+    if (!r.ok) throw new Error('خواندن کلید از GitHub ناموفق بود (' + r.status + ')');
+    const blob = JSON.parse(new TextDecoder().decode(unb64((await r.json()).content.replace(/\s/g, ''))));
+    let tok;
+    try { tok = await decryptToken(blob, v('opOld')); } catch (e) { throw new Error('رمز مدیریت فعلی اشتباه است.'); }
+    await putFile(KEY_FILE, await encryptToken(tok, v('opNew')), 'Update admin key', ghToken);
+    ownerPwOpen = false; renderUsers();
+    showToast('رمز مدیریت عوض شد ✅ — از این به بعد با رمز تازه وارد شوید');
+  } catch (e) { err.textContent = e.message; btn.disabled = false; btn.textContent = 'ذخیره رمز تازه'; }
 }
 async function userSave() {
   const e = uEdit, err = document.getElementById('userErr'), btn = document.getElementById('userSaveBtn');
