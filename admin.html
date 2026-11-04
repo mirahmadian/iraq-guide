@@ -452,6 +452,17 @@
     <div class="sec-body" style="display:block;border-top:1px dashed var(--border-s)" id="rate-reporter" data-perm="owner"></div>
   </div>
 
+  <!-- BALE -->
+  <div class="sec-card open" data-grp="news" data-perm="bale">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">📩</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">اطلاعیه در بله (@HamyarKaravan_Bot)</div>
+        <div class="sec-head-sub">زائرانی که با رضایت خودشان شماره‌شان را در بله فرستاده‌اند — ارسال پیام به همه یا زائران یک شهر</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="bale-admin"></div>
+  </div>
   <!-- HOME LAYOUT -->
   <div class="sec-card open" data-perm="layout" data-grp="home">
     <div class="sec-card-head no-toggle">
@@ -855,6 +866,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-reviews.js"></script>
 <script src="admin-stats.js"></script>
 <script src="admin-users.js"></script>
+<script src="admin-bale.js"></script>
 <script>
 /* ══════════════════════════════════════════
    TABS
@@ -1763,6 +1775,7 @@ async function publishData() {
 
 /* دسته‌های داخل تب عمومی */
 function showGrp(g){
+  if(g==='news'&&!baleData&&typeof baleLoad==='function') setTimeout(baleLoad,0);
   document.querySelectorAll('#tab-general [data-grp]').forEach(el=>el.classList.toggle('grp-on',el.dataset.grp===g));
   document.querySelectorAll('.grp-bar button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));
   try{sessionStorage.setItem('admin-grp',g)}catch(e){}

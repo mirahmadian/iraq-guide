@@ -20,6 +20,7 @@ const STATIC = [
   'guide.js',
   'reviews.js',
   'stats.js',
+  'bale.js',
   'rate.json',
   'rate-market.json',
   'besat-logo.png',

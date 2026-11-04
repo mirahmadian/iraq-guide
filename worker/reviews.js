@@ -7,6 +7,7 @@
    مدیر با همان کلید GitHub پنل مدیریت شناسایی می‌شود (دسترسی push به مخزن).
    استقرار: cd worker && npx wrangler deploy
 ══════════════════════════════════════════ */
+import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 
 const REPO = 'mirahmadian/iraq-guide';
@@ -220,6 +221,9 @@ export default {
         return json({ ok: true });
       }
 
+      /* ── بازوی بله ── */
+      if (p.startsWith('/bale/')) { const r = await handleBalePublic(p, req, env, body, dev, json, err, limited, ip, sha); if (r) return r; }
+
       /* ── همکاران پنل (ورود با نام کاربری) ── */
       if (p.startsWith('/staff/')) return await handleStaff(p, req, env, body, json, err, limited, ip);
 
@@ -230,7 +234,7 @@ export default {
         const owner = !sm && await isAdmin(env, req);
         if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
         if (staff && staff.mustChange) return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
-        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : 'owner';
+        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : 'owner';
         if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
         if (p === '/admin/gh-register' && req.method === 'POST') {
           /* کلید GitHub مدیر اصلی برای انتشارهای همکاران (رمزگذاری‌شده) */
@@ -240,6 +244,9 @@ export default {
         }
         const u = await handleUsers(p, req, env, body, json, err);
         if (u) return u;
+        if (p === '/admin/bale/setup' && req.method === 'POST') return json(await baleSetup(env, url.origin));
+        const bb = await handleBaleAdmin(p, req, env, body, json, err, !!owner);
+        if (bb) return bb;
         if (p === '/admin/stats' && req.method === 'GET') {
           const now = Date.now(), M = 6e4, D = 864e5;
           const q = (sql, ...b) => env.DB.prepare(sql).bind(...b);

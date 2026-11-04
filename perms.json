@@ -3,7 +3,8 @@
   "groups": [
     { "id": "news", "label": "📢 اطلاع‌رسانی", "items": [
       { "k": "notices", "label": "اطلاعیه‌های عمومی", "p": ["site.notices"] },
-      { "k": "rate", "label": "نرخ دستی دینار", "p": ["site.rate"] }
+      { "k": "rate", "label": "نرخ دستی دینار", "p": ["site.rate"] },
+      { "k": "bale", "label": "ارسال پیام بله به زائران", "p": [] }
     ]},
     { "id": "home", "label": "🧩 صفحه اول", "items": [
       { "k": "layout", "label": "چیدمان آیکون‌ها، نوار پایین و اسلایدر", "p": ["site.layout"], "files": ["slides/"] }

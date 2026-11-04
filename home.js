@@ -235,6 +235,7 @@ function renderHome() {
     ${typeof todayBarHTML === 'function' ? todayBarHTML(c) : ''}
     ${typeof noticesHTML === 'function' ? noticesHTML(c) : ''}
     ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
+    ${typeof baleStripHTML === 'function' ? baleStripHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
       <button class="hslide" style="--img:url('${escHtml(encodeURI(x.img))}')" onclick="slideTap(${i})" aria-label="${escHtml(x.t || x.tag || 'اسلاید')}">
         <span class="blur"></span><span class="fit"></span>
