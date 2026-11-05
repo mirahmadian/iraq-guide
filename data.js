@@ -4672,7 +4672,8 @@ const CARAVAN_DATA = {
             "hotels/h-1793277384685-xqmh2.jpg",
             "hotels/h-1793277390958-nhx0v.jpg",
             "hotels/h-1793277395138-j6lss.jpg",
-            "hotels/h-1793277404359-su9tl.jpg"
+            "hotels/h-1793277404359-su9tl.jpg",
+            "hotels/h-1793840093647-vqbgr.jpg"
           ],
           "mapNeshanUrl": "https://nshn.ir/ferbZlBQIA2czs",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=32.620254,44.041129",
@@ -4894,8 +4895,10 @@ const CARAVAN_DATA = {
           "name": "فندق نور العقيلة",
           "nameEn": "",
           "address": "",
-          "cardImage": "",
-          "images": [],
+          "cardImage": "hotels/h-1793840096177-x663m.jpg",
+          "images": [
+            "hotels/h-1793840096177-x663m.jpg"
+          ],
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=32.611844,44.040073",
           "hidden": true,
@@ -5038,11 +5041,12 @@ const CARAVAN_DATA = {
           "name": "فندق سلطان",
           "nameEn": "",
           "address": "",
-          "cardImage": "",
-          "images": [],
+          "cardImage": "hotels/h-1793840098454-3ijiw.jpg",
+          "images": [
+            "hotels/h-1793840098454-3ijiw.jpg"
+          ],
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=32.613147,44.029588",
-          "hidden": true,
           "contacts": []
         },
         {
