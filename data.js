@@ -38,11 +38,11 @@ const CARAVAN_DATA = {
       "top": true
     },
     "icon": {
-      "i192": "icons/i192-1793520657572.png",
-      "i512": "icons/i512-1793520657572.png",
-      "mask": "icons/mask-1793520657572.png",
-      "apple": "icons/apple-1793520657572.png",
-      "bg": "#044e39"
+      "i192": "icons/i192-1793836944392.png",
+      "i512": "icons/i512-1793836944392.png",
+      "mask": "icons/mask-1793836944392.png",
+      "apple": "icons/apple-1793836944392.png",
+      "bg": "#bbebf7"
     },
     "layout": {
       "tiles": [
