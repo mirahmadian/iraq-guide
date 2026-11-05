@@ -61,7 +61,8 @@ const CARAVAN_DATA = {
         {
           "id": "guide",
           "on": true,
-          "icon": "slides/icon-guide-1793836532986.png"
+          "icon": "slides/icon-guide-1793836532986.png",
+          "iconFull": true
         },
         {
           "id": "zyarat",
@@ -69,26 +70,33 @@ const CARAVAN_DATA = {
         },
         {
           "id": "hq",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-hq-1793837979440.png",
+          "iconFull": true
         },
         {
           "id": "clinic",
           "on": true,
-          "icon": "slides/icon-clinic-1793836535909.png"
+          "icon": "slides/icon-clinic-1793836535909.png",
+          "iconFull": true
         },
         {
           "id": "consulate",
           "on": true,
-          "icon": "slides/icon-consulate-1793836538018.png"
+          "icon": "slides/icon-consulate-1793836538018.png",
+          "iconFull": true
         },
         {
           "id": "besat",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-besat-1793837981931.png",
+          "iconFull": true
         },
         {
           "id": "hotel",
           "on": true,
-          "icon": "slides/icon-hotel-1793836540466.png"
+          "icon": "slides/icon-hotel-1793836540466.png",
+          "iconFull": true
         },
         {
           "id": "map",
@@ -102,21 +110,26 @@ const CARAVAN_DATA = {
         {
           "id": "transport",
           "on": true,
-          "icon": "slides/icon-transport-1793836720954.png"
+          "icon": "slides/icon-transport-1793836720954.png",
+          "iconFull": true
         },
         {
           "id": "food",
           "on": true,
-          "icon": "slides/icon-food-1793836723245.png"
+          "icon": "slides/icon-food-1793836723245.png",
+          "iconFull": true
         },
         {
           "id": "currency",
           "on": true,
-          "icon": "slides/icon-currency-1793836725367.png"
+          "icon": "slides/icon-currency-1793836725367.png",
+          "iconFull": true
         },
         {
           "id": "ziyarat",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-ziyarat-1793837984275.png",
+          "iconFull": true
         },
         {
           "id": "restaurant",
