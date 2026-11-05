@@ -66,7 +66,9 @@ const CARAVAN_DATA = {
         },
         {
           "id": "zyarat",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-zyarat-1793838774497.png",
+          "iconFull": true
         },
         {
           "id": "hq",
@@ -101,11 +103,14 @@ const CARAVAN_DATA = {
         {
           "id": "map",
           "on": true,
-          "icon": "slides/icon-map-1793836718658.png"
+          "icon": "slides/icon-map-1793836718658.png",
+          "iconFull": true
         },
         {
           "id": "ins",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-ins-1793838776711.png",
+          "iconFull": true
         },
         {
           "id": "transport",
