@@ -1,4 +1,4 @@
-const CACHE = 'caravan-2.49';
+const CACHE = 'caravan-2.50';
 const STATIC = [
   './',
   'index.html',
