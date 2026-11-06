@@ -1,0 +1,23 @@
+# سامانه نواقص هتل‌ها (team.html) — جایگزین سرور 188؛ index.js را ببینید
+name = "hamyar-hotels"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://mirahmadian.github.io,http://localhost:8765"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hamyar-hotels"
+database_id = "10359407-12af-4227-8991-fe9ef7ff9046"
+
+# تکه‌های عکس و فیلم
+[[d1_databases]]
+binding = "MDB"
+database_name = "hamyar-hotels-media"
+database_id = "a8fccebf-9f09-47bc-92f2-ea34a9959b3d"
+
+# پاک‌سازی ساعتی (رسانه‌های بیش از ۷ روز، نشست‌های تمام‌شده)
+[triggers]
+crons = ["17 * * * *"]
