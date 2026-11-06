@@ -2,9 +2,10 @@
 (() => {
 /* مدیر ثابت: ورودی‌های هفته ← برای هر ورودی یک گزارش */
 let app;
-const S = { me: null, weeks: [], week: 0, entries: [], hotel: '', bulkSure: false, E: null };
+const S = { me: null, opts: {}, weeks: [], week: 0, entries: [], hotel: '', bulkSure: false, E: null };
 
-window.startFM = me => { app = document.getElementById('app'); S.me = me; S.hotel = ''; loadHome(); };
+/* opts.onBack: مدیر منطقه‌ای که خودش هم هتل دارد از تب «هتل‌های من» آمده است */
+window.startFM = (me, opts = {}) => { app = document.getElementById('app'); S.me = me; S.opts = opts; S.hotel = ''; loadHome(); };
 
 /* ═════════ home: weeks → hotels → entries ═════════ */
 async function loadHome(week) {
@@ -22,11 +23,11 @@ async function renderHome() {
   const list = S.entries, hotels = [...new Set(list.map(e => e.hotel))], shown = list.filter(e => !S.hotel || e.hotel === S.hotel);
   const pending = list.filter(e => !e.rid), week = S.weeks.find(w => w.id === S.week);
   let bioHint = false; try { bioHint = !S.me.passkeys.length && localStorage.getItem('hr-bio-hint') !== 'no' && await bioAvailable(); } catch (e) {}
-  app.innerHTML = `<header class="app-head"><div class="in"><a class="hbtn" href="./" style="text-decoration:none">→ برنامه</a><div class="t"><div class="hi">${esc(S.me.region)} · مدیر ثابت</div><h1>${esc(S.me.name)}</h1></div><button class="hbtn" id="acc">⚙️ حساب</button><button class="hbtn" data-logout>🚪 خروج</button></div></header>
+  app.innerHTML = `<header class="app-head"><div class="in">${S.opts.onBack ? '<button class="hbtn" id="fm-back">→ پنل منطقه</button>' : '<a class="hbtn" href="./" style="text-decoration:none">→ برنامه</a>'}<div class="t"><div class="hi">${esc(S.me.region)} · ${S.opts.onBack ? 'هتل‌های من (کار مدیر ثابت)' : 'مدیر ثابت'}</div><h1>${esc(S.me.name)}</h1></div>${S.opts.onBack ? '' : '<button class="hbtn" id="acc">⚙️ حساب</button>'}<button class="hbtn" data-logout>🚪 خروج</button></div></header>
   <main class="page">
     ${bioHint ? `<div class="bulk" style="background:var(--pri-soft)"><span>☝️ دفعه‌ی بعد با اثر انگشت وارد شوید؟</span><span class="row"><button class="btn small" id="bio-on">روشن کن</button><button class="btn small ghost" id="bio-no">نه</button></span></div>` : ''}
     ${S.weeks.length > 1 ? `<div class="field"><label class="label" for="wk">هفته</label><select id="wk" class="inp">${S.weeks.map(w => `<option value="${w.id}" ${w.id === S.week ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}</select></div>` : week ? `<div class="label">📅 ${esc(week.title)}</div>` : ''}
-    ${!list.length ? `<div class="card"><b>هنوز ورودی‌ای به شما سپرده نشده است.</b><span class="muted">وقتی مدیر منطقه اکسل هفتگی را وارد کند، هتل‌ها و کاروان‌های شما این‌جا نشان داده می‌شوند.</span></div>` : `
+    ${!list.length ? `<div class="card"><b>هنوز ورودی‌ای به شما سپرده نشده است.</b><span class="muted">${S.opts.onBack ? 'برای این‌که هتلی به خودتان سپرده شود: در اکسل هفتگی، کد ملی خودتان را جلوی یک شیت بنویسید؛ یا در تب «مدیران ثابت»، نام شیت خودتان را در ردیف خودتان وارد کنید.' : 'وقتی مدیر منطقه اکسل هفتگی را وارد کند، هتل‌ها و کاروان‌های شما این‌جا نشان داده می‌شوند.'}</span></div>` : `
     <div class="stats3"><div><b class="num">${fa(hotels.length)}</b><span>هتل</span></div><div><b class="num">${fa(list.length)}</b><span>ورودی</span></div><div><b class="num">${fa(list.length - pending.length)}</b><span>گزارش‌شده</span></div></div>
     ${hotels.length > 1 ? `<div class="cos"><button class="chip" aria-pressed="${!S.hotel}" data-hf="">همه‌ی هتل‌ها</button>${hotels.map(h => `<button class="chip" aria-pressed="${S.hotel === h}" data-hf="${esc(h)}">${esc(h)}</button>`).join('')}</div>` : ''}
     ${pending.length ? `<div class="bulk"><span>${fa(pending.length)} ورودی هنوز گزارش نشده. اگر هیچ مشکلی نداشتند:</span><button class="btn small okb" id="bulk">${S.bulkSure ? 'مطمئنید؟ دوباره بزنید' : '✔ همه بدون نقص'}</button></div>` : ''}
@@ -35,7 +36,8 @@ async function renderHome() {
         <span class="d">ورود ${md(e.d_in)} ← خروج ${md(e.d_out)} · ${fa(e.caravans)} کاروان · ${fa(e.pilgrims)} زائر</span>
         <span class="st"><span class="pill ${st.c}">${st.l}</span>${e.feedback ? '<span class="pill info">💬 بازخورد</span>' : `<span class="dim" style="font-size:11px">${e.rid ? 'ویرایش ←' : 'ثبت گزارش ←'}</span>`}</span></button>`; }).join('')}</section>`; }).join('')}`}
   </main>`;
-  app.querySelector('#acc').onclick = () => { app.innerHTML = `<header class="app-head"><div class="in"><div class="t"><div class="hi">${esc(S.me.nid)}</div><h1>حساب کاربری</h1></div></div></header><main class="page" id="accp"></main>`; renderAccount(app.querySelector('#accp'), S.me, () => loadHome(S.week)); };
+  const fb = app.querySelector('#fm-back'); if (fb) fb.onclick = () => S.opts.onBack();
+  const ac = app.querySelector('#acc'); if (ac) ac.onclick = () => { app.innerHTML = `<header class="app-head"><div class="in"><div class="t"><div class="hi">${esc(S.me.nid)}</div><h1>حساب کاربری</h1></div></div></header><main class="page" id="accp"></main>`; renderAccount(app.querySelector('#accp'), S.me, () => loadHome(S.week)); };
   const wk = app.querySelector('#wk'); if (wk) wk.onchange = () => { S.hotel = ''; loadHome(+wk.value); };
   app.querySelectorAll('[data-hf]').forEach(b => b.onclick = () => { S.hotel = b.dataset.hf; renderHome(); });
   app.querySelectorAll('[data-entry]').forEach(b => b.onclick = () => openEntry(+b.dataset.entry));

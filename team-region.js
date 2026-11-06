@@ -11,8 +11,9 @@ window.startRegion = (me, opts) => {
   HR.viewRegion = opts.region || 0;
   shell(); go((location.hash.slice(1) || 'dash'));
 };
-const TABS = [['dash', '📊 داشبورد'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
-const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account') : TABS;
+/* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
+const TABS = [['dash', '📊 داشبورد'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
+const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS;
 function shell() {
   const sup = !!A.opts.region;
   app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? 'مدیر سامانه (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
@@ -24,6 +25,7 @@ function shell() {
 function go(tab) {
   if (!tabs().find(t => t[0] === tab)) tab = 'dash';
   if (A.tab === 'form' && tab !== 'form' && A.formDirty && !confirmLeave()) return;
+  if (tab === 'mine') { window.onbeforeunload = null; history.replaceState(null, '', '#mine'); const me = A.me; return startFM(me, { onBack: () => { history.replaceState(null, '', '#dash'); startRegion(me, {}); } }); }
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
@@ -301,10 +303,11 @@ async function loadUsers() { try { A.users = await api('/api/admin/users'); } ca
 function renderUsers() {
   const m = main();
   m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز ساخته شد') : ''}
-    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.length)})</h2></div>
+    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2></div>
       <p class="hint">حساب‌ها معمولاً هنگام وارد کردن اکسل هفتگی خودکار ساخته می‌شوند. «شیت» همان نام شیت این نفر در اکسل است تا هفته‌های بعد خودکار شناخته شود.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی</th><th>شیت</th><th>ورودی‌های سپرده‌شده</th><th>وضعیت</th><th>اثر انگشت</th><th>گزارش</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
-      ${A.users.map(u => `<tr><td><input data-uname="${u.id}" value="${esc(u.name)}" maxlength="80"></td><td class="num">${faS(u.nid)}</td><td><input data-usheet="${u.id}" value="${esc(u.sheet || '')}" maxlength="60" style="min-width:90px" dir="ltr"></td><td class="num">${u.entries ? fa(u.entries) : '<span class="pill bad">هیچ</span>'}</td>
+      ${A.users.map(u => u.role === 'region' ? `<tr class="me-row"><td><b>${esc(u.name)}</b> <span class="pill info">مدیر منطقه</span></td><td class="num">${faS(u.nid)}</td><td><input data-usheet="${u.id}" data-uname-fixed="${esc(u.name)}" value="${esc(u.sheet || '')}" maxlength="60" style="min-width:90px" dir="ltr" placeholder="نام شیت خودتان"></td><td class="num">${u.entries ? fa(u.entries) : '<span class="dim">—</span>'}</td>
+        <td colspan="5" class="dim" style="font-size:12.5px">اگر خودتان هم هتل دارید، نام شیت خودتان در اکسل را بنویسید؛ هتل‌هایش در تب «🏨 هتل‌های من» می‌آید.</td></tr>` : `<tr><td><input data-uname="${u.id}" value="${esc(u.name)}" maxlength="80"></td><td class="num">${faS(u.nid)}</td><td><input data-usheet="${u.id}" value="${esc(u.sheet || '')}" maxlength="60" style="min-width:90px" dir="ltr"></td><td class="num">${u.entries ? fa(u.entries) : '<span class="pill bad">هیچ</span>'}</td>
         <td>${!u.active ? '<span class="pill bad">غیرفعال</span>' : !u.last_login ? '<span class="pill warn">هنوز وارد نشده</span>' : '<span class="pill ok">فعال</span>'}</td>
         <td>${u.passkeys ? `${fa(u.passkeys)} دستگاه <button class="btn small ghost" data-uclr="${u.id}">حذف</button>` : '<span class="dim">—</span>'}</td><td class="num">${fa(u.reports)}</td><td class="dim">${u.last_login ? fmtTs(u.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-upw="${u.id}" placeholder="رمز تازه (خالی=تصادفی)" style="min-width:150px" autocomplete="new-password"><button class="btn small ghost" data-ureset="${u.id}">تعیین رمز</button><button class="btn small ${u.active ? 'danger' : 'okb'}" data-uact="${u.id}" data-v="${u.active ? 0 : 1}">${u.active ? 'غیرفعال' : 'فعال'}</button></div></td></tr>`).join('') || '<tr><td colspan="9" class="empty">هنوز کسی نیست.</td></tr>'}</tbody></table></div></div>
@@ -315,7 +318,7 @@ function renderUsers() {
         <div class="field" style="flex:1 1 150px"><label class="label" for="nu-pw">رمز (خالی = رمز تصادفی)</label><input id="nu-pw" maxlength="60" autocomplete="new-password"></div><button class="btn" type="submit">افزودن</button></div>
       <p class="hint">نام کاربری هر نفر کد ملی اوست. اگر رمز را خودتان بنویسید (دست‌کم ۶ کاراکتر)، همان می‌ماند؛ اگر خالی بگذارید، یک رمز تصادفی ساخته می‌شود. مدیر ثابت با همین رمز وارد می‌شود و لازم نیست عوضش کند.</p>
       <span class="err" id="nu-err"></span></form>`;
-  const saveEdit = async id => { const name = m.querySelector(`[data-uname="${id}"]`).value, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { const r = await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast(!sheet.trim() ? 'ذخیره شد.' : r.entries ? `ذخیره شد؛ ${fa(r.entries)} ورودی به او سپرده شد.` : `ذخیره شد، ولی در اکسل‌های واردشده شیتی به نام «${sheet.trim()}» پیدا نشد.`, !r.entries && !!sheet.trim()); loadUsers(); } catch (e) { toast(e.message, true); } };
+  const saveEdit = async id => { const ni = m.querySelector(`[data-uname="${id}"]`), name = ni ? ni.value : m.querySelector(`[data-usheet="${id}"]`).dataset.unameFixed, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { const r = await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast(!sheet.trim() ? 'ذخیره شد.' : r.entries ? `ذخیره شد؛ ${fa(r.entries)} ورودی به او سپرده شد.` : `ذخیره شد، ولی در اکسل‌های واردشده شیتی به نام «${sheet.trim()}» پیدا نشد.`, !r.entries && !!sheet.trim()); loadUsers(); } catch (e) { toast(e.message, true); } };
   m.querySelectorAll('[data-uname],[data-usheet]').forEach(i => i.onchange = () => saveEdit(i.dataset.uname || i.dataset.usheet));
   m.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } b.disabled = true; b.textContent = '…'; try { A.temp = [await api(`/api/admin/users/${b.dataset.ureset}/reset`, { body: { password: m.querySelector(`[data-upw="${b.dataset.ureset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; b.textContent = 'تعیین رمز'; toast(e.message, true); } });
   m.querySelectorAll('[data-uact]').forEach(b => b.onclick = async () => { try { await api(`/api/admin/users/${b.dataset.uact}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });

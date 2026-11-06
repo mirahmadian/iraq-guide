@@ -441,13 +441,14 @@ async function api(req, url, u) {
   if (p === '/api/notes' && m === 'POST') {
     const b = await body(), r = await canSeeReport(u, +b.report_id), text = String(b.text || '').trim().slice(0, 1000);
     if (!text) fail(400, 'متن خالی است.');
-    await run('INSERT INTO notes (report_id, qid, user_id, role, text, ts) VALUES (?, ?, ?, ?, ?, ?)', r.id, b.qid ? String(b.qid).slice(0, 40) : null, u.id, u.role, text, Date.now());
+    await run('INSERT INTO notes (report_id, qid, user_id, role, text, ts) VALUES (?, ?, ?, ?, ?, ?)', r.id, b.qid ? String(b.qid).slice(0, 40) : null, u.id, r.user_id === u.id ? 'fm' : u.role, text, Date.now());
     return { notes: await notesOf(r.id) };
   }
 
   /* ── fixed manager ── */
   if (p.startsWith('/api/fm/')) {
-    if (u.role !== 'fm') fail(403, 'این بخش مخصوص مدیران ثابت است.');
+    /* مدیر منطقه هم می‌تواند خودش هتل داشته باشد (تب «هتل‌های من») */
+    if (u.role !== 'fm' && u.role !== 'region') fail(403, 'این بخش مخصوص مدیران ثابت است.');
     if (p === '/api/fm/home' && m === 'GET') {
       const weeks = await all('SELECT DISTINCT w.id, w.title, w.imported FROM weeks w JOIN entries e ON e.week_id = w.id JOIN assign a ON a.entry_id = e.id WHERE a.user_id = ? ORDER BY w.imported DESC', u.id);
       const wid = +url.searchParams.get('week') || weeks[0]?.id || 0;
@@ -612,7 +613,7 @@ async function api(req, url, u) {
     if (p === '/api/admin/import' && m === 'POST') {
       const b = await body(4 << 20), parsed = cleanParsed(b.parsed);
       const token = hex(rand(16)), now = Date.now();
-      const users = await all("SELECT id, nid, name, sheet FROM users WHERE region_id = ? AND role = 'fm'", R);
+      const users = await all("SELECT id, nid, name, sheet FROM users WHERE region_id = ? AND role IN ('fm', 'region')", R);
       const sheets = parsed.sheets.map(s => {
         const c = parsed.codes.find(c => c.sheet === s.sheet), old = users.find(x => x.sheet === s.sheet);
         const guess = c ? { nid: c.nid, name: c.name || old?.name || '', from: 'codes' } : old ? { nid: old.nid, name: old.name, from: 'before' } : null;
@@ -641,7 +642,7 @@ async function api(req, url, u) {
       for (const o of owners) {
         const x = known.get(o.nid);
         if (x && x.region_id !== R) fail(400, `کد ملی ${o.nid} در منطقه‌ی دیگری ثبت شده است.`);
-        if (x && x.role !== 'fm') fail(400, `کد ملی ${o.nid} مال یک مدیر منطقه است.`);
+        if (x && x.role === 'super') fail(400, `کد ملی ${o.nid} مال مدیر سامانه است.`);
       }
       let w = await one('SELECT * FROM weeks WHERE region_id = ? AND title = ?', R, title);
       if (w) await run('UPDATE weeks SET file = ?, imported = ?, imported_by = ? WHERE id = ?', pv.file, now, u.id, w.id);
@@ -658,7 +659,7 @@ async function api(req, url, u) {
         prep(`INSERT OR IGNORE INTO sheet_rows (week_id, sheet, row_no) SELECT ?, ${J}'$.s'), ${J}'$.r') FROM json_each(?)`, w.id, JSON.stringify(parsed.sheets.flatMap(s => s.ids.map(r => ({ s: s.sheet, r })))))];
       for (const o of owners) {
         const x = known.get(o.nid);
-        if (x) st.push(prep('UPDATE users SET name = ?, sheet = ? WHERE id = ?', o.name, o.s.sheet, x.id));
+        if (x) st.push(x.role === 'fm' ? prep('UPDATE users SET name = ?, sheet = ? WHERE id = ?', o.name, o.s.sheet, x.id) : prep('UPDATE users SET sheet = ? WHERE id = ?', o.s.sheet, x.id));
         else {
           const pw = tempPassword(), h = await hashPassword(pw);
           st.push(prep("INSERT INTO users (region_id, role, nid, name, sheet, salt, hash, must_change, created, created_by) VALUES (?, 'fm', ?, ?, ?, ?, ?, 0, ?, ?)", R, o.nid, o.name, o.s.sheet, h.salt, h.hash, now, u.id));
@@ -670,16 +671,16 @@ async function api(req, url, u) {
       st.push(prep('DELETE FROM previews WHERE token = ?', pv.token));
       await DB.batch(st);
       /* sheets left without a national code still reach whoever already has that sheet name on their account */
-      const fms = await all("SELECT id FROM users WHERE region_id = ? AND role = 'fm' AND sheet IS NOT NULL", R);
+      const fms = await all("SELECT id FROM users WHERE region_id = ? AND role IN ('fm', 'region') AND sheet IS NOT NULL", R);
       if (fms.length) await DB.batch(fms.flatMap(x => syncSheetStmts(x.id)));
       const assigned = (await one('SELECT COUNT(*) AS n FROM assign a JOIN entries e ON e.id = a.entry_id WHERE e.week_id = ?', w.id)).n;
       return { week: w.id, assigned, created, title };
     }
     if (p === '/api/admin/users' && m === 'GET') {
-      return all(`SELECT u.id, u.nid, u.name, u.sheet, u.active, u.must_change, u.last_login, u.created,
+      return all(`SELECT u.id, u.role, u.nid, u.name, u.sheet, u.active, u.must_change, u.last_login, u.created,
         (SELECT COUNT(*) FROM passkeys k WHERE k.user_id = u.id) AS passkeys, (SELECT COUNT(*) FROM reports r WHERE r.user_id = u.id) AS reports,
         (SELECT COUNT(*) FROM assign a WHERE a.user_id = u.id) AS entries
-        FROM users u WHERE u.region_id = ? AND u.role = 'fm' ORDER BY u.name`, R);
+        FROM users u WHERE u.region_id = ? AND u.role IN ('fm', 'region') ORDER BY u.role = 'region' DESC, u.name`, R);
     }
     if (p === '/api/admin/users' && m === 'POST') {
       const b = await body(), nid = nidNormalize(b.nid), name = String(b.name || '').trim().slice(0, 80);
@@ -692,7 +693,9 @@ async function api(req, url, u) {
       return { name, nid, password: h.pw, temporary: !!h.must, entries: await syncSheet(nu.id) };
     }
     if ((mm = p.match(/^\/api\/admin\/users\/(\d+)\/(reset|active|passkeys|edit)$/)) && m === 'POST') {
-      const t = await one("SELECT * FROM users WHERE id = ? AND region_id = ? AND role = 'fm'", +mm[1], R); if (!t) fail(404, 'پیدا نشد');
+      const t = await one("SELECT * FROM users WHERE id = ? AND region_id = ? AND role IN ('fm', 'region')", +mm[1], R); if (!t) fail(404, 'پیدا نشد');
+      /* حساب مدیر منطقه را این‌جا فقط خودش (یا مدیر سامانه) ویرایش می‌کند و فقط نام و شیت؛ رمز و فعال/غیرفعال در پنل مدیر سامانه است */
+      if (t.role === 'region' && (mm[2] !== 'edit' || (u.role !== 'super' && t.id !== u.id))) fail(403, 'حساب مدیر منطقه را فقط مدیر سامانه تغییر می‌دهد.');
       const b = await body();
       if (mm[2] === 'reset') { const h = await newPassword(b.password, 'fm'); await DB.batch([prep('UPDATE users SET salt = ?, hash = ?, must_change = ? WHERE id = ?', h.salt, h.hash, h.must, t.id), endAll(t.id)]); return { name: t.name, nid: t.nid, password: h.pw, temporary: !!h.must }; }
       if (mm[2] === 'active') { await DB.batch([prep('UPDATE users SET active = ? WHERE id = ?', b.active ? 1 : 0, t.id), ...(b.active ? [] : [endAll(t.id)])]); return { ok: true }; }
