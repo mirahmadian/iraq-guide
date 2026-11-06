@@ -8,6 +8,9 @@
    رازها: BACKUP_KEY (همان کلید nginx سرور). مدیر اصلی با فرستادن کد owner_code به بازوی بله ثبت می‌شود (config: owner_chat).
 ══════════════════════════════════════════ */
 /* sslip.io نه nip.io: فیلترینگ ایران nip.io را از خارج قطع می‌کند (proxy.js را ببینید) */
+import { HANDOVER, OWNER_STEPS } from './handover.js';
+import { ERRLOG, logError } from './errlog.js';
+export { logError };
 const SRV = 'https://188-121-118-223.sslip.io', SRV80 = 'http://188-121-118-223.sslip.io';
 const CHECKS = [
   { k: 'team', name: 'سامانه نواقص هتل‌ها (روی Cloudflare)', url: 'https://hamyar-team.hamyar-karevan.workers.dev/api/me', ok: s => s === 401 || s === 200 },
@@ -25,6 +28,19 @@ const cfgJson = async (env, k, d) => { try { return JSON.parse(await cfgGet(env,
 const tehran = t => new Intl.DateTimeFormat('fa-IR-u-ca-persian', { timeZone: 'Asia/Tehran', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(t);
 const dur = ms => { const m = Math.round(ms / 6e4); return m < 60 ? m.toLocaleString('fa') + ' دقیقه' : (Math.round(m / 6) / 10).toLocaleString('fa') + ' ساعت'; };
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+
+/* ── خطاهای سرور (۵۰۰) در جدول errlog: hamyar-reviews در DB خودش، hamyar-team در hamyar-hotels (HDB) ──
+   نشانی بدون پارامتر (توکن‌ها در پارامترند) و پیام کوتاه نگه داشته می‌شود؛ ۳۰ روز. */
+async function recentErrors(env, since, limit = 20) {
+  const out = [];
+  for (const [db, name] of [[env.DB, 'hamyar-reviews'], [env.HDB, 'hamyar-team']]) {
+    if (!db) continue;
+    try { out.push(...(await db.prepare('SELECT ts, src, method, path, msg FROM errlog WHERE ts > ? ORDER BY ts DESC LIMIT ?').bind(since, limit).all()).results.map(r => ({ ...r, src: r.src || name }))); } catch (e) {}
+  }
+  return out.sort((a, b) => b.ts - a.ts).slice(0, limit);
+}
+const utc = t => new Date(t).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+const errText = list => list.map(r => `- ${utc(r.ts)} [${r.src}] ${r.method} ${r.path}\n  ${String(r.msg).split('\n').slice(0, 3).join('\n  ')}`).join('\n');
 
 async function notify(env, text) {
   const chat = await cfgGet(env, 'owner_chat');
@@ -57,7 +73,7 @@ async function checkAll(env, budget) {
       st.fails = (st.fails || 0) + 1; st.status = status; st.lastFail = now;
       if (st.up && st.fails >= FAILS_TO_ALERT) {
         st.up = false; st.since = now - (FAILS_TO_ALERT - 1) * 5 * 6e4;
-        await notify(env, `🔴 ${c.name} از حدود ${dur(now - st.since)} پیش جواب نمی‌دهد.\n\nاگر تا نیم ساعت دیگر خودش وصل نشد، Codespace را باز کنید و به Claude بگویید: «سامانه ${c.name} قطع است».`);
+        await notify(env, `🔴 ${c.name} از حدود ${dur(now - st.since)} پیش جواب نمی‌دهد.\n\nاگر تا نیم ساعت دیگر خودش وصل نشد، Codespace را باز کنید و به Claude بگویید: «سامانه ${c.name} قطع است».\nاگر Claude در دسترس نبود: پنل مدیریت ← آمار ← «🆘 بسته نجات» ← «کپی گزارش برای کمک»، یا همین پیام را برای برنامه‌نویس یا هوش مصنوعی دیگر بفرستید.\n\n— برای برنامه‌نویس —\nسامانه: ${c.k} (${c.name})\nنشانی بررسی: ${c.url}\nپاسخ: ${status ? 'HTTP ' + status : 'وصل نشد / مهلت تمام شد'}\nزمان: ${utc(now)}\nپرونده فنی: worker/handover.js در مخزن mirahmadian/iraq-guide`);
       }
     }
     await cfgSet(env, 'mon:' + c.k, JSON.stringify(st));
@@ -169,6 +185,39 @@ async function daily(env, checks) {
   }
 }
 
+/* اگر از آخرین هشدار دست‌کم ۳ خطای تازه‌ی سرور ثبت شده باشد (و ۳ ساعت از هشدار قبلی گذشته باشد)، به مدیر خبر بده */
+async function errorAlert(env) {
+  const now = Date.now(), seen = +(await cfgGet(env, 'err:seen')) || now - H, lastAlert = +(await cfgGet(env, 'err:alert')) || 0;
+  const list = await recentErrors(env, seen, 10);
+  if (list.length < 3 || now - lastAlert < 3 * H) return;
+  await notify(env, `⚠️ در سامانه‌ها ${list.length.toLocaleString('fa')} خطای فنی تازه ثبت شده است. ممکن است کاربران پیام «خطای سرور» دیده باشند.\nبه Claude بگویید؛ اگر در دسترس نبود، این پیام را عیناً برای برنامه‌نویس یا هوش مصنوعی دیگر بفرستید.\n\n— برای برنامه‌نویس —\n${errText(list.slice(0, 4))}\nپرونده فنی: worker/handover.js در مخزن mirahmadian/iraq-guide`);
+  await cfgSet(env, 'err:alert', now); await cfgSet(env, 'err:seen', now);
+}
+
+/* گزارش کامل برای کمک گرفتن (برنامه‌نویس یا هوش مصنوعی دیگر): وضعیت زنده + خطاهای اخیر + پرونده‌ی فنی */
+async function report(env) {
+  const now = Date.now(), checks = [];
+  for (const c of CHECKS) checks.push({ ...c, ...(await cfgJson(env, 'mon:' + c.k, {})) });
+  const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {}), bt = await cfgJson(env, 'bk:team', {});
+  const errs = await recentErrors(env, now - 7 * D, 25);
+  return `# گزارش وضعیت سامانه‌های همیار کاروان
+زمان گزارش: ${tehran(now)} (${utc(now)})
+
+## وضعیت زنده (نگهبان هر ۵ دقیقه بررسی می‌کند)
+${checks.map(c => `- ${c.up === false ? '🔴 قطع' : '🟢 سالم'} — ${c.name} — ${c.url} — آخرین پاسخ: ${c.status ? 'HTTP ' + c.status : '—'}${c.up === false ? ` — قطع از ${utc(c.since)}` : c.last ? ` — آخرین بررسی ${utc(c.last)}` : ''}`).join('\n')}
+
+## پشتیبان‌ها
+- سرور، ساعتی (در Cloudflare): ${bd.at ? utc(bd.at) : 'هنوز نه / گیر کرده'}
+- سرور، کامل شبانه (در Cloudflare): ${bf.at ? utc(bf.at) : 'هنوز نه / گیر کرده'}
+- سامانه نواقص هتل‌ها، روزانه: ${bt.at ? utc(bt.at) : 'هنوز نه'}
+
+## خطاهای سرور در ۷ روز گذشته (${errs.length})
+${errs.length ? errText(errs) : 'خطایی ثبت نشده.'}
+
+---
+${HANDOVER}`;
+}
+
 export async function guardRun(env, force) {
   if (!env.BKDB) return { error: 'BKDB not bound' };
   for (const q of BK_SCHEMA) await env.BKDB.prepare(q).run();
@@ -180,8 +229,9 @@ export async function guardRun(env, force) {
     res.push(await pull(env, 'data', budget, force));
     res.push(await pull(env, 'full', budget, force));
   }
+  if (new Date().getUTCMinutes() % 15 < 5) await errorAlert(env);   /* هر ربع ساعت */
   await daily(env, checks);
-  if (new Date().getUTCMinutes() < 5) await cleanup(env);
+  if (new Date().getUTCMinutes() < 5) { await cleanup(env); for (const db of [env.DB, env.HDB]) if (db) try { await db.prepare(ERRLOG).run(); await db.prepare('DELETE FROM errlog WHERE ts < ?').bind(Date.now() - 30 * D).run(); } catch (e) {} }
   return { checks, backups: res, budgetLeft: budget.n };
 }
 
@@ -202,7 +252,7 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
     for (const c of CHECKS) checks.push({ k: c.k, name: c.name, ...(await cfgJson(env, 'mon:' + c.k, {})) });
     for (const q of BK_SCHEMA) await env.BKDB.prepare(q).run();
     const list = (await env.BKDB.prepare('SELECT name AS k, kind, ts, bytes, sha256, got FROM files ORDER BY ts DESC, kind LIMIT 300').all()).results;
-    return json({ checks, backups: list, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
+    return json({ checks, backups: list, steps: OWNER_STEPS, errors: (await recentErrors(env, Date.now() - 7 * D, 50)).length, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
   }
   if (p === '/admin/guard/get' && req.method === 'GET') {
     const k = url.searchParams.get('k') || '';
@@ -213,6 +263,7 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
     return new Response(v, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="hamyar-${k.replace('/', '-')}${k.startsWith('team/') ? '.json.gz' : '.tar.gz'}"`,
       'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Content-Disposition' } });
   }
+  if (p === '/admin/guard/report' && req.method === 'GET') return new Response(await report(env), { headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' } });
   if (p === '/admin/guard/run' && req.method === 'POST') return json(await guardRun(env, true));
   if (p === '/admin/guard/test' && req.method === 'POST') return json({ sent: await notify(env, '🔔 پیام آزمایشی نگهبان سرور همیار — اگر این را می‌بینید، هشدارها درست به شما می‌رسد.') });
   return null;

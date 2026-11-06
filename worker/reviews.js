@@ -9,6 +9,7 @@
 ══════════════════════════════════════════ */
 import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { guardRun, handleGuardAdmin } from './guard.js';
+import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 
 const REPO = 'mirahmadian/iraq-guide';
@@ -292,6 +293,7 @@ export default {
       }
       return err('یافت نشد', 404);
     } catch (e) {
+      ctx.waitUntil(logError(env.DB, 'hamyar-reviews', req, e));
       return err('خطای سرور: ' + (e && e.message || e), 500);
     }
   }

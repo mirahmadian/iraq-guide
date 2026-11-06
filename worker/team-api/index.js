@@ -7,6 +7,7 @@
    - رمزهای قدیمی (scrypt) در اولین ورود به PBKDF2 تبدیل می‌شوند
 ══════════════════════════════════════════ */
 import { scrypt } from './scrypt.js';
+import { logError } from '../errlog.js';
 
 const RP_ID = 'mirahmadian.github.io', ORIGIN = 'https://' + RP_ID;
 const SESSION_DAYS = 30, KEEP_DAYS = 7;
@@ -755,7 +756,7 @@ async function cleanup() {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     DB = env.DB; MDB = env.MDB; ENV = env;
     const url = new URL(req.url); BASE = url.origin;
     const origin = req.headers.get('origin'), allowed = (env.ALLOWED_ORIGINS || 'https://mirahmadian.github.io').split(',');
@@ -771,7 +772,7 @@ export default {
       if (url.pathname === '/' || url.pathname === '/admin' || url.pathname === '/admin/') return Response.redirect('https://mirahmadian.github.io/iraq-guide/team.html', 302);
       return jres(404, { error: 'پیدا نشد' }, cors);
     } catch (e) {
-      if (!(e instanceof HttpError)) console.error(req.method, url.pathname, e && e.stack || e);
+      if (!(e instanceof HttpError)) { console.error(req.method, url.pathname, e && e.stack || e); ctx.waitUntil(logError(env.DB, 'hamyar-team', req, e)); }
       return jres(e.status || 500, { error: e instanceof HttpError ? e.message : 'خطای سرور. دوباره امتحان کنید.' }, cors);
     }
   },

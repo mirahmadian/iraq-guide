@@ -6,7 +6,7 @@ let guardData = null, guardErr = '';
 function guardLoad() {
   if (STAFF) return;
   guardErr = ''; renderGuard();
-  adminFetch('/admin/guard', null, adminAuth()).then(d => { guardData = d; renderGuard(); }).catch(e => { guardErr = e.message; renderGuard(); });
+  adminFetch('/admin/guard', null, adminAuth()).then(d => { guardData = d; renderGuard(); renderRescue(); }).catch(e => { guardErr = e.message; renderGuard(); });
 }
 const gFa = n => (+n || 0).toLocaleString('fa');
 const gAgo = t => { if (!t) return '—'; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'همین الان' : m < 60 ? gFa(m) + ' دقیقه پیش' : m < 1440 ? gFa(Math.round(m / 60)) + ' ساعت پیش' : gFa(Math.round(m / 1440)) + ' روز پیش'; };
@@ -38,6 +38,43 @@ function renderGuard() {
   <div class="empty-msg" style="padding:8px 0 0">سرور هر ساعت از داده‌های چاپ و بسته‌بندی و بیمه نسخه پشتیبان می‌سازد و Cloudflare آن را بیرون از ایران نگه می‌دارد. از سامانه نواقص هتل‌ها (که خودش روی Cloudflare است) هم هر روز یک نسخه جدا گرفته می‌شود. اگر سرور از دست برود، Claude با همین نسخه‌ها همه چیز را روی سرور تازه برمی‌گرداند.</div>
   <button class="add-row-btn" onclick="guardLoad()">🔄 به‌روزرسانی</button>`;
 }
+/* ── بسته نجات: راهنمای ساده + کپی/دانلود گزارش کامل (/admin/guard/report) ── */
+const mdLite = t => escH(t).replace(/^## (.+)$/gm, '<div class="field-label" style="margin-top:4px">$1</div>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+  .replace(/^ {3}- (.+)$/gm, '<div style="padding-right:22px">• $1</div>').replace(/^(\d)\. (.+)$/gm, '<div class="rs-step"><span>$1</span><div>$2</div></div>').replace(/\n{2,}/g, '<br>').replace(/\n/g, '');
+function renderRescue() {
+  const el = document.getElementById('rescue-admin');
+  if (!el || STAFF) return;
+  const d = guardData;
+  el.innerHTML = `${d && d.steps ? `<div class="rs-steps">${mdLite(d.steps.trim())}</div>` : '<div class="empty-msg">در حال دریافت…</div>'}
+    ${d && d.errors ? `<div class="rs-warn">⚠️ در ۷ روز گذشته ${gFa(d.errors)} خطای فنی ثبت شده؛ جزئیاتش داخل گزارش است.</div>` : ''}
+    <div class="rs-btns"><button class="add-row-btn" onclick="rescueCopy(this)">📋 کپی گزارش برای کمک</button>
+    <button class="add-row-btn" onclick="rescueDownload(this)">⬇️ دانلود پرونده کامل (برای نگهداری)</button></div>
+    <div class="empty-msg" style="padding:6px 0 0">گزارش شامل وضعیت همین لحظه سامانه‌ها، خطاهای اخیر و نقشه فنی کامل است. <b>هیچ رمز یا کلیدی در آن نیست</b> و فرستادنش بی‌خطر است.</div>`;
+}
+async function rescueText() {
+  const r = await fetch(RV_API + '/admin/guard/report', { headers: { Authorization: adminAuth() } });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'خطا ' + r.status);
+  return r.text();
+}
+async function rescueCopy(b) {
+  const t0 = b.textContent; b.disabled = true; b.textContent = '⏳';
+  try {
+    const t = await rescueText();
+    try { await navigator.clipboard.writeText(t); showToast('✅ گزارش کپی شد. آن را در گفتگو با برنامه‌نویس یا هوش مصنوعی بچسبانید.'); }
+    catch (e) { rescueSave(t); showToast('کپی نشد؛ به‌جایش فایل گزارش دانلود شد.'); }
+  } catch (e) { showToast('❌ ' + e.message); }
+  b.disabled = false; b.textContent = t0;
+}
+function rescueSave(t) {
+  const d = new Date().toISOString().slice(0, 10);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + t], { type: 'text/markdown;charset=utf-8' })); a.download = `hamyar-rescue-${d}.md`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+async function rescueDownload(b) {
+  const t0 = b.textContent; b.disabled = true; b.textContent = '⏳';
+  try { rescueSave(await rescueText()); showToast('✅ دانلود شد. یک نسخه در گوشی، رایانه و ایمیل خودتان نگه دارید.'); } catch (e) { showToast('❌ ' + e.message); }
+  b.disabled = false; b.textContent = t0;
+}
 async function guardGet(k, b) {
   b.disabled = true; const t = b.textContent; b.textContent = '⏳';
   try {
@@ -66,5 +103,10 @@ async function guardTest(b) {
   .gd-b{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #eee}
   .gd-b span:first-child{flex:1}
   .gd-s{color:#777;font-size:12px}
+  .rs-steps{font-size:14px;line-height:2}
+  .rs-step{display:flex;gap:8px;align-items:flex-start;margin:4px 0}
+  .rs-step>span{flex:0 0 24px;height:24px;border-radius:50%;background:#B8892B;color:#fff;font-weight:800;display:grid;place-items:center;font-size:13px;margin-top:4px}
+  .rs-warn{margin-top:10px;padding:8px 12px;border-radius:10px;background:#fdf0ef;border:1px solid #f0b7b2;font-size:13.5px}
+  .rs-btns{display:grid;gap:8px;margin-top:12px}
   </style>`);
 })();
