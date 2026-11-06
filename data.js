@@ -138,7 +138,9 @@ const CARAVAN_DATA = {
         },
         {
           "id": "restaurant",
-          "on": true
+          "on": true,
+          "icon": "slides/icon-restaurant-1793984369189.png",
+          "iconFull": true
         },
         {
           "id": "parking",
