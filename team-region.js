@@ -26,7 +26,7 @@ function go(tab) {
   if (A.tab === 'form' && tab !== 'form' && A.formDirty && !confirmLeave()) return;
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
-  main().innerHTML = '<div class="empty">در حال بارگذاری…</div>';
+  main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
   ({ dash: loadDash, import: renderImport, form: loadForm, users: loadUsers, account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
 }
 let leaveSure = false;
@@ -94,7 +94,7 @@ function renderDash() {
   m.querySelector('#f-p').onchange = e => { A.f.person = e.target.value; renderDash(); };
   m.querySelector('#f-s').onchange = e => { A.f.section = e.target.value; renderDash(); };
   m.querySelector('#f-r').onchange = e => { A.f.result = e.target.value; renderDash(); };
-  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget; b.disabled = true; try { await download('/api/admin/export?' + b.dataset.q, 'naghayes.xlsx'); } catch (x) { toast(x.message, true); } b.disabled = false; };
+  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q, 'naghayes.xlsx'); toast('فایل اکسل دانلود شد.'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
   m.querySelectorAll('[data-def]').forEach(r => r.onclick = () => { A.sel = r.dataset.def; A.detail = null; renderDash(); if (innerWidth < 1100) document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
   if (sel) wireDetail(sel);
 }

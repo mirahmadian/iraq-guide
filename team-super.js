@@ -16,7 +16,7 @@ const main = () => document.getElementById('main');
 function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
-  main().innerHTML = '<div class="empty">در حال بارگذاری…</div>';
+  main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
   ({ regions: loadRegions, users: loadUsers, account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const roleName = r => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r === 'super' ? 'مدیر سامانه' : r;

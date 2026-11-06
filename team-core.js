@@ -32,7 +32,30 @@ const RATING = [{ v: 'great', l: 'عالی', em: '😍', c: 'g' }, { v: 'good', 
    هر درخواست مهلت دارد و دوباره (با اتصال تازه) فرستاده می‌شود؛ خواندنی‌ها یک دقیقه نگه داشته می‌شوند تا جابه‌جایی بین تب‌ها فوری باشد. */
 const GETC = new Map(), INFLIGHT = new Map();
 const teamUrl = (path, method) => path + (path.includes('?') ? '&' : '?') + (HR.token ? '_t=' + HR.token : '') + (method === 'PUT' || method === 'DELETE' ? '&_m=' + method : '');
+/* نشانگر «سامانه در حال کار است»: اگر درخواستی بیش از ۰٫۴ ثانیه طول بکشد، نوار متحرک بالای صفحه و ساعت شنی پایین صفحه نمایش داده می‌شود */
+let BUSY = 0, busyT = null, busySlowT = null;
+function busyEl() {
+  let el = document.getElementById('busy');
+  if (!el) { el = document.createElement('div'); el.id = 'busy'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<div class="busy-bar"><i></i></div><div class="busy-pill"><span class="busy-hg" aria-hidden="true">⏳</span><span class="busy-t"></span></div>'; el.hidden = true; document.body.appendChild(el); }
+  return el;
+}
+function busy(d, label) {
+  BUSY = Math.max(0, BUSY + d);
+  if (d > 0 && label) busyEl().dataset.label = label;
+  if (BUSY > 0 && !busyT) busyT = setTimeout(() => {
+    const el = busyEl(); el.querySelector('.busy-t').textContent = el.dataset.label || 'سامانه در حال کار است… لطفاً صبر کنید';
+    el.hidden = false;
+    busySlowT = setTimeout(() => { el.querySelector('.busy-t').textContent = 'سرور کند است؛ هنوز در حال تلاش است… لطفاً صفحه را نبندید'; }, 9000);
+  }, 400);
+  if (BUSY === 0) { clearTimeout(busyT); clearTimeout(busySlowT); busyT = busySlowT = null; const el = document.getElementById('busy'); if (el) { el.hidden = true; delete el.dataset.label; } }
+}
 async function api(path, opt = {}) {
+  if (opt.quiet) return apiRun(path, opt);
+  busy(1, opt.busyLabel);
+  try { return await apiRun(path, opt); } finally { busy(-1); }
+}
+async function apiRun(path, opt = {}) {
   if (HR.viewRegion && path.startsWith('/api/admin/')) path += (path.includes('?') ? '&' : '?') + 'region=' + HR.viewRegion;
   let body = opt.body;
   if (body !== undefined && !(body instanceof Blob) && !(body instanceof ArrayBuffer)) body = JSON.stringify(body);
@@ -66,12 +89,13 @@ async function api(path, opt = {}) {
   const r = await run;
   if (opt.raw && r.ok) return r;
   let j = {}; try { j = JSON.parse(opt.raw ? await r.text() : r.text); } catch (e) {}
-  if (!r.ok) throw Object.assign(new Error(j.error || 'خطا ' + r.status), { status: r.status });
+  /* «fetch failed» پیام خام سرور است وقتی خودش به سرویس دیگری وصل نمی‌شود */
+  if (!r.ok) throw Object.assign(new Error(j.error === 'fetch failed' ? 'سرور در آماده کردن پاسخ به مشکل خورد (fetch failed). چند دقیقه بعد دوباره امتحان کنید و اگر تکرار شد به مدیر سامانه خبر دهید.' : j.error || 'خطا ' + r.status), { status: r.status });
   if (get) GETC.set(path, { t: Date.now(), text: r.text });
   return j;
 }
 async function download(path, fallbackName) {
-  const r = await api(path, { raw: true });
+  const r = await api(path, { raw: true, busyLabel: 'در حال ساختن فایل اکسل… ممکن است کمی طول بکشد' });
   const cd = r.headers.get('Content-Disposition') || '', m = /filename\*=UTF-8''([^;]+)/.exec(cd);
   const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = m ? decodeURIComponent(m[1]) : fallbackName;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
