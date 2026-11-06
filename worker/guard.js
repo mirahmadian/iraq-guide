@@ -10,7 +10,7 @@
 /* sslip.io نه nip.io: فیلترینگ ایران nip.io را از خارج قطع می‌کند (proxy.js را ببینید) */
 const SRV = 'https://188-121-118-223.sslip.io', SRV80 = 'http://188-121-118-223.sslip.io';
 const CHECKS = [
-  { k: 'team', name: 'سامانه نواقص هتل‌ها (مدیران ثابت و منطقه)', url: SRV + '/api/me', ok: s => s === 401 || s === 200 },
+  { k: 'team', name: 'سامانه نواقص هتل‌ها (روی Cloudflare)', url: 'https://hamyar-team.hamyar-karevan.workers.dev/api/me', ok: s => s === 401 || s === 200 },
   { k: 'chap', name: 'سامانه چاپ و بسته‌بندی', url: SRV80 + '/chap/login', ok: s => s >= 200 && s < 500 },
   { k: 'bime', name: 'سامانه بیمه', url: SRV80 + '/bime/', ok: s => s < 500 }
 ];

@@ -150,7 +150,7 @@ async function sendMedia(qid, file, kind) {
     let blob = file;
     if (kind === 'image') { blob = await compressImage(file); up.preview = URL.createObjectURL(blob); }
     else {
-      if (file.size > 200 * 1048576) throw new Error('فیلم بیشتر از ۲۰۰ مگ است. کوتاه‌ترش کنید.');
+      if (file.size > 60 * 1048576) throw new Error(`فیلم ${kb(file.size)} است؛ حداکثر ۶۰ مگ. فیلم کوتاه‌تر (حدود ۲۰ ثانیه) یا با کیفیت پایین‌تر بگیرید.`);
       const dur = await new Promise(res => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => { res(v.duration); URL.revokeObjectURL(v.src); }; v.onerror = () => res(0); v.src = URL.createObjectURL(file); });
       if (dur > 61) throw new Error(`فیلم ${fa(Math.round(dur))} ثانیه است. حداکثر ۶۰ ثانیه.`);
     }
@@ -160,7 +160,7 @@ async function sendMedia(qid, file, kind) {
     E.media.push(m); E.uploads.splice(E.uploads.indexOf(up), 1);
     if (up.preview) URL.revokeObjectURL(up.preview);
     if (m.status === 'processing') pollMedia(E, m.id);
-    toast(kind === 'image' ? `عکس فرستاده شد (${kb(m.size)} به‌جای ${kb(file.size)}).` : 'فیلم رسید و در حال فشرده‌سازی است.');
+    toast(kind === 'image' ? `عکس فرستاده شد (${kb(m.size)} به‌جای ${kb(file.size)}).` : 'فیلم فرستاده شد.');
   } catch (e) { up.err = e.message; setTimeout(() => { const i = E.uploads.indexOf(up); if (i >= 0) E.uploads.splice(i, 1); if (S.E === E) renderEntry(); }, 6000); }
   if (S.E === E) renderEntry();
 }

@@ -94,7 +94,7 @@ function renderDash() {
   m.querySelector('#f-p').onchange = e => { A.f.person = e.target.value; renderDash(); };
   m.querySelector('#f-s').onchange = e => { A.f.section = e.target.value; renderDash(); };
   m.querySelector('#f-r').onchange = e => { A.f.result = e.target.value; renderDash(); };
-  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q, 'naghayes.xlsx'); toast('فایل اکسل دانلود شد.'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
+  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q); toast('فایل اکسل دانلود شد.'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
   m.querySelectorAll('[data-def]').forEach(r => r.onclick = () => { A.sel = r.dataset.def; A.detail = null; renderDash(); if (innerWidth < 1100) document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
   if (sel) wireDetail(sel);
 }
@@ -149,14 +149,11 @@ async function renderImport() {
   m.querySelector('#xl').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     const msg = m.querySelector('#xl-msg'); msg.textContent = 'در حال خواندن…'; A.temp = null;
-    /* in 8KB pieces: on a weak line a lost piece is resent alone instead of the whole file */
+    /* فایل روی همین دستگاه خوانده می‌شود و فقط نتیجه (چند ده کیلوبایت) فرستاده می‌شود */
     try {
-      const PART = 8192, of = Math.max(1, Math.ceil(file.size / PART)), up = Math.random().toString(16).slice(2);
-      let r;
-      for (let i = 0; i < of; i++) {
-        msg.textContent = of > 1 ? `در حال ارسال… ${fa(Math.round(i / of * 100))}٪` : 'در حال ارسال…';
-        r = await api(`/api/admin/import?name=${encodeURIComponent(file.name)}&up=${up}&i=${i}&of=${of}`, { method: 'POST', body: file.slice(i * PART, (i + 1) * PART), retry: true, timeout: 15000 });
-      }
+      const parsed = await parseWeeklyFile(file);
+      msg.textContent = 'در حال ارسال…';
+      const r = await api('/api/admin/import', { body: { name: file.name, parsed }, retry: true, timeout: 60000, busyLabel: 'در حال بررسی فایل اکسل…' });
       if (!r.token) throw new Error('ارسال کامل نشد. دوباره فایل را انتخاب کنید.');
       A.imp = { preview: r }; renderImport();
     }
