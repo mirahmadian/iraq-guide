@@ -387,6 +387,86 @@ function cleanParsed(p) {
   return { title: S(p.title, 120), mainName: S(p.mainName, 60), rows, sheets, codes, problems: (p.problems || []).slice(0, 50).map(x => S(x, 200)) };
 }
 
+/* ── کیفیت هتل‌ها و شرکت‌ها (نمره از ۱۰۰) ──
+   هر پاسخ نمره دارد (عالی ۱۰۰، خوب ۸۰، متوسط ۵۰، ضعیف ۲۰؛ بله/خیرِ درست ۱۰۰ و نقص ۰؛ گزینه‌ی سالم ۱۰۰ و گزینه‌های نقص ۴۰ تا ۱۰)، «موضوعیت ندارد» حساب نمی‌شود.
+   نمره‌ی هر گزارش = میانگین پاسخ‌هایش؛ بخش «نقل» جداست (کار شرکت نقلِ سیاحه است، نه هتل).
+   نمره‌ی هتل = میانگین گزارش‌ها. نمره‌ی شرکت سیاحه = میانگین نمره‌ی هتل‌هایش (هر هتل یک سهم)، فقط از گزارش کاروان‌های خود همان شرکت در آن هتل. */
+const SC_RATING = { great: 100, good: 80, mid: 50, poor: 20 };
+const isTransport = sec => sec && (sec.id === 'tr' || /نقل|اتوبوس|ترابری|حمل/.test(sec.title || ''));
+const normName = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[‌‏‎]/g, '').replace(/[ـ]/g, '').replace(/\s+/g, ' ').trim();
+function itemScore(q, it) {
+  if (it.answer === 'na') return null;
+  if (!q) return it.is_defect ? 30 : 100;
+  if (q.type === 'rating') return SC_RATING[it.answer] ?? null;
+  if (q.type === 'yesno') return it.answer === q.good ? 100 : it.answer === 'yes' || it.answer === 'no' ? 0 : null;
+  const o = (q.options || []).find(x => x.l === it.answer); if (!o) return it.is_defect ? 30 : 100;
+  if (!o.bad) return 100;
+  const bads = q.options.filter(x => x.bad), k = bads.indexOf(o);
+  return bads.length > 1 ? Math.round(40 - 30 * k / (bads.length - 1)) : 30;
+}
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+async function qualityOf(weekIds) {
+  if (!weekIds.length) return { hotels: [], companies: [], transport: [], sections: [], avg: null };
+  const W = JSON.stringify(weekIds);
+  const rows = await all(`SELECT i.report_id, i.qid, i.section, i.answer, i.is_defect, i.result, r.entry_id, e.hotel, e.siyahe, e.pilgrims, w.region_id, g.name AS region
+    FROM items i JOIN reports r ON r.id = i.report_id JOIN entries e ON e.id = r.entry_id JOIN weeks w ON w.id = e.week_id JOIN regions g ON g.id = w.region_id
+    WHERE e.week_id IN (SELECT value FROM json_each(?))`, W);
+  const forms = new Map();
+  for (const rid of new Set(rows.map(r => r.region_id))) {
+    const f = await formOf(rid), qs = new Map(), tr = new Set(), secs = [];
+    for (const sec of f.sections) { if (isTransport(sec)) tr.add(sec.title); else secs.push(sec.title); for (const q of sec.questions) qs.set(q.id, { ...q, sec: sec.title }); }
+    forms.set(rid, { qs, tr, secs });
+  }
+  /* per report: hotel score, section scores, transport score */
+  const reps = new Map();
+  for (const it of rows) {
+    const F = forms.get(it.region_id), q = F.qs.get(it.qid), sec = q ? q.sec : it.section, tr = F.tr.has(sec) || (!q && /نقل|اتوبوس/.test(it.section || ''));
+    let R = reps.get(it.report_id);
+    if (!R) reps.set(it.report_id, R = { entry: it.entry_id, hotel: it.hotel, siyahe: it.siyahe, pilgrims: it.pilgrims, region_id: it.region_id, region: it.region, h: [], t: [], secs: {}, defects: 0, fixed: 0, tdef: 0, tfix: 0 });
+    const v = itemScore(q, it);
+    if (tr) { if (v != null) R.t.push(v); if (it.is_defect) { R.tdef++; if (it.result === 'fixed') R.tfix++; } continue; }
+    if (v != null) { R.h.push(v); (R.secs[sec] = R.secs[sec] || []).push(v); }
+    if (it.is_defect) { R.defects++; if (it.result === 'fixed') R.fixed++; }
+  }
+  /* hotels (same name in the same region = one hotel) */
+  const hotels = new Map();
+  for (const R of reps.values()) {
+    const s = avg(R.h); if (s == null) continue;
+    const k = R.region_id + '|' + normName(R.hotel);
+    let H = hotels.get(k);
+    if (!H) hotels.set(k, H = { key: k, name: normName(R.hotel), region: R.region, region_id: R.region_id, scores: [], secs: {}, defects: 0, fixed: 0, entries: new Set(), pilgrims: 0, companies: new Set() });
+    H.scores.push(s); H.defects += R.defects; H.fixed += R.fixed;
+    if (!H.entries.has(R.entry)) { H.entries.add(R.entry); H.pilgrims += R.pilgrims || 0; }
+    if (R.siyahe) H.companies.add(normName(R.siyahe));
+    for (const [sec, v] of Object.entries(R.secs)) (H.secs[sec] = H.secs[sec] || []).push(avg(v));
+  }
+  const hotelList = [...hotels.values()].map(H => ({ key: H.key, name: H.name, region: H.region, score: r1(avg(H.scores)), n: H.scores.length, pilgrims: H.pilgrims,
+    secs: Object.fromEntries(Object.entries(H.secs).map(([k, v]) => [k, r1(avg(v))])), defects: H.defects, fixed: H.fixed, companies: [...H.companies] }));
+  /* siyahe companies: average of their hotels, each hotel counted once, from their own caravans' reports only */
+  const comp = new Map();
+  for (const R of reps.values()) {
+    if (!R.siyahe) continue;
+    const c = normName(R.siyahe); let C = comp.get(c);
+    if (!C) comp.set(c, C = { name: c, hotels: new Map(), n: 0, defects: 0, fixed: 0, t: [], tn: 0, tdef: 0, tfix: 0 });
+    const s = avg(R.h);
+    if (s != null) {
+      const hk = R.region_id + '|' + normName(R.hotel);
+      if (!C.hotels.has(hk)) C.hotels.set(hk, { name: normName(R.hotel), region: R.region, s: [] });
+      C.hotels.get(hk).s.push(s); C.n++; C.defects += R.defects; C.fixed += R.fixed;
+    }
+    const t = avg(R.t); if (t != null) { C.t.push(t); C.tn++; } C.tdef += R.tdef; C.tfix += R.tfix;
+  }
+  const companies = [], transport = [];
+  for (const C of comp.values()) {
+    const hs = [...C.hotels.values()].map(h => ({ name: h.name, region: h.region, score: r1(avg(h.s)), n: h.s.length }));
+    if (hs.length) companies.push({ name: C.name, score: r1(avg(hs.map(h => h.score))), n: C.n, hotels: hs.sort((a, b) => a.score - b.score), defects: C.defects, fixed: C.fixed });
+    if (C.tn) transport.push({ name: C.name, score: r1(avg(C.t)), n: C.tn, defects: C.tdef, fixed: C.tfix });
+  }
+  const secs = [...new Set([...forms.values()].flatMap(F => F.secs))];
+  return { hotels: hotelList, companies, transport, sections: secs, avg: r1(avg(hotelList.map(h => h.score))) };
+}
+
 /* ── routes ── */
 async function api(req, url, u) {
   const p = url.pathname, m = req.method === 'POST' && ['PUT', 'DELETE'].includes(url.searchParams.get('_m')) ? url.searchParams.get('_m') : req.method;
@@ -538,6 +618,12 @@ async function api(req, url, u) {
       const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login FROM users WHERE role = 'region' ORDER BY name");
       regions.forEach(r => r.managers = managers.filter(x => x.region_id === r.id));
       return { regions };
+    }
+    /* کیفیت در همه‌ی مناطق: آخرین هفته‌ی هر منطقه (یا week=all برای همه‌ی هفته‌ها) */
+    if (p === '/api/super/quality' && m === 'GET') {
+      const isAll = url.searchParams.get('week') === 'all';
+      const ws = await all(isAll ? 'SELECT id FROM weeks' : 'SELECT w.id FROM weeks w WHERE w.imported = (SELECT MAX(x.imported) FROM weeks x WHERE x.region_id = w.region_id)');
+      return { week: isAll ? 'all' : 'latest', ...await qualityOf(ws.map(w => w.id)) };
     }
     if (p === '/api/super/users' && m === 'GET') {
       const rid = +url.searchParams.get('region') || 0;
@@ -723,6 +809,16 @@ async function api(req, url, u) {
         actions: json(d.actions), actionText: d.action_text, result: d.result, resultNote: d.result_note, updated: d.updated, descr: d.descr, entry_id: d.entry_id }));
       const entries = await one('SELECT COUNT(*) AS n, SUM(pilgrims) AS p, COUNT(DISTINCT hotel) AS h FROM entries WHERE week_id = ?', wid);
       return { weeks, week: wid, people, defects, entries, sections: (await formOf(R)).sections.map(s => ({ title: s.title, emoji: s.emoji })) };
+    }
+    /* کیفیت هتل‌ها و شرکت‌ها؛ week=all یعنی همه‌ی هفته‌ها، وگرنه یک هفته با مقایسه با هفته‌ی قبل */
+    if (p === '/api/admin/quality' && m === 'GET') {
+      const weeks = await all('SELECT id, title, imported FROM weeks WHERE region_id = ? ORDER BY imported DESC', R);
+      const wq = url.searchParams.get('week'), isAll = wq === 'all', wid = isAll ? 0 : +wq || weeks[0]?.id || 0;
+      if (wid && !weeks.find(w => w.id === wid)) fail(404, 'هفته پیدا نشد');
+      const Q = await qualityOf(isAll ? weeks.map(w => w.id) : wid ? [wid] : []);
+      const prevW = isAll ? null : weeks[weeks.findIndex(w => w.id === wid) + 1];
+      if (prevW) { const P = await qualityOf([prevW.id]), pm = new Map(P.hotels.map(h => [h.key, h.score])); Q.hotels.forEach(h => h.prev = pm.get(h.key) ?? null); Q.prevTitle = prevW.title; }
+      return { weeks, week: isAll ? 'all' : wid, ...Q };
     }
     if ((mm = p.match(/^\/api\/admin\/defect\/(\d+)$/)) && m === 'GET') {
       const r = await canSeeReport(u, +mm[1]);

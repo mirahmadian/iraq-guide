@@ -12,7 +12,7 @@ window.startRegion = (me, opts) => {
   shell(); go((location.hash.slice(1) || 'dash'));
 };
 /* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
-const TABS = [['dash', '📊 داشبورد'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
+const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
 const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS;
 function shell() {
   const sup = !!A.opts.region;
@@ -29,7 +29,7 @@ function go(tab) {
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ dash: loadDash, import: renderImport, form: loadForm, users: loadUsers, account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
+  ({ dash: loadDash, quality: () => loadQuality(), import: renderImport, form: loadForm, users: loadUsers, account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
 }
 let leaveSure = false;
 function confirmLeave() { if (leaveSure) { leaveSure = false; A.formDirty = false; return true; } leaveSure = true; toast('تغییرهای فرم ذخیره نشده‌اند. برای رها کردن، دوباره روی تب بزنید.', true); setTimeout(() => leaveSure = false, 5000); return false; }
@@ -299,6 +299,12 @@ function wireForm(cur) {
 }
 
 /* ═════════ fixed managers ═════════ */
+/* ═════════ hotel quality (team-quality.js) ═════════ */
+async function loadQuality(week) {
+  let d; try { d = await api('/api/admin/quality' + (week ? '?week=' + week : '')); } catch (e) { return toast(e.message, true); }
+  if (A.tab !== 'quality') return;
+  renderQuality(main(), d, { weeks: d.weeks, week: d.week, onWeek: w => { main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadQuality(w); } });
+}
 async function loadUsers() { try { A.users = await api('/api/admin/users'); } catch (e) { return toast(e.message, true); } if (A.tab === 'users') renderUsers(); }
 function renderUsers() {
   const m = main();
