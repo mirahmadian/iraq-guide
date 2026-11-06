@@ -83,6 +83,17 @@ async function loadUsers() {
   if (U.tab !== 'users') return;
   renderUsers();
 }
+/* ردیف ویرایش یک کاربر: نام، کد ملی (نام کاربری)، منطقه و شیت */
+function editRowHTML(x, R) {
+  const sup = x.role === 'super';
+  return `<tr class="edit-row"><td colspan="10"><div class="row" style="align-items:flex-end">
+    <div class="field" style="flex:1 1 200px"><label class="label" for="ed-name">نام و نام خانوادگی</label><input id="ed-name" value="${esc(x.name)}" maxlength="80"></div>
+    <div class="field" style="flex:1 1 150px"><label class="label" for="ed-nid">کد ملی (نام کاربری)</label><input id="ed-nid" value="${esc(x.nid)}" inputmode="numeric" maxlength="12" dir="ltr"></div>
+    ${sup ? '' : `<div class="field" style="flex:1 1 150px"><label class="label" for="ed-region">منطقه</label><select id="ed-region">${R.map(r => `<option value="${r.id}" ${x.region_id === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></div>
+    <div class="field" style="flex:1 1 120px"><label class="label" for="ed-sheet">نام شیت در اکسل</label><input id="ed-sheet" value="${esc(x.sheet || '')}" maxlength="60" dir="ltr"></div>`}
+    <button class="btn" id="ed-save">ذخیره</button><button class="btn ghost" id="ed-cancel">انصراف</button></div>
+    <p class="hint">${roleName(x.role)} · اگر کد ملی را عوض کنید، این نفر از این به بعد با کد ملی تازه وارد می‌شود (رمزش همان قبلی است).</p><span class="err" id="ed-err"></span></td></tr>`;
+}
 function renderUsers() {
   const m = main(), R = U.O.regions, list = U.users;
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
@@ -90,16 +101,29 @@ function renderUsers() {
       <div class="filters"><select id="fr" aria-label="منطقه"><option value="0">همه‌ی مناطق</option>${R.map(r => `<option value="${r.id}" ${U.region === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></div></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>
-      ${list.map(x => `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleName(x.role)}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
+      ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleName(x.role)}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
         <td class="dim">${x.creator ? esc(x.creator) + (x.creator_role === 'region' ? ' (مدیر منطقه)' : '') : 'اکسل یا سامانه'}</td><td>${statusPill(x)}</td><td class="num">${fa(x.reports)}</td><td class="dim">${x.last_login ? fmtTs(x.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-pw="${x.id}" placeholder="خالی=تصادفی" style="min-width:110px" autocomplete="new-password"><button class="btn small ghost" data-reset="${x.id}">تعیین</button></div></td>
-        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
+        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button><button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
           ${x.passkeys ? `<button class="btn small ghost" data-pk="${x.id}" title="حذف اثر انگشت‌های ثبت‌شده">☝️ ${fa(x.passkeys)}</button>` : ''}
           ${x.reports ? '' : `<button class="btn small danger" data-del="${x.id}">حذف</button>`}</div></td></tr>`).join('') || '<tr><td colspan="10" class="empty">کاربری نیست.</td></tr>'}</tbody></table></div></div>
     ${newUserForm(R, 'fm')}`;
   wireTemp(m); wireNewUser(m);
   m.querySelector('#fr').onchange = e => { U.region = +e.target.value; loadUsers(); };
   const sure = b => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return false; };
+  m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { U.edit = +b.dataset.edit; renderUsers(); const i = m.querySelector('#ed-name'); if (i) i.focus(); });
+  const ec = m.querySelector('#ed-cancel'); if (ec) ec.onclick = () => { U.edit = 0; renderUsers(); };
+  const es = m.querySelector('#ed-save'); if (es) es.onclick = async () => {
+    const x = list.find(u => u.id === U.edit), err = m.querySelector('#ed-err'), body = { name: m.querySelector('#ed-name').value, nid: m.querySelector('#ed-nid').value };
+    if (x.role !== 'super') { body.region_id = +m.querySelector('#ed-region').value; body.sheet = m.querySelector('#ed-sheet').value; }
+    es.disabled = true; err.textContent = '';
+    try {
+      const r = await api(`/api/super/users/${x.id}/edit`, { body });
+      U.edit = 0; U.O = null;
+      toast(r.entries !== undefined && body.sheet && body.sheet.trim() ? (r.entries ? `ذخیره شد؛ ${fa(r.entries)} ورودی به او سپرده شد.` : `ذخیره شد، ولی در اکسل‌های واردشده شیتی به نام «${body.sheet.trim()}» پیدا نشد.`) : 'ذخیره شد.', r.entries === 0 && !!(body.sheet || '').trim());
+      loadUsers();
+    } catch (e) { es.disabled = false; err.textContent = e.message; }
+  };
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.act}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { if (!sure(b)) return; b.disabled = true; try { U.temp = [await api(`/api/super/users/${b.dataset.reset}/reset`, { body: { password: m.querySelector(`[data-pw="${b.dataset.reset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; toast(e.message, true); } });
   m.querySelectorAll('[data-pk]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { await api(`/api/super/users/${b.dataset.pk}/passkeys`, { body: {} }); loadUsers(); } catch (e) { toast(e.message, true); } });

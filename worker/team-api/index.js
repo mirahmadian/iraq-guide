@@ -573,12 +573,20 @@ async function api(req, url, u) {
       if (mm[2] === 'reset') { const h = await newPassword(b.password, t.role); await DB.batch([prep('UPDATE users SET salt = ?, hash = ?, must_change = ? WHERE id = ?', h.salt, h.hash, h.must, t.id), endAll(t.id)]); return { name: t.name, nid: t.nid, password: h.pw, temporary: !!h.must }; }
       if (mm[2] === 'active') { await DB.batch([prep('UPDATE users SET active = ? WHERE id = ?', b.active ? 1 : 0, t.id), ...(b.active ? [] : [endAll(t.id)])]); return { ok: true }; }
       if (mm[2] === 'passkeys') { await run('DELETE FROM passkeys WHERE user_id = ?', t.id); return { ok: true }; }
+      /* ویرایش: نام، کد ملی (= نام کاربری)، منطقه و نام شیت */
       if (mm[2] === 'edit') {
         const name = String(b.name || '').trim().slice(0, 80); if (!name) fail(400, 'نام را بنویسید.');
-        if (t.role === 'super') { await run('UPDATE users SET name = ? WHERE id = ?', name, t.id); return { ok: true }; }
+        const nid = b.nid !== undefined ? nidNormalize(b.nid) : t.nid;
+        if (nid !== t.nid) {
+          if (!nidValid(nid)) fail(400, 'کد ملی معتبر نیست.');
+          if (await one('SELECT 1 FROM users WHERE nid = ? AND id != ?', nid, t.id)) fail(400, 'این کد ملی مال کاربر دیگری است.');
+        }
+        if (t.role === 'super') { await run('UPDATE users SET name = ?, nid = ? WHERE id = ?', name, nid, t.id); return { ok: true }; }
         const region = b.region_id ? +b.region_id : t.region_id; if (!await one('SELECT 1 FROM regions WHERE id = ?', region)) fail(400, 'منطقه نامعتبر');
-        if (region !== t.region_id && await one('SELECT 1 FROM assign WHERE user_id = ?', t.id)) fail(400, 'این نفر در هفته‌های این منطقه ورودی دارد و جابه‌جا نمی‌شود.');
-        await run('UPDATE users SET name = ?, region_id = ? WHERE id = ?', name, region, t.id); return { ok: true };
+        if (region !== t.region_id && await one('SELECT 1 FROM assign WHERE user_id = ?', t.id)) fail(400, 'این نفر در هفته‌های منطقه‌ی فعلی ورودی دارد و جابه‌جا نمی‌شود.');
+        const sheet = b.sheet !== undefined ? String(b.sheet || '').trim().slice(0, 60) || null : t.sheet;
+        await run('UPDATE users SET name = ?, nid = ?, region_id = ?, sheet = ? WHERE id = ?', name, nid, region, sheet, t.id);
+        return { ok: true, entries: sheet !== t.sheet || region !== t.region_id ? await syncSheet(t.id) : undefined };
       }
       if (mm[2] === 'delete') {
         const used = (await one('SELECT (SELECT COUNT(*) FROM reports WHERE user_id = ?1) + (SELECT COUNT(*) FROM notes WHERE user_id = ?1) + (SELECT COUNT(*) FROM media WHERE user_id = ?1) AS n', t.id)).n;
