@@ -15,7 +15,7 @@ const CHECKS = [
   { k: 'bime', name: 'سامانه بیمه', url: SRV80 + '/bime/', ok: s => s < 500 }
 ];
 const FAILS_TO_ALERT = 3, CHUNK = 32 * 1024, H = 36e5, D = 864e5;
-const TTL = { data: 3 * D, daily: 35 * D, full: 35 * D };
+const TTL = { data: 3 * D, daily: 35 * D, full: 35 * D, team: 35 * D };
 const BK_SCHEMA = ['CREATE TABLE IF NOT EXISTS files (name TEXT PRIMARY KEY, kind TEXT, ts TEXT, bytes INTEGER, sha256 TEXT, n INTEGER, got INTEGER, exp INTEGER)',
   'CREATE TABLE IF NOT EXISTS chunks (name TEXT NOT NULL, i INTEGER NOT NULL, data BLOB, PRIMARY KEY (name, i))'];
 
@@ -133,16 +133,38 @@ async function pull(env, mode, budget, force) {
 }
 
 /* ── ۳. گزارش روزانه و هشدار پشتیبان ── */
+/* پشتیبان روزانه سامانه نواقص هتل‌ها (D1 hamyar-hotels، binding HDB): همه‌ی جدول‌ها به JSON فشرده، در BKDB با نام team/<ts>.
+   عکس و فیلم‌ها (۷ روزه) جزو آن نیستند. برگرداندن: worker/team-api/restore.mjs */
+const TEAM_TABLES = ['regions', 'users', 'sessions', 'passkeys', 'weeks', 'entries', 'assign', 'sheet_rows', 'forms', 'reports', 'items', 'notes', 'media'];
+async function teamBackup(env, force) {
+  if (!env.HDB) return { mode: 'team', error: 'HDB not bound' };
+  const now = Date.now(), day = new Date(now + 3.5 * H).toISOString().slice(0, 10), last = await cfgJson(env, 'bk:team', {});
+  if (!force && last.day === day) return { mode: 'team', skip: true };
+  const res = await env.HDB.batch(TEAM_TABLES.map(t => env.HDB.prepare('SELECT * FROM ' + t)));
+  const ts = new Date(now).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  const body = JSON.stringify({ kind: 'hamyar-hotels', ts, tables: Object.fromEntries(TEAM_TABLES.map((t, i) => [t, res[i].results])) });
+  const gz = new Uint8Array(await new Response(new Blob([body]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  const sha = hex(await crypto.subtle.digest('SHA-256', gz)), name = 'team/' + ts, P = 512 * 1024, n = Math.ceil(gz.length / P);
+  await env.BKDB.batch([...Array(n).keys()].map(i => env.BKDB.prepare('INSERT OR REPLACE INTO chunks (name, i, data) VALUES (?, ?, ?)').bind(name, i, gz.subarray(i * P, (i + 1) * P)))
+    .concat(env.BKDB.prepare('INSERT OR REPLACE INTO files (name, kind, ts, bytes, sha256, n, got, exp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(name, 'team', ts, gz.length, sha, n, now, now + TTL.team)));
+  await cfgSet(env, 'bk:team', JSON.stringify({ day, at: now, bytes: gz.length, rows: res.reduce((a, r) => a + r.results.length, 0) }));
+  return { mode: 'team', ts, bytes: gz.length };
+}
+
 async function daily(env, checks) {
   const now = Date.now(), today = new Date(now + 3.5 * H).toISOString().slice(0, 10), hr = new Date(now + 3.5 * H).getUTCHours();
-  const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {});
+  const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {}), bt = await cfgJson(env, 'bk:team', {});
   const stale = !bd.at || now - bd.at > 3 * H;
   const warned = await cfgGet(env, 'bk:warned');
   if (stale && !warned) { await notify(env, `⚠️ بیش از ۳ ساعت است که نسخه پشتیبان تازه از سرور گرفته نشده (آخرین: ${bd.at ? tehran(bd.at) : 'هیچ‌وقت'}).\nسامانه‌ها ممکن است سالم باشند؛ فقط پشتیبان‌گیری گیر کرده. اگر فردا هم این پیام آمد، به Claude بگویید.`); await cfgSet(env, 'bk:warned', '1'); }
   if (!stale && warned) await env.DB.prepare("DELETE FROM config WHERE k = 'bk:warned'").run();
+  /* پشتیبان روزانه سامانه نواقص هتل‌ها بیش از ۳۰ ساعت عقب افتاده */
+  const tStale = bt.at && now - bt.at > 30 * H, tWarned = await cfgGet(env, 'bk:team-warned');
+  if (tStale && !tWarned) { await notify(env, `⚠️ پشتیبان روزانه سامانه نواقص هتل‌ها از ${tehran(bt.at)} گرفته نشده. سامانه احتمالاً سالم است؛ به Claude بگویید.`); await cfgSet(env, 'bk:team-warned', '1'); }
+  if (!tStale && tWarned) await env.DB.prepare("DELETE FROM config WHERE k = 'bk:team-warned'").run();
   if (hr === 9 && (await cfgGet(env, 'daily:sent')) !== today) {
     const down = checks.filter(c => !c.up);
-    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
+    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
     await cfgSet(env, 'daily:sent', today);
   }
 }
@@ -153,7 +175,8 @@ export async function guardRun(env, force) {
   const budget = { n: 44 };   /* سقف درخواست‌های هر اجرا در پلن رایگان: ۵۰ */
   const checks = await checkAll(env, budget);
   const res = [];
-  if (env.BACKUP_KEY && checks.find(c => c.k === 'team').up) {
+  try { res.push(await teamBackup(env, force)); } catch (e) { res.push({ mode: 'team', error: String(e && e.message || e) }); }
+  if (env.BACKUP_KEY && checks.find(c => c.k === 'chap').up) {
     res.push(await pull(env, 'data', budget, force));
     res.push(await pull(env, 'full', budget, force));
   }
@@ -183,11 +206,11 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
   }
   if (p === '/admin/guard/get' && req.method === 'GET') {
     const k = url.searchParams.get('k') || '';
-    if (!/^(data|daily|full)\/\d{8}T\d{6}Z$/.test(k)) return err('نام فایل نامعتبر');
+    if (!/^(data|daily|full|team)\/\d{8}T\d{6}Z$/.test(k)) return err('نام فایل نامعتبر');
     const f = await env.BKDB.prepare('SELECT bytes FROM files WHERE name = ?').bind(k).first();
     const v = f && await readChunks(env, k, f.bytes);
     if (!v) return err('این نسخه پیدا نشد (شاید منقضی شده).', 404);
-    return new Response(v, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="hamyar-${k.replace('/', '-')}.tar.gz"`,
+    return new Response(v, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="hamyar-${k.replace('/', '-')}${k.startsWith('team/') ? '.json.gz' : '.tar.gz'}"`,
       'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Content-Disposition' } });
   }
   if (p === '/admin/guard/run' && req.method === 'POST') return json(await guardRun(env, true));

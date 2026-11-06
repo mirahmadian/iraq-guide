@@ -20,3 +20,9 @@ database_id = "74d9e2c7-e22d-4389-8d44-a214943c6b70"
 # نگهبان سرور هر ۵ دقیقه
 [triggers]
 crons = ["*/5 * * * *"]
+
+# داده‌های سامانه نواقص هتل‌ها (worker/team-api) — فقط برای پشتیبان روزانه در guard.js خوانده می‌شود
+[[d1_databases]]
+binding = "HDB"
+database_name = "hamyar-hotels"
+database_id = "10359407-12af-4227-8991-fe9ef7ff9046"
