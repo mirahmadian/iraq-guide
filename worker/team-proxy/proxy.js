@@ -23,6 +23,16 @@ export default {
     const out = new Headers(r.headers);
     if (!out.has('Access-Control-Allow-Origin')) out.set('Access-Control-Allow-Origin', req.headers.get('origin') || '*');
     out.set('Access-Control-Expose-Headers', 'Content-Disposition');
+    /* پاسخ‌های معمولی (JSON، فایل اکسل) اول کامل گرفته و بعد فرستاده می‌شوند: عبور جریانی فایل اکسل وسط راه قطع می‌شد
+       (responseStreamDisconnected). فقط عکس و فیلم‌های بزرگ جریانی می‌مانند. */
+    const ct = r.headers.get('content-type') || '', len = +(r.headers.get('content-length') || 0);
+    if (!/^(image|video|audio)\//.test(ct) && len < 20e6) {
+      let buf;
+      try { buf = await r.arrayBuffer(); }
+      catch (e) { return new Response(JSON.stringify({ error: 'ارتباط با سرور اصلی وسط کار قطع شد. دوباره امتحان کنید.' }), { status: 502, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' } }); }
+      out.delete('content-encoding'); out.delete('content-length'); out.delete('transfer-encoding');
+      return new Response(buf, { status: r.status, headers: out });
+    }
     return new Response(r.body, { status: r.status, headers: out });
   }
 };

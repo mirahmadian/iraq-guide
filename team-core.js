@@ -95,9 +95,18 @@ async function apiRun(path, opt = {}) {
   return j;
 }
 async function download(path, fallbackName) {
-  const r = await api(path, { raw: true, busyLabel: 'در حال ساختن فایل اکسل… ممکن است کمی طول بکشد' });
+  /* اگر فایل وسط راه قطع شد، یک بار هم از راه دیگر (مستقیم / واسطه) گرفته می‌شود */
+  let r, blob;
+  for (let k = 0; ; k++) {
+    try { r = await api(path, { raw: true, busyLabel: 'در حال ساختن فایل اکسل… ممکن است کمی طول بکشد' }); blob = await r.blob(); break; }
+    catch (e) {
+      if (k || (e.status && e.status < 500)) throw e.status ? e : Object.assign(new Error('دریافت فایل وسط کار قطع شد. اینترنت را بررسی کنید و دوباره امتحان کنید.'), { offline: true });
+      HR_API = HR_APIS.find(b => b !== HR_API);
+      try { localStorage.setItem('hr-api', HR_API); } catch (x) {}
+    }
+  }
   const cd = r.headers.get('Content-Disposition') || '', m = /filename\*=UTF-8''([^;]+)/.exec(cd);
-  const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = m ? decodeURIComponent(m[1]) : fallbackName;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = m ? decodeURIComponent(m[1]) : fallbackName;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
