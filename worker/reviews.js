@@ -8,6 +8,7 @@
    استقرار: cd worker && npx wrangler deploy
 ══════════════════════════════════════════ */
 import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
+import { guardRun, handleGuardAdmin } from './guard.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 
 const REPO = 'mirahmadian/iraq-guide';
@@ -113,6 +114,8 @@ async function sha256Full(s) {
 const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, ts: r.ts });
 
 export default {
+  /* نگهبان سرور: هر ۵ دقیقه (guard.js) */
+  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
@@ -248,6 +251,7 @@ export default {
         const u = await handleUsers(p, req, env, body, json, err);
         if (u) return u;
         if (p === '/admin/bale/setup' && req.method === 'POST') return json(await baleSetup(env, url.origin));
+        if (p.startsWith('/admin/guard')) { const g = await handleGuardAdmin(p, req, env, url, json, err); if (g) return g; }
         const bb = await handleBaleAdmin(p, req, env, body, json, err, !!owner);
         if (bb) return bb;
         if (p === '/admin/stats' && req.method === 'GET') {

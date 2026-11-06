@@ -10,3 +10,13 @@ binding = "AI"
 binding = "DB"
 database_name = "hamyar-reviews"
 database_id = "83e811da-280d-4122-918a-62e42a0b1098"
+
+# پشتیبان‌های سرور 188 (guard.js)
+[[d1_databases]]
+binding = "BKDB"
+database_name = "hamyar-backups"
+database_id = "74d9e2c7-e22d-4389-8d44-a214943c6b70"
+
+# نگهبان سرور هر ۵ دقیقه
+[triggers]
+crons = ["*/5 * * * *"]

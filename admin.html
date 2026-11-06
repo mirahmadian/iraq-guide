@@ -859,6 +859,11 @@
 </div><!-- /tab-reviews -->
 
 <div class="page" id="tab-stats" style="max-width:900px">
+  <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🛡️</div>
+      <div class="sec-head-info"><div class="sec-head-title">سلامت سرور و پشتیبان‌ها</div><div class="sec-head-sub">سامانه‌های سرور ۱۸۸ (نواقص هتل‌ها، چاپ و بسته‌بندی، بیمه) — فقط برای مدیر اصلی</div></div></div>
+    <div class="sec-body" style="display:block" id="guard-admin"></div>
+  </div>
   <div id="stats-admin"></div>
 </div><!-- /tab-stats -->
 
@@ -889,6 +894,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-layout.js"></script>
 <script src="admin-emergency.js"></script>
 <script src="admin-zyarat.js"></script>
+<script src="admin-guard.js"></script>
 <script src="admin-notice.js"></script>
 <script src="admin-rate.js"></script>
 <script src="admin-guide.js"></script>
@@ -906,7 +912,7 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'reviews') rvaLoad();
-  if (id === 'stats') statsLoad();
+  if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); }
   if (id === 'users') usersLoad();
 }
 
