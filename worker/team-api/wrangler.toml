@@ -1,11 +1,11 @@
 # سامانه نواقص هتل‌ها (team.html) — جایگزین سرور 188؛ index.js را ببینید
-name = "hamyar-hotels"
+name = "hamyar-team"
 main = "index.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGINS = "https://mirahmadian.github.io,http://localhost:8765"
+ALLOWED_ORIGINS = "https://mirahmadian.github.io"
 
 [[d1_databases]]
 binding = "DB"
