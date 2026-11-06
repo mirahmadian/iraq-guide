@@ -733,7 +733,24 @@ async function api(req, url, u) {
           json(d.reasons).join('، '), d.day ? persianDigits(d.day) : '', [...json(d.actions), d.action_text].filter(Boolean).join('، '), d.result ? RESULT[d.result] : 'ثبت نشده', d.result_note || '',
           ns.filter(n => n.role === 'region').map(n => n.text).join(' / '), ns.filter(n => n.role === 'fm').map(n => n.text).join(' / '), mc.get(d.entry_id + '|' + d.uid + '|' + d.qid) || 0, faDate(d.updated)];
       });
-      return { title: `نواقص گزارش‌شده · ${w.title}`, file: 'نواقص-' + w.title + '.xlsx', rows: data };
+      /* برگه‌ی دوم: همه‌ی گزارش‌های ثبت‌شده (با نقص و بی‌نقص)، هر گزارش یک ردیف و پاسخ هر سؤال یک ستون؛ فقط فیلتر «فرد» روی آن اثر دارد */
+      const person = +url.searchParams.get('person') || 0;
+      const reps = await all(`SELECT r.id AS rid, r.descr, r.updated, u.name AS person, u.nid, e.hotel, e.company, e.siyahe, e.d_in, e.d_out, e.pilgrims
+        FROM reports r JOIN users u ON u.id = r.user_id JOIN entries e ON e.id = r.entry_id
+        WHERE e.week_id = ?1 AND u.region_id = ?2 AND (?3 = 0 OR u.id = ?3) ORDER BY u.name, e.hotel, e.d_in, e.row_no`, wid, R, person);
+      const its = await all(`SELECT i.report_id, i.qid, i.question, i.answer_label, i.is_defect, i.result FROM items i JOIN reports r ON r.id = i.report_id JOIN entries e ON e.id = r.entry_id
+        WHERE e.week_id = ? AND r.id IN (SELECT value FROM json_each(?))`, wid, JSON.stringify(reps.map(r => r.rid)));
+      const cols = (await formOf(R)).sections.flatMap(sec => sec.questions.map(q => ({ id: q.id, t: q.text })));
+      for (const i of its) if (!cols.find(c => c.id === i.qid)) cols.push({ id: i.qid, t: i.question || i.qid });   /* سؤالی که بعداً از فرم حذف شده */
+      const byRep = new Map(); for (const i of its) { if (!byRep.has(i.report_id)) byRep.set(i.report_id, new Map()); byRep.get(i.report_id).set(i.qid, i); }
+      const all_ = reps.map(r => {
+        const m = byRep.get(r.rid) || new Map(), defs = [...m.values()].filter(i => i.is_defect), open = defs.filter(i => i.result !== 'fixed').length;
+        return [r.person, r.nid, r.hotel, r.company, r.siyahe, persianDigits(r.d_in), persianDigits(r.d_out), r.pilgrims,
+          defs.length ? `${persianDigits(defs.length)} نقص` : 'بدون نقص', defs.length ? (open ? `${persianDigits(open)} باز` : 'همه رفع شد') : '', r.descr || '',
+          ...cols.map(c => { const i = m.get(c.id); return !i ? '' : i.is_defect ? `${i.answer_label} ⚠ (${RESULT[i.result] || 'ثبت نشده'})` : i.answer_label; }), faDate(r.updated)];
+      });
+      return { title: `نواقص گزارش‌شده · ${w.title}`, file: 'گزارش‌ها-' + w.title + '.xlsx', rows: data,
+        reports: { title: `همه‌ی گزارش‌های ثبت‌شده · ${w.title}`, head: ['ردیف', 'مدیر ثابت', 'کد ملی', 'هتل', 'شرکت مجری', 'شرکت سیاحه', 'ورود کاروان', 'خروج کاروان', 'تعداد زائر', 'نتیجه گزارش', 'نقص‌های باز', 'توضیح کلی', ...cols.map(c => c.t), 'آخرین به‌روزرسانی'], rows: all_ } };
     }
     fail(404, 'پیدا نشد');
   }

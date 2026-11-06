@@ -79,7 +79,7 @@ function renderDash() {
         <div class="filters"><select id="f-p" aria-label="مدیر ثابت"><option value="">همه‌ی افراد</option>${D.people.map(p => `<option value="${p.id}" ${+f.person === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
           <select id="f-s" aria-label="حوزه"><option value="">همه‌ی حوزه‌ها</option>${[...new Set([...D.sections.map(s => s.title), ...rows.map(d => d.section)])].map(s => `<option ${f.section === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
           <select id="f-r" aria-label="نتیجه"><option value="">هر نتیجه</option>${Object.entries(RESULT).map(([k, [l]]) => `<option value="${k}" ${f.result === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-          <button class="btn small" id="xl-out" data-q="${esc(qs.toString())}">📥 خروجی اکسل</button></div></div>
+          <button class="btn small" id="xl-out" data-q="${esc(qs.toString())}">📥 خروجی اکسل (همه گزارش‌ها + نواقص)</button></div></div>
         <div class="tbl-wrap"><table><thead><tr><th>مدیر ثابت</th><th>هتل · شرکت مجری</th><th>اشکال</th><th>اقدام</th><th>نتیجه</th></tr></thead><tbody>
         ${shown.map(d => `<tr class="click" data-def="${esc(d.key)}" aria-current="${A.sel === d.key}"><td>${esc(d.person)}</td><td>${esc(d.hotel)}<br><span class="dim">${esc(shortCo(d.company))} · ${md(d.d_in)}–${md(d.d_out)}</span></td>
           <td>${esc(d.question)}<br><span class="dim">${esc(d.section)} · ${esc(d.reasons.join('، ') || d.answer)}</span></td>
@@ -96,7 +96,7 @@ function renderDash() {
   m.querySelector('#f-p').onchange = e => { A.f.person = e.target.value; renderDash(); };
   m.querySelector('#f-s').onchange = e => { A.f.section = e.target.value; renderDash(); };
   m.querySelector('#f-r').onchange = e => { A.f.result = e.target.value; renderDash(); };
-  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q); toast('فایل اکسل دانلود شد.'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
+  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q); toast('فایل اکسل دانلود شد: برگه‌ی «همه گزارش‌ها» و برگه‌ی «نواقص».'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
   m.querySelectorAll('[data-def]').forEach(r => r.onclick = () => { A.sel = r.dataset.def; A.detail = null; renderDash(); if (innerWidth < 1100) document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
   if (sel) wireDetail(sel);
 }

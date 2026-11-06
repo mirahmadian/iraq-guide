@@ -82,7 +82,7 @@ async function parseWeeklyFile(file) {
   return { title, mainName, rows, sheets, codes, problems };
 }
 
-/* defects Excel from the rows the server sends ({ title, file, rows }) */
+/* Excel of a week from what the server sends: { title, file, rows (defects), reports: { title, head, rows } (every report) } */
 async function saveDefectsBook(d) {
   const X = await loadXlsx();
   const head = ['ردیف', 'مدیر ثابت', 'کد ملی', 'هتل', 'شرکت مجری', 'شرکت سیاحه', 'ورود کاروان', 'خروج کاروان', 'تعداد زائر', 'حوزه', 'اشکال مشاهده‌شده', 'پاسخ', 'جزئیات اشکال',
@@ -94,8 +94,17 @@ async function saveDefectsBook(d) {
   ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: Math.max(1, aoa.length - 1), c: head.length - 1 } }) };
   const wb = X.utils.book_new();
   wb.Workbook = { Views: [{ RTL: true }] };
+  /* برگه‌ی «همه‌ی گزارش‌ها» (با نقص و بی‌نقص) اول می‌آید؛ برگه‌ی «نواقص» بعد از آن */
+  if (d.reports) {
+    const R = d.reports, ra = [[R.title], R.head, ...R.rows.map((r, i) => [i + 1, ...r])];
+    const rs = X.utils.aoa_to_sheet(ra);
+    rs['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(R.head.length - 1, 12) } }];
+    rs['!cols'] = R.head.map((h, i) => ({ wch: i === 0 ? 5 : i < 12 ? [5, 20, 12, 18, 30, 14, 11, 11, 8, 12, 11, 30][i] : i === R.head.length - 1 ? 16 : 18 }));
+    rs['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: Math.max(1, ra.length - 1), c: R.head.length - 1 } }) };
+    X.utils.book_append_sheet(wb, rs, 'همه گزارش‌ها');
+  }
   X.utils.book_append_sheet(wb, ws, 'نواقص');
   const blob = new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = String(d.file || 'naghayes.xlsx').replace(/[\\/:*?"<>|]/g, '-');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = String(d.file || 'naghayes.xlsx').replace(/[\\/:*?"<>|]/g, '-').replace(/\u200c/g, ' ');   /* مرورگر نیم‌فاصله را «_» می‌کرد */
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
