@@ -8,8 +8,22 @@ const qCell = s => { const l = qLevel(s); return l ? `<td class="q-cell ${l[2]}"
 const qFix = (d, f) => d ? `${faS(Math.round(f / d * 100))}٪ <span class="dim">(${fa(f)} از ${fa(d)})</span>` : '<span class="dim">نقصی نبود</span>';
 const LOW_H = 2, LOW_C = 3;   /* کمتر از این تعداد گزارش = «داده کم» */
 
+/* مرتب‌سازی جدول با زدن روی عنوان ستون (بار اول کم به زیاد، بار دوم برعکس)؛ خانه‌های خالی همیشه آخر */
+const Q_SORT = {
+  name: h => h.name, region: h => h.region, score: h => h.score, n: h => h.n,
+  fix: h => h.defects ? h.fixed / h.defects : null, co: h => h.companies.map(shortCo).join('، ') || null
+};
+function qSortVal(h, k) { return k.startsWith('sec:') ? h.secs[k.slice(4)] ?? null : Q_SORT[k](h); }
+function qSorted(list, s) {
+  if (!s) return [...list].sort((a, b) => (a.n < LOW_H) - (b.n < LOW_H) || a.score - b.score);
+  return [...list].sort((a, b) => {
+    const x = qSortVal(a, s.k), y = qSortVal(b, s.k);
+    if (x == null || y == null) return (x == null) - (y == null);
+    return (typeof x === 'string' ? x.localeCompare(y, 'fa') : x - y) * s.dir;
+  });
+}
 function renderQuality(el, d, o = {}) {
-  const H = [...d.hotels].sort((a, b) => (a.n < LOW_H) - (b.n < LOW_H) || a.score - b.score);
+  const H = qSorted(d.hotels, o.sort);
   const cnt = QL.map(l => H.filter(h => h.n >= LOW_H && qLevel(h.score) === l).length);
   const C = [...d.companies].sort((a, b) => (a.n < LOW_C) - (b.n < LOW_C) || a.score - b.score);
   const T = [...d.transport].sort((a, b) => (a.n < LOW_C) - (b.n < LOW_C) || a.score - b.score);
@@ -20,8 +34,9 @@ function renderQuality(el, d, o = {}) {
     ${!H.length ? '<div class="empty">برای این دوره هنوز گزارشی ثبت نشده است.</div>' : `
     <div class="q-sum"><div><b class="num">${d.avg == null ? '—' : faS(Math.round(d.avg))}</b><span>میانگین نمره‌ی هتل‌ها</span></div>
       ${QL.map((l, i) => `<div class="${l[2]}"><b class="num">${fa(cnt[i])}</b><span>${l[1]}</span></div>`).join('')}</div>
-    <p class="hint">مرتب از ضعیف‌ترین به بهترین. رنگ هر خانه وضع هتل در آن بخش است. ${d.prevTitle ? `▲▼ تغییر نسبت به «${esc(d.prevTitle)}».` : ''} هتلی که کمتر از ${fa(LOW_H)} گزارش دارد کم‌رنگ و پایین فهرست است (داده کم).</p>
-    <div class="tbl-wrap"><table class="q-tbl"><thead><tr><th>هتل</th>${o.showRegion ? '<th>منطقه</th>' : ''}<th>نمره</th>${d.sections.map(s => `<th class="q-sec">${esc(s)}</th>`).join('')}<th>گزارش</th><th>رفع نقص</th><th>شرکت سیاحه</th></tr></thead><tbody>
+    <p class="hint">${o.sort ? `مرتب بر اساس ستون انتخاب‌شده. <button type="button" class="q-reset" id="q-reset">برگشت به ترتیب پیش‌فرض</button>` : 'مرتب از ضعیف‌ترین به بهترین؛ برای مرتب‌سازی دیگر روی عنوان هر ستون بزنید.'} رنگ هر خانه وضع هتل در آن بخش است. ${d.prevTitle ? `▲▼ تغییر نسبت به «${esc(d.prevTitle)}».` : ''} هتلی که کمتر از ${fa(LOW_H)} گزارش دارد کم‌رنگ است${o.sort ? '' : ' و پایین فهرست می‌آید'} (داده کم).</p>
+    <div class="tbl-wrap"><table class="q-tbl"><thead><tr>${[['name', 'هتل'], ...(o.showRegion ? [['region', 'منطقه']] : []), ['score', 'نمره'], ...d.sections.map(x => ['sec:' + x, x, 'q-sec']), ['n', 'گزارش'], ['fix', 'رفع نقص'], ['co', 'شرکت سیاحه']]
+      .map(([k, t, c]) => { const on = o.sort && o.sort.k === k; return `<th class="${c || ''}" aria-sort="${on ? (o.sort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" class="q-sort${on ? ' on' : ''}" data-sk="${esc(k)}" title="مرتب‌سازی بر اساس «${esc(t)}»">${esc(t)} <span aria-hidden="true">${on ? (o.sort.dir > 0 ? '▲' : '▼') : '⇅'}</span></button></th>`; }).join('')}</tr></thead><tbody>
     ${H.map(h => `<tr class="${h.n < LOW_H ? 'q-low' : ''}"><td><b>${esc(h.name)}</b> ${trend(h)}</td>${o.showRegion ? `<td class="dim">${esc(h.region)}</td>` : ''}<td>${qBadge(h.score, h.n < LOW_H)}</td>
       ${d.sections.map(s => qCell(h.secs[s])).join('')}<td class="num">${fa(h.n)}${h.n < LOW_H ? ' <span class="dim">(داده کم)</span>' : ''}</td><td>${qFix(h.defects, h.fixed)}</td><td class="dim" style="font-size:12px">${esc(h.companies.map(shortCo).join('، '))}</td></tr>`).join('')}
     </tbody></table></div>`}
@@ -48,6 +63,13 @@ function renderQuality(el, d, o = {}) {
     <p>نمره‌ی هر گزارش میانگین پاسخ‌های آن است و نمره‌ی هتل میانگین گزارش‌هایش. پاسخ‌های بخش «نقل» در نمره‌ی هتل نیست و جدا برای شرکت‌ها حساب می‌شود.</p>
     <p>این نمره‌ها فقط برای مدیران است و در برنامه‌ی زائران نمایش داده نمی‌شود.</p></details>`;
   const ws = el.querySelector('#q-week'); if (ws && o.onWeek) ws.onchange = () => o.onWeek(ws.value);
+  const wrap = el.querySelector('.q-tbl') && el.querySelector('.q-tbl').parentElement, sx = wrap ? wrap.scrollLeft : 0;
+  el.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => {
+    const k = b.dataset.sk, dir = o.sort && o.sort.k === k ? -o.sort.dir : 1;
+    const y = window.scrollY; renderQuality(el, d, { ...o, sort: { k, dir } }); window.scrollTo(0, y);
+    const w2 = el.querySelector('.q-tbl').parentElement; w2.scrollLeft = sx; const f = el.querySelector(`[data-sk="${CSS.escape(k)}"]`); if (f) f.focus({ preventScroll: true });
+  });
+  const rs = el.querySelector('#q-reset'); if (rs) rs.onclick = () => { const y = window.scrollY; renderQuality(el, d, { ...o, sort: null }); window.scrollTo(0, y); };
 }
 
 (function () {
@@ -74,6 +96,10 @@ function renderQuality(el, d, o = {}) {
   .q-co-n{flex:1 1 40%;display:flex;flex-direction:column;min-width:0}.q-co-n .dim{font-size:12px}
   .q-bar{flex:1 1 40%;height:10px;border-radius:6px;background:color-mix(in srgb,currentColor 8%,transparent);overflow:hidden}.q-bar i{display:block;height:100%;background:var(--q,#999);border-radius:6px}
   .q-co-b{padding:8px 4px 2px;font-size:13px;display:grid;gap:6px}.q-co-h{display:flex;align-items:center;gap:6px}
+  .q-sort{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font:inherit;font-weight:700;padding:4px 2px;border-radius:6px;white-space:normal}
+  .q-sort span{font-size:11px;opacity:.45}.q-sort.on{color:var(--pri,#0F5A43)}.q-sort.on span{opacity:1}
+  .q-sort:hover span{opacity:.9}.q-sort:focus-visible{outline:2px solid var(--pri,#0F5A43);outline-offset:2px}
+  .q-reset{all:unset;cursor:pointer;color:var(--pri,#0F5A43);font-weight:700;text-decoration:underline}
   .q-how p{font-size:13px;line-height:1.9;margin:6px 0 0}`;
   document.head.appendChild(st);
 })();
