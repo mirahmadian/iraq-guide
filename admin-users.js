@@ -498,7 +498,7 @@ function csUsageHTML(u) {
   if (!u) return '';
   if (u.denied || u.core == null) return `<div style="font-size:13px;line-height:2;background:#FBF3D6;border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>⏱️ ساعت‌های باقی‌مانده دیده نشد.</b><br>
     برای دیدنش یک بار به کلید GitHub پنل اجازه‌ی «Plan» بدهید:<br>
-    ${String(ghToken || '').startsWith('github_pat_') ? `۱. <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> ← روی کلید پنل ← <b>Edit</b><br>۲. در <b>Account permissions</b>: <b>Plan</b> = Read-only ← پایین صفحه <b>Update</b>`
+    ${String(ghToken || '').startsWith('github_pat_') ? `۱. <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> ← روی کلید پنل ← <b>Edit</b><br>۲. در بخش Permissions تب <b>Account</b> را بزنید ← <b>+ Add permissions</b> ← <b>Plan</b> را انتخاب کنید<br>۳. کنار Plan را روی <b>Read-only</b> بگذارید ← پایین صفحه <b>Update</b>`
       : `۱. <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a> ← روی کلید پنل ← تیک <b>user</b> (یا read:user) ← <b>Update token</b>`}<br>
     راه دستی: <a href="https://github.com/settings/billing/usage" target="_blank" rel="noopener">github.com/settings/billing/usage</a></div>`;
   const pct = Math.min(100, u.core / u.incl * 100), col = u.left < u.incl * .15 ? '#B3261E' : u.left < u.incl * .4 ? '#B25B12' : '#1E7D4F';
