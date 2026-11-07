@@ -29,6 +29,8 @@ const FL_VAPID = 'BBB3huPc-duqsm_MRzkmn5MWbbtWCnzu6cRu-JaBE2mIiJqiiLHRpIBxz8cww2
   .fl-step.past{opacity:.45}
   .fl-ok{margin-top:12px;padding:12px 14px;border-radius:14px;line-height:1.9;font-size:calc(13.5px * var(--fs,1));background:rgba(30,125,79,.10);border:1px solid rgba(30,125,79,.4)}
   .fl-warn{margin-top:12px;padding:12px 14px;border-radius:14px;line-height:1.9;font-size:calc(13.5px * var(--fs,1));background:rgba(199,119,0,.12);border:1px solid #C77700}
+  .fl-cal{margin-top:14px;padding:12px 14px;border-radius:14px;border:2px dashed var(--gold);background:var(--card);font-size:calc(13.5px * var(--fs,1));line-height:1.9}
+  .fl-cal > b{font-size:calc(15px * var(--fs,1))}
   .fl-chk{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:calc(13.5px * var(--fs,1));font-weight:700;line-height:1.7}
   .fl-chk input{width:22px;height:22px;accent-color:var(--gold)}
   `;
@@ -131,6 +133,11 @@ function flRender() {
         ${f.bale !== o.bale ? '<button class="lost-btn" onclick="flEnable(this)">💾 ذخیره‌ی تغییر</button>' : ''}
         <button class="lost-btn alt" onclick="flOff()">🔕 خاموش کردن هشدارها</button>`
       : `<button class="lost-btn" onclick="flEnable(this)">🔔 ${o ? 'ذخیره و روشن کردن هشدارها' : 'روشن کردن هشدارها'}</button>${o ? '<div class="rem-note">هشدارهای قبلی شما برای پرواز دیگری است؛ با این دکمه جایگزین می‌شود.</div>' : ''}${flMsg ? `<div class="fl-warn">${flMsg}</div>` : ''}`}
+      <div class="fl-cal"><b>📴 بدون اینترنت هم سر وقت خبر بده</b>
+        <div>هشدارها را در <b>تقویم خود گوشی</b> ثبت کنید تا با ساعت گوشی، حتی وقتی اینترنت نیست، سر وقت روی صفحه بیایند.</div>
+        <button class="lost-btn" onclick="flIcs()">⏰ ثبت هشدارها در گوشی (بدون اینترنت)</button>
+        ${saved && o.ics ? '<div class="fl-ok" style="margin-top:8px">✅ فایل هشدارها ساخته شد. اگر در تقویم «ذخیره» را زده‌اید، کار تمام است.</div>' : ''}
+        <div class="rem-note">${typeof remIsIos === 'function' && remIsIos() ? 'بعد از زدن دکمه، در پنجره‌ای که باز می‌شود «Add All» (افزودن همه) را بزنید.' : 'بعد از زدن دکمه، فایل دانلودشده را باز کنید (از نوار اعلان یا پوشه‌ی دانلود)، برنامه‌ی تقویم را انتخاب کنید و «ذخیره» را بزنید.'} به حساب گوگل یا تنظیم خاصی نیاز نیست.</div></div>
       <div class="st-lbl" style="margin-top:16px">🔔 برنامه‌ی هشدارها</div>
       <div class="fl-steps">${steps.map(s => `<div class="fl-step ${s.t < now ? 'past' : ''}"><div class="t">${flHM(s.t)}<small>${flRelDay(s.t)}</small></div><div class="m"><b>${escHtml(s.title)}</b><br>${escHtml(s.body)}</div></div>`).join('')}</div>` : ''}
     <ul class="st-tips">
@@ -160,7 +167,9 @@ async function flEnable(btn) {
       else sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: flKey(FL_VAPID) });
     } catch (e) { why = 'push'; }
   }
-  const o = { city: c.city, air: c.air, day: c.day, h: c.h, m: c.m, fl: c.fl, dep: c.dep, steps, bale: !!f.bale, push: !!sub, baleOk: false, shown: [] };
+  const prev = flLoad();
+  const o = { city: c.city, air: c.air, day: c.day, h: c.h, m: c.m, fl: c.fl, dep: c.dep, steps, bale: !!f.bale, push: !!sub, baleOk: false, shown: [],
+    ics: flSame(prev, f) && prev.ics, icsSteps: prev && prev.icsSteps };
   let net = true;
   try { const r = await rvFetch('/flight/set', { sub: sub ? sub.toJSON() : null, steps, fl: c.fl, bale: !!f.bale }); o.push = !!sub && r.push; o.baleOk = !!r.bale; }
   catch (e) { net = false; o.push = false; }
@@ -176,10 +185,42 @@ async function flEnable(btn) {
   if (!msgs.length || o.push) showToast('✅ هشدارهای روز بازگشت روشن شد');
   if (typeof renderHome === 'function') try { renderHome(); } catch (e) {}
 }
+/* ── تقویم خود گوشی (بدون اینترنت): هر هشدار یک رویداد کوتاه با زنگ سر همان لحظه ── */
+const flUid = k => `flight-${k}@iraq-guide`;
+function flIcsText(steps, cancel) {
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//iraq-guide//flight//FA', 'CALSCALE:GREGORIAN', cancel ? 'METHOD:CANCEL' : 'METHOD:PUBLISH'], seq = Math.floor(Date.now() / 1000);
+  steps.forEach(s => {
+    L.push('BEGIN:VEVENT', `UID:${flUid(s.k)}`, `DTSTAMP:${icsTime(Date.now())}`, `SEQUENCE:${seq}`, `DTSTART:${icsTime(s.t)}`, `DTEND:${icsTime(s.t + 10 * 6e4)}`, `SUMMARY:${icsEsc(s.title)}`);
+    if (cancel) L.push('STATUS:CANCELLED');
+    else L.push(`DESCRIPTION:${icsEsc(s.body + '\n— همیار کاروان')}`, 'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc(s.title)}`, 'TRIGGER:PT0M', 'END:VALARM');
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.map(icsFold).join('\r\n') + '\r\n';
+}
+function flIcs() {
+  const f = flForm, c = flCalc(f); if (!c) return;
+  const steps = flSteps(c).filter(s => s.t > Date.now() + 30e3);
+  if (!steps.length) return showToast('زمان حرکت گذشته است');
+  let o = flLoad();
+  if (!flSame(o, f)) o = { city: c.city, air: c.air, day: c.day, h: c.h, m: c.m, fl: c.fl, dep: c.dep, steps, bale: false, push: false, baleOk: false, shown: [] };
+  /* رویدادهای پرواز قبلی که در این فایل نیستند، با فایل لغو جدا پاک می‌شوند؛ هم‌نام‌ها خودشان جایگزین می‌شوند */
+  o.ics = true; o.icsSteps = steps.map(s => ({ k: s.k, t: s.t, title: s.title }));
+  flStore(o);
+  remDownload(flIcsText(steps), 'هشدار حرکت به فرودگاه.ics');
+  showToast(remIsIos() ? 'در پنجره باز شده «Add All» را بزنید' : 'فایل هشدارها دانلود شد — آن را باز کنید و در تقویم «ذخیره» را بزنید', 9000);
+  flRender();
+  if (typeof renderHome === 'function') try { renderHome(); } catch (e) {}
+}
 async function flOff() {
+  const old = flLoad();
+  if (old && old.ics && old.icsSteps && old.icsSteps.length && confirm('هشدارها از تقویم گوشی هم پاک شود؟ (یک فایل لغو دانلود می‌شود)')) {
+    remDownload(flIcsText(old.icsSteps, true), 'لغو هشدار پرواز.ics');
+    showToast(remIsIos() ? 'در پنجره باز شده تأیید کنید تا از تقویم حذف شود' : 'فایل لغو دانلود شد — بازش کنید تا از تقویم حذف شود. اگر حذف نشد، رویدادها را در تقویم لمس کنید و «حذف» را بزنید', 9000);
+  }
   flStore(null); flMsg = '';
   try { await rvFetch('/flight/del', {}); } catch (e) {}
-  showToast('هشدارهای پرواز خاموش شد');
+  if (!(old && old.ics)) showToast('هشدارهای پرواز خاموش شد');
   flRender();
 }
 
