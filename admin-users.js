@@ -488,7 +488,7 @@ async function csUsage(force) {
     const q = +(i.grossQuantity ?? i.quantity ?? 0), sku = String(i.sku || '') + ' ' + String(i.unitType || '');
     paid += +(i.netAmount || 0);
     if (/storage|gb/i.test(sku)) gb += q;
-    else { const c = /(\d+)\s*-?\s*core/i.exec(sku); core += q * (c ? +c[1] : 2); }
+    else { const c = /_d(\d+)\b|(\d+)\s*-?\s*core/i.exec(sku); core += q * (c ? +(c[1] || c[2]) : 2); }   /* sku واقعی GitHub: codespaces_compute_d2 = دستگاه ۲ هسته‌ای، quantity = ساعت */
   }
   const reset = new Date(Date.UTC(y, m, 1)), days = Math.ceil((reset - now) / 864e5);
   return csUse = { at: Date.now(), plan: plan || 'free', incl, inclGb, core, gb, paid, left: Math.max(0, incl - core), days };
