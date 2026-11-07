@@ -146,7 +146,7 @@ function applyStaffPerms() {
   st.textContent = css.join(',') + '{display:none!important}';
 
   const GEN = ['notices', 'rate', 'bale', 'layout', 'title', 'icon', 'banner', 'footer', 'insurance', 'transport', 'emergency', 'flight'];
-  const tabOk = id => id === 'help' ? true : id === 'mgrco' ? has('mgr') : id === 'general' ? GEN.some(has) : STAFF_CITIES.includes(id) ? [...P].some(k => k.startsWith(`city.${id}.`)) : id === 'users' ? false : has(id);
+  const tabOk = id => id === 'help' ? true : id === 'general' ? GEN.some(has) : STAFF_CITIES.includes(id) ? [...P].some(k => k.startsWith(`city.${id}.`)) : id === 'users' ? false : has(id);
   let first = null;
   document.querySelectorAll('.tab-btn').forEach(b => {
     const id = ((b.getAttribute('onclick') || '').match(/switchTab\('(\w+)'/) || [])[1];
