@@ -22,6 +22,18 @@ let mgrPoll = null, mgrCode = '', mgrErr = '';
   .mg-me b{display:block;font-size:calc(16px * var(--fs,1))}
   .mg-me small{color:var(--muted);font-size:calc(12.5px * var(--fs,1));line-height:1.8}
   .mg-soon{margin-top:12px;padding:14px;border-radius:16px;border:1px dashed var(--border-s);color:var(--muted);text-align:center;line-height:2;font-size:calc(13.5px * var(--fs,1))}
+  .mg-sec-h{margin:16px 0 8px;font-weight:900;font-size:calc(16px * var(--fs,1))}.mg-sec-h span{color:var(--muted);font-weight:700;font-size:.85em}
+  .mg-search{width:100%;box-sizing:border-box;min-height:48px;border-radius:14px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);
+    font-family:var(--font);font-size:calc(14.5px * var(--fs,1));padding:0 14px;margin-bottom:8px}
+  .mg-co{padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--border-s);margin-bottom:8px;line-height:1.9;font-size:calc(14px * var(--fs,1))}
+  .mg-co > b{font-size:calc(15px * var(--fs,1))}
+  .mg-row span{color:var(--muted);font-size:.92em}
+  .mg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .mg-call,.mg-wa{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:calc(13.5px * var(--fs,1))}
+  .mg-call{background:var(--gold);color:#fff}.mg-wa{background:rgba(37,211,102,.14);color:#128C4A;border:1px solid rgba(37,211,102,.5)}
+  [data-theme="dark"] .mg-wa{color:#5BE39A}
+  .mg-note{margin-top:6px;color:var(--muted);font-size:calc(12.5px * var(--fs,1))}
+  .mg-upd{margin:8px 2px 0;color:var(--muted);font-size:calc(12px * var(--fs,1))}
   .mgr-strip{display:flex;gap:10px;align-items:center;width:100%;margin-top:12px;padding:12px 14px;border-radius:var(--r);cursor:pointer;text-align:right;font-family:var(--font);
     border:1px solid var(--gold);background:var(--gold-dim);color:var(--text);font-size:calc(14px * var(--fs,1));font-weight:800;line-height:1.7}
   .mgr-strip > span:first-child{font-size:22px}
@@ -60,8 +72,9 @@ function mgrRender() {
     const m = o.me || {};
     box.innerHTML = `<div class="mg-me"><div class="av">🧳</div><div><b>${escHtml(m.name || '')}</b>
         <small>${[m.role, m.company, mgrCity(m.city)].filter(Boolean).map(escHtml).join(' · ') || 'مدیر کاروان'}${m.until ? `<br>دسترسی تا ${escHtml(mgrDate(m.until))}` : ''}</small></div></div>
-      <div class="mg-soon">🛠️ بخش‌های ویژه‌ی مدیران (مثل شرکت‌های مجری و شماره‌ی نمایندگانشان) به‌زودی همین‌جا اضافه می‌شود.</div>
+      ${mgrCoHTML(o)}
       <button class="lost-btn alt" onclick="mgrLogout()">🚪 خروج از بخش مدیران روی این گوشی</button>`;
+    mgrList();
     return;
   }
   const waiting = !!mgrPoll;
@@ -125,7 +138,7 @@ function mgrIn(r) {
   showToast('✅ وارد بخش ویژه‌ی مدیران شدید', 4000);
   const t = document.getElementById('pvTitle');
   if (t && document.getElementById('mgBody')) t.textContent = '🧳 بخش ویژه‌ی مدیران کاروان';
-  mgrRender(); mgrRefreshUI();
+  mgrRender(); mgrRefreshUI(); mgrCheck(true);
 }
 async function mgrLogout() {
   if (!confirm('بخش مدیران روی این گوشی بسته شود؟ (برای ورود دوباره باید از بله تأیید بگیرید)')) return;
@@ -136,13 +149,45 @@ function mgrRefreshUI() {
   const b = document.getElementById('moreMgr'); if (b) b.innerHTML = `<span aria-hidden="true">${isMgr() ? '🧳' : '🔐'}</span>${isMgr() ? 'بخش ویژه‌ی مدیران کاروان' : 'ورود مدیران کاروان'}`;
   if (typeof renderHome === 'function') try { renderHome(); } catch (e) {}
 }
-/* بررسی اعتبار: اگر شماره از فهرست حذف شده یا تاریخش گذشته، بخش ویژه از این گوشی پاک می‌شود */
+/* ── شرکت‌های مجری (داده از /mgr/data؛ روی گوشی نگه داشته می‌شود تا بدون اینترنت هم باشد) ── */
+let mgrQ = '';
+const mgrFa = s => String(s || '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+/* شماره برای واتس‌اپ: کد کشور بدون صفر (۰۹… ایران → ۹۸، ۰۷… عراق → ۹۶۴) */
+function mgrWa(p) {
+  let d = String(p || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2); else if (/^09\d{9}$/.test(d)) d = '98' + d.slice(1); else if (/^07\d{9}$/.test(d)) d = '964' + d.slice(1);
+  return d.length >= 10 ? d : '';
+}
+const mgrNorm = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[\u200c\u200f\u200e]/g, '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/\s+/g, ' ').trim().toLowerCase();
+function mgrCoHTML(o) {
+  const L = o.data && o.data.companies;
+  if (!L) return `<div class="mg-soon">${navigator.onLine ? '⏳ در حال دریافت اطلاعات…' : '📶 برای دریافت اطلاعات بخش مدیران، یک بار به اینترنت وصل شوید؛ بعد از آن بدون اینترنت هم در دسترس است.'}</div>`;
+  return `<div class="mg-sec-h">🏢 شرکت‌های مجری <span>${L.length ? `(${mgrFa(L.length)})` : ''}</span></div>
+    ${L.length ? `<input type="search" class="mg-search" placeholder="🔎 جستجوی نام شرکت، مدیرعامل یا نماینده…" value="${escHtml(mgrQ)}" oninput="mgrQ=this.value;mgrList()" aria-label="جستجو در شرکت‌های مجری">
+    <div id="mgList"></div>` : '<div class="mg-soon">هنوز اطلاعاتی ثبت نشده است.</div>'}
+    <div class="mg-upd">آخرین به‌روزرسانی: ${escHtml(mgrDate(o.data.at))}؛ بدون اینترنت هم در دسترس است</div>`;
+}
+function mgrList() {
+  const el = document.getElementById('mgList'), o = mgrLoad(); if (!el || !o || !o.data) return;
+  const q = mgrNorm(mgrQ), L = o.data.companies.filter(c => !q || mgrNorm([c.name, c.ceo, c.rep_name, c.rep_phone, c.phone2].join(' ')).includes(q));
+  /* تماس با شماره‌ی بین‌المللی (+۹۶۴/+۹۸) تا با سیم‌کارت ایرانی در عراق هم وصل شود */
+  const call = (ph, label) => { if (!ph) return ''; const w = mgrWa(ph), shown = ph.replace(/^00/, '+');
+    return `<a class="mg-call" href="tel:${w ? '+' + w : escHtml(shown)}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="https://wa.me/${w}" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">💬 واتس‌اپ</a>` : ''}`; };
+  el.innerHTML = L.length ? L.map(c => `<div class="mg-co"><b>${escHtml(c.name)}</b>
+      ${c.ceo ? `<div class="mg-row"><span>مدیرعامل:</span> ${escHtml(c.ceo)}</div>` : ''}
+      ${c.rep_name || c.rep_phone ? `<div class="mg-row"><span>نماینده در عراق:</span> ${escHtml(c.rep_name || '—')}</div>` : ''}
+      <div class="mg-btns">${call(c.rep_phone, 'نماینده')}${call(c.phone2, 'شماره‌ی دوم')}</div>
+      ${c.note ? `<div class="mg-note">${escHtml(c.note)}</div>` : ''}</div>`).join('')
+    : '<div class="mg-soon">شرکتی با این نام پیدا نشد.</div>';
+}
+/* بررسی اعتبار + دریافت اطلاعات: اگر شماره از فهرست حذف شده یا تاریخش گذشته، بخش ویژه (و اطلاعاتش) از این گوشی پاک می‌شود */
 async function mgrCheck(force) {
   const o = mgrLoad(); if (!o || !navigator.onLine) return;
   if (!force && Date.now() - (o.checked || 0) < 6 * 36e5) return;
   try {
-    const r = await mgrFetch('/mgr/me');
-    mgrSave({ ...o, me: r.me, checked: Date.now() });
+    const r = await mgrFetch('/mgr/data');
+    mgrSave({ ...o, me: r.me, data: { companies: r.companies || [], at: r.at }, checked: Date.now() });
+    const box = document.getElementById('mgBody'); if (box && !box.contains(document.activeElement)) mgrRender(); else mgrList();
   } catch (e) {
     if (e.status === 401) { mgrSave(null); showToast('دسترسی بخش مدیران روی این گوشی تمام شده است', 6000); mgrRender(); }
   }

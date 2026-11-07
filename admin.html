@@ -858,6 +858,11 @@
       <div class="sec-head-info"><div class="sec-head-title">مدیران کاروان — ورود به بخش ویژه‌ی برنامه</div><div class="sec-head-sub">فقط شماره‌هایی که این‌جا ثبت شوند، با تأیید بازوی بله وارد بخش ویژه می‌شوند. شماره‌ها فقط روی سرور است، نه در فایل عمومی برنامه.</div></div></div>
     <div class="sec-body" style="display:block" id="mgr-admin"></div>
   </div>
+  <div class="sec-card open" data-perm="mgr" style="margin-top:14px">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🏢</div>
+      <div class="sec-head-info"><div class="sec-head-title">شرکت‌های مجری — فقط برای مدیران کاروان</div><div class="sec-head-sub">نام شرکت، مدیرعامل و شماره نماینده در عراق؛ فقط مدیرانی که وارد بخش ویژه شده‌اند می‌بینند (روی گوشی‌شان بدون اینترنت هم می‌ماند)</div></div></div>
+    <div class="sec-body" style="display:block" id="mgrco-admin"></div>
+  </div>
 </div><!-- /tab-mgr -->
 
 <div class="page" id="tab-stats" style="max-width:900px">
@@ -929,7 +934,7 @@ function switchTab(id, btn) {
   if (id === 'reviews') rvaLoad();
   if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); }
   if (id === 'users') usersLoad();
-  if (id === 'mgr' && typeof mgaLoad === 'function') mgaLoad();
+  if (id === 'mgr' && typeof mgaLoad === 'function') { mgaLoad(); mcoLoad(); }
 }
 
 function toggleCard(key) {

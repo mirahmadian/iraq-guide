@@ -159,3 +159,97 @@ async function mgaImport(btn) {
   .mga-act button{border:1px solid var(--border-s);background:var(--card);border-radius:8px;min-width:36px;min-height:34px;cursor:pointer;font-size:15px}
   </style>`);
 })();
+
+/* ══ 🏢 شرکت‌های مجری (محتوای بخش ویژه‌ی مدیران؛ فقط روی سرور، نه data.js) ══ */
+let mcoData = null, mcoErr = '', mcoQ = '', mcoEdit = null, mcoImp = null;
+function mcoLoad() {
+  mcoErr = ''; mcoRender();
+  adminFetch('/admin/mgr/co', null, adminAuth()).then(d => { mcoData = d; mcoRender(); }).catch(e => { mcoErr = e.message; mcoRender(); });
+}
+function mcoRender() {
+  const el = document.getElementById('mgrco-admin'); if (!el) return;
+  if (mcoErr) { el.innerHTML = `<div class="empty-msg" style="color:#B3261E">${escH(mcoErr)}</div><button class="add-row-btn" onclick="mcoLoad()">🔄 دوباره</button>`; return; }
+  if (!mcoData) { el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>'; return; }
+  const e = mcoEdit || {};
+  el.innerHTML = `
+  <div class="mga-box"><div class="field-label">${e.id ? '✏️ ویرایش شرکت' : '➕ افزودن شرکت مجری'}</div>
+    <div class="mga-form">
+      <input id="mcoName" class="input-full" list="mcoSug" placeholder="نام شرکت مجری" value="${escH(e.name || '')}">
+      <input id="mcoCeo" class="input-full" placeholder="نام مدیرعامل" value="${escH(e.ceo || '')}">
+      <input id="mcoRep" class="input-full" placeholder="نام نماینده در عراق" value="${escH(e.rep_name || '')}">
+      <input id="mcoPh" class="input-full" dir="ltr" inputmode="tel" placeholder="شماره نماینده (مثلاً 07701234567)" value="${escH(e.rep_phone || '')}">
+      <input id="mcoPh2" class="input-full" dir="ltr" inputmode="tel" placeholder="شماره دوم (اختیاری)" value="${escH(e.phone2 || '')}">
+      <input id="mcoNote" class="input-full" placeholder="توضیح کوتاه (اختیاری)" value="${escH(e.note || '')}">
+    </div>
+    <datalist id="mcoSug">${mcoData.suggest.map(x => `<option value="${escH(x.name)}">`).join('')}</datalist>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="pub-btn" onclick="mcoSave(this)">${e.id ? '💾 ذخیره' : '➕ افزودن'}</button>${e.id || e.name ? '<button class="lock-link" onclick="mcoEdit=null;mcoRender()">انصراف</button>' : ''}</div>
+    <div class="empty-msg" style="padding:6px 0 0">شماره عراقی را با ۰۷… یا ‎+964… بنویسید و ایرانی را با ۰۹…؛ دکمه‌ی واتس‌اپ خودکار ساخته می‌شود.</div></div>
+
+  ${mcoData.suggest.length ? `<details class="gd-det"><summary><b>💡 ${mgaN(mcoData.suggest.length)} شرکت مجری در اکسل‌های هفتگی سامانه‌ی نواقص هست که هنوز این‌جا ثبت نشده</b></summary>
+    <div class="mco-sug">${mcoData.suggest.slice(0, 120).map((x, i) => `<button onclick="mcoEdit={name:mcoData.suggest[${i}].name};mcoRender();document.getElementById('mcoCeo').focus()">＋ ${escH(x.name)} <span>(${mgaN(x.n)} ردیف)</span></button>`).join('')}</div></details>` : ''}
+
+  <details class="gd-det" ${mcoImp ? 'open' : ''}><summary><b>📄 ورود یک‌جا از اکسل</b></summary><div style="padding:8px 0">
+    <div class="empty-msg" style="padding:0 0 8px;line-height:2">ستون‌ها: <b>نام شرکت</b> (یا «شرکت مجری»)، مدیرعامل، نماینده، شماره/موبایل نماینده، شماره دوم، توضیح. ردیف اول عنوان ستون‌ها. شرکتی که با همین نام هست به‌روز می‌شود.</div>
+    <input type="file" accept=".xlsx,.xls,.csv" onchange="mcoFile(this)">
+    ${mcoImp ? `<div class="mga-imp">${mcoImp.err ? `<span style="color:#B3261E">${escH(mcoImp.err)}</span>` : `<b>${mgaN(mcoImp.rows.length)}</b> شرکت پیدا شد.
+      <div style="max-height:160px;overflow:auto;margin:6px 0;font-size:12.5px">${mcoImp.rows.slice(0, 50).map(r => `<div>${escH(r.name)} — ${escH([r.ceo, r.rep_name, r.rep_phone].filter(Boolean).join('، '))}</div>`).join('')}</div>
+      <button class="pub-btn" onclick="mcoImport(this)">✅ ثبت ${mgaN(mcoImp.rows.length)} شرکت</button> <button class="lock-link" onclick="mcoImp=null;mcoRender()">انصراف</button>`}</div>` : ''}
+  </div></details>
+
+  <input type="search" class="input-full" placeholder="🔎 جستجوی شرکت، مدیرعامل یا نماینده…" value="${escH(mcoQ)}" oninput="mcoQ=this.value;mcoList()" style="margin:12px 0 8px">
+  <div id="mcoList"></div>`;
+  mcoList();
+}
+function mcoList() {
+  const el = document.getElementById('mcoList'); if (!el || !mcoData) return;
+  const q = mcoQ.trim(), L = q ? mcoData.list.filter(c => [c.name, c.ceo, c.rep_name, c.rep_phone].some(v => String(v || '').includes(q))) : mcoData.list;
+  el.innerHTML = L.length ? L.map(c => `<div class="mga-row"><div class="mga-main"><b>${escH(c.name)}</b>
+      <div class="mga-sub">${c.ceo ? `مدیرعامل: ${escH(c.ceo)}` : '<span style="color:#B25B12">مدیرعامل ثبت نشده</span>'}</div>
+      <div class="mga-sub">نماینده: ${escH(c.rep_name || '—')} <span dir="ltr">${escH(mgaFaPhone(c.rep_phone || ''))}</span>${c.phone2 ? `، <span dir="ltr">${escH(mgaFaPhone(c.phone2))}</span>` : ''}${c.note ? `، ${escH(c.note)}` : ''}</div></div>
+    <div class="mga-act"><button onclick="mcoEdit=mcoData.list.find(x=>x.id===${c.id});mcoRender();document.getElementById('mgrco-admin').scrollIntoView({behavior:'smooth'})" title="ویرایش">✏️</button>
+      <button onclick="mcoDel(${c.id})" title="حذف">🗑</button></div></div>`).join('')
+    : `<div class="empty-msg">${mcoData.list.length ? 'شرکتی با این جستجو پیدا نشد.' : 'هنوز شرکتی ثبت نشده است.'}</div>`;
+}
+async function mcoSave(btn) {
+  const v = id => document.getElementById(id).value.trim();
+  const body = { id: mcoEdit && mcoEdit.id, name: v('mcoName'), ceo: v('mcoCeo'), rep_name: v('mcoRep'), rep_phone: v('mcoPh'), phone2: v('mcoPh2'), note: v('mcoNote') };
+  if (!body.name) return showToast('نام شرکت را بنویسید');
+  if (!body.id && mcoData.list.some(c => c.name === body.name)) return showToast('این شرکت قبلاً ثبت شده؛ از ✏️ کنار آن ویرایش کنید');
+  btn.disabled = true;
+  try { await adminFetch('/admin/mgr/co/save', body, adminAuth()); showToast('ذخیره شد ✅ — مدیران با اتصال بعدی به اینترنت می‌بینند'); mcoEdit = null; mcoLoad(); }
+  catch (e) { showToast(e.message); btn.disabled = false; }
+}
+async function mcoDel(id) {
+  const c = mcoData.list.find(x => x.id === id);
+  if (!confirm(`«${c.name}» حذف شود؟`)) return;
+  try { await adminFetch('/admin/mgr/co/del', { id }, adminAuth()); showToast('حذف شد'); mcoLoad(); } catch (e) { showToast(e.message); }
+}
+async function mcoFile(inp) {
+  const f = inp.files[0]; if (!f) return;
+  try {
+    await mgaSheetJS();
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+    const norm = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/\s+/g, ' ').trim();
+    const hi = rows.findIndex(r => r.some(c => /شرکت|مجری/.test(norm(c))));
+    if (hi < 0) throw new Error('ستون «نام شرکت» یا «شرکت مجری» پیدا نشد.');
+    const H = rows[hi].map(norm), col = re => H.findIndex(h => re.test(h));
+    const ci = { name: col(/شرکت|مجری/), ceo: col(/مدیر ?عامل/), rep: H.findIndex(h => /نماینده/.test(h) && !/شماره|تلفن|موبایل|همراه/.test(h)),
+      ph: H.findIndex((h, i) => /شماره|تلفن|موبایل|همراه/.test(h) && !/دوم|۲/.test(h)), ph2: H.findIndex(h => /(شماره|تلفن).*(دوم|۲)/.test(h)), note: col(/توضیح|ملاحظ/) };
+    const g = (r, i) => i >= 0 ? norm(r[i]) : '';
+    const out = [], seen = new Set();
+    rows.slice(hi + 1).forEach(r => { const x = { name: g(r, ci.name), ceo: g(r, ci.ceo), rep_name: g(r, ci.rep), rep_phone: g(r, ci.ph), phone2: g(r, ci.ph2), note: g(r, ci.note) }; if (x.name && !seen.has(x.name)) { seen.add(x.name); out.push(x); } });
+    mcoImp = out.length ? { rows: out } : { err: 'هیچ ردیفی با نام شرکت پیدا نشد.', rows: [] };
+  } catch (e) { mcoImp = { err: e.message, rows: [] }; }
+  mcoRender();
+}
+async function mcoImport(btn) {
+  btn.disabled = true;
+  try { const r = await adminFetch('/admin/mgr/co/import', { rows: mcoImp.rows }, adminAuth()); showToast(`✅ ${mgaN(r.n)} شرکت ثبت شد`); mcoImp = null; mcoLoad(); }
+  catch (e) { showToast(e.message); btn.disabled = false; }
+}
+document.head.insertAdjacentHTML('beforeend', `<style>
+  .mco-sug{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
+  .mco-sug button{border:1px dashed var(--border-s);background:var(--card);border-radius:999px;padding:6px 10px;cursor:pointer;font-family:var(--font);font-size:12.5px}
+  .mco-sug button span{color:var(--dim,#888)}
+</style>`);

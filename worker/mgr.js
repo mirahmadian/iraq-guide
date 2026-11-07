@@ -12,7 +12,9 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS mgr_devices (tok TEXT PRIMARY KEY, phone TEXT NOT NULL, dev TEXT, created INTEGER NOT NULL, last INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS mgr_devices_phone ON mgr_devices (phone)`,
   `CREATE TABLE IF NOT EXISTS mgr_links (code TEXT PRIMARY KEY, dev TEXT, exp INTEGER NOT NULL, phone TEXT, otp TEXT, state TEXT NOT NULL DEFAULT 'wait')`,
-  `CREATE TABLE IF NOT EXISTS mgr_pending (chat_id INTEGER PRIMARY KEY, code TEXT NOT NULL, t INTEGER NOT NULL)`
+  `CREATE TABLE IF NOT EXISTS mgr_pending (chat_id INTEGER PRIMARY KEY, code TEXT NOT NULL, t INTEGER NOT NULL)`,
+  /* محتوای بخش ویژه: شرکت‌های مجری (فقط برای مدیرانِ واردشده؛ هرگز در data.js عمومی نیست) */
+  `CREATE TABLE IF NOT EXISTS mgr_companies (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ceo TEXT, rep_name TEXT, rep_phone TEXT, phone2 TEXT, note TEXT, updated INTEGER NOT NULL, by TEXT)`
 ];
 let ready = false;
 async function ensure(env) { if (ready) return; await env.DB.batch(SCHEMA.map(q => env.DB.prepare(q))); ready = true; }
@@ -85,6 +87,13 @@ export async function handleMgr(p, req, env, body, dev, json, err, limited, ip) 
     const r = await mgrAuth(env, req);
     if (!r) return err('دسترسی بخش مدیران فعال نیست.', 401);
     return json({ ok: true, me: meOf(r) });
+  }
+  /* محتوای بخش ویژه (گوشی آن را برای استفاده‌ی بدون اینترنت نگه می‌دارد) */
+  if (p === '/mgr/data' && req.method === 'GET') {
+    const r = await mgrAuth(env, req);
+    if (!r) return err('دسترسی بخش مدیران فعال نیست.', 401);
+    const companies = (await env.DB.prepare('SELECT name, ceo, rep_name, rep_phone, phone2, note, updated FROM mgr_companies ORDER BY name').all()).results;
+    return json({ ok: true, me: meOf(r), companies, at: now });
   }
   if (p === '/mgr/logout' && req.method === 'POST') {
     const t = (req.headers.get('Authorization') || '').match(/^mgr\s+([0-9a-f]{64})$/i);
@@ -189,6 +198,52 @@ export async function handleMgrAdmin(p, req, env, body, json, err, who) {
   if (p === '/admin/mgr/revoke' && req.method === 'POST') {
     await env.DB.prepare('DELETE FROM mgr_devices WHERE phone = ?').bind(mgrPhone(body.phone)).run();
     return json({ ok: true });
+  }
+  /* ── شرکت‌های مجری ── */
+  if (p === '/admin/mgr/co' && req.method === 'GET') {
+    const list = (await env.DB.prepare('SELECT * FROM mgr_companies ORDER BY name').all()).results;
+    /* پیشنهاد نام از ستون «شرکت مجری» اکسل‌های هفتگی سامانه‌ی نواقص (پایگاه hamyar-hotels) */
+    let suggest = [];
+    try {
+      const norm = x => String(x || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/\s+/g, ' ').trim();
+      const have = new Set(list.map(c => norm(c.name)));
+      const rows = env.HDB ? (await env.HDB.prepare("SELECT company, COUNT(*) AS n FROM entries WHERE company IS NOT NULL AND company != '' GROUP BY company ORDER BY n DESC LIMIT 400").all()).results : [];
+      const seen = new Map();
+      for (const r of rows) { const k = norm(r.company); if (k && !have.has(k)) seen.set(k, (seen.get(k) || 0) + r.n); }
+      suggest = [...seen.entries()].map(([name, n]) => ({ name, n }));
+    } catch (e) {}
+    return json({ list, suggest });
+  }
+  const coRow = b => ({ name: S(b.name, 150), ceo: S(b.ceo, 80), rep_name: S(b.rep_name, 80), rep_phone: S(mgrPhone(b.rep_phone), 20), phone2: S(mgrPhone(b.phone2), 20), note: S(b.note, 300) });
+  if (p === '/admin/mgr/co/save' && req.method === 'POST') {
+    const c = coRow(body), id = +body.id || 0;
+    if (!c.name) return err('نام شرکت را بنویسید.');
+    if (c.rep_phone && !/^\+?\d{7,16}$/.test(c.rep_phone)) return err('شماره‌ی نماینده درست نیست.');
+    if (id) await env.DB.prepare('UPDATE mgr_companies SET name = ?, ceo = ?, rep_name = ?, rep_phone = ?, phone2 = ?, note = ?, updated = ?, by = ? WHERE id = ?').bind(c.name, c.ceo, c.rep_name, c.rep_phone, c.phone2, c.note, now, who, id).run();
+    else await env.DB.prepare('INSERT INTO mgr_companies (name, ceo, rep_name, rep_phone, phone2, note, updated, by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(c.name, c.ceo, c.rep_name, c.rep_phone, c.phone2, c.note, now, who).run();
+    return json({ ok: true });
+  }
+  if (p === '/admin/mgr/co/del' && req.method === 'POST') {
+    await env.DB.prepare('DELETE FROM mgr_companies WHERE id = ?').bind(+body.id).run();
+    return json({ ok: true });
+  }
+  if (p === '/admin/mgr/co/import' && req.method === 'POST') {
+    const rows = (Array.isArray(body.rows) ? body.rows : []).slice(0, 1000).map(coRow).filter(c => c.name);
+    if (!rows.length) return err('هیچ ردیفی با نام شرکت پیدا نشد.');
+    const J = "json_extract(value, '$.";
+    /* شرکتی که با همین نام هست به‌روز می‌شود، بقیه اضافه */
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE mgr_companies SET ceo = COALESCE(NULLIF((SELECT ${J}ceo') FROM json_each(?1) WHERE ${J}name') = mgr_companies.name), ''), ceo),
+        rep_name = COALESCE(NULLIF((SELECT ${J}rep_name') FROM json_each(?1) WHERE ${J}name') = mgr_companies.name), ''), rep_name),
+        rep_phone = COALESCE(NULLIF((SELECT ${J}rep_phone') FROM json_each(?1) WHERE ${J}name') = mgr_companies.name), ''), rep_phone),
+        phone2 = COALESCE(NULLIF((SELECT ${J}phone2') FROM json_each(?1) WHERE ${J}name') = mgr_companies.name), ''), phone2),
+        note = COALESCE(NULLIF((SELECT ${J}note') FROM json_each(?1) WHERE ${J}name') = mgr_companies.name), ''), note), updated = ?2, by = ?3
+        WHERE name IN (SELECT ${J}name') FROM json_each(?1))`).bind(JSON.stringify(rows), now, who),
+      env.DB.prepare(`INSERT INTO mgr_companies (name, ceo, rep_name, rep_phone, phone2, note, updated, by)
+        SELECT ${J}name'), ${J}ceo'), ${J}rep_name'), ${J}rep_phone'), ${J}phone2'), ${J}note'), ?2, ?3 FROM json_each(?1)
+        WHERE ${J}name') NOT IN (SELECT name FROM mgr_companies)`).bind(JSON.stringify(rows), now, who)
+    ]);
+    return json({ ok: true, n: rows.length });
   }
   /* کد یک‌بارمصرف دستی برای کسی که بله ندارد (۲۴ ساعت) */
   if (p === '/admin/mgr/otp' && req.method === 'POST') {
