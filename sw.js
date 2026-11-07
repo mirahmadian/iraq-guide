@@ -26,6 +26,7 @@ const STATIC = [
   'bale.js',
   'flight-def.js',
   'flight.js',
+  'mgr.js',
   'rate.json',
   'rate-market.json',
   'besat-logo.png',

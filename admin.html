@@ -387,6 +387,7 @@
   <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
   <button class="tab-btn" onclick="switchTab('zyarat',this)">📿 زیارت‌نامه‌ها</button>
   <button class="tab-btn" onclick="switchTab('reviews',this)">💬 نظرها</button>
+  <button class="tab-btn" onclick="switchTab('mgr',this)">🧳 مدیران کاروان</button>
   <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
   <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)">👥 کاربران</button>
 </div>
@@ -851,6 +852,14 @@
   <div id="reviews-admin"></div>
 </div><!-- /tab-reviews -->
 
+<div class="page" id="tab-mgr" style="max-width:900px">
+  <div class="sec-card open" data-perm="mgr">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🧳</div>
+      <div class="sec-head-info"><div class="sec-head-title">مدیران کاروان — ورود به بخش ویژه‌ی برنامه</div><div class="sec-head-sub">فقط شماره‌هایی که این‌جا ثبت شوند، با تأیید بازوی بله وارد بخش ویژه می‌شوند. شماره‌ها فقط روی سرور است، نه در فایل عمومی برنامه.</div></div></div>
+    <div class="sec-body" style="display:block" id="mgr-admin"></div>
+  </div>
+</div><!-- /tab-mgr -->
+
 <div class="page" id="tab-stats" style="max-width:900px">
   <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
     <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🛡️</div>
@@ -898,6 +907,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-emergency.js"></script>
 <script src="flight-def.js"></script>
 <script src="admin-flight.js"></script>
+<script src="admin-mgr.js"></script>
 <script src="admin-zyarat.js"></script>
 <script src="admin-guard.js"></script>
 <script src="admin-notice.js"></script>
@@ -919,6 +929,7 @@ function switchTab(id, btn) {
   if (id === 'reviews') rvaLoad();
   if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); }
   if (id === 'users') usersLoad();
+  if (id === 'mgr' && typeof mgaLoad === 'function') mgaLoad();
 }
 
 function toggleCard(key) {

@@ -230,6 +230,7 @@ function renderHome() {
     ${typeof zyStripHTML === 'function' ? zyStripHTML() : ''}
     ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
     ${typeof flightAlertHTML === 'function' ? flightAlertHTML() : ''}
+    ${typeof mgrStripHTML === 'function' ? mgrStripHTML() : ''}
     ${typeof baleStripHTML === 'function' ? baleStripHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
       <button class="hslide" style="--img:url('${escHtml(encodeURI(x.img))}')" onclick="slideTap(${i})" aria-label="${escHtml(x.t || x.tag || 'اسلاید')}">

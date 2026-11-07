@@ -12,6 +12,7 @@ import { guardRun, handleGuardAdmin } from './guard.js';
 import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 import { handleFlight, flightTick } from './flight.js';
+import { handleMgr, handleMgrAdmin } from './mgr.js';
 import { bale as baleSend } from './bale.js';
 
 const REPO = 'mirahmadian/iraq-guide';
@@ -231,6 +232,7 @@ export default {
       }
 
       /* ── بازوی بله ── */
+      if (p.startsWith('/mgr/')) { const r = await handleMgr(p, req, env, body, dev, json, err, limited, ip); if (r) return r; }
       if (p.startsWith('/flight/')) { const r = await handleFlight(p, req, env, body, dev, json, err, limited); if (r) return r; }
       if (p.startsWith('/bale/')) { const r = await handleBalePublic(p, req, env, body, dev, json, err, limited, ip, sha); if (r) return r; }
 
@@ -244,7 +246,7 @@ export default {
         const owner = !sm && await isAdmin(env, req);
         if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
         if (staff && staff.mustChange) return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
-        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : 'owner';
+        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : p.startsWith('/admin/mgr') ? 'mgr' : 'owner';
         if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
         if (p === '/admin/gh-register' && req.method === 'POST') {
           /* کلید GitHub مدیر اصلی برای انتشارهای همکاران (رمزگذاری‌شده) */
@@ -256,6 +258,8 @@ export default {
         if (u) return u;
         if (p === '/admin/bale/setup' && req.method === 'POST') return json(await baleSetup(env, url.origin));
         if (p.startsWith('/admin/guard')) { const g = await handleGuardAdmin(p, req, env, url, json, err); if (g) return g; }
+        const mg = await handleMgrAdmin(p, req, env, body, json, err, staff ? staff.user : 'owner');
+        if (mg) return mg;
         const bb = await handleBaleAdmin(p, req, env, body, json, err, !!owner);
         if (bb) return bb;
         if (p === '/admin/stats' && req.method === 'GET') {
