@@ -7,6 +7,7 @@ function guardLoad() {
   if (STAFF) return;
   guardErr = ''; renderGuard();
   adminFetch('/admin/guard', null, adminAuth()).then(d => { guardData = d; renderGuard(); renderRescue(); }).catch(e => { guardErr = e.message; renderGuard(); });
+  cfLoad();
 }
 const gFa = n => (+n || 0).toLocaleString('fa');
 const gAgo = t => { if (!t) return '—'; const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'همین الان' : m < 60 ? gFa(m) + ' دقیقه پیش' : m < 1440 ? gFa(Math.round(m / 60)) + ' ساعت پیش' : gFa(Math.round(m / 1440)) + ' روز پیش'; };
@@ -112,3 +113,53 @@ async function guardTest(b) {
   .rs-btns{display:grid;gap:8px;margin-top:12px}
   </style>`);
 })();
+
+/* ══ ☁️ Cloudflare: حجم پایگاه‌ها از /admin/cf + راهنمای ساده‌ی دسترسی ══ */
+let cfData = null;
+function cfLoad() {
+  const el = document.getElementById('cf-admin'); if (!el) return;
+  if (STAFF) { el.closest('.sec-card').style.display = 'none'; return; }
+  el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>';
+  adminFetch('/admin/cf', null, adminAuth()).then(d => { cfData = d; cfRender(); }).catch(e => { el.innerHTML = `<div class="empty-msg" style="color:#B3261E">${escH(e.message)}</div><button class="add-row-btn" onclick="cfLoad()">🔄 دوباره</button>`; });
+}
+const cfBar = (pct, col) => `<div style="height:10px;border-radius:6px;background:#eee;overflow:hidden;margin:4px 0"><i style="display:block;height:100%;width:${Math.max(1, Math.min(100, pct))}%;background:${col}"></i></div>`;
+const cfCol = pct => pct > 85 ? '#B3261E' : pct > 60 ? '#B25B12' : '#1E7D4F';
+const cfPct = x => (x < 1 ? x.toFixed(2) : x < 10 ? x.toFixed(1) : Math.round(x)).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]).replace('.', '٫');
+function cfRender() {
+  const el = document.getElementById('cf-admin'), d = cfData; if (!el || !d) return;
+  const used = d.dbs.reduce((a, x) => a + (x.bytes || 0), 0), tp = used / d.limits.total * 100;
+  el.innerHTML = `
+  <div style="font-size:13px;line-height:2">
+    <div style="border:1px solid #e5dccb;border-radius:12px;padding:12px;margin-bottom:10px">
+      <b style="font-size:15px">💾 فضای رایگان پایگاه داده</b>
+      <div style="font-size:22px;font-weight:800;color:${cfCol(tp)}">${tp < 1 ? 'کمتر از ۱٪' : cfPct(tp) + '٪'} <span style="font-size:14px">پر شده</span></div>
+      ${cfBar(tp, cfCol(tp))}
+      <div>مصرف‌شده: <b>${gKb(used)}</b> از <b>۵ گیگ</b> رایگان (هر پایگاه حداکثر ۵۰۰ مگ)</div>
+    </div>
+    ${d.dbs.map(x => { const p = (x.bytes || 0) / d.limits.db * 100; return `<div style="padding:8px 0;border-bottom:1px solid #eee">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b dir="ltr">${escH(x.name)}</b><span>${x.error ? '<span style="color:#B3261E">خوانده نشد</span>' : `${gKb(x.bytes)} از ۵۰۰ مگ، ${gFa(x.tables)} جدول`}</span></div>
+      <div style="color:#666;font-size:12px">${escH(x.what)}</div>${x.error ? '' : cfBar(p, cfCol(p))}</div>`; }).join('')}
+    <details class="gd-det" style="margin-top:10px"><summary><b>📘 راهنما: Cloudflare چیست و چطور داده‌ها را ببینم؟</b></summary>
+      <div style="padding:6px 2px">
+      <div class="field-label">Cloudflare چیست؟</div>
+      یک شرکت بزرگ اینترنتی است که برنامه‌های کوچک (Worker) و پایگاه داده (D1) را روی سرورهای خودش در سراسر دنیا اجرا می‌کند. سرور مشخصی با یک آدرس IP ندارید که خودتان نگهداری کنید؛ Cloudflare خودش روشن نگهش می‌دارد. برای همین از ایران و بیرون ایران در دسترس است.
+      <div class="field-label">آدرس‌های سامانه شما</div>
+      <div dir="ltr" style="text-align:left;font-size:12px">hamyar-team.hamyar-karevan.workers.dev<br>hamyar-reviews.hamyar-karevan.workers.dev</div>
+      اولی برای سامانه نواقص هتل‌ها و دومی برای نظرات، پنل مدیریت، نگهبان و پشتیبان‌هاست. این‌ها فقط «در» ورود برنامه‌اند؛ باز کردنشان در مرورگر چیز دیدنی ندارد.
+      <div class="field-label">دیدن جدول‌ها در پنل Cloudflare</div>
+      <div class="rs-step"><span>۱</span><div>بروید به <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">dash.cloudflare.com</a> و با ایمیل و رمز حساب Cloudflare وارد شوید.</div></div>
+      <div class="rs-step"><span>۲</span><div>از منوی سمت چپ: <b>Storage &amp; databases</b> ← <b>D1 SQL database</b>.</div></div>
+      <div class="rs-step"><span>۳</span><div>روی نام پایگاه بزنید (مثلاً <b dir="ltr">hamyar-hotels</b>) ← تب <b>Explore data</b> (یا Tables). فهرست جدول‌ها می‌آید و با زدن روی هر جدول ردیف‌هایش را می‌بینید.</div></div>
+      <div class="rs-step"><span>۴</span><div>برنامه‌ها (Worker) در منوی <b>Compute (Workers)</b> ← <b>Workers &amp; Pages</b> هستند؛ تب <b>Metrics</b> هر کدام تعداد درخواست‌ها و خطاها را نشان می‌دهد.</div></div>
+      <div style="background:#FBE3E1;border-radius:10px;padding:8px 10px;margin-top:6px">⚠️ در پنل Cloudflare فقط <b>نگاه کنید</b>. ویرایش یا پاک کردن ردیف و جدول در آنجا مستقیم روی داده‌ی واقعی اثر می‌گذارد و برگشت ندارد (جز از پشتیبان). برای تغییر، از خود سامانه یا Claude کمک بگیرید.</div>
+      <div class="field-label">سهمیه‌ی رایگان (بدون هزینه)</div>
+      • فضای پایگاه داده: ۵ گیگ در کل، هر پایگاه ۵۰۰ مگ (عدد بالای همین کارت)<br>
+      • خواندن: ۵ میلیون ردیف در روز، نوشتن: ۱۰۰ هزار ردیف در روز<br>
+      • درخواست به برنامه‌ها: ۱۰۰ هزار در روز<br>
+      سهمیه‌های روزانه هر شب ساعت ۳:۳۰ بامداد به وقت ایران صفر می‌شوند. اگر روزی تمام شود سامانه تا آن ساعت خطا می‌دهد ولی <b>داده‌ای پاک نمی‌شود</b> و پولی هم کم نمی‌شود (حساب رایگان است). مصرف روزانه را در پنل Cloudflare، صفحه‌ی هر پایگاه، تب <b>Metrics</b> ببینید.
+      <div class="field-label">حجم فعلی یعنی چه؟</div>
+      متن گزارش‌ها خیلی کم‌حجم است؛ بیشترین فضا را عکس و فیلم‌ها می‌گیرند که بعد از ۷ روز خودکار پاک می‌شوند. پس با این روند، فضا سال‌ها کافی است. اگر نوار یک پایگاه زرد یا قرمز شد، به Claude یا برنامه‌نویس خبر دهید.
+      </div></details>
+    <button class="add-row-btn" onclick="cfLoad()">🔄 به‌روزرسانی</button>
+  </div>`;
+}

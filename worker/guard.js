@@ -285,6 +285,17 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
     const list = (await env.BKDB.prepare('SELECT name AS k, kind, ts, bytes, sha256, got FROM files ORDER BY ts DESC, kind LIMIT 300').all()).results;
     return json({ checks, backups: list, steps: OWNER_STEPS, cs: await cfgJson(env, 'cs:last', null), errors: (await recentErrors(env, Date.now() - 7 * D, 50)).length, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
   }
+  /* ☁️ حجم پایگاه‌های داده در Cloudflare (meta.size_after هر پرس‌وجو = حجم فعلی پایگاه) */
+  if (p === '/admin/cf' && req.method === 'GET') {
+    const L = [['DB', 'hamyar-reviews', 'نظرات زائران، کاربران پنل، تنظیمات'], ['HDB', 'hamyar-hotels', 'سامانه نواقص هتل‌ها (team)'], ['MDB', 'hamyar-hotels-media', 'عکس و فیلم‌های سامانه نواقص'], ['BKDB', 'hamyar-backups', 'پشتیبان‌ها (سرور ۱۸۸، نواقص، حافظه Claude)']];
+    const dbs = [];
+    for (const [b, name, what] of L) {
+      if (!env[b]) continue;
+      try { const r = await env[b].prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite%' AND name NOT LIKE '_cf%'").all();
+        dbs.push({ name, what, bytes: r.meta.size_after || 0, tables: r.results[0].n }); } catch (e) { dbs.push({ name, what, error: String(e.message || e).slice(0, 120) }); }
+    }
+    return json({ dbs, limits: { db: 500 * 1048576, total: 5 * 1073741824 } });
+  }
   if (p === '/admin/guard/get' && req.method === 'GET') {
     const k = url.searchParams.get('k') || '';
     if (!/^(data|daily|full|team|memory)\/\d{8}T\d{6}Z$/.test(k)) return err('نام فایل نامعتبر');
