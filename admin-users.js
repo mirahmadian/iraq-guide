@@ -154,6 +154,12 @@ function applyStaffPerms() {
     b.style.display = ok ? '' : 'none';
     if (ok && !first) first = b;
   });
+  /* عنوان دسته‌ای در منوی کناری که هیچ بخشِ مجازی زیرش نیست، پنهان شود */
+  document.querySelectorAll('.side-h').forEach(h => {
+    let n = h.nextElementSibling, any = false;
+    for (; n && !n.classList.contains('side-h'); n = n.nextElementSibling) if (getComputedStyle(n).display !== 'none') any = true;
+    h.style.display = any ? '' : 'none';
+  });
   document.querySelectorAll('.grp-bar button').forEach(b => {
     b.style.display = [...document.querySelectorAll(`#tab-general [data-grp="${b.dataset.g}"][data-perm]`)].some(c => has(c.dataset.perm)) ? '' : 'none';
   });
@@ -182,7 +188,7 @@ async function staffPublish() {
   } catch (e) {
     showToast('❌ ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '🚀 انتشار برای کاربران';
+    btn.disabled = false; btn.innerHTML = PUB_HTML;
   }
 }
 
@@ -512,11 +518,11 @@ function csUsageHTML(u) {
     ${u.paid > 0.009 ? `<div style="color:#B3261E"><b>⚠️ این ماه ${csN(u.paid, 2)} دلار هزینه‌ی اضافه ثبت شده است.</b></div>` : ''}
     <div style="color:#777;font-size:12px">عدد GitHub ممکن است تا چند ساعت عقب‌تر از مصرف واقعی باشد.</div></div>`;
 }
-/* برچسب دکمه‌ی بالای پنل: «⏻ Codespace · ۴۲ ساعت مانده» */
+/* برچسب دکمه‌ی پایین منوی کناری: «Codespace، ۴۲ ساعت مانده» */
 async function csBadge() {
   const b = document.querySelector('[onclick="csOpen()"]');
   if (!b || STAFF || !ghToken) return;
-  try { const u = await csUsage(); if (u.core != null) { b.textContent = `⏻ Codespace · ${csN(u.left / 2)} ساعت مانده`; b.title = `${csN(u.left, 1)} ساعت هسته از ${csN(u.incl)} ساعت رایگان این ماه مانده (حدود ${csN(u.left / 2, 1)} ساعت با دستگاه ۲ هسته‌ای) — برای جزئیات یا خاموش کردن بزنید`; if (u.left < u.incl * .15) b.style.color = '#B3261E'; } } catch (e) {}
+  try { const u = await csUsage(); if (u.core != null) { (b.querySelector('.nl') || b).textContent = `Codespace، ${csN(u.left / 2)} ساعت مانده`; b.title = `${csN(u.left, 1)} ساعت هسته از ${csN(u.incl)} ساعت رایگان این ماه مانده (حدود ${csN(u.left / 2, 1)} ساعت با دستگاه ۲ هسته‌ای) — برای جزئیات یا خاموش کردن بزنید`; if (u.left < u.incl * .15) b.style.color = '#B3261E'; } } catch (e) {}
 }
 const CS_STATE = { Available: '🟢 روشن', Starting: '🟡 در حال روشن شدن', ShuttingDown: '🟠 در حال خاموش شدن', Shutdown: '⚪ خاموش', Rebuilding: '🟡 در حال ساخت' };
 async function csOpen() {

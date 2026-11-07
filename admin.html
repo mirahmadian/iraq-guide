@@ -22,22 +22,72 @@
     button,input,select,textarea{font-family:var(--font)}
     body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
 
+    /* ── SIDEBAR (منوی کناری جمع‌شونده) ── */
+    :root{--sw:256px;--side-bg:#0F3324;--side-fg:#CFE6D9;--side-dim:#86AE98;--side-hi:rgba(255,255,255,.08);--side-on:#E4F3EA;--side-on-fg:#0F3324}
+    body.side-mini{--sw:72px}
+    body{padding-inline-start:var(--sw);transition:padding .2s}
+    .side{position:fixed;inset-block:0;inset-inline-start:0;width:var(--sw);z-index:150;background:var(--side-bg);color:var(--side-fg);
+      display:flex;flex-direction:column;transition:width .2s,transform .2s;overflow:hidden}
+    .side svg,.topbar svg{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .side-brand{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);min-height:64px}
+    .topbar-icon{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#3A9B74,#2E7D5E);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .topbar-icon svg{width:22px;height:22px}
+    .side-bt{min-width:0}
+    .topbar-title{font-size:14.5px;font-weight:800;color:#fff;white-space:nowrap}
+    .topbar-sub{font-size:11px;color:var(--side-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .side-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 10px 12px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+    .side-h{font-size:11px;font-weight:700;color:var(--side-dim);padding:12px 10px 4px;white-space:nowrap;letter-spacing:.2px}
+    .tab-btn,.side-link{display:flex;align-items:center;gap:12px;width:100%;padding:7px 12px;margin:1px 0;border:none;border-radius:10px;background:transparent;
+      color:var(--side-fg);font-family:var(--font);font-size:13.5px;font-weight:600;cursor:pointer;text-align:start;text-decoration:none;white-space:nowrap;min-height:38px;transition:background .15s,color .15s}
+    .tab-btn:hover,.side-link:hover{background:var(--side-hi);color:#fff}
+    .tab-btn.active{background:var(--side-on);color:var(--side-on-fg);font-weight:800}
+    .tab-btn:focus-visible,.side-link:focus-visible,.topbar button:focus-visible{outline:2px solid #7FD3AE;outline-offset:2px}
+    .side-foot{padding:6px 10px 10px;border-top:1px solid rgba(255,255,255,.08)}
+    .side-link{font-size:13px;color:var(--side-dim)}
+    .side-col svg{transform:none;transition:transform .2s}
+    body.side-mini .side-col svg{transform:scaleX(-1)}
+    body.side-mini .side .nl,body.side-mini .side-bt{display:none}
+    body.side-mini .side-h{font-size:0;padding:10px 0 4px;margin:0 12px;border-top:1px solid rgba(255,255,255,.08)}
+    body.side-mini .side-h:first-child{border-top:0}
+    body.side-mini .tab-btn,body.side-mini .side-link{justify-content:center;padding:7px 0}
+    body.side-mini .side-brand{justify-content:center;padding-inline:0}
+    .ab{display:none;font-style:normal}
+    body.side-mini .ab{display:block;font-size:9.5px;font-weight:700;line-height:1;margin-top:3px}
+    body.side-mini .tab-btn:has(.ab){flex-direction:column;gap:0}
+    .side-dim{display:none}
+
     /* ── TOP BAR ── */
-    .topbar{
-      position:sticky;top:0;z-index:100;
-      background:var(--card);border-bottom:1px solid var(--border-s);
-      padding:8px 20px;display:flex;align-items:center;gap:10px;min-height:58px;flex-wrap:wrap;
-      box-shadow:var(--shadow);
+    .topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(6px);border-bottom:1px solid var(--border);
+      padding:10px 24px;display:flex;align-items:center;gap:10px;min-height:62px}
+    .tb-title{font-size:17px;font-weight:800;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:9px}
+    .tb-title svg{color:var(--gold);width:22px;height:22px}
+    .tb-search{display:flex;align-items:center;gap:8px;min-width:240px;padding:8px 12px;border:1px solid var(--border-s);border-radius:10px;background:var(--bg);
+      color:var(--dim);font-family:var(--font);font-size:13px;cursor:pointer;min-height:40px}
+    .tb-search .nl{flex:1;text-align:start}
+    .tb-search kbd{font-family:var(--font);font-size:10.5px;direction:ltr;border:1px solid var(--border-s);border-radius:5px;padding:0 5px;background:var(--card);color:var(--muted)}
+    .tb-search:hover,.tb-btn:hover,.tb-ico:hover{border-color:var(--gold);color:var(--gold)}
+    .tb-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border:1px solid var(--border-s);border-radius:10px;background:var(--card);color:var(--gold);
+      font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;min-height:40px;white-space:nowrap}
+    .tb-ico{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-s);border-radius:10px;background:var(--card);color:var(--muted);cursor:pointer;flex-shrink:0}
+    .tb-menu{display:none}
+    .page{max-width:900px}
+    @media(max-width:1100px){.tb-search{min-width:0}.tb-search .nl,.tb-search kbd{display:none}}
+    @media(max-width:900px){
+      body,body.side-mini{padding-inline-start:0;--sw:270px}
+      .side{transform:translateX(100%);box-shadow:none}
+      body.side-open .side{transform:none;box-shadow:-8px 0 30px rgba(0,0,0,.25)}
+      body.side-open .side-dim{display:block;position:fixed;inset:0;z-index:140;background:rgba(10,30,20,.45)}
+      body.side-mini .side .nl,body.side-mini .side-bt{display:revert}
+      body.side-mini .side-h{font-size:11px;padding:14px 10px 5px;margin:0;border:0}
+      body.side-mini .tab-btn,body.side-mini .side-link{justify-content:flex-start;padding:7px 12px}
+      body.side-mini .ab{display:none}body.side-mini .tab-btn:has(.ab){flex-direction:row;gap:12px}
+      .side-col{display:none}
+      .tb-menu{display:inline-flex}
+      .topbar{padding:8px 12px;gap:8px;min-height:56px}
+      .tb-title{font-size:15px}
     }
-    .topbar-brand{display:flex;align-items:center;gap:10px;flex:1}
-    .topbar-icon{
-      width:38px;height:38px;border-radius:10px;
-      background:linear-gradient(135deg,var(--gold),var(--gold-l));
-      display:flex;align-items:center;justify-content:center;font-size:19px;
-      box-shadow:0 2px 8px rgba(46,125,94,.3);flex-shrink:0;
-    }
-    .topbar-title{font-size:14px;font-weight:800;color:var(--text)}
-    .topbar-sub{font-size:10.5px;color:var(--dim);margin-top:1px}
+    @media(max-width:600px){.tb-btn .nl,.pub-btn .nl{display:none}.tb-btn,.pub-btn{padding:8px 10px}.tb-title svg{display:none}}
+    @media(prefers-reduced-motion:reduce){.side,body{transition:none}}
     .save-btn{
       padding:9px 20px;background:linear-gradient(135deg,var(--gold),var(--gold-l));
       color:#fff;border:none;border-radius:9px;font-family:var(--font);
@@ -54,24 +104,6 @@
     .grp-bar button small{display:block;font-size:11px;font-weight:500;opacity:.75}
     .grp-bar button.on{background:var(--gold);border-color:var(--gold);color:#fff}
     #tab-general [data-grp]:not(.grp-on){display:none}
-    .tabs-bar{
-      position:sticky;top:58px;z-index:90;background:var(--bg);
-      padding:10px 20px 0;border-bottom:2px solid var(--border);
-      display:flex;gap:4px;overflow-x:auto;
-    }
-    .tabs-bar::-webkit-scrollbar{height:0}
-    .tab-btn{
-      padding:9px 18px;border:none;background:transparent;
-      font-family:var(--font);font-size:12.5px;font-weight:600;
-      color:var(--dim);cursor:pointer;border-radius:9px 9px 0 0;
-      white-space:nowrap;transition:all .18s;position:relative;bottom:-2px;
-      border:1px solid transparent;border-bottom:none;
-    }
-    .tab-btn:hover{color:var(--gold);background:var(--gold-dim)}
-    .tab-btn.active{
-      color:var(--gold);background:var(--card);font-weight:800;
-      border-color:var(--border-s);border-bottom-color:var(--card);
-    }
     .tab-badge{
       display:inline-flex;align-items:center;justify-content:center;
       width:17px;height:17px;border-radius:50%;background:var(--gold);
@@ -264,7 +296,8 @@
     .ico-clinic{background:rgba(211,47,47,.12)}
 
     /* ── PUBLISH / LOCK ── */
-    .pub-btn{padding:9px 20px;background:#1B5FA8;color:#fff;border:none;border-radius:9px;font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .pub-btn{padding:9px 18px;background:#1B5FA8;color:#fff;border:none;border-radius:10px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;min-height:40px}
+    .pub-btn:hover{background:#174F8C}
     .pub-btn:disabled{opacity:.6;cursor:wait}
     .lock-btn{width:36px;height:36px;border:1px solid var(--border-s);border-radius:9px;background:var(--card);cursor:pointer;font-size:15px}
     .lock-overlay{position:fixed;inset:0;z-index:2000;background:var(--bg);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px}
@@ -278,7 +311,7 @@
     .lock-box input{width:100%}
     .lock-err{color:var(--red);font-size:12px;min-height:18px;margin:6px 0}
     .lock-link{background:none;border:none;color:var(--dim);font-family:var(--font);font-size:11.5px;cursor:pointer;margin-top:10px;text-decoration:underline}
-    @media(max-width:600px){.save-btn,.pub-btn{padding:9px 10px;font-size:11.5px}}
+    @media(max-width:600px){.save-btn{padding:9px 10px;font-size:11.5px}}
     @media(max-width:600px){
       .hide-sm{display:none}
       .contact-row{flex-wrap:wrap}
@@ -357,43 +390,54 @@
   </div>
 </div>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-brand">
-    <div class="topbar-icon">🛠️</div>
-    <div>
-      <div class="topbar-title">پنل مدیریت کاروان</div>
-      <div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div>
-    </div>
+<!-- SIDEBAR -->
+<aside class="side" id="side" aria-label="بخش‌های پنل">
+  <div class="side-brand">
+    <div class="topbar-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4.5a4 4 0 0 0-5 5L4 15l3 3 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/></svg></div>
+    <div class="side-bt"><div class="topbar-title">پنل مدیریت کاروان</div><div class="topbar-sub">ویرایش داده‌ها و تنظیمات</div></div>
   </div>
-  <a class="view-btn app-btn" href="./" onclick="return leaveAdmin()" title="بازگشت به برنامه همیار کاروان">🏠 بازگشت به برنامه</a>
-  <a class="view-btn" data-perm="owner" href="team.html#owner" style="text-decoration:none" title="مدیر سامانه: مناطق، مدیران منطقه و همه‌ی کاربران">🏨 گزارشات مدیران ثابت</a>
-  <button class="view-btn" onclick="adSearchOpen()" title="پیدا کردن هر بخش پنل (میان‌بر: Ctrl+K)">🔎 جستجو</button>
-  <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
-  <button class="view-btn" data-perm="owner" onclick="csOpen()" title="خاموش کردن Codespace (محیط توسعه) تا ساعت رایگان مصرف نشود">⏻ خاموشی Codespace</button>
-  <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
-  <button class="lock-btn" id="staffPassBtn" style="display:none" onclick="staffChangeOpen(false)" title="تغییر رمز">🔑</button>
-  <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
-</div>
+  <nav class="tabs-bar side-nav">
+      <div class="side-h">محتوای برنامه</div>
+      <button class="tab-btn active" onclick="switchTab('general',this)" title="عمومی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg><span class="nl">عمومی</span></button>
+      <button class="tab-btn" onclick="switchTab('food',this)" title="برنامه غذایی"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18M4.5 3v5.5a2.5 2.5 0 0 0 5 0V3M18 21V3c-2.2 1-3.5 3.4-3.5 7v3H18"/></svg><span class="nl">برنامه غذایی</span></button>
+      <button class="tab-btn" onclick="switchTab('besat',this)" title="بعثه"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5"/></svg><span class="nl">بعثه</span></button>
+      <button class="tab-btn" onclick="switchTab('guide',this)" title="راهنمای زائر"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8"/></svg><span class="nl">راهنمای زائر</span></button>
+      <button class="tab-btn" onclick="switchTab('zyarat',this)" title="زیارت‌نامه‌ها"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg><span class="nl">زیارت‌نامه‌ها</span></button>
+      <div class="side-h">شهرها</div>
+      <button class="tab-btn" onclick="switchTab('najaf',this)" title="نجف"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21v-7.5a7 7 0 0 1 14 0V21M12 3v3.5M10 21v-3.5a2 2 0 0 1 4 0V21"/></svg><span class="nl">نجف</span><i class="ab">نجف</i></button>
+      <button class="tab-btn" onclick="switchTab('karbala',this)" title="کربلا"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21v-7.5a7 7 0 0 1 14 0V21M12 3v3.5M10 21v-3.5a2 2 0 0 1 4 0V21"/></svg><span class="nl">کربلا</span><i class="ab">کربلا</i></button>
+      <button class="tab-btn" onclick="switchTab('kadhimiya',this)" title="کاظمین"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21v-7.5a7 7 0 0 1 14 0V21M12 3v3.5M10 21v-3.5a2 2 0 0 1 4 0V21"/></svg><span class="nl">کاظمین</span><i class="ab">کاظمین</i></button>
+      <button class="tab-btn" onclick="switchTab('samarra',this)" title="سامراء"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21v-7.5a7 7 0 0 1 14 0V21M12 3v3.5M10 21v-3.5a2 2 0 0 1 4 0V21"/></svg><span class="nl">سامراء</span><i class="ab">سامراء</i></button>
+      <div class="side-h">مدیران و شرکت‌ها</div>
+      <button class="tab-btn" onclick="switchTab('mgr',this)" title="مدیران کاروان"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18M10 12v2h4v-2"/></svg><span class="nl">مدیران کاروان</span></button>
+      <button class="tab-btn" onclick="switchTab('mgrco',this)" title="شرکت‌های مجری"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5l8-2v18M12 8h8v13M2 21h20M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2"/></svg><span class="nl">شرکت‌های مجری</span></button>
+      <div class="side-h">بازخورد و آمار</div>
+      <button class="tab-btn" onclick="switchTab('reviews',this)" title="نظرها"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M12 7.8l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z"/></svg><span class="nl">نظرها</span></button>
+      <button class="tab-btn" onclick="switchTab('stats',this)" title="آمار و فضای سرور"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg><span class="nl">آمار و فضای سرور</span></button>
+      <div class="side-h">سامانه</div>
+      <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)" title="کاربران و دسترسی‌ها"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.1a5 5 0 0 1 5.5 4.9"/></svg><span class="nl">کاربران و دسترسی‌ها</span></button>
+      <button class="tab-btn" onclick="switchTab('help',this)" title="راهنمای سامانه"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.5v.4M12 17v.01"/></svg><span class="nl">راهنمای سامانه</span></button>
+      <div class="side-h">میان‌بُرها</div>
+      <a class="side-link" data-perm="owner" href="team.html#owner" title="گزارشات مدیران ثابت: مناطق، مدیران منطقه و همه‌ی کاربران"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V6M3 15h18v5M21 15v-2.5A3.5 3.5 0 0 0 17.5 9H11v6"/><circle cx="7" cy="11.5" r="2"/></svg><span class="nl">گزارشات مدیران ثابت</span></a>
+      <a class="side-link" href="./" onclick="return leaveAdmin()" title="بازگشت به برنامه همیار کاروان"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5.5v-6h-5v6H4z"/></svg><span class="nl">بازگشت به برنامه</span></a>
+      <button class="side-link" data-perm="owner" onclick="csOpen()" title="خاموش کردن Codespace (محیط توسعه) تا ساعت رایگان مصرف نشود"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8M7 6.3a7 7 0 1 0 10 0"/></svg><span class="nl">خاموشی Codespace</span></button>
+  </nav>
+  <div class="side-foot">
+    <button class="side-link side-col" onclick="sideCollapse()" title="جمع/باز کردن منو"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span class="nl">جمع کردن منو</span></button>
+  </div>
+</aside>
+<div class="side-dim" onclick="sideOpen(false)"></div>
 
-<!-- TABS -->
-<div class="tabs-bar">
-  <button class="tab-btn active" onclick="switchTab('general',this)">⚙️ عمومی</button>
-  <button class="tab-btn" onclick="switchTab('najaf',this)">🕌 نجف</button>
-  <button class="tab-btn" onclick="switchTab('karbala',this)">🕌 کربلا</button>
-  <button class="tab-btn" onclick="switchTab('kadhimiya',this)">🕌 کاظمین</button>
-  <button class="tab-btn" onclick="switchTab('samarra',this)">🕌 سامراء</button>
-  <button class="tab-btn" onclick="switchTab('food',this)">🍽️ برنامه غذایی</button>
-  <button class="tab-btn" onclick="switchTab('besat',this)">📜 بعثه</button>
-  <button class="tab-btn" onclick="switchTab('guide',this)">📘 راهنما</button>
-  <button class="tab-btn" onclick="switchTab('zyarat',this)">📿 زیارت‌نامه‌ها</button>
-  <button class="tab-btn" onclick="switchTab('reviews',this)">💬 نظرها</button>
-  <button class="tab-btn" onclick="switchTab('mgr',this)">🧳 مدیران کاروان</button>
-  <button class="tab-btn" onclick="switchTab('mgrco',this)">🏢 شرکت‌های مجری</button>
-  <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
-  <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)">👥 کاربران</button>
-  <button class="tab-btn" onclick="switchTab('help',this)">📖 راهنمای سامانه</button>
-</div>
+<!-- TOP BAR -->
+<header class="topbar">
+  <button class="tb-ico tb-menu" onclick="sideOpen(true)" title="منو" aria-label="باز کردن منو"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <h1 class="tb-title" id="tbTitle">عمومی</h1>
+  <button class="tb-search" onclick="adSearchOpen()" title="پیدا کردن هر بخش پنل (میان‌بر: Ctrl+K)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg><span class="nl">جستجو در پنل…</span><kbd>Ctrl K</kbd></button>
+  <button class="tb-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg><span class="nl">پیش‌نمایش</span></button>
+  <button class="pub-btn" id="pubBtn" onclick="publishData()" title="انتشار تغییرات برای همه‌ی کاربران"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span class="nl">انتشار برای کاربران</span></button>
+  <button class="tb-ico" id="staffPassBtn" style="display:none" onclick="staffChangeOpen(false)" title="تغییر رمز"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14.5 8.5l2 2"/></svg></button>
+  <button class="tb-ico" onclick="forgetDevice()" title="خروج از این دستگاه"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></button>
+</header>
 
 <!-- ══ TAB: GENERAL ══ -->
 <div class="page active" id="tab-general">
@@ -943,6 +987,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  sideTitle(btn); sideOpen(false);
   if (id === 'reviews') rvaLoad();
   if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); }
   if (id === 'users') usersLoad();
@@ -1829,7 +1874,7 @@ async function publishData() {
   } catch(e) {
     showToast('❌ ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '🚀 انتشار برای کاربران';
+    btn.disabled = false; btn.innerHTML = PUB_HTML;
   }
 }
 
@@ -1927,12 +1972,22 @@ function init(){
   fitTabsBar();
 }
 
-function fitTabsBar(){
-  const t=document.querySelector('.topbar'),b=document.querySelector('.tabs-bar');
-  if(t&&b) b.style.top=t.offsetHeight+'px';
+function fitTabsBar(){}
+/* منوی کناری: عنوان بخش فعال در نوار بالا، جمع/باز شدن (به خاطر سپرده می‌شود) و کشوی موبایل */
+const PUB_HTML = document.getElementById('pubBtn').innerHTML;
+function sideTitle(btn){
+  const t=document.getElementById('tbTitle'); if(!t||!btn) return;
+  const sv=btn.querySelector('svg'), nl=btn.querySelector('.nl');
+  t.innerHTML=(sv?sv.outerHTML:'')+'<span></span>'; t.lastChild.textContent=nl?nl.textContent:btn.textContent.trim();
 }
-window.addEventListener('resize',fitTabsBar);
-window.addEventListener('load',fitTabsBar);
+function sideCollapse(){
+  const m=document.body.classList.toggle('side-mini');
+  try{localStorage.setItem('admin-side-mini',m?'1':'')}catch(e){}
+}
+function sideOpen(on){ document.body.classList.toggle('side-open',!!on); }
+try{ if(localStorage.getItem('admin-side-mini')) document.body.classList.add('side-mini'); }catch(e){}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') sideOpen(false); });
+sideTitle(document.querySelector('.tab-btn.active'));
 
 /* ══════════════════════════════════════════
    LIVE PREVIEW (پیش‌نمایش بدون انتشار)
