@@ -81,6 +81,51 @@ function rrOpen(h, o, done) {
   paint();
   const first = ov.querySelector('[data-s]') || ov.querySelector('.rr-x'); if (first) first.focus();
 }
+/* ── خروجی اکسل همین صفحه: هتل‌ها (به همان ترتیب جدول)، شرکت‌های سیاحه، نقل، و راهنمای محاسبه ── */
+async function saveQualityBook(d, o, H) {
+  const X = await loadXlsx(), five = Q_SCALE === 5;
+  const sc = s => s == null ? '' : five ? +q5(s) : Math.round(s * 10) / 10, lvl = s => { const l = qLevel(s); return l ? l[1] : ''; };
+  const pct = (df, fx) => df ? Math.round(fx / df * 100) : '';
+  const period = o.week === 'all' ? 'همه‌ی هفته‌ها' : o.weekTitle || ((o.weeks || []).find(w => String(w.id) === String(o.week)) || {}).title || '';
+  const unit = five ? 'از ۵' : 'از ۱۰۰', wb = X.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  const sheet = (name, title, head, rows, widths) => {
+    const aoa = [[title], head, ...rows.map((r, i) => [i + 1, ...r])], ws = X.utils.aoa_to_sheet(aoa);
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(head.length - 1, 10) } }];
+    ws['!cols'] = head.map((h, i) => ({ wch: widths[i] || 14 }));
+    ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: Math.max(1, aoa.length - 1), c: head.length - 1 } }) };
+    X.utils.book_append_sheet(wb, ws, name);
+  };
+  const rrText = h => h.rr ? h.rr.list.map(x => { const t = [x.tags.join('، '), x.note].filter(Boolean).join(' — '); return t && o.week === 'all' ? `${x.wtitle}: ${t}` : t; }).filter(Boolean).join(' | ') : '';
+  sheet('هتل‌ها', `کیفیت هتل‌ها · ${period} · نمره ${unit}`,
+    ['ردیف', 'هتل', ...(o.showRegion ? ['منطقه'] : []), `نمره (${unit})`, 'وضعیت', ...d.sections.map(x => `${x} (${unit})`), 'تعداد گزارش', 'نقص', 'رفع‌شده', 'رفع نقص ٪',
+      'ستاره‌ی مدیر منطقه (از ۵)', 'ملاحظات مدیر منطقه', 'اختلاف با گزارش‌ها', ...(d.prevTitle ? [`تغییر نسبت به «${d.prevTitle}»`] : []), 'شرکت سیاحه'],
+    H.map(h => [h.name, ...(o.showRegion ? [h.region] : []), sc(h.score), h.n ? lvl(h.score) + (h.n < LOW_H ? ' (داده کم)' : '') : 'بدون گزارش', ...d.sections.map(x => sc(h.secs[x])),
+      h.n, h.n ? h.defects : '', h.n ? h.fixed : '', h.n ? pct(h.defects, h.fixed) : '', h.rr ? h.rr.stars : '', rrText(h), rrGap(h) != null ? '⚠️ اختلاف زیاد' : '',
+      ...(d.prevTitle ? [h.prev == null || h.score == null ? '' : five ? Math.round((h.score - h.prev) * 0.4) / 10 : Math.round(h.score - h.prev)] : []), h.companies.map(shortCo).join('، ')]),
+    [5, 24, ...(o.showRegion ? [12] : []), 11, 14, ...d.sections.map(() => 12), 9, 7, 8, 9, 12, 40, 14, ...(d.prevTitle ? [14] : []), 30]);
+  const C = [...d.companies].sort((a, b) => (a.n < LOW_C) - (b.n < LOW_C) || a.score - b.score);
+  if (C.length) sheet('شرکت‌های سیاحه', `شرکت‌های سیاحه — میانگین کیفیت هتل‌های طرف قرارداد · ${period}`,
+    ['ردیف', 'شرکت سیاحه', `نمره (${unit})`, 'وضعیت', 'تعداد هتل', 'تعداد گزارش', 'رفع نقص ٪', 'هتل‌ها و نمره‌شان'],
+    C.map(c => [c.name, sc(c.score), lvl(c.score) + (c.n < LOW_C ? ' (داده کم)' : ''), c.hotels.length, c.n, pct(c.defects, c.fixed), c.hotels.map(h => `${h.name}${o.showRegion ? ` (${h.region})` : ''}: ${sc(h.score)}`).join(' | ')]),
+    [5, 34, 11, 16, 9, 10, 10, 70]);
+  const T = [...d.transport].sort((a, b) => (a.n < LOW_C) - (b.n < LOW_C) || a.score - b.score);
+  if (T.length) sheet('نقل', `نقل (اتوبوس) به تفکیک شرکت · ${period}`, ['ردیف', 'شرکت', `نمره (${unit})`, 'وضعیت', 'تعداد گزارش', 'نقص', 'رفع‌شده', 'رفع نقص ٪'],
+    T.map(t => [t.name, sc(t.score), lvl(t.score) + (t.n < LOW_C ? ' (داده کم)' : ''), t.n, t.defects, t.fixed, pct(t.defects, t.fixed)]), [5, 34, 11, 16, 10, 7, 8, 10]);
+  const help = [['نمره چطور حساب می‌شود؟'], [''],
+    ['هر پاسخ مدیر ثابت نمره دارد: عالی ۱۰۰، خوب ۸۰، متوسط ۵۰، ضعیف ۲۰؛ بله/خیر: پاسخ درست ۱۰۰ و نقص صفر؛ گزینه‌های نقص بین ۴۰ تا ۱۰. «موضوعیت ندارد» حساب نمی‌شود.'],
+    ['نمره‌ی هر گزارش میانگین پاسخ‌های آن است و نمره‌ی هتل میانگین گزارش‌هایش. پاسخ‌های بخش «نقل» در نمره‌ی هتل نیست و جدا آمده است.'],
+    ['در حالت ۵ سطحی: صفر = ۱ و ۱۰۰ = ۵ (مثلاً ۸۰ = ۴٫۲).'],
+    [`وضعیت: ${QL.map(l => `${l[1]} ${l[0] ? `از ${l[0]} به بالا` : 'زیر ۵۰'}`).join('، ')} (از ۱۰۰).`],
+    [`هتل با کمتر از ${LOW_H} گزارش و شرکت با کمتر از ${LOW_C} گزارش «داده کم» است.`],
+    ['نمره‌ی شرکت سیاحه = میانگین هتل‌هایش (هر هتل یک سهم)، فقط از گزارش کاروان‌های خود همان شرکت؛ عملکرد مستقیم شرکت نیست.'],
+    ['ستاره‌ی مدیر منطقه ارزیابی جداگانه‌ی خود اوست و در هیچ نمره‌ای حساب نمی‌شود. «اختلاف زیاد» یعنی دست‌کم ۱٫۵ ستاره فاصله با نمره‌ی گزارش‌ها.']];
+  const hs = X.utils.aoa_to_sheet(help); hs['!cols'] = [{ wch: 120 }]; X.utils.book_append_sheet(wb, hs, 'راهنما');
+  const blob = new Blob([X.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `کیفیت هتل‌ها - ${period}.xlsx`.replace(/[\\/:*?"<>|]/g, '-').replace(/\u200c/g, ' ');
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
 function renderQuality(el, d, o = {}) {
   const H = qSorted(d.hotels, o.sort);
   const cnt = QL.map(l => H.filter(h => h.n >= LOW_H && qLevel(h.score) === l).length);
@@ -90,6 +135,7 @@ function renderQuality(el, d, o = {}) {
   el.innerHTML = `
   <div class="card"><div class="card-h"><h2>⭐ کیفیت هتل‌ها</h2>
     ${o.weeks ? `<select class="sel" id="q-week" aria-label="دوره">${o.weeks.map(w => `<option value="${w.id}" ${String(w.id) === String(o.week) ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}<option value="all" ${o.week === 'all' ? 'selected' : ''}>همه‌ی هفته‌ها روی هم</option></select>` : ''}
+    ${H.length ? '<button type="button" class="btn small ghost" id="q-xlsx" title="جدول همین صفحه به ترتیب فعلی، با شرکت‌ها و نقل">📥 خروجی اکسل</button>' : ''}
     <div class="q-scale" role="group" aria-label="مقیاس نمره"><span>نمره از</span>${[100, 5].map(v => `<button type="button" data-qs="${v}" aria-pressed="${Q_SCALE === v}" class="${Q_SCALE === v ? 'on' : ''}">${v === 5 ? '۵ سطحی' : '۱۰۰'}</button>`).join('')}</div></div>
     ${!H.length ? '<div class="empty">برای این دوره هنوز گزارشی ثبت نشده است.</div>' : `
     <div class="q-sum"><div><b class="num">${d.avg == null ? '—' : qN(d.avg)}</b><span>میانگین نمره‌ی هتل‌ها</span></div>
@@ -135,6 +181,8 @@ function renderQuality(el, d, o = {}) {
     Q_SCALE = +b.dataset.qs; try { localStorage.setItem('q-scale', String(Q_SCALE)); } catch (e) {}
     const y = window.scrollY; renderQuality(el, d, o); window.scrollTo(0, y);
   });
+  const xb = el.querySelector('#q-xlsx');
+  if (xb) xb.onclick = async () => { xb.disabled = true; try { await saveQualityBook(d, o, H); } catch (e) { toast('ساختن فایل اکسل ممکن نشد: ' + e.message, true); } xb.disabled = false; };
   el.querySelectorAll('[data-rr]').forEach(b => b.onclick = () => rrOpen(H[+b.dataset.rr], o, () => { const y = window.scrollY; renderQuality(el, d, o); window.scrollTo(0, y); }));
   const rs = el.querySelector('#q-reset'); if (rs) rs.onclick = () => { const y = window.scrollY; renderQuality(el, d, { ...o, sort: null }); window.scrollTo(0, y); };
 }
