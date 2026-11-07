@@ -83,6 +83,38 @@ function renderQuality(el, d, o = {}) {
   const rs = el.querySelector('#q-reset'); if (rs) rs.onclick = () => { const y = window.scrollY; renderQuality(el, d, { ...o, sort: null }); window.scrollTo(0, y); };
 }
 
+/* «🏢 شرکت‌ها»: هر شرکت سیاحه با کدام شرکت‌های مجری کار می‌کند و هتل‌هایش کدام است (از ردیف‌های اکسل هفتگی؛ d.dir از همان API کیفیت) */
+function renderCompanies(el, d, o = {}) {
+  const view = o.view || 'siyahe', term = normQ(o.q || '');
+  const hs = new Map(d.hotels.map(h => [h.key, h])), cs = new Map(d.companies.map(c => [c.name, c]));
+  const dir = d.dir || [], moj = new Map();
+  dir.forEach(S => S.mojri.forEach(m => { let x = moj.get(m.name); if (!x) moj.set(m.name, x = { name: m.name, siyahe: [], caravans: 0, pilgrims: 0 }); x.siyahe.push({ name: S.name, caravans: m.caravans, pilgrims: m.pilgrims }); x.caravans += m.caravans; x.pilgrims += m.pilgrims; }));
+  const M = [...moj.values()].sort((a, b) => b.caravans - a.caravans).map(x => (x.siyahe.sort((a, b) => b.caravans - a.caravans), x));
+  const hit = (...names) => !term || names.some(n => normQ(n).includes(term));
+  const SL = dir.filter(S => hit(S.name, ...S.hotels.map(h => h.name), ...S.mojri.map(m => m.name)));
+  const ML = M.filter(x => hit(x.name, ...x.siyahe.map(y => y.name)));
+  const hotelN = new Set(dir.flatMap(S => S.hotels.map(h => h.key))).size;
+  const cnt = x => `${fa(x.caravans)} کاروان${x.pilgrims ? ` · ${fa(x.pilgrims)} زائر` : ''}`;
+  const mark = n => term && normQ(n).includes(term) ? ' q-hit' : '';
+  el.innerHTML = `<div class="card"><div class="card-h"><h2>🏢 شرکت‌های سیاحه، هتل‌ها و شرکت‌های مجری</h2>
+    ${o.weeks ? `<select class="sel" id="q-week" aria-label="دوره">${o.weeks.map(w => `<option value="${w.id}" ${String(w.id) === String(o.week) ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}<option value="all" ${o.week === 'all' ? 'selected' : ''}>همه‌ی هفته‌ها روی هم</option></select>` : ''}</div>
+    ${!dir.length ? '<div class="empty">برای این دوره هنوز اکسل هفتگی وارد نشده است.</div>' : `
+    <div class="q-sum q-sum3"><div><b class="num">${fa(dir.filter(S => S.name !== '—').length)}</b><span>شرکت سیاحه</span></div><div><b class="num">${fa(M.length)}</b><span>شرکت مجری</span></div><div><b class="num">${fa(hotelN)}</b><span>هتل</span></div></div>
+    <p class="hint">از روی ردیف‌های اکسل هفتگی (همه‌ی کاروان‌ها، چه گزارش داشته باشند چه نه). روی هر شرکت بزنید تا جزئیاتش باز شود.${d.hotels.length ? ' نمره‌ی کنار هتل‌ها از تب «کیفیت هتل‌ها» است.' : ''}</p>
+    <div class="q-tools"><input type="search" class="inp" id="co-q" placeholder="جستجوی نام شرکت یا هتل…" value="${esc(o.q || '')}" aria-label="جستجو">
+      <div class="q-scale" role="group" aria-label="نمایش">${[['siyahe', 'بر اساس سیاحه'], ['mojri', 'بر اساس مجری']].map(([k, t]) => `<button type="button" data-cv="${k}" aria-pressed="${view === k}" class="${view === k ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+    <div class="q-comp" id="co-list">${view === 'siyahe' ? (SL.length ? SL.map(S => { const c = cs.get(S.name); return `<details class="q-co"${term ? ' open' : ''}><summary>
+      <span class="q-co-n"><b class="${mark(S.name)}">${S.name === '—' ? 'بدون نام شرکت سیاحه در اکسل' : esc(shortCo(S.name))}</b><span class="dim">${fa(S.hotels.length)} هتل · ${fa(S.mojri.length)} شرکت مجری · ${cnt(S)}</span></span>${c ? qBadge(c.score, c.n < LOW_C) : ''}</summary>
+      <div class="co-grid"><div><h4>🏨 هتل‌ها</h4>${S.hotels.map(h => { const q = hs.get(h.key); return `<div class="q-co-h">${q ? qBadge(q.score, q.n < LOW_H) : '<span class="q-badge q-none" title="هنوز گزارشی ندارد">—</span>'} <span class="${mark(h.name)}">${esc(h.name)}</span>${o.showRegion ? ` <span class="dim">(${esc(h.region)})</span>` : ''} <span class="dim">· ${fa(h.caravans)} کاروان</span></div>`; }).join('') || '<div class="dim">—</div>'}</div>
+        <div><h4>🤝 شرکت‌های مجری طرف قرارداد</h4>${S.mojri.map(m => `<div class="co-m"><span class="${mark(m.name)}">${esc(shortCo(m.name))}</span> <span class="dim">· ${cnt(m)}</span></div>`).join('') || '<div class="dim">در اکسل نام شرکت مجری نیامده است.</div>'}</div></div></details>`; }).join('') : '<div class="empty">چیزی پیدا نشد.</div>')
+      : (ML.length ? ML.map(x => `<details class="q-co"${term ? ' open' : ''}><summary><span class="q-co-n"><b class="${mark(x.name)}">${esc(shortCo(x.name))}</b><span class="dim">${fa(x.siyahe.length)} شرکت سیاحه · ${cnt(x)}</span></span></summary>
+      <div class="co-grid"><div><h4>🏢 شرکت‌های سیاحه</h4>${x.siyahe.map(y => { const c = cs.get(y.name); return `<div class="q-co-h">${c ? qBadge(c.score, c.n < LOW_C) : ''} <span class="${mark(y.name)}">${y.name === '—' ? 'بدون نام' : esc(shortCo(y.name))}</span> <span class="dim">· ${cnt(y)}</span></div>`; }).join('')}</div></div></details>`).join('') : '<div class="empty">چیزی پیدا نشد.</div>')}</div>`}</div>`;
+  const ws = el.querySelector('#q-week'); if (ws && o.onWeek) ws.onchange = () => o.onWeek(ws.value);
+  el.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => renderCompanies(el, d, { ...o, view: b.dataset.cv }));
+  const qi = el.querySelector('#co-q'); if (qi) qi.oninput = () => { const v = qi.value, pos = qi.selectionStart; renderCompanies(el, d, { ...o, q: v }); const n = el.querySelector('#co-q'); n.focus(); n.setSelectionRange(pos, pos); };
+}
+const normQ = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[‌‏‎]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
 (function () {
   const st = document.createElement('style');
   st.textContent = `
@@ -115,6 +147,12 @@ function renderQuality(el, d, o = {}) {
   .q-scale button{all:unset;cursor:pointer;padding:5px 10px;border-radius:8px;border:1px solid var(--border,#e5dccb);font-weight:700}
   .q-scale button.on{background:var(--pri,#0F5A43);color:#fff;border-color:transparent}
   .q-scale button:focus-visible{outline:2px solid var(--pri,#0F5A43);outline-offset:2px}
+  .q-sum3{grid-template-columns:repeat(3,1fr)!important}.q-sum3>div{grid-column:auto!important}
+  .q-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.q-tools .inp{flex:1 1 220px;min-width:0}
+  .co-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 4px 4px;font-size:13px}.co-grid>div{display:grid;gap:6px;align-content:start}
+  .co-grid h4{margin:0 0 2px;font-size:13px}.co-m{padding:4px 0;border-bottom:1px dashed var(--border,#e5dccb)}
+  @media (max-width:560px){.co-grid{grid-template-columns:1fr}}
+  .q-none{--q:#888;--qb:transparent;opacity:.6}.q-hit{background:#FFE58A;color:#000;border-radius:4px;padding:0 2px}
   .q-how p{font-size:13px;line-height:1.9;margin:6px 0 0}`;
   document.head.appendChild(st);
 })();

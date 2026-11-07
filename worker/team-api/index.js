@@ -406,6 +406,23 @@ function itemScore(q, it) {
 }
 const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
 const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+/* فهرست شرکت‌ها از روی ردیف‌های اکسل هفتگی (همه‌ی کاروان‌ها، چه گزارش داشته باشند چه نه):
+   هر شرکت سیاحه ← هتل‌هایش و شرکت‌های مجری طرف قراردادش، با تعداد کاروان و زائر */
+async function dirOf(weekIds) {
+  if (!weekIds.length) return [];
+  const rows = await all(`SELECT e.hotel, e.company, e.siyahe, e.caravans, e.pilgrims, w.region_id, g.name AS region
+    FROM entries e JOIN weeks w ON w.id = e.week_id JOIN regions g ON g.id = w.region_id WHERE e.week_id IN (SELECT value FROM json_each(?))`, JSON.stringify(weekIds));
+  const S = new Map(), add = (m, k, v, r) => { let x = m.get(k); if (!x) m.set(k, x = { ...v, caravans: 0, pilgrims: 0 }); x.caravans += r.caravans > 0 ? r.caravans : 1; x.pilgrims += r.pilgrims || 0; };
+  for (const r of rows) {
+    const sk = normName(r.siyahe) || '—';
+    let C = S.get(sk); if (!C) S.set(sk, C = { name: sk, hotels: new Map(), mojri: new Map(), caravans: 0, pilgrims: 0 });
+    C.caravans += r.caravans > 0 ? r.caravans : 1; C.pilgrims += r.pilgrims || 0;
+    const h = normName(r.hotel); if (h) add(C.hotels, r.region_id + '|' + h, { key: r.region_id + '|' + h, name: h, region: r.region }, r);
+    const c = normName(r.company); if (c) add(C.mojri, c, { name: c }, r);
+  }
+  const srt = m => [...m.values()].sort((a, b) => b.caravans - a.caravans || a.name.localeCompare(b.name, 'fa'));
+  return [...S.values()].map(C => ({ ...C, hotels: srt(C.hotels), mojri: srt(C.mojri) })).sort((a, b) => (a.name === '—') - (b.name === '—') || b.caravans - a.caravans);
+}
 async function qualityOf(weekIds) {
   if (!weekIds.length) return { hotels: [], companies: [], transport: [], sections: [], avg: null };
   const W = JSON.stringify(weekIds);
@@ -623,7 +640,8 @@ async function api(req, url, u) {
     if (p === '/api/super/quality' && m === 'GET') {
       const isAll = url.searchParams.get('week') === 'all';
       const ws = await all(isAll ? 'SELECT id FROM weeks' : 'SELECT w.id FROM weeks w WHERE w.imported = (SELECT MAX(x.imported) FROM weeks x WHERE x.region_id = w.region_id)');
-      return { week: isAll ? 'all' : 'latest', ...await qualityOf(ws.map(w => w.id)) };
+      const ids = ws.map(w => w.id);
+      return { week: isAll ? 'all' : 'latest', ...await qualityOf(ids), dir: await dirOf(ids) };
     }
     if (p === '/api/super/users' && m === 'GET') {
       const rid = +url.searchParams.get('region') || 0;
@@ -815,7 +833,8 @@ async function api(req, url, u) {
       const weeks = await all('SELECT id, title, imported FROM weeks WHERE region_id = ? ORDER BY imported DESC', R);
       const wq = url.searchParams.get('week'), isAll = wq === 'all', wid = isAll ? 0 : +wq || weeks[0]?.id || 0;
       if (wid && !weeks.find(w => w.id === wid)) fail(404, 'هفته پیدا نشد');
-      const Q = await qualityOf(isAll ? weeks.map(w => w.id) : wid ? [wid] : []);
+      const ids = isAll ? weeks.map(w => w.id) : wid ? [wid] : [], Q = await qualityOf(ids);
+      Q.dir = await dirOf(ids);
       const prevW = isAll ? null : weeks[weeks.findIndex(w => w.id === wid) + 1];
       if (prevW) { const P = await qualityOf([prevW.id]), pm = new Map(P.hotels.map(h => [h.key, h.score])); Q.hotels.forEach(h => h.prev = pm.get(h.key) ?? null); Q.prevTitle = prevW.title; }
       return { weeks, week: isAll ? 'all' : wid, ...Q };

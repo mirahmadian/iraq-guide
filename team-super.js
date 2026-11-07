@@ -3,7 +3,7 @@
 /* مدیر سامانه: همه‌ی مناطق، مدیران منطقه و همه‌ی کاربرانی که ساخته‌اند */
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
-const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['users', '👥 همه‌ی کاربران'], ['account', '🔐 حساب من']];
+const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['users', '👥 همه‌ی کاربران'], ['account', '🔐 حساب من']];
 const tabs = () => U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS;
 
 window.startSuper = me => { app = document.getElementById('app'); U.me = me; HR.viewRegion = 0; shell(); go(U.tab); };
@@ -17,7 +17,7 @@ function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), regions: loadRegions, users: loadUsers, account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const roleName = r => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r === 'super' ? 'مدیر سامانه' : r;
 /* «هنوز وارد نشده» از روی زمان آخرین ورود (مدیر ثابت رمز موقتش را لازم نیست عوض کند، پس رمز موقت نشانه ورود نکردن نیست) */
@@ -78,6 +78,11 @@ function wireNewUser(m) {
 }
 
 /* ═════════ hotel quality, every region (team-quality.js) ═════════ */
+async function loadCompanies(week) {
+  let d; try { d = await api('/api/super/quality' + (week === 'all' ? '?week=all' : '')); } catch (e) { return toast(e.message, true); }
+  if (U.tab !== 'cos') return;
+  renderCompanies(main(), d, { showRegion: true, weeks: [{ id: 'latest', title: 'آخرین هفته‌ی هر منطقه' }], week: d.week, onWeek: w => { main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadCompanies(w); } });
+}
 async function loadQuality(week) {
   let d; try { d = await api('/api/super/quality' + (week === 'all' ? '?week=all' : '')); } catch (e) { return toast(e.message, true); }
   if (U.tab !== 'quality') return;
