@@ -368,6 +368,7 @@
   </div>
   <a class="view-btn app-btn" href="./" onclick="return leaveAdmin()" title="بازگشت به برنامه همیار کاروان">🏠 بازگشت به برنامه</a>
   <a class="view-btn" data-perm="owner" href="team.html#owner" style="text-decoration:none" title="مدیر سامانه: مناطق، مدیران منطقه و همه‌ی کاربران">🏨 گزارشات مدیران ثابت</a>
+  <button class="view-btn" onclick="adSearchOpen()" title="پیدا کردن هر بخش پنل (میان‌بر: Ctrl+K)">🔎 جستجو</button>
   <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
   <button class="view-btn" data-perm="owner" onclick="csOpen()" title="خاموش کردن Codespace (محیط توسعه) تا ساعت رایگان مصرف نشود">⏻ خاموشی Codespace</button>
   <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
@@ -913,6 +914,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="flight-def.js"></script>
 <script src="admin-flight.js"></script>
 <script src="admin-mgr.js"></script>
+<script src="admin-search.js"></script>
 <script src="admin-zyarat.js"></script>
 <script src="admin-guard.js"></script>
 <script src="admin-notice.js"></script>
@@ -1531,7 +1533,7 @@ function renderCityMeta(id){
   <div class="sec-card open">
     <div class="sec-card-head no-toggle">
       <div class="sec-head-icon ico-gen">🏙️</div>
-      <div class="sec-head-info"><div class="sec-head-title">نام شهر</div><div class="sec-head-sub">عنوان بالای صفحه شهر</div></div>
+      <div class="sec-head-info"><div class="sec-head-title">نام، عکس، نقشه و بنر شهر</div><div class="sec-head-sub">عنوان بالای صفحه شهر، عکس پس‌زمینه، نقشه شهر و بنر ستاد</div></div>
     </div>
     <div class="sec-body" style="display:block">
       <div class="field" data-perm="city.${id}.info">
