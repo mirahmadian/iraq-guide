@@ -58,3 +58,10 @@ CREATE TABLE IF NOT EXISTS challenges (c TEXT PRIMARY KEY, kind TEXT NOT NULL, u
 CREATE TABLE IF NOT EXISTS tries (k TEXT PRIMARY KEY, n INTEGER NOT NULL, until INTEGER NOT NULL, first INTEGER NOT NULL);
 -- ارسال تکه‌تکه عکس و فیلم (تکه‌ها در پایگاه جدای MDB)
 CREATE TABLE IF NOT EXISTS uploads (k TEXT PRIMARY KEY, user_id INTEGER NOT NULL, next INTEGER NOT NULL, size INTEGER NOT NULL, psize INTEGER, of INTEGER NOT NULL, exp INTEGER NOT NULL, res TEXT);
+
+-- ارزیابی خود مدیر منطقه از هتل، هر هفته جدا (جدا از نمره‌ی گزارش مدیران ثابت)
+CREATE TABLE IF NOT EXISTS region_ratings (
+  week_id INTEGER NOT NULL REFERENCES weeks(id) ON DELETE CASCADE, hotel TEXT NOT NULL, region_id INTEGER NOT NULL,
+  stars INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5), tags TEXT, note TEXT, user_id INTEGER REFERENCES users(id), updated INTEGER NOT NULL,
+  PRIMARY KEY (week_id, hotel)
+);

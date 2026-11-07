@@ -308,7 +308,9 @@ async function loadCompanies(week) {
 async function loadQuality(week) {
   let d; try { d = await api('/api/admin/quality' + (week ? '?week=' + week : '')); } catch (e) { return toast(e.message, true); }
   if (A.tab !== 'quality') return;
-  renderQuality(main(), d, { weeks: d.weeks, week: d.week, onWeek: w => { main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadQuality(w); } });
+  const wt = (d.weeks.find(w => w.id === d.week) || {}).title || '';
+  renderQuality(main(), d, { weeks: d.weeks, week: d.week, weekTitle: wt, canRate: d.week !== 'all' && !!d.week, rateHint: true, tags: d.rrTags,
+    onRate: (h, v) => api('/api/admin/rating', { body: { week: d.week, hotel: h.name, ...v } }), onWeek: w => { main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadQuality(w); } });
 }
 async function loadUsers() { try { A.users = await api('/api/admin/users'); } catch (e) { return toast(e.message, true); } if (A.tab === 'users') renderUsers(); }
 function renderUsers() {

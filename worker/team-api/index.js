@@ -423,6 +423,41 @@ async function dirOf(weekIds) {
   const srt = m => [...m.values()].sort((a, b) => b.caravans - a.caravans || a.name.localeCompare(b.name, 'fa'));
   return [...S.values()].map(C => ({ ...C, hotels: srt(C.hotels), mojri: srt(C.mojri) })).sort((a, b) => (a.name === '—') - (b.name === '—') || b.caravans - a.caravans);
 }
+/* ── ارزیابی خود مدیر منطقه از هتل (هر هفته جدا؛ جدا از نمره‌ی گزارش مدیران ثابت و بی‌اثر روی نمره‌ی شرکت‌ها) ── */
+const RR_TAGS = ['نظافت', 'غذا', 'برخورد کارکنان', 'آسانسور', 'سرمایش و گرمایش', 'سرویس بهداشتی', 'امنیت', 'آب و برق'];
+async function ratingsOf(weekIds) {
+  const M = new Map();
+  if (!weekIds.length) return M;
+  const rows = await all(`SELECT r.*, w.title AS wtitle, u.name AS by_name FROM region_ratings r JOIN weeks w ON w.id = r.week_id LEFT JOIN users u ON u.id = r.user_id
+    WHERE r.week_id IN (SELECT value FROM json_each(?)) ORDER BY w.imported DESC`, JSON.stringify(weekIds));
+  for (const r of rows) {
+    const k = r.region_id + '|' + r.hotel; let x = M.get(k);
+    if (!x) M.set(k, x = { list: [] });
+    x.list.push({ week: r.week_id, wtitle: r.wtitle, stars: r.stars, tags: JSON.parse(r.tags || '[]'), note: r.note || '', by: r.by_name || '', updated: r.updated });
+  }
+  for (const x of M.values()) { x.stars = r1(avg(x.list.map(i => i.stars))); x.n = x.list.length; }
+  return M;
+}
+/* ارزیابی‌ها + هتل‌هایی که در اکسل هفته هستند ولی هنوز گزارشی ندارند (تا مدیر منطقه بتواند به آن‌ها هم امتیاز بدهد) */
+async function withRatings(Q, weekIds) {
+  const M = await ratingsOf(weekIds), have = new Set(Q.hotels.map(h => h.key));
+  if (weekIds.length) {
+    const ents = await all(`SELECT e.hotel, e.siyahe, e.pilgrims, w.region_id, g.name AS region FROM entries e JOIN weeks w ON w.id = e.week_id JOIN regions g ON g.id = w.region_id
+      WHERE e.week_id IN (SELECT value FROM json_each(?))`, JSON.stringify(weekIds));
+    const extra = new Map();
+    for (const e of ents) {
+      const name = normName(e.hotel), k = e.region_id + '|' + name;
+      if (!name || have.has(k)) continue;
+      let H = extra.get(k);
+      if (!H) extra.set(k, H = { key: k, name, region: e.region, score: null, n: 0, pilgrims: 0, secs: {}, defects: 0, fixed: 0, companies: new Set() });
+      H.pilgrims += e.pilgrims || 0; if (e.siyahe) H.companies.add(normName(e.siyahe));
+    }
+    for (const H of extra.values()) Q.hotels.push({ ...H, companies: [...H.companies] });
+  }
+  Q.hotels.forEach(h => h.rr = M.get(h.key) || null);
+  Q.rrTags = RR_TAGS;
+  return Q;
+}
 async function qualityOf(weekIds) {
   if (!weekIds.length) return { hotels: [], companies: [], transport: [], sections: [], avg: null };
   const W = JSON.stringify(weekIds);
@@ -641,7 +676,7 @@ async function api(req, url, u) {
       const isAll = url.searchParams.get('week') === 'all';
       const ws = await all(isAll ? 'SELECT id FROM weeks' : 'SELECT w.id FROM weeks w WHERE w.imported = (SELECT MAX(x.imported) FROM weeks x WHERE x.region_id = w.region_id)');
       const ids = ws.map(w => w.id);
-      return { week: isAll ? 'all' : 'latest', ...await qualityOf(ids), dir: await dirOf(ids) };
+      return { week: isAll ? 'all' : 'latest', ...await withRatings(await qualityOf(ids), ids), dir: await dirOf(ids) };
     }
     if (p === '/api/super/users' && m === 'GET') {
       const rid = +url.searchParams.get('region') || 0;
@@ -835,9 +870,25 @@ async function api(req, url, u) {
       if (wid && !weeks.find(w => w.id === wid)) fail(404, 'هفته پیدا نشد');
       const ids = isAll ? weeks.map(w => w.id) : wid ? [wid] : [], Q = await qualityOf(ids);
       Q.dir = await dirOf(ids);
+      await withRatings(Q, ids);
       const prevW = isAll ? null : weeks[weeks.findIndex(w => w.id === wid) + 1];
       if (prevW) { const P = await qualityOf([prevW.id]), pm = new Map(P.hotels.map(h => [h.key, h.score])); Q.hotels.forEach(h => h.prev = pm.get(h.key) ?? null); Q.prevTitle = prevW.title; }
       return { weeks, week: isAll ? 'all' : wid, ...Q };
+    }
+    /* ارزیابی مدیر منطقه: stars ۱ تا ۵ (۰ = پاک کردن)، برچسب‌ها و ملاحظات؛ برای یک هفته‌ی مشخص */
+    if (p === '/api/admin/rating' && m === 'POST') {
+      const b = await body(), wid = +b.week, hotel = normName(b.hotel), stars = Math.round(+b.stars || 0);
+      if (!await one('SELECT 1 FROM weeks WHERE id = ? AND region_id = ?', wid, R)) fail(404, 'هفته پیدا نشد');
+      const names = new Set((await all('SELECT DISTINCT hotel FROM entries WHERE week_id = ?', wid)).map(e => normName(e.hotel)));
+      if (!hotel || !names.has(hotel)) fail(404, 'این هتل در اکسل این هفته نیست.');
+      if (stars < 0 || stars > 5) fail(400, 'امتیاز باید بین ۱ تا ۵ باشد.');
+      if (!stars) await run('DELETE FROM region_ratings WHERE week_id = ? AND hotel = ?', wid, hotel);
+      else {
+        const tags = (Array.isArray(b.tags) ? b.tags : []).filter(t => RR_TAGS.includes(t)), note = String(b.note || '').trim().slice(0, 1500);
+        await run(`INSERT INTO region_ratings (week_id, hotel, region_id, stars, tags, note, user_id, updated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+          ON CONFLICT(week_id, hotel) DO UPDATE SET stars = ?4, tags = ?5, note = ?6, user_id = ?7, updated = ?8`, wid, hotel, R, stars, JSON.stringify(tags), note, u.id, Date.now());
+      }
+      return { rr: (await ratingsOf([wid])).get(R + '|' + hotel) || null };
     }
     if ((mm = p.match(/^\/api\/admin\/defect\/(\d+)$/)) && m === 'GET') {
       const r = await canSeeReport(u, +mm[1]);
@@ -866,14 +917,16 @@ async function api(req, url, u) {
       const cols = (await formOf(R)).sections.flatMap(sec => sec.questions.map(q => ({ id: q.id, t: q.text })));
       for (const i of its) if (!cols.find(c => c.id === i.qid)) cols.push({ id: i.qid, t: i.question || i.qid });   /* سؤالی که بعداً از فرم حذف شده */
       const byRep = new Map(); for (const i of its) { if (!byRep.has(i.report_id)) byRep.set(i.report_id, new Map()); byRep.get(i.report_id).set(i.qid, i); }
+      const RRm = await ratingsOf([wid]);
+      const rrOf = h => { const x = RRm.get(R + '|' + normName(h)), i = x && x.list[0]; return i ? [persianDigits(i.stars) + ' از ۵', [i.tags.join('، '), i.note].filter(Boolean).join(' — ')] : ['', '']; };
       const all_ = reps.map(r => {
         const m = byRep.get(r.rid) || new Map(), defs = [...m.values()].filter(i => i.is_defect), open = defs.filter(i => i.result !== 'fixed').length;
         return [r.person, r.nid, r.hotel, r.company, r.siyahe, persianDigits(r.d_in), persianDigits(r.d_out), r.pilgrims,
           defs.length ? `${persianDigits(defs.length)} نقص` : 'بدون نقص', defs.length ? (open ? `${persianDigits(open)} باز` : 'همه رفع شد') : '', r.descr || '',
-          ...cols.map(c => { const i = m.get(c.id); return !i ? '' : i.is_defect ? `${i.answer_label} ⚠ (${RESULT[i.result] || 'ثبت نشده'})` : i.answer_label; }), faDate(r.updated)];
+          ...cols.map(c => { const i = m.get(c.id); return !i ? '' : i.is_defect ? `${i.answer_label} ⚠ (${RESULT[i.result] || 'ثبت نشده'})` : i.answer_label; }), faDate(r.updated), ...rrOf(r.hotel)];
       });
       return { title: `نواقص گزارش‌شده · ${w.title}`, file: 'گزارش‌ها-' + w.title + '.xlsx', rows: data,
-        reports: { title: `همه‌ی گزارش‌های ثبت‌شده · ${w.title}`, head: ['ردیف', 'مدیر ثابت', 'کد ملی', 'هتل', 'شرکت مجری', 'شرکت سیاحه', 'ورود کاروان', 'خروج کاروان', 'تعداد زائر', 'نتیجه گزارش', 'نقص‌های باز', 'توضیح کلی', ...cols.map(c => c.t), 'آخرین به‌روزرسانی'], rows: all_ } };
+        reports: { title: `همه‌ی گزارش‌های ثبت‌شده · ${w.title}`, head: ['ردیف', 'مدیر ثابت', 'کد ملی', 'هتل', 'شرکت مجری', 'شرکت سیاحه', 'ورود کاروان', 'خروج کاروان', 'تعداد زائر', 'نتیجه گزارش', 'نقص‌های باز', 'توضیح کلی', ...cols.map(c => c.t), 'آخرین به‌روزرسانی', 'امتیاز مدیر منطقه به هتل', 'ملاحظات مدیر منطقه'], rows: all_ } };
     }
     fail(404, 'پیدا نشد');
   }

@@ -15,17 +15,71 @@ const LOW_H = 2, LOW_C = 3;   /* کمتر از این تعداد گزارش = «
 
 /* مرتب‌سازی جدول با زدن روی عنوان ستون (بار اول کم به زیاد، بار دوم برعکس)؛ خانه‌های خالی همیشه آخر */
 const Q_SORT = {
-  name: h => h.name, region: h => h.region, score: h => h.score, n: h => h.n,
+  name: h => h.name, region: h => h.region, score: h => h.score, rr: h => h.rr ? h.rr.stars : null, n: h => h.n,
   fix: h => h.defects ? h.fixed / h.defects : null, co: h => h.companies.map(shortCo).join('، ') || null
 };
 function qSortVal(h, k) { return k.startsWith('sec:') ? h.secs[k.slice(4)] ?? null : Q_SORT[k](h); }
 function qSorted(list, s) {
-  if (!s) return [...list].sort((a, b) => (a.n < LOW_H) - (b.n < LOW_H) || a.score - b.score);
+  if (!s) return [...list].sort((a, b) => (a.n < LOW_H) - (b.n < LOW_H) || (a.score ?? 1e9) - (b.score ?? 1e9));
   return [...list].sort((a, b) => {
     const x = qSortVal(a, s.k), y = qSortVal(b, s.k);
     if (x == null || y == null) return (x == null) - (y == null);
     return (typeof x === 'string' ? x.localeCompare(y, 'fa') : x - y) * s.dir;
   });
+}
+/* ── ارزیابی خود مدیر منطقه (ستاره ۱ تا ۵ + ملاحظات؛ هر هفته جدا، کنار نمره‌ی گزارش‌ها و بی‌اثر بر آن) ── */
+const rrStars = v => { const f = Math.max(0, Math.min(5, Math.round(v))); return '★'.repeat(f) + '☆'.repeat(5 - f); };
+const rrNum = v => faS(String(v)).replace('.', '٫');
+const RR_CAP = ['روی ستاره‌ها بزنید', 'خیلی ضعیف', 'ضعیف', 'متوسط', 'خوب', 'عالی'];
+/* اختلاف زیاد: نمره‌ی گزارش‌ها (برده به ۱ تا ۵) و ستاره‌های مدیر منطقه دست‌کم ۱٫۵ فاصله دارند */
+function rrGap(h) { if (!h.rr || h.score == null || h.n < LOW_H) return null; const f = 1 + h.score * 0.04; return Math.abs(f - h.rr.stars) >= 1.5 ? f : null; }
+function rrCell(h, i, o) {
+  const r = h.rr, g = rrGap(h), note = r && r.list.some(x => x.note || x.tags.length);
+  const inner = r ? `<span class="rr-st" title="${rrNum(r.stars)} از ۵ — ${RR_CAP[Math.round(r.stars)]}">${rrStars(r.stars)}</span>${r.n > 1 ? ` <span class="dim">(${rrNum(r.stars)}، ${fa(r.n)} هفته)</span>` : ''}${note ? ' <span title="ملاحظات دارد">💬</span>' : ''}${g != null ? ` <span class="rr-gap" title="اختلاف زیاد: گزارش مدیران ثابت حدود ${rrNum(q5(h.score))} از ۵، ارزیابی مدیر منطقه ${rrNum(r.stars)} از ۵">⚠️</span>` : ''}`
+    : o.canRate ? '<span class="rr-add">✍️ ارزیابی</span>' : '<span class="dim">—</span>';
+  return `<td class="rr-td">${r || o.canRate ? `<button type="button" class="rr-btn" data-rr="${i}" title="${o.canRate ? 'ثبت یا ویرایش ارزیابی شما' : 'دیدن ارزیابی و ملاحظات'}">${inner}</button>` : inner}</td>`;
+}
+function rrOpen(h, o, done) {
+  const cur = h.rr && o.canRate ? h.rr.list.find(x => String(x.week) === String(o.week)) || null : null;
+  let st = cur ? cur.stars : 0;
+  const tags = new Set(cur ? cur.tags : []), past = h.rr ? h.rr.list.filter(x => x !== cur) : [];
+  const ov = document.createElement('div'); ov.className = 'rr-ov';
+  ov.innerHTML = `<div class="rr-box" role="dialog" aria-modal="true" aria-label="ارزیابی ${esc(h.name)}">
+    <div class="rr-h"><b>🏨 ${esc(h.name)}</b>${o.showRegion ? ` <span class="dim">(${esc(h.region)})</span>` : ''}<button type="button" class="rr-x" aria-label="بستن">✕</button></div>
+    <div class="dim" style="font-size:13px">${h.score != null ? `نمره‌ی گزارش مدیران ثابت: <b>${qN(h.score)}</b>${Q_SCALE === 5 ? ' از ۵' : ' از ۱۰۰'} (${fa(h.n)} گزارش)` : 'برای این هتل هنوز گزارشی از مدیران ثابت ثبت نشده است.'}</div>
+    ${o.canRate ? `<div class="rr-lbl">امتیاز شما به این هتل در «${esc(o.weekTitle || '')}»</div>
+      <div class="rr-stars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-s="${n}" aria-label="${fa(n)} ستاره">★</button>`).join('')}</div><div class="rr-cap"></div>
+      <div class="rr-lbl">موضوع‌ها <span class="dim">(اختیاری)</span></div>
+      <div class="rr-tags">${(o.tags || []).map(t => `<button type="button" data-t="${esc(t)}" class="${tags.has(t) ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>
+      <div class="rr-lbl">ملاحظات <span class="dim">(اختیاری)</span></div>
+      <textarea class="rr-note" rows="4" maxlength="1500" placeholder="مثلاً: سرویس بهداشتی طبقه‌ی سوم مشکل دائمی دارد؛ با مدیر هتل صحبت شد.">${esc(cur ? cur.note : '')}</textarea>
+      <div class="rr-act"><button type="button" class="btn" data-a="save">💾 ذخیره</button>${cur ? '<button type="button" class="btn danger" data-a="del">پاک کردن ارزیابی</button>' : ''}<button type="button" class="btn ghost" data-a="close">انصراف</button></div>
+      <p class="dim" style="font-size:12px;margin:8px 0 0">این امتیاز جدا از نمره‌ی گزارش‌های مدیران ثابت نمایش داده می‌شود و در نمره‌ی هتل و شرکت‌های سیاحه حساب نمی‌شود. مدیران ثابت آن را نمی‌بینند.</p>` : ''}
+    ${past.length ? `<div class="rr-lbl">${o.canRate ? 'ارزیابی‌های هفته‌های دیگر' : 'ارزیابی‌های مدیر منطقه'}</div>${past.map(x => `<div class="rr-item"><span class="rr-st">${rrStars(x.stars)}</span> <b>${esc(x.wtitle)}</b> <span class="dim">— ${esc(x.by)}</span>
+      ${x.tags.length ? `<div class="rr-it-t">${x.tags.map(esc).join('، ')}</div>` : ''}${x.note ? `<div class="rr-it-n">${esc(x.note)}</div>` : ''}</div>`).join('')}` : ''}
+  </div>`;
+  document.body.appendChild(ov);
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc_); };
+  const esc_ = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('.rr-x').onclick = close;
+  const paint = () => { ov.querySelectorAll('[data-s]').forEach(b => b.classList.toggle('on', +b.dataset.s <= st)); const c = ov.querySelector('.rr-cap'); if (c) c.textContent = RR_CAP[st]; };
+  ov.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { st = +b.dataset.s; paint(); });
+  ov.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { const t = b.dataset.t; tags.has(t) ? tags.delete(t) : tags.add(t); b.classList.toggle('on', tags.has(t)); });
+  const send = async (stars, btn) => {
+    btn.disabled = true;
+    try { const r = await o.onRate(h, { stars, tags: [...tags], note: ov.querySelector('.rr-note').value }); h.rr = r.rr; close(); done(); toast(stars ? 'ارزیابی ثبت شد' : 'ارزیابی پاک شد'); }
+    catch (e) { btn.disabled = false; toast(e.message, true); }
+  };
+  ov.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+    if (b.dataset.a === 'close') return close();
+    if (b.dataset.a === 'del') { if (confirm('ارزیابی این هفته پاک شود؟')) send(0, b); return; }
+    if (!st) return toast('اول امتیاز (تعداد ستاره) را انتخاب کنید.', true);
+    send(st, b);
+  });
+  paint();
+  const first = ov.querySelector('[data-s]') || ov.querySelector('.rr-x'); if (first) first.focus();
 }
 function renderQuality(el, d, o = {}) {
   const H = qSorted(d.hotels, o.sort);
@@ -40,11 +94,12 @@ function renderQuality(el, d, o = {}) {
     ${!H.length ? '<div class="empty">برای این دوره هنوز گزارشی ثبت نشده است.</div>' : `
     <div class="q-sum"><div><b class="num">${d.avg == null ? '—' : qN(d.avg)}</b><span>میانگین نمره‌ی هتل‌ها</span></div>
       ${QL.map((l, i) => `<div class="${l[2]}"><b class="num">${fa(cnt[i])}</b><span>${l[1]}</span></div>`).join('')}</div>
-    <p class="hint">${o.sort ? `مرتب بر اساس ستون انتخاب‌شده. <button type="button" class="q-reset" id="q-reset">برگشت به ترتیب پیش‌فرض</button>` : 'مرتب از ضعیف‌ترین به بهترین؛ برای مرتب‌سازی دیگر روی عنوان هر ستون بزنید.'} رنگ هر خانه وضع هتل در آن بخش است. ${d.prevTitle ? `▲▼ تغییر نسبت به «${esc(d.prevTitle)}».` : ''} هتلی که کمتر از ${fa(LOW_H)} گزارش دارد کم‌رنگ است${o.sort ? '' : ' و پایین فهرست می‌آید'} (داده کم).</p>
-    <div class="tbl-wrap"><table class="q-tbl"><thead><tr>${[['name', 'هتل'], ...(o.showRegion ? [['region', 'منطقه']] : []), ['score', 'نمره'], ...d.sections.map(x => ['sec:' + x, x, 'q-sec']), ['n', 'گزارش'], ['fix', 'رفع نقص'], ['co', 'شرکت سیاحه']]
+    <p class="hint">${o.sort ? `مرتب بر اساس ستون انتخاب‌شده. <button type="button" class="q-reset" id="q-reset">برگشت به ترتیب پیش‌فرض</button>` : 'مرتب از ضعیف‌ترین به بهترین؛ برای مرتب‌سازی دیگر روی عنوان هر ستون بزنید.'} رنگ هر خانه وضع هتل در آن بخش است. ${d.prevTitle ? `▲▼ تغییر نسبت به «${esc(d.prevTitle)}».` : ''} هتلی که کمتر از ${fa(LOW_H)} گزارش دارد کم‌رنگ است${o.sort ? '' : ' و پایین فهرست می‌آید'} (داده کم).
+      <br>«نظر مدیر منطقه» ارزیابی جداگانه‌ی خود مدیر منطقه است (۱ تا ۵ ستاره)${o.canRate ? '؛ برای ثبت، روی «✍️ ارزیابی» کنار هر هتل بزنید' : o.week === 'all' && o.rateHint ? '؛ برای ثبت ارزیابی، یک هفته را انتخاب کنید' : ''}. ⚠️ یعنی این ارزیابی با نمره‌ی گزارش‌های مدیران ثابت اختلاف زیادی دارد و بهتر است بررسی شود.</p>
+    <div class="tbl-wrap"><table class="q-tbl"><thead><tr>${[['name', 'هتل'], ...(o.showRegion ? [['region', 'منطقه']] : []), ['score', 'نمره'], ['rr', 'نظر مدیر منطقه'], ...d.sections.map(x => ['sec:' + x, x, 'q-sec']), ['n', 'گزارش'], ['fix', 'رفع نقص'], ['co', 'شرکت سیاحه']]
       .map(([k, t, c]) => { const on = o.sort && o.sort.k === k; return `<th class="${c || ''}" aria-sort="${on ? (o.sort.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" class="q-sort${on ? ' on' : ''}" data-sk="${esc(k)}" title="مرتب‌سازی بر اساس «${esc(t)}»">${esc(t)} <span aria-hidden="true">${on ? (o.sort.dir > 0 ? '▲' : '▼') : '⇅'}</span></button></th>`; }).join('')}</tr></thead><tbody>
-    ${H.map(h => `<tr class="${h.n < LOW_H ? 'q-low' : ''}"><td><b>${esc(h.name)}</b> ${trend(h)}</td>${o.showRegion ? `<td class="dim">${esc(h.region)}</td>` : ''}<td>${qBadge(h.score, h.n < LOW_H)}</td>
-      ${d.sections.map(s => qCell(h.secs[s])).join('')}<td class="num">${fa(h.n)}${h.n < LOW_H ? ' <span class="dim">(داده کم)</span>' : ''}</td><td>${qFix(h.defects, h.fixed)}</td><td class="dim" style="font-size:12px">${esc(h.companies.map(shortCo).join('، '))}</td></tr>`).join('')}
+    ${H.map((h, i) => `<tr class="${h.n < LOW_H ? 'q-low' : ''}"><td><b>${esc(h.name)}</b> ${trend(h)}</td>${o.showRegion ? `<td class="dim">${esc(h.region)}</td>` : ''}<td>${qBadge(h.score, h.n < LOW_H)}</td>${rrCell(h, i, o)}
+      ${d.sections.map(s => qCell(h.secs[s])).join('')}<td class="num">${h.n ? fa(h.n) + (h.n < LOW_H ? ' <span class="dim">(داده کم)</span>' : '') : '<span class="dim">بدون گزارش</span>'}</td><td>${h.n ? qFix(h.defects, h.fixed) : '<span class="dim">—</span>'}</td><td class="dim" style="font-size:12px">${esc(h.companies.map(shortCo).join('، '))}</td></tr>`).join('')}
     </tbody></table></div>`}
     <div class="q-legend">${QL.map(l => `<span><i class="${l[2]}"></i>${l[1]} ${l[0] ? `(${qN(l[0])} به بالا)` : `(زیر ${qN(50)})`}</span>`).join('')}</div>
   </div>
@@ -80,6 +135,7 @@ function renderQuality(el, d, o = {}) {
     Q_SCALE = +b.dataset.qs; try { localStorage.setItem('q-scale', String(Q_SCALE)); } catch (e) {}
     const y = window.scrollY; renderQuality(el, d, o); window.scrollTo(0, y);
   });
+  el.querySelectorAll('[data-rr]').forEach(b => b.onclick = () => rrOpen(H[+b.dataset.rr], o, () => { const y = window.scrollY; renderQuality(el, d, o); window.scrollTo(0, y); }));
   const rs = el.querySelector('#q-reset'); if (rs) rs.onclick = () => { const y = window.scrollY; renderQuality(el, d, { ...o, sort: null }); window.scrollTo(0, y); };
 }
 
@@ -153,6 +209,28 @@ const normQ = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک')
   .co-grid h4{margin:0 0 2px;font-size:13px}.co-m{padding:4px 0;border-bottom:1px dashed var(--border,#e5dccb)}
   @media (max-width:560px){.co-grid{grid-template-columns:1fr}}
   .q-none{--q:#888;--qb:transparent;opacity:.6}.q-hit{background:#FFE58A;color:#000;border-radius:4px;padding:0 2px}
+  .rr-td{white-space:nowrap}
+  .rr-btn{all:unset;cursor:pointer;padding:4px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:2px}
+  .rr-btn:hover{background:color-mix(in srgb,currentColor 7%,transparent)}.rr-btn:focus-visible{outline:2px solid var(--pri,#0F5A43)}
+  .rr-st{color:#C08A00;letter-spacing:1px;font-size:15px}
+  .rr-add{color:var(--pri,#0F5A43);font-weight:700;font-size:13px;border:1px dashed currentColor;border-radius:8px;padding:2px 8px}
+  .rr-gap{cursor:help}
+  .rr-ov{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+  .rr-box{background:var(--surface,#fff);color:var(--ink,#222);border-radius:18px;max-width:460px;width:100%;max-height:90vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:6px}
+  .rr-h{display:flex;align-items:center;gap:6px}.rr-h b{flex:1;font-size:16px}
+  .rr-x{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;font-size:16px}
+  .rr-lbl{font-weight:800;font-size:13.5px;margin-top:10px}
+  .rr-stars{display:flex;gap:6px}
+  .rr-stars button{all:unset;cursor:pointer;font-size:34px;line-height:1;color:#CFC8B8;padding:2px}
+  .rr-stars button.on{color:#E0A400}.rr-stars button:focus-visible{outline:2px solid var(--pri,#0F5A43);border-radius:6px}
+  .rr-cap{font-size:13px;font-weight:700;color:var(--muted,#777);min-height:18px}
+  .rr-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .rr-tags button{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;border:1px solid var(--line,#ddd);font-size:13px}
+  .rr-tags button.on{background:var(--pri,#0F5A43);color:#fff;border-color:transparent}
+  .rr-note{width:100%;box-sizing:border-box;border:1px solid var(--line,#ddd);border-radius:12px;padding:10px;font:inherit;background:var(--surface2,var(--surface,#fff));color:inherit;resize:vertical}
+  .rr-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .rr-item{padding:8px 0;border-top:1px dashed var(--line,#ddd);font-size:13px;line-height:1.8}
+  .rr-it-t{color:var(--muted,#777)}.rr-it-n{white-space:pre-wrap}
   .q-how p{font-size:13px;line-height:1.9;margin:6px 0 0}`;
   document.head.appendChild(st);
 })();
