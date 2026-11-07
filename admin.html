@@ -193,21 +193,11 @@
     .phone-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 
     /* ── OUTPUT ── */
-    .output-card{
-      background:#1A2F20;border-radius:var(--r);padding:18px;margin-top:20px;
-      position:relative;
-    }
-    .output-card h3{font-size:12.5px;color:#9BBFAE;margin-bottom:10px;font-weight:600}
     textarea{
       width:100%;height:360px;background:#0E2A1C;color:#C8F0DC;
       border:1px solid rgba(46,125,94,.3);border-radius:9px;
       font-family:var(--font);font-size:11.5px;padding:12px;
       resize:vertical;outline:none;direction:ltr;
-    }
-    .copy-btn{
-      position:absolute;top:16px;left:16px;padding:7px 14px;
-      background:var(--gold);color:#fff;border:none;border-radius:7px;
-      font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;
     }
 
     /* ── TOAST ── */
@@ -380,7 +370,6 @@
   <a class="view-btn" data-perm="owner" href="team.html#owner" style="text-decoration:none" title="مدیر سامانه: مناطق، مدیران منطقه و همه‌ی کاربران">🏨 گزارشات مدیران ثابت</a>
   <button class="view-btn" onclick="openPreview()" title="نمایش تغییرات قبل از انتشار">👁 پیش‌نمایش</button>
   <button class="view-btn" data-perm="owner" onclick="csOpen()" title="خاموش کردن Codespace (محیط توسعه) تا ساعت رایگان مصرف نشود">⏻ خاموشی Codespace</button>
-  <button class="save-btn hide-sm" data-perm="owner" onclick="generateOutput()" title="کپی دستی">⬇️ متن data.js</button>
   <button class="pub-btn" id="pubBtn" onclick="publishData()">🚀 انتشار برای کاربران</button>
   <button class="lock-btn" id="staffPassBtn" style="display:none" onclick="staffChangeOpen(false)" title="تغییر رمز">🔑</button>
   <button class="lock-btn" onclick="forgetDevice()" title="خروج از این دستگاه">🔒</button>
@@ -574,12 +563,6 @@
     </div>
   </div>
 
-  <!-- OUTPUT -->
-  <div class="output-card" data-perm="owner" id="outputWrap" style="display:none">
-    <button class="copy-btn" onclick="copyOutput()">📋 کپی همه</button>
-    <h3>متن data.js (فقط برای کپی دستی؛ معمولاً لازم نیست):</h3>
-    <textarea id="outputArea" readonly spellcheck="false"></textarea>
-  </div>
 
 </div><!-- /tab-general -->
 
@@ -1586,26 +1569,12 @@ function clearHero(id){
   renderCityMeta(id);
 }
 
-function generateOutput(){
-  const output=buildOutput();
-  const wrap=document.getElementById('outputWrap');
-  const area=document.getElementById('outputArea');
-  area.value=output;
-  wrap.style.display='block';
-
-  /* برو به تب عمومی تا output نمایش داده شود */
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-general').classList.add('active');
-  document.querySelector('.tab-btn').classList.add('active');
-
-  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}),80);
-  showToast('فایل آماده شد — متن را کپی کنید ✅');
-}
-
-function copyOutput(){
-  navigator.clipboard.writeText(document.getElementById('outputArea').value)
-    .then(()=>showToast('کپی شد! 📋'));
+/* اضطراری (کارت «🆘 بسته نجات»): فایل data.js برای وقتی که «انتشار» کار نکند و برنامه‌نویس بخواهد دستی در GitHub بگذارد */
+function downloadDataJs(){
+  const url=URL.createObjectURL(new Blob([buildOutput()],{type:'text/javascript;charset=utf-8'}));
+  const a=Object.assign(document.createElement('a'),{href:url,download:'data.js'});
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+  showToast('فایل data.js دانلود شد');
 }
 
 function showToast(msg){

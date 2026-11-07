@@ -291,7 +291,7 @@ function userEditorHTML() {
       <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick='uSet(${JSON.stringify(all)},false)'>هیچ دسترسی</button>
     </div>
     <div style="padding:0 16px">${groups}</div>
-    <div class="empty-msg" style="padding:4px 16px">همکار فقط بخش‌های تیک‌خورده را در پنل می‌بیند و فقط همان‌ها را می‌تواند منتشر کند. «👥 کاربران»، کلید ثبت‌کننده نرخ و متن data.js فقط برای شماست.</div>
+    <div class="empty-msg" style="padding:4px 16px">همکار فقط بخش‌های تیک‌خورده را در پنل می‌بیند و فقط همان‌ها را می‌تواند منتشر کند. «👥 کاربران»، کلید ثبت‌کننده نرخ و بسته نجات فقط برای شماست.</div>
     <div class="lock-err" id="userErr" style="padding:0 16px"></div>
     <div style="display:flex;gap:8px;padding:8px 16px 16px;flex-wrap:wrap">
       <button class="pub-btn" style="flex:2" id="userSaveBtn" onclick="userSave()">💾 ذخیره همکار</button>

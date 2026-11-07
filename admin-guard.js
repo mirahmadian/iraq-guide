@@ -52,6 +52,9 @@ function renderRescue() {
     ${d && d.errors ? `<div class="rs-warn">⚠️ در ۷ روز گذشته ${gFa(d.errors)} خطای فنی ثبت شده؛ جزئیاتش داخل گزارش است.</div>` : ''}
     <div class="rs-btns"><button class="add-row-btn" onclick="rescueCopy(this)">📋 کپی گزارش برای کمک</button>
     <button class="add-row-btn" onclick="rescueDownload(this)">⬇️ دانلود پرونده کامل (برای نگهداری)</button></div>
+    <details class="gd-det" style="margin-top:8px"><summary>اگر دکمه‌ی «🚀 انتشار برای کاربران» کار نکرد</summary>
+      <div class="empty-msg" style="padding:6px 0">فایل داده‌های برنامه (data.js) را با همین تغییرات دانلود کنید و به برنامه‌نویس بدهید تا دستی در GitHub بگذارد.</div>
+      <button class="add-row-btn" onclick="downloadDataJs()">⬇️ دانلود فایل data.js</button></details>
     <div class="empty-msg" style="padding:6px 0 0">گزارش شامل وضعیت همین لحظه سامانه‌ها، خطاهای اخیر و نقشه فنی کامل است. <b>هیچ رمز یا کلیدی در آن نیست</b> و فرستادنش بی‌خطر است.</div>`;
 }
 async function rescueText() {
