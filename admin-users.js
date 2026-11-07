@@ -460,15 +460,69 @@ function csDialog(html) {
   if (!d) {
     document.body.insertAdjacentHTML('beforeend', `<div id="csDlg" style="position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px">
       <div style="background:#fff;color:#222;border-radius:16px;max-width:460px;width:100%;padding:18px;max-height:90vh;overflow:auto">
-      <b style="font-size:16px">💻 خاموش کردن Codespace</b><div id="csBody" style="margin-top:10px"></div>
+      <b style="font-size:16px">💻 Codespace (محیط توسعه)</b><div id="csBody" style="margin-top:10px"></div>
       <button class="add-row-btn" style="margin:12px 0 0;width:100%" onclick="document.getElementById('csDlg').remove()">بستن</button></div></div>`);
   }
   document.getElementById('csBody').innerHTML = html;
+}
+/* ── ساعت‌های رایگان Codespace در این ماه (API صورت‌حساب GitHub؛ کلید پنل باید اجازه‌ی «Plan» داشته باشد) ──
+   سهم رایگان ماهانه بر حسب «ساعت هسته» است: حساب رایگان ۱۲۰، Pro ۱۸۰ (یک ساعت کار با دستگاه ۲ هسته‌ای = ۲ ساعت هسته)؛ فضا ۱۵ / ۲۰ گیگ‌ماه. اول هر ماه (UTC) صفر می‌شود. */
+const CS_FREE = { free: [120, 15], pro: [180, 20] };
+let csUse = null;
+async function csUsage(force) {
+  if (csUse && !force && Date.now() - csUse.at < 5 * 60e3) return csUse;
+  const me = await (await csApi('/user')).json();
+  const plan = String(me.plan && me.plan.name || '').toLowerCase(), [incl, inclGb] = CS_FREE[plan] || CS_FREE.free;
+  const now = new Date(), y = now.getUTCFullYear(), m = now.getUTCMonth() + 1;
+  let items = null, denied = false;
+  for (const path of [`/users/${me.login}/settings/billing/usage/summary?year=${y}&month=${m}&product=codespaces`, `/users/${me.login}/settings/billing/usage?year=${y}&month=${m}`]) {
+    const r = await csApi(path);
+    if (r.status === 401 || r.status === 403 || r.status === 404) { denied = true; continue; }
+    if (!r.ok) continue;
+    items = ((await r.json()).usageItems || []).filter(i => /codespace/i.test(i.product || '') && (!i.date || String(i.date).startsWith(`${y}-${String(m).padStart(2, '0')}`)));
+    break;
+  }
+  if (!items) return csUse = { denied, at: Date.now() };
+  let core = 0, gb = 0, paid = 0;
+  for (const i of items) {
+    const q = +(i.grossQuantity ?? i.quantity ?? 0), sku = String(i.sku || '') + ' ' + String(i.unitType || '');
+    paid += +(i.netAmount || 0);
+    if (/storage|gb/i.test(sku)) gb += q;
+    else { const c = /(\d+)\s*-?\s*core/i.exec(sku); core += q * (c ? +c[1] : 2); }
+  }
+  const reset = new Date(Date.UTC(y, m, 1)), days = Math.ceil((reset - now) / 864e5);
+  return csUse = { at: Date.now(), plan: plan || 'free', incl, inclGb, core, gb, paid, left: Math.max(0, incl - core), days };
+}
+const csN = (n, d = 0) => (+n).toLocaleString('fa', { maximumFractionDigits: d });
+function csUsageHTML(u) {
+  if (!u) return '';
+  if (u.denied || u.core == null) return `<div style="font-size:13px;line-height:2;background:#FBF3D6;border-radius:12px;padding:10px 12px;margin-bottom:10px"><b>⏱️ ساعت‌های باقی‌مانده دیده نشد.</b><br>
+    برای دیدنش یک بار به کلید GitHub پنل اجازه‌ی «Plan» بدهید:<br>
+    ${String(ghToken || '').startsWith('github_pat_') ? `۱. <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> ← روی کلید پنل ← <b>Edit</b><br>۲. در <b>Account permissions</b>: <b>Plan</b> = Read-only ← پایین صفحه <b>Update</b>`
+      : `۱. <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a> ← روی کلید پنل ← تیک <b>user</b> (یا read:user) ← <b>Update token</b>`}<br>
+    راه دستی: <a href="https://github.com/settings/billing/usage" target="_blank" rel="noopener">github.com/settings/billing/usage</a></div>`;
+  const pct = Math.min(100, u.core / u.incl * 100), col = u.left < u.incl * .15 ? '#B3261E' : u.left < u.incl * .4 ? '#B25B12' : '#1E7D4F';
+  return `<div style="border:1px solid #e5dccb;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;line-height:2">
+    <b style="font-size:15px">⏱️ ساعت‌های رایگان این ماه</b>
+    <div style="font-size:26px;font-weight:800;color:${col};margin-top:4px">${csN(u.left, 1)} <span style="font-size:14px">ساعت هسته مانده</span></div>
+    <div>یعنی حدود <b>${csN(u.left / 2, 1)} ساعت</b> کار با Codespace معمولی (۲ هسته‌ای)</div>
+    <div style="height:10px;border-radius:6px;background:#eee;overflow:hidden;margin:6px 0"><i style="display:block;height:100%;width:${pct}%;background:${col}"></i></div>
+    <div>مصرف‌شده: ${csN(u.core, 1)} از ${csN(u.incl)} ساعت هسته${u.plan === 'pro' ? ' (حساب Pro)' : ''} · فضای ذخیره: ${csN(u.gb, 1)} از ${csN(u.inclGb)} گیگ‌ماه</div>
+    <div>${csN(u.days)} روز دیگر (اول ماه میلادی) دوباره پر می‌شود.</div>
+    ${u.paid > 0.009 ? `<div style="color:#B3261E"><b>⚠️ این ماه ${csN(u.paid, 2)} دلار هزینه‌ی اضافه ثبت شده است.</b></div>` : ''}
+    <div style="color:#777;font-size:12px">عدد GitHub ممکن است تا چند ساعت عقب‌تر از مصرف واقعی باشد.</div></div>`;
+}
+/* برچسب دکمه‌ی بالای پنل: «⏻ Codespace · ۴۲ ساعت مانده» */
+async function csBadge() {
+  const b = document.querySelector('[onclick="csOpen()"]');
+  if (!b || STAFF || !ghToken) return;
+  try { const u = await csUsage(); if (u.core != null) { b.textContent = `⏻ Codespace · ${csN(u.left / 2)} ساعت مانده`; b.title = `${csN(u.left, 1)} ساعت هسته از ${csN(u.incl)} ساعت رایگان این ماه مانده (حدود ${csN(u.left / 2, 1)} ساعت با دستگاه ۲ هسته‌ای) — برای جزئیات یا خاموش کردن بزنید`; if (u.left < u.incl * .15) b.style.color = '#B3261E'; } } catch (e) {}
 }
 const CS_STATE = { Available: '🟢 روشن', Starting: '🟡 در حال روشن شدن', ShuttingDown: '🟠 در حال خاموش شدن', Shutdown: '⚪ خاموش', Rebuilding: '🟡 در حال ساخت' };
 async function csOpen() {
   if (STAFF || !ghToken) return showToast('این کار فقط برای مدیر اصلی است');
   csDialog('در حال بررسی…');
+  let use = ''; try { use = csUsageHTML(await csUsage(true)); csBadge(); } catch (e) {}
   try {
     /* کلید بدون اجازه Codespaces گاهی خطا نمی‌دهد و فقط فهرست خالی برمی‌گرداند؛ پس هر دو مسیر امتحان می‌شود */
     let list = [], denied = false;
@@ -479,13 +533,13 @@ async function csOpen() {
       list = (await r.json()).codespaces || [];
       if (list.length) break;
     }
-    if (!list.length) return csDialog(`<div style="font-size:13px;line-height:2;margin-bottom:8px"><b>GitHub هیچ Codespaceی به این کلید نشان نداد.</b>${denied ? '' : ' معمولاً یعنی کلید پنل هنوز اجازه دیدن Codespaceها را ندارد.'}</div>` + csHelp());
-    csDialog(list.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee">
+    if (!list.length) return csDialog(use + `<div style="font-size:13px;line-height:2;margin-bottom:8px"><b>GitHub هیچ Codespaceی به این کلید نشان نداد.</b>${denied ? '' : ' معمولاً یعنی کلید پنل هنوز اجازه دیدن Codespaceها را ندارد.'}</div>` + csHelp());
+    csDialog(use + list.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eee">
       <div style="flex:1;font-size:13px;line-height:1.8"><b>${escH(c.display_name || c.name)}</b><br>${CS_STATE[c.state] || escH(c.state)}
         ${c.idle_timeout_minutes ? ` · خاموشی خودکار بعد از ${c.idle_timeout_minutes.toLocaleString('fa')} دقیقه بیکاری` : ''}</div>
       ${c.state === 'Available' || c.state === 'Starting' ? `<button class="pub-btn" style="background:#B3261E" onclick="csStop('${escH(c.name)}',this)">⏻ خاموش کن</button>` : ''}
     </div>`).join('') + `<div style="font-size:12px;color:#666;line-height:1.9;margin-top:8px">خاموش کردن چیزی را پاک نمی‌کند؛ هر وقت لازم شد از github.com/codespaces دوباره روشنش کنید. اگر الان با Claude در حال کار هستید، آن کار قطع می‌شود.</div>`);
-  } catch (e) { csDialog('❌ ' + escH(e.message) + '<br><br>' + csHelp()); }
+  } catch (e) { csDialog(use + '❌ ' + escH(e.message) + '<br><br>' + csHelp()); }
 }
 async function csStop(name, btn) {
   if (!confirm('Codespace خاموش شود؟ اگر کار توسعه‌ای در جریان است، قطع می‌شود.')) return;

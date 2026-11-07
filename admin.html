@@ -1744,6 +1744,7 @@ async function doUnlock() {
     try { localStorage.setItem(TOKEN_KEY, token); } catch(e) {}
     showToast('وارد شدید ✅');
     syncLatestData();
+    csBadge();
   } catch(e) { err.textContent = e.message; }
 }
 
@@ -1902,6 +1903,7 @@ function init(){
   initLayout();
   initEmerg();
   initZyarat();
+  setTimeout(() => { if (typeof csBadge === 'function') csBadge(); }, 1500);
   initNotices();
   showGrp((()=>{try{return sessionStorage.getItem('admin-grp')}catch(e){}})()||'news');
   initRate();
