@@ -30,7 +30,12 @@ let mgrPoll = null, mgrCode = '', mgrErr = '';
   .mg-row span{color:var(--muted);font-size:.92em}
   .mg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .mg-call,.mg-wa{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:calc(13.5px * var(--fs,1))}
-  .mg-call{background:var(--gold);color:#fff}.mg-wa{background:rgba(37,211,102,.14);color:#128C4A;border:1px solid rgba(37,211,102,.5)}
+  .mg-call{background:var(--gold);color:#fff}.mg-call.alt{background:var(--card2);color:var(--text);border:1px solid var(--border-s)}
+  .mg-wa{background:rgba(37,211,102,.14);color:#128C4A;border:1px solid rgba(37,211,102,.5)}
+  .mg-pair{display:inline-flex;gap:4px}
+  .mg-reps{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-s)}
+  .mg-rh{font-weight:800;color:var(--brass);font-size:calc(13px * var(--fs,1))}
+  .mg-rep{padding:6px 0}.mg-rep > b{font-size:calc(14px * var(--fs,1))}
   [data-theme="dark"] .mg-wa{color:#5BE39A}
   .mg-note{margin-top:6px;color:var(--muted);font-size:calc(12.5px * var(--fs,1))}
   .mg-upd{margin:8px 2px 0;color:var(--muted);font-size:calc(12px * var(--fs,1))}
@@ -163,21 +168,24 @@ function mgrCoHTML(o) {
   const L = o.data && o.data.companies;
   if (!L) return `<div class="mg-soon">${navigator.onLine ? '⏳ در حال دریافت اطلاعات…' : '📶 برای دریافت اطلاعات بخش مدیران، یک بار به اینترنت وصل شوید؛ بعد از آن بدون اینترنت هم در دسترس است.'}</div>`;
   return `<div class="mg-sec-h">🏢 شرکت‌های مجری <span>${L.length ? `(${mgrFa(L.length)})` : ''}</span></div>
-    ${L.length ? `<input type="search" class="mg-search" placeholder="🔎 جستجوی نام شرکت، مدیرعامل یا نماینده…" value="${escHtml(mgrQ)}" oninput="mgrQ=this.value;mgrList()" aria-label="جستجو در شرکت‌های مجری">
+    ${L.length ? `<input type="search" class="mg-search" placeholder="🔎 جستجوی نام شرکت، مدیرعامل، نماینده یا شماره…" value="${escHtml(mgrQ)}" oninput="mgrQ=this.value;mgrList()" aria-label="جستجو در شرکت‌های مجری">
     <div id="mgList"></div>` : '<div class="mg-soon">هنوز اطلاعاتی ثبت نشده است.</div>'}
     <div class="mg-upd">آخرین به‌روزرسانی: ${escHtml(mgrDate(o.data.at))}؛ بدون اینترنت هم در دسترس است</div>`;
 }
 function mgrList() {
   const el = document.getElementById('mgList'), o = mgrLoad(); if (!el || !o || !o.data) return;
-  const q = mgrNorm(mgrQ), L = o.data.companies.filter(c => !q || mgrNorm([c.name, c.ceo, c.rep_name, c.rep_phone, c.phone2].join(' ')).includes(q));
+  const reps = c => c.reps || (c.rep_name || c.rep_phone ? [{ name: c.rep_name || '', iq: c.rep_phone || '', ir: c.phone2 || '' }] : []);   /* داده‌ی قدیمی روی گوشی */
+  const q = mgrNorm(mgrQ), L = o.data.companies.filter(c => !q || mgrNorm([c.name, c.ceo, c.address, c.phone, ...reps(c).flatMap(r => [r.name, r.ir, r.iq])].join(' ')).includes(q));
   /* تماس با شماره‌ی بین‌المللی (+۹۶۴/+۹۸) تا با سیم‌کارت ایرانی در عراق هم وصل شود */
-  const call = (ph, label) => { if (!ph) return ''; const w = mgrWa(ph), shown = ph.replace(/^00/, '+');
-    return `<a class="mg-call" href="tel:${w ? '+' + w : escHtml(shown)}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="https://wa.me/${w}" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">💬 واتس‌اپ</a>` : ''}`; };
-  el.innerHTML = L.length ? L.map(c => `<div class="mg-co"><b>${escHtml(c.name)}</b>
+  const call = (ph, label, cls) => { if (!ph) return ''; const w = mgrWa(ph), shown = ph.replace(/^00/, '+');
+    return `<span class="mg-pair"><a class="mg-call ${cls || ''}" href="tel:${w ? '+' + w : escHtml(shown)}" aria-label="تماس ${label}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="https://wa.me/${w}" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">💬</a>` : ''}</span>`; };
+  el.innerHTML = L.length ? L.map(c => { const R = reps(c); return `<div class="mg-co"><b>${escHtml(c.name)}</b>
       ${c.ceo ? `<div class="mg-row"><span>مدیرعامل:</span> ${escHtml(c.ceo)}</div>` : ''}
-      ${c.rep_name || c.rep_phone ? `<div class="mg-row"><span>نماینده در عراق:</span> ${escHtml(c.rep_name || '—')}</div>` : ''}
-      <div class="mg-btns">${call(c.rep_phone, 'نماینده')}${call(c.phone2, 'شماره‌ی دوم')}</div>
-      ${c.note ? `<div class="mg-note">${escHtml(c.note)}</div>` : ''}</div>`).join('')
+      ${c.address ? `<div class="mg-row"><span>📍 آدرس:</span> ${escHtml(c.address)}</div>` : ''}
+      ${c.phone ? `<div class="mg-btns">${call(c.phone, 'شرکت', 'alt')}</div>` : ''}
+      ${R.length ? `<div class="mg-reps"><div class="mg-rh">👤 ${R.length > 1 ? 'نمایندگان' : 'نماینده'} در عراق</div>${R.map(r => `<div class="mg-rep"><b>${escHtml(r.name || 'نماینده')}</b>
+        <div class="mg-btns">${call(r.iq, 'عراق')}${call(r.ir, 'ایران', 'alt')}</div></div>`).join('')}</div>` : ''}
+      ${c.note ? `<div class="mg-note">${escHtml(c.note)}</div>` : ''}</div>`; }).join('')
     : '<div class="mg-soon">شرکتی با این نام پیدا نشد.</div>';
 }
 /* بررسی اعتبار + دریافت اطلاعات: اگر شماره از فهرست حذف شده یا تاریخش گذشته، بخش ویژه (و اطلاعاتش) از این گوشی پاک می‌شود */
