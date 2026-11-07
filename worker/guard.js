@@ -10,6 +10,7 @@
 /* sslip.io نه nip.io: فیلترینگ ایران nip.io را از خارج قطع می‌کند (proxy.js را ببینید) */
 import { HANDOVER, OWNER_STEPS } from './handover.js';
 import { ERRLOG, logError } from './errlog.js';
+import { ghToken } from './staff.js';
 export { logError };
 const SRV = 'https://188-121-118-223.sslip.io', SRV80 = 'http://188-121-118-223.sslip.io';
 const CHECKS = [
@@ -18,7 +19,7 @@ const CHECKS = [
   { k: 'bime', name: 'سامانه بیمه', url: SRV80 + '/bime/', ok: s => s < 500 }
 ];
 const FAILS_TO_ALERT = 3, CHUNK = 32 * 1024, H = 36e5, D = 864e5;
-const TTL = { data: 3 * D, daily: 35 * D, full: 35 * D, team: 35 * D };
+const TTL = { data: 3 * D, daily: 35 * D, full: 35 * D, team: 35 * D, memory: 400 * D };
 const BK_SCHEMA = ['CREATE TABLE IF NOT EXISTS files (name TEXT PRIMARY KEY, kind TEXT, ts TEXT, bytes INTEGER, sha256 TEXT, n INTEGER, got INTEGER, exp INTEGER)',
   'CREATE TABLE IF NOT EXISTS chunks (name TEXT NOT NULL, i INTEGER NOT NULL, data BLOB, PRIMARY KEY (name, i))'];
 
@@ -169,7 +170,7 @@ async function teamBackup(env, force) {
 
 async function daily(env, checks) {
   const now = Date.now(), today = new Date(now + 3.5 * H).toISOString().slice(0, 10), hr = new Date(now + 3.5 * H).getUTCHours();
-  const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {}), bt = await cfgJson(env, 'bk:team', {});
+  const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {}), bt = await cfgJson(env, 'bk:team', {}), cs = await cfgJson(env, 'cs:last', {});
   const stale = !bd.at || now - bd.at > 3 * H;
   const warned = await cfgGet(env, 'bk:warned');
   if (stale && !warned) { await notify(env, `⚠️ بیش از ۳ ساعت است که نسخه پشتیبان تازه از سرور گرفته نشده (آخرین: ${bd.at ? tehran(bd.at) : 'هیچ‌وقت'}).\nسامانه‌ها ممکن است سالم باشند؛ فقط پشتیبان‌گیری گیر کرده. اگر فردا هم این پیام آمد، به Claude بگویید.`); await cfgSet(env, 'bk:warned', '1'); }
@@ -180,7 +181,7 @@ async function daily(env, checks) {
   if (!tStale && tWarned) await env.DB.prepare("DELETE FROM config WHERE k = 'bk:team-warned'").run();
   if (hr === 9 && (await cfgGet(env, 'daily:sent')) !== today) {
     const down = checks.filter(c => !c.up);
-    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
+    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n💻 آخرین استفاده از Codespace: ${cs.at ? Math.floor((now - cs.at) / D).toLocaleString('fa') + ' روز پیش' : '—'}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
     await cfgSet(env, 'daily:sent', today);
   }
 }
@@ -218,6 +219,35 @@ ${errs.length ? errText(errs) : 'خطایی ثبت نشده.'}
 ${HANDOVER}`;
 }
 
+/* ── یادآوری Codespace: GitHub یک Codespace را بعد از ۳۰ روز خاموش ماندن پاک می‌کند (با حافظه و کلیدهای Claude) ──
+   روزی یک بار آخرین زمان استفاده از سه جا خوانده می‌شود: فهرست Codespaceها، گزارش مصرف GitHub (هر دو با کلید GitHub مدیر که پنل رمزگذاری‌شده نگه داشته)،
+   و «cs:seen» که Codespace خودش هر چند ساعت می‌فرستد (worker/claude-memory.mjs). روز ۲۵، ۲۸ و ۲۹ در بله یادآوری می‌شود. */
+async function csCheck(env, force) {
+  const now = Date.now(), day = new Date(now + 3.5 * H).toISOString().slice(0, 10);
+  if (!force && (await cfgGet(env, 'cs:checked')) === day) return;
+  await cfgSet(env, 'cs:checked', day);
+  let last = +(await cfgGet(env, 'cs:seen')) || 0, src = last ? 'codespace' : '';
+  try {
+    const tok = await ghToken(env), H2 = { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json', 'User-Agent': 'hamyar-guard' };
+    const r = await fetch('https://api.github.com/user/codespaces', { headers: H2 });
+    if (r.ok) for (const c of (await r.json()).codespaces || []) { const t = Date.parse(c.last_used_at || ''); if (t > last) { last = t; src = 'github'; } }
+    const me = await (await fetch('https://api.github.com/user', { headers: H2 })).json();
+    const u = await fetch(`https://api.github.com/users/${me.login}/settings/billing/usage`, { headers: H2 });
+    if (u.ok) for (const i of (await u.json()).usageItems || []) if (/codespaces_compute/.test(i.sku || '') && +i.quantity > 0) { const t = Date.parse(i.date) + D - 1; if (t > last && t <= now) { last = t; src = 'billing'; } }
+  } catch (e) {}
+  if (!last) return;
+  await cfgSet(env, 'cs:last', JSON.stringify({ at: last, src }));
+  const days = Math.floor((now - last) / D), R = await cfgJson(env, 'cs:remind', {});
+  if (R.last !== last) { R.last = last; R.steps = []; }
+  const step = [29, 28, 25].find(x => days >= x && !R.steps.includes(x));
+  if (step) {
+    const left = Math.max(1, 30 - days);
+    await notify(env, `💻 یادآوری Codespace\n\n${days.toLocaleString('fa')} روز است که Codespace (محیط کار Claude) روشن نشده است. GitHub آن را بعد از ۳۰ روز خاموش ماندن خودکار پاک می‌کند و حافظه و تنظیمات Claude از بین می‌رود — حدود ${left.toLocaleString('fa')} روز دیگر.\n\nلطفاً همین امروز:\n۱. github.com/codespaces را باز کنید\n۲. روی Codespace «iraq-guide» بزنید تا روشن شود (چند دقیقه صبر کنید)\n۳. بعد از پنل مدیریت ← «⏻ خاموشی Codespace» دوباره خاموشش کنید.\n\nهمین چند دقیقه روشن شدن کافی است و ۳۰ روز از نو شروع می‌شود.`);
+    R.steps.push(...[25, 28, 29].filter(x => x <= step));
+  }
+  await cfgSet(env, 'cs:remind', JSON.stringify(R));
+}
+
 export async function guardRun(env, force) {
   if (!env.BKDB) return { error: 'BKDB not bound' };
   for (const q of BK_SCHEMA) await env.BKDB.prepare(q).run();
@@ -230,6 +260,7 @@ export async function guardRun(env, force) {
     res.push(await pull(env, 'full', budget, force));
   }
   if (new Date().getUTCMinutes() % 15 < 5) await errorAlert(env);   /* هر ربع ساعت */
+  try { await csCheck(env, false); } catch (e) {}
   await daily(env, checks);
   if (new Date().getUTCMinutes() < 5) { await cleanup(env); for (const db of [env.DB, env.HDB]) if (db) try { await db.prepare(ERRLOG).run(); await db.prepare('DELETE FROM errlog WHERE ts < ?').bind(Date.now() - 30 * D).run(); } catch (e) {} }
   return { checks, backups: res, budgetLeft: budget.n };
@@ -252,19 +283,19 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
     for (const c of CHECKS) checks.push({ k: c.k, name: c.name, ...(await cfgJson(env, 'mon:' + c.k, {})) });
     for (const q of BK_SCHEMA) await env.BKDB.prepare(q).run();
     const list = (await env.BKDB.prepare('SELECT name AS k, kind, ts, bytes, sha256, got FROM files ORDER BY ts DESC, kind LIMIT 300').all()).results;
-    return json({ checks, backups: list, steps: OWNER_STEPS, errors: (await recentErrors(env, Date.now() - 7 * D, 50)).length, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
+    return json({ checks, backups: list, steps: OWNER_STEPS, cs: await cfgJson(env, 'cs:last', null), errors: (await recentErrors(env, Date.now() - 7 * D, 50)).length, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
   }
   if (p === '/admin/guard/get' && req.method === 'GET') {
     const k = url.searchParams.get('k') || '';
-    if (!/^(data|daily|full|team)\/\d{8}T\d{6}Z$/.test(k)) return err('نام فایل نامعتبر');
+    if (!/^(data|daily|full|team|memory)\/\d{8}T\d{6}Z$/.test(k)) return err('نام فایل نامعتبر');
     const f = await env.BKDB.prepare('SELECT bytes FROM files WHERE name = ?').bind(k).first();
     const v = f && await readChunks(env, k, f.bytes);
     if (!v) return err('این نسخه پیدا نشد (شاید منقضی شده).', 404);
-    return new Response(v, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="hamyar-${k.replace('/', '-')}${k.startsWith('team/') ? '.json.gz' : '.tar.gz'}"`,
+    return new Response(v, { headers: { 'Content-Type': 'application/gzip', 'Content-Disposition': `attachment; filename="hamyar-${k.replace('/', '-')}${/^(team|memory)\//.test(k) ? '.json.gz' : '.tar.gz'}"`,
       'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Content-Disposition' } });
   }
   if (p === '/admin/guard/report' && req.method === 'GET') return new Response(await report(env), { headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' } });
-  if (p === '/admin/guard/run' && req.method === 'POST') return json(await guardRun(env, true));
+  if (p === '/admin/guard/run' && req.method === 'POST') { try { await csCheck(env, true); } catch (e) {} return json(await guardRun(env, true)); }
   if (p === '/admin/guard/test' && req.method === 'POST') return json({ sent: await notify(env, '🔔 پیام آزمایشی نگهبان سرور همیار — اگر این را می‌بینید، هشدارها درست به شما می‌رسد.') });
   return null;
 }

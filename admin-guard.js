@@ -30,10 +30,12 @@ function renderGuard() {
     <div>💾 <b>آخرین پشتیبان ساعتی:</b> ${last ? gTs(last.ts) : 'هنوز گرفته نشده'}</div>
     <div>📦 <b>آخرین پشتیبان کامل (با کد برنامه‌ها):</b> ${full ? gTs(full.ts) : 'هنوز گرفته نشده'}</div>
     <div>🏨 <b>آخرین پشتیبان سامانه نواقص هتل‌ها (Cloudflare):</b> ${team ? gTs(team.ts) : 'هنوز گرفته نشده'}</div>
+    <div>🧠 <b>آخرین پشتیبان حافظه Claude:</b> ${by('memory')[0] ? gTs(by('memory')[0].ts) : 'هنوز گرفته نشده'}</div>
+    ${d.cs && d.cs.at ? (() => { const days = Math.floor((Date.now() - d.cs.at) / 864e5); return `<div style="${days >= 25 ? 'color:#B3261E' : ''}">💻 <b>آخرین استفاده از Codespace:</b> ${gAgo(d.cs.at)}${days >= 20 ? ` — <b>${gFa(Math.max(0, 30 - days))} روز</b> تا پاک شدن خودکار؛ روشنش کنید.` : ''}</div>`; })() : ''}
     <div>🔔 <b>هشدار در بله:</b> ${d.alerts ? 'فعال است ✅ <button class="lock-link" onclick="guardTest(this)">فرستادن پیام آزمایشی</button>' : '<span style="color:#B3261E">هنوز فعال نشده</span> — کد فعال‌سازی را از Claude بگیرید و برای بازوی @HamyarKaravan_Bot بفرستید.'}</div>
   </div>
   <details class="gd-det"><summary>همه نسخه‌های پشتیبان (${gFa(d.backups.length)})</summary>
-    ${[['team', '🏨 سامانه نواقص هتل‌ها — روزانه، ۳۵ روز'], ['full', '📦 کامل سرور — هر شب، ۳۵ روز نگه داشته می‌شود'], ['daily', '📅 روزانه — ۳۵ روز'], ['data', '🕐 ساعتی — ۳ روز']].map(([k, t]) => by(k).length ? `<div class="field-label" style="margin-top:10px">${t}</div>${by(k).map(row).join('')}` : '').join('')}
+    ${[['team', '🏨 سامانه نواقص هتل‌ها — روزانه، ۳۵ روز'], ['memory', '🧠 حافظه Claude — ۲۰ نسخه آخر (برای Codespace تازه)'], ['full', '📦 کامل سرور — هر شب، ۳۵ روز نگه داشته می‌شود'], ['daily', '📅 روزانه — ۳۵ روز'], ['data', '🕐 ساعتی — ۳ روز']].map(([k, t]) => by(k).length ? `<div class="field-label" style="margin-top:10px">${t}</div>${by(k).map(row).join('')}` : '').join('')}
   </details>
   <div class="empty-msg" style="padding:8px 0 0">سرور هر ساعت از داده‌های چاپ و بسته‌بندی و بیمه نسخه پشتیبان می‌سازد و Cloudflare آن را بیرون از ایران نگه می‌دارد. از سامانه نواقص هتل‌ها (که خودش روی Cloudflare است) هم هر روز یک نسخه جدا گرفته می‌شود. اگر سرور از دست برود، Claude با همین نسخه‌ها همه چیز را روی سرور تازه برمی‌گرداند.</div>
   <button class="add-row-btn" onclick="guardLoad()">🔄 به‌روزرسانی</button>`;
@@ -80,7 +82,7 @@ async function guardGet(k, b) {
   try {
     const r = await fetch(RV_API + '/admin/guard/get?k=' + encodeURIComponent(k), { headers: { Authorization: adminAuth() } });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'خطا ' + r.status);
-    const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = 'hamyar-' + k.replace('/', '-') + (k.startsWith('team/') ? '.json.gz' : '.tar.gz');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = 'hamyar-' + k.replace('/', '-') + (/^(team|memory)\//.test(k) ? '.json.gz' : '.tar.gz');
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   } catch (e) { showToast('❌ ' + e.message); }
   b.disabled = false; b.textContent = t;

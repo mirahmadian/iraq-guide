@@ -46,7 +46,7 @@ export async function ghTokenHash(env) {
   const r = await env.DB.prepare('SELECT v FROM config WHERE k = ?').bind('gh').first();
   return r ? JSON.parse(r.v).h : '';
 }
-async function ghToken(env) {
+export async function ghToken(env) {
   const r = await env.DB.prepare('SELECT v FROM config WHERE k = ?').bind('gh').first();
   if (!r) throw new Error('مدیر اصلی هنوز یک بار وارد پنل نشده است؛ بعد از ورود او، انتشار همکاران فعال می‌شود.');
   const v = JSON.parse(r.v);
