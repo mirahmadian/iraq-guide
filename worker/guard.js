@@ -286,7 +286,7 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
     return json({ checks, backups: list, steps: OWNER_STEPS, cs: await cfgJson(env, 'cs:last', null), errors: (await recentErrors(env, Date.now() - 7 * D, 50)).length, alerts: !!(await cfgGet(env, 'owner_chat')), job: { data: await cfgJson(env, 'bkjob:data', null), full: await cfgJson(env, 'bkjob:full', null) } });
   }
   /* ☁️ حجم پایگاه‌های داده در Cloudflare (meta.size_after هر پرس‌وجو = حجم فعلی پایگاه) */
-  if (p === '/admin/cf' && req.method === 'GET') {
+  if (p === '/admin/guard/cf' && req.method === 'GET') {
     const L = [['DB', 'hamyar-reviews', 'نظرات زائران، کاربران پنل، تنظیمات'], ['HDB', 'hamyar-hotels', 'سامانه نواقص هتل‌ها (team)'], ['MDB', 'hamyar-hotels-media', 'عکس و فیلم‌های سامانه نواقص'], ['BKDB', 'hamyar-backups', 'پشتیبان‌ها (سرور ۱۸۸، نواقص، حافظه Claude)']];
     const dbs = [];
     for (const [b, name, what] of L) {

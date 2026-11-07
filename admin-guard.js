@@ -114,13 +114,13 @@ async function guardTest(b) {
   </style>`);
 })();
 
-/* ══ ☁️ Cloudflare: حجم پایگاه‌ها از /admin/cf + راهنمای ساده‌ی دسترسی ══ */
+/* ══ ☁️ Cloudflare: حجم پایگاه‌ها از /admin/guard/cf + راهنمای ساده‌ی دسترسی ══ */
 let cfData = null;
 function cfLoad() {
   const el = document.getElementById('cf-admin'); if (!el) return;
   if (STAFF) { el.closest('.sec-card').style.display = 'none'; return; }
   el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>';
-  adminFetch('/admin/cf', null, adminAuth()).then(d => { cfData = d; cfRender(); }).catch(e => { el.innerHTML = `<div class="empty-msg" style="color:#B3261E">${escH(e.message)}</div><button class="add-row-btn" onclick="cfLoad()">🔄 دوباره</button>`; });
+  adminFetch('/admin/guard/cf', null, adminAuth()).then(d => { cfData = d; cfRender(); }).catch(e => { el.innerHTML = `<div class="empty-msg" style="color:#B3261E">${escH(e.message)}</div><button class="add-row-btn" onclick="cfLoad()">🔄 دوباره</button>`; });
 }
 const cfBar = (pct, col) => `<div style="height:10px;border-radius:6px;background:#eee;overflow:hidden;margin:4px 0"><i style="display:block;height:100%;width:${Math.max(1, Math.min(100, pct))}%;background:${col}"></i></div>`;
 const cfCol = pct => pct > 85 ? '#B3261E' : pct > 60 ? '#B25B12' : '#1E7D4F';
