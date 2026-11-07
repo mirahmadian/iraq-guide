@@ -24,6 +24,7 @@ const STATIC = [
   'reviews.js',
   'stats.js',
   'bale.js',
+  'flight.js',
   'rate.json',
   'rate-market.json',
   'besat-logo.png',
@@ -55,7 +56,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== 'flight-data').map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -117,3 +118,27 @@ async function warmCache(urls) {
     } catch (_) {}
   }
 }
+
+/* ✈️ اعلان ساعت حرکت به فرودگاه: سرور (worker/flight.js) بدون محتوا بیدار می‌کند؛ متن از حافظه‌ی گوشی (flight.js) */
+self.addEventListener('push', e => {
+  e.waitUntil((async () => {
+    let d = null;
+    try { const r = await (await caches.open('flight-data')).match('flight.json'); d = r && await r.json(); } catch (_) {}
+    const now = Date.now(), due = d && d.steps ? d.steps.filter(s => s.t <= now + 3 * 6e4) : [];
+    const s = due[due.length - 1];
+    await self.registration.showNotification(s ? s.title : '✈️ یادآوری حرکت به فرودگاه', {
+      body: s ? s.body : 'برای دیدن ساعت حرکت، برنامه همیار کاروان را باز کنید.',
+      icon: 'app-icon-192.png', badge: 'app-icon-192.png', lang: 'fa', dir: 'rtl', tag: 'flight-' + (s ? s.k : 'x'),
+      requireInteraction: true, renotify: true, vibrate: [300, 150, 300, 150, 600], data: { url: './#flight' }
+    });
+  })());
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const w = list.find(c => 'focus' in c);
+    if (w) { if (/flight/.test(url)) w.postMessage('open-flight'); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});

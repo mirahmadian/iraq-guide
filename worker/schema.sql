@@ -41,3 +41,5 @@ CREATE TABLE IF NOT EXISTS bale_users (
 CREATE INDEX IF NOT EXISTS bale_users_dev ON bale_users (dev);
 CREATE TABLE IF NOT EXISTS bale_links (code TEXT PRIMARY KEY, dev TEXT NOT NULL, exp INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS bale_pending (chat_id INTEGER PRIMARY KEY, dev TEXT NOT NULL, t INTEGER NOT NULL);
+-- flight-departure reminders (worker/flight.js); one row per device, deleted after the flight
+CREATE TABLE IF NOT EXISTS flights (dev TEXT PRIMARY KEY, sub TEXT, steps TEXT NOT NULL, nxt INTEGER, fl INTEGER NOT NULL, bale INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL);

@@ -94,6 +94,7 @@ const hasContacts = g => !!(g && (g.contacts || []).length);
 const TILE_DEFS = {
   lost:      { label: 'گم شده‌ام', color: 'clinic', has: () => true, open: () => openLost() },
   stay:      { label: 'تاریخ خروج', color: 'consulate', has: () => typeof openStay === 'function', sub: () => staySub(), open: () => openStay() },
+  flight:    { label: 'حرکت به فرودگاه', color: 'transport', has: () => typeof openFlight === 'function', sub: () => flightSub(), open: () => openFlight() },
   guide:     { label: 'راهنمای زائر', color: 'hotel', has: () => typeof guideVisible === 'function' && guideVisible(), hidden: () => !guideSections().some(s => !s.hidden), open: () => openGuide() },
   zyarat:    { label: 'زیارت‌نامه‌ها', color: 'ziyarat', has: () => typeof zyVisible === 'function' && zyVisible(), open: () => openZyarat() },
   hq:        { label: 'ستاد', color: 'hq', has: c => !!c.hq, open: c => openPage(c.hq.title, secOf(c, 'hq', '🏢', 'ستاد', { banner: c.hqBanner })) },
@@ -228,6 +229,7 @@ function renderHome() {
     ${typeof noticesHTML === 'function' ? noticesHTML(c) : ''}
     ${typeof zyStripHTML === 'function' ? zyStripHTML() : ''}
     ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
+    ${typeof flightAlertHTML === 'function' ? flightAlertHTML() : ''}
     ${typeof baleStripHTML === 'function' ? baleStripHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `
       <button class="hslide" style="--img:url('${escHtml(encodeURI(x.img))}')" onclick="slideTap(${i})" aria-label="${escHtml(x.t || x.tag || 'اسلاید')}">

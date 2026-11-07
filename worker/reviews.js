@@ -11,6 +11,8 @@ import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { guardRun, handleGuardAdmin } from './guard.js';
 import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
+import { handleFlight, flightTick } from './flight.js';
+import { bale as baleSend } from './bale.js';
 
 const REPO = 'mirahmadian/iraq-guide';
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -116,7 +118,7 @@ const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, 
 
 export default {
   /* نگهبان سرور: هر ۵ دقیقه (guard.js) */
-  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); },
+  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); ctx.waitUntil(flightTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('flight', e && e.message))); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
@@ -229,6 +231,7 @@ export default {
       }
 
       /* ── بازوی بله ── */
+      if (p.startsWith('/flight/')) { const r = await handleFlight(p, req, env, body, dev, json, err, limited); if (r) return r; }
       if (p.startsWith('/bale/')) { const r = await handleBalePublic(p, req, env, body, dev, json, err, limited, ip, sha); if (r) return r; }
 
       /* ── همکاران پنل (ورود با نام کاربری) ── */

@@ -4,7 +4,7 @@
    فهرست شناسه‌ها باید با TILE_DEFS و NAV_DEFS در home.js یکی باشد
 ══════════════════════════════════════════ */
 const LAYOUT_TILES = {
-  lost: ['گم شده‌ام', 'clinic', '🆘'], stay: ['تاریخ خروج', 'consulate', '📅'], guide: ['راهنمای زائر', 'hotel', '📘'], zyarat: ['زیارت‌نامه‌ها', 'ziyarat', '📿'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
+  lost: ['گم شده‌ام', 'clinic', '🆘'], stay: ['تاریخ خروج', 'consulate', '📅'], flight: ['حرکت به فرودگاه', 'transport', '✈️'], guide: ['راهنمای زائر', 'hotel', '📘'], zyarat: ['زیارت‌نامه‌ها', 'ziyarat', '📿'], hq: ['ستاد', 'hq', '🏢'], clinic: ['درمانگاه', 'clinic', '☾'], consulate: ['کنسولگری', 'consulate', '🏛️'],
   besat: ['برنامه‌های بعثه', 'ziyarat', '📜'], hotel: ['هتل‌ها', 'hotel', '🏨'], map: ['نقشه شهر', 'parking', '🗺️'],
   ins: ['بیمه معلم', 'ins', '📋'], transport: ['ناظر نقل', 'transport', '🚌'], food: ['برنامه غذایی', 'restaurant', '🍽️'], currency: ['تبدیل ارز', 'ins', '💱'],
   ziyarat: ['اماکن زیارتی', 'ziyarat', '🕌'], restaurant: ['رستوران', 'restaurant', '🍴'], parking: ['پارکینگ', 'parking', '🅿️'], other: ['سایر مکان‌ها', 'other', '📍']

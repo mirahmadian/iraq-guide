@@ -10,7 +10,7 @@ const API = t => `https://tapi.bale.ai/bot${t}/`;
 export const BOT_USER = 'HamyarKaravan_Bot';
 const SEND_BATCH = 35; /* هر درخواست حداکثر ۵۰ زیردرخواست دارد (Workers رایگان) */
 
-async function bale(env, method, body) {
+export async function bale(env, method, body) {
   const r = await fetch(API(env.BALE_TOKEN) + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   return r.json().catch(() => ({ ok: false }));
 }
