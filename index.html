@@ -539,7 +539,9 @@
       animation:slideUp .25s ease;
       /* وقتی گزینه‌ها از ارتفاع صفحه بیشتر است (مثلاً مرورگر کامپیوتر)، داخل پنجره اسکرول شود */
       max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;
+      scrollbar-width:thin;scrollbar-color:var(--brass-l) transparent;
     }
+    .modal::-webkit-scrollbar{width:8px}.modal::-webkit-scrollbar-thumb{background:var(--brass-l);border-radius:8px}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .modal-handle{width:40px;height:4px;background:var(--border-s);border-radius:2px;margin:0 auto 14px}
     .modal-title{font-size:calc(16px * var(--fs,1));font-weight:900;color:var(--text);text-align:center;margin-bottom:14px}
@@ -1343,6 +1345,13 @@ function handleTabKey(e, cityId) {
   if (e.key === 'ArrowLeft' && idx < tabs.length-1) { tabs[idx+1].click(); tabs[idx+1].focus(); }
 }
 
+/* چرخ ماوس روی هر جای صفحه‌ی تیره (نه فقط روی خود پنجره) پنجره‌ی باز را اسکرول کند — در مانیتور پهن پنجره باریک و وسط صفحه است */
+document.addEventListener('wheel', e => {
+  const ov = e.target.closest && e.target.closest('.overlay.open');
+  if (!ov) return;
+  const m = ov.querySelector('.modal');
+  if (m && !m.contains(e.target)) { m.scrollTop += e.deltaY; e.preventDefault(); }
+}, { passive: false });
 function openMore() {
   document.getElementById('moreInstall').style.display = deferredPrompt ? 'flex' : 'none';
   document.getElementById('moreZy').style.display = typeof zyVisible === 'function' && zyVisible() ? 'flex' : 'none';
