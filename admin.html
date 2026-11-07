@@ -391,6 +391,7 @@
   <button class="tab-btn" onclick="switchTab('mgr',this)">🧳 مدیران کاروان</button>
   <button class="tab-btn" onclick="switchTab('stats',this)">📊 آمار</button>
   <button class="tab-btn" data-perm="owner" onclick="switchTab('users',this)">👥 کاربران</button>
+  <button class="tab-btn" onclick="switchTab('help',this)">📖 راهنمای سامانه</button>
 </div>
 
 <!-- ══ TAB: GENERAL ══ -->
@@ -885,6 +886,10 @@
   <div id="stats-admin"></div>
 </div><!-- /tab-stats -->
 
+<div class="page" id="tab-help" style="max-width:900px">
+  <div id="help-admin"></div>
+</div><!-- /tab-help -->
+
 <div class="page" id="tab-users" style="max-width:1000px">
   <div id="users-admin"></div>
 </div><!-- /tab-users -->
@@ -915,6 +920,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-flight.js"></script>
 <script src="admin-mgr.js"></script>
 <script src="admin-search.js"></script>
+<script src="admin-help.js"></script>
 <script src="admin-zyarat.js"></script>
 <script src="admin-guard.js"></script>
 <script src="admin-notice.js"></script>
