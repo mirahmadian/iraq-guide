@@ -537,6 +537,8 @@
       border-radius:24px 24px 0 0;width:100%;max-width:480px;
       padding:16px 18px max(18px,env(safe-area-inset-bottom));
       animation:slideUp .25s ease;
+      /* وقتی گزینه‌ها از ارتفاع صفحه بیشتر است (مثلاً مرورگر کامپیوتر)، داخل پنجره اسکرول شود */
+      max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;
     }
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .modal-handle{width:40px;height:4px;background:var(--border-s);border-radius:2px;margin:0 auto 14px}
