@@ -4876,15 +4876,31 @@ const CARAVAN_DATA = {
         },
         {
           "id": "hotel-karbala-m016",
-          "name": "هتل امپراطور",
-          "nameEn": "",
-          "address": "",
-          "cardImage": "",
-          "images": [],
+          "name": "هتل امپراطور الدولی",
+          "nameEn": "Emperor international ",
+          "address": "کربلا. شارع العلقمی. نزدیک حرم حضرت عباس",
+          "addressAr": "کربلاء المقدسه. شارع العلقمی. قرب مرقد الامام العباس",
+          "cardImage": "hotels/h-1794080707409-ln5lr.jpg",
+          "images": [
+            "hotels/h-1794080707409-ln5lr.jpg",
+            "hotels/h-1794080710633-0d29m.jpg"
+          ],
           "mapNeshanUrl": "",
           "mapGoogleUrl": "https://www.google.com/maps/search/?api=1&query=32.616697,44.039409",
-          "hidden": true,
-          "contacts": []
+          "contacts": [
+            {
+              "role": "استقبال",
+              "phone": "07816666909",
+              "name": null,
+              "countryCode": "964"
+            },
+            {
+              "role": "",
+              "phone": "07716666909",
+              "name": null,
+              "countryCode": "964"
+            }
+          ]
         },
         {
           "id": "hotel-karbala-m017",
