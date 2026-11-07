@@ -4598,8 +4598,7 @@ const CARAVAN_DATA = {
             "role": "رئیس ستاد نجف",
             "phone": "07855435901",
             "name": null,
-            "countryCode": "964",
-            "photo": "people/p-1792889048518-d3xpe.jpg"
+            "countryCode": "964"
           },
           {
             "role": "مسئول حراست ستاد نجف",
