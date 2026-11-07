@@ -24,6 +24,7 @@ const STATIC = [
   'reviews.js',
   'stats.js',
   'bale.js',
+  'flight-def.js',
   'flight.js',
   'rate.json',
   'rate-market.json',

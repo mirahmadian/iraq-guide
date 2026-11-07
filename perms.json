@@ -4,7 +4,8 @@
     { "id": "news", "label": "📢 اطلاع‌رسانی", "items": [
       { "k": "notices", "label": "اطلاعیه‌های عمومی", "p": ["site.notices"] },
       { "k": "rate", "label": "نرخ دستی دینار", "p": ["site.rate"] },
-      { "k": "bale", "label": "ارسال پیام بله به زائران", "p": [] }
+      { "k": "bale", "label": "ارسال پیام بله به زائران", "p": [] },
+      { "k": "flight", "label": "ابزار ساعت حرکت به فرودگاه (ساعت‌ها و متن هشدارها)", "p": ["flight"] }
     ]},
     { "id": "home", "label": "🧩 صفحه اول", "items": [
       { "k": "layout", "label": "چیدمان آیکون‌ها، نوار پایین و اسلایدر", "p": ["site.layout"], "files": ["slides/"] }

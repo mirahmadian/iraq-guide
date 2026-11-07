@@ -5,10 +5,7 @@
    حافظه‌ی گوشی نشان می‌دهد)، پیام بله (اختیاری) و وقتی برنامه باز است، پیام داخل خود برنامه.
    همه‌ی ساعت‌ها به وقت عراق (UTC+3).
 ══════════════════════════════════════════ */
-/* چند ساعت قبل از پرواز از هتل خارج شوند — جدول «برنامه ساعات حرکت کاروان‌ها» */
-const FL_RULES = { karbala: { najaf: 5, baghdad: 7 }, najaf: { najaf: 4, baghdad: 8 }, kadhimiya: { baghdad: 4, najaf: 8 } };
-const FL_CITY = { karbala: 'کربلا', najaf: 'نجف', kadhimiya: 'کاظمین' };
-const FL_AIR = { najaf: 'فرودگاه نجف', baghdad: 'فرودگاه بغداد' };
+/* جدول ساعت‌ها و متن هشدارها: flight-def.js (پیش‌فرض) + آنچه مدیر در پنل منتشر کرده (flCfg) */
 const FL_KEY = 'caravan-flight', FL_CACHE = 'flight-data';
 const FL_VAPID = 'BBB3huPc-duqsm_MRzkmn5MWbbtWCnzu6cRu-JaBE2mIiJqiiLHRpIBxz8cww2XxFXzqdPDDD2fuSfHd8IE8bAs';
 
@@ -63,26 +60,26 @@ function flStore(o) {
 
 /* ── حساب ── */
 function flCalc(f) {
-  const hours = (FL_RULES[f.city] || {})[f.air];
+  const hours = (flCfg().rules[f.city] || {})[f.air];
   if (!hours) return null;
   const fl = f.day * 864e5 + (f.h * 60 + f.m) * 6e4 - 3 * 36e5, dep = fl - hours * 36e5;
   return { ...f, hours, fl, dep };
 }
 function flSteps(c) {
-  const air = FL_AIR[c.air], depT = flHM(c.dep), flT = flHM(c.fl), depDay = flDayNo(c.dep), h = flIraq(c.dep).getUTCHours();
-  const at = (day, hh) => day * 864e5 + hh * 36e5 - 3 * 36e5;
+  const depDay = flDayNo(c.dep), d = flIraq(c.dep), depMin = d.getUTCHours() * 60 + d.getUTCMinutes();
+  const v = { 'حرکت': flHM(c.dep), 'پرواز': flHM(c.fl), 'فرودگاه': FL_AIR[c.air], 'روز': flDayText(depDay) };
+  const fill = x => String(x || '').replace(/\{(حرکت|پرواز|فرودگاه|روز)\}/g, (_, k) => v[k]);
+  const at = (day, hh) => day * 864e5 + hh * 36e5 - 3 * 36e5, hr = (x, def) => { const n = +x; return n >= 0 && n < 24 ? n : def; };
   const s = [];
-  if (h < 8) s.push({ k: 'eve', t: at(depDay - 1, 14), title: '✈️ امشب حرکت به فرودگاه است',
-    body: `ساعت ${depT} (${flDayText(depDay)}) از هتل به سمت ${air} حرکت می‌کنید؛ پرواز ساعت ${flT}. به زائرین اعلام کنید چمدان‌ها را از امروز ببندند، گذرنامه‌ها را آماده کنند و حساب‌ها را با هتل تسویه کنند.` });
-  else s.push({ k: 'eve', t: at(depDay - 1, 20), title: '✈️ فردا روز بازگشت است',
-    body: `فردا ساعت ${depT} از هتل به سمت ${air} حرکت می‌کنید؛ پرواز ساعت ${flT}. امشب به زائرین اعلام کنید چمدان‌ها را ببندند، گذرنامه‌ها را آماده کنند و حساب‌ها را با هتل تسویه کنند.` });
-  if (h >= 11) s.push({ k: 'morn', t: at(depDay, 8), title: '✈️ امروز روز بازگشت است',
-    body: `ساعت ${depT} از هتل به سمت ${air} حرکت می‌کنید (پرواز ${flT}). ساعت حرکت را به همه‌ی زائرین یادآوری کنید.` });
-  s.push({ k: 'h3', t: c.dep - 3 * 36e5, title: '⏰ ۳ ساعت تا حرکت به فرودگاه', body: `حرکت ساعت ${depT}. به زائرین بگویید وسایل را جمع کنند، اتاق‌ها را بگردند چیزی جا نماند و گذرنامه همراهشان باشد.` });
-  s.push({ k: 'h2', t: c.dep - 2 * 36e5, title: '🧳 ۲ ساعت تا حرکت', body: `چمدان‌ها به لابی هتل منتقل شود. حرکت ساعت ${depT}.` });
-  s.push({ k: 'h1', t: c.dep - 36e5, title: '🔑 ۱ ساعت تا حرکت', body: 'کلید اتاق‌ها تحویل پذیرش شود، تسویه با هتل نهایی شود و همه‌ی زائرین در لابی جمع شوند.' });
-  s.push({ k: 'm30', t: c.dep - 30 * 6e4, title: '🚌 ۳۰ دقیقه تا حرکت', body: 'آماده‌ی سوار شدن به اتوبوس. زائرین و چمدان‌ها را شمارش کنید.' });
-  s.push({ k: 'go', t: c.dep, title: '🚌 الان زمان حرکت به فرودگاه است', body: `همین حالا به سمت ${air} حرکت کنید. پرواز ساعت ${flT}.` });
+  flCfg().msgs.forEach((m, i) => {
+    if (!m || m.on === false || !(m.title || m.body)) return;
+    let t;
+    if (m.k === 'eve') { if (depMin < 8 * 60) return; t = at(depDay - 1, hr(m.at, 20)); }
+    else if (m.k === 'eveN') { if (depMin >= 8 * 60) return; t = at(depDay - 1, hr(m.at, 14)); }
+    else if (m.k === 'morn') { const mh = hr(m.at, 8); if (depMin - mh * 60 < 180) return; t = at(depDay, mh); }
+    else t = c.dep - Math.max(0, Math.min(24 * 60, +m.min || 0)) * 6e4;
+    s.push({ k: String(m.k || 'x' + i).slice(0, 10), t, title: fill(m.title).slice(0, 80) || '✈️ یادآوری حرکت به فرودگاه', body: fill(m.body).slice(0, 400) });
+  });
   return s.sort((a, b) => a.t - b.t);
 }
 
@@ -92,7 +89,7 @@ function openFlight() {
   const o = flLoad(), t = stToday();
   const cur = typeof homeCity === 'function' && homeCity() ? homeCity().id : '';
   flForm = o ? { city: o.city, air: o.air, day: o.day, h: o.h, m: o.m, bale: o.bale }
-    : { city: FL_RULES[cur] ? cur : 'karbala', air: 'najaf', day: t + 1, h: 12, m: 0, bale: typeof baleState === 'function' && baleState() === '1' };
+    : { city: FL_CITY[cur] ? cur : 'karbala', air: 'najaf', day: t + 1, h: 12, m: 0, bale: typeof baleState === 'function' && baleState() === '1' };
   if (!o && flForm.city === 'kadhimiya') flForm.air = 'baghdad';
   flMsg = '';
   openPage('✈️ ساعت حرکت به فرودگاه', '<div id="flBody"></div>');
@@ -110,7 +107,7 @@ function flRender() {
   box.innerHTML = `
     <div class="st-form">
       <label class="st-lbl" style="margin-top:0">🏨 هتل شما در کدام شهر است؟</label>
-      <div class="fl-chips">${Object.keys(FL_RULES).map(k => chip('city', k, FL_CITY[k])).join('')}</div>
+      <div class="fl-chips">${Object.keys(FL_CITY).map(k => chip('city', k, FL_CITY[k])).join('')}</div>
       <label class="st-lbl">✈️ پرواز از کدام فرودگاه است؟</label>
       <div class="fl-chips">${Object.keys(FL_AIR).map(k => chip('air', k, FL_AIR[k])).join('')}</div>
       <label class="st-lbl">📅 تاریخ پرواز</label>
@@ -147,7 +144,7 @@ function flRender() {
       <li>این ساعت‌ها طبق دستورالعمل عمومی بعثه است؛ اگر مدیر نقل یا ستاد ساعت دیگری اعلام کرد، همان ملاک است.</li>
     </ul>`;
 }
-function flSet(k, v) { flForm[k] = v; if (k === 'city' && !FL_RULES[v][flForm.air]) flForm.air = Object.keys(FL_RULES[v])[0]; flMsg = ''; flRender(); }
+function flSet(k, v) { flForm[k] = v; flMsg = ''; flRender(); }
 
 const flKey = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), ch => ch.charCodeAt(0));
 async function flEnable(btn) {

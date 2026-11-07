@@ -402,7 +402,7 @@
   </div>
 
   <div class="grp-bar" role="tablist" aria-label="دسته‌های تب عمومی">
-    <button data-g="news" onclick="showGrp('news')">📢 اطلاع‌رسانی<small>اطلاعیه‌ها · نرخ دینار</small></button>
+    <button data-g="news" onclick="showGrp('news')">📢 اطلاع‌رسانی<small>اطلاعیه‌ها · نرخ دینار · هشدار پرواز</small></button>
     <button data-g="home" onclick="showGrp('home')">🧩 صفحه اول<small>آیکون‌ها · نوار پایین · اسلایدر</small></button>
     <button data-g="look" onclick="showGrp('look')">🎨 نام و ظاهر<small>عنوان · آیکون برنامه · بنر · درباره</small></button>
     <button data-g="contacts" onclick="showGrp('contacts')">📞 شماره‌های عمومی<small>بیمه معلم · ناظر نقل</small></button>
@@ -455,6 +455,16 @@
       </div>
     </div>
     <div class="sec-body" style="display:block" id="bale-admin"></div>
+  </div>
+  <div class="sec-card open" data-grp="news" data-perm="flight">
+    <div class="sec-card-head no-toggle">
+      <div class="sec-head-icon ico-gen">✈️</div>
+      <div class="sec-head-info">
+        <div class="sec-head-title">ابزار «ساعت حرکت به فرودگاه»</div>
+        <div class="sec-head-sub">چند ساعت قبل از پرواز از هتل خارج شوند، و زمان و متن هشدارهای روز بازگشت</div>
+      </div>
+    </div>
+    <div class="sec-body" style="display:block" id="flight-admin"></div>
   </div>
   <!-- HOME LAYOUT -->
   <div class="sec-card open" data-perm="layout" data-grp="home">
@@ -886,6 +896,8 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="icons.js"></script>
 <script src="admin-layout.js"></script>
 <script src="admin-emergency.js"></script>
+<script src="flight-def.js"></script>
+<script src="admin-flight.js"></script>
 <script src="admin-zyarat.js"></script>
 <script src="admin-guard.js"></script>
 <script src="admin-notice.js"></script>
@@ -1414,6 +1426,7 @@ function buildData(pending){
     insurance:{title:groupMeta.insurance.title.trim()||'نماینده بیمه معلم – تمام شهرها',contacts:contactsData('insurance')},
     transport:{title:groupMeta.transport.title.trim()||'ناظر نقل شرکت‌های عراقی',contacts:contactsData('transport')},
     ...emergOut(),
+    ...flightOut(),
     food:getFoodData(),
     besat:getBesatData(),
     guide:getGuideData(),
@@ -1876,6 +1889,7 @@ function init(){
   initGuide();
   initLayout();
   initEmerg();
+  initFlightAdmin();
   initZyarat();
   setTimeout(() => { if (typeof csBadge === 'function') csBadge(); }, 1500);
   initNotices();
