@@ -59,6 +59,11 @@ const CARAVAN_DATA = {
           "iconFull": true
         },
         {
+          "id": "flight",
+          "on": true,
+          "icon": "slides/icon-flight-1794079143965.png"
+        },
+        {
           "id": "guide",
           "on": true,
           "icon": "slides/icon-guide-1793836532986.png",
