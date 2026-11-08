@@ -148,8 +148,9 @@ function lostShowLoc(co) {
   const t = encodeURIComponent(text), ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const ph = lostIntl(me.phone), acc = Math.round(co.accuracy || 0);
   let html = `<div class="lost-loc">✓ موقعیت پیدا شد${acc ? ` (دقت حدود ${acc.toLocaleString('fa')} متر)` : ''}. حالا یکی از راه‌های زیر را بزنید:</div>`;
-  if (ph) html += `<a class="lost-btn" href="https://wa.me/${ph.replace('+', '')}?text=${t}" target="_blank" rel="noopener">💬 واتس‌اپ به ${escHtml(me.phone)}</a>`;
-  html += `<a class="lost-btn ${ph ? 'alt' : ''}" href="https://wa.me/?text=${t}" target="_blank" rel="noopener">💬 واتس‌اپ (انتخاب مخاطب)</a>`;
+  const wt = escHtml(text);
+  if (ph) html += `<a class="lost-btn" href="https://wa.me/${ph.replace('+', '')}?text=${t}" data-wa="${ph.replace('+', '')}" data-wa-text="${wt}" onclick="return waClick(this)" target="_blank" rel="noopener">${WA_SVG} واتس‌اپ به ${escHtml(me.phone)}</a>`;
+  html += `<a class="lost-btn ${ph ? 'alt' : ''}" href="https://wa.me/?text=${t}" data-wa="" data-wa-text="${wt}" onclick="return waClick(this)" target="_blank" rel="noopener">${WA_SVG} واتس‌اپ (انتخاب مخاطب)</a>`;
   html += `<a class="lost-btn alt" href="sms:${ph}${ios ? '&' : '?'}body=${t}">✉️ پیامک — بدون اینترنت هم می‌رود</a>`;
   if (navigator.share) html += `<button class="lost-btn alt" onclick='navigator.share({text:${JSON.stringify(text).replace(/'/g, "&#39;")}}).catch(()=>{})'>📤 سایر برنامه‌ها (بله، ایتا، تلگرام…)</button>`;
   if (!ph) html += `<div class="lost-hint">اگر شماره مسئول کاروان را در «اطلاعات من» (پایین صفحه) وارد کنید، با یک لمس برای او فرستاده می‌شود.</div>`;

@@ -31,7 +31,8 @@ let mgrPoll = null, mgrCode = '', mgrErr = '';
   .mg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .mg-call,.mg-wa{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:calc(13.5px * var(--fs,1))}
   .mg-call{background:var(--gold);color:#fff}.mg-call.alt{background:var(--card2);color:var(--text);border:1px solid var(--border-s)}
-  .mg-wa{background:rgba(37,211,102,.14);color:#128C4A;border:1px solid rgba(37,211,102,.5)}
+  .mg-wa{background:rgba(37,211,102,.14);color:#128C4A;border:1px solid rgba(37,211,102,.5);justify-content:center;min-width:46px}
+  .mg-wa .wa-ic{width:22px;height:22px}
   .mg-pair{display:inline-flex;gap:4px}
   .mg-reps{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-s)}
   .mg-rh{font-weight:800;color:var(--brass);font-size:calc(13px * var(--fs,1))}
@@ -178,7 +179,7 @@ function mgrList() {
   const q = mgrNorm(mgrQ), L = o.data.companies.filter(c => !q || mgrNorm([c.name, c.ceo, c.address, c.phone, ...reps(c).flatMap(r => [r.name, r.ir, r.iq])].join(' ')).includes(q));
   /* تماس با شماره‌ی بین‌المللی (+۹۶۴/+۹۸) تا با سیم‌کارت ایرانی در عراق هم وصل شود */
   const call = (ph, label, cls) => { if (!ph) return ''; const w = mgrWa(ph), shown = ph.replace(/^00/, '+');
-    return `<span class="mg-pair"><a class="mg-call ${cls || ''}" href="tel:${w ? '+' + w : escHtml(shown)}" aria-label="تماس ${label}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="https://wa.me/${w}" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">💬</a>` : ''}</span>`; };
+    return `<span class="mg-pair"><a class="mg-call ${cls || ''}" href="tel:${w ? '+' + w : escHtml(shown)}" aria-label="تماس ${label}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="${waHref(w)}" data-wa="${w}" onclick="return waClick(this)" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">${WA_SVG}</a>` : ''}</span>`; };
   el.innerHTML = L.length ? L.map(c => { const R = reps(c); return `<div class="mg-co"><b>${escHtml(c.name)}</b>
       ${c.ceo ? `<div class="mg-row"><span>مدیرعامل:</span> ${escHtml(c.ceo)}</div>` : ''}
       ${c.address ? `<div class="mg-row"><span>📍 آدرس:</span> ${escHtml(c.address)}</div>` : ''}
