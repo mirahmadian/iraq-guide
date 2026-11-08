@@ -91,11 +91,62 @@ function bindChips(box, again) {
 }
 const match = r => (!S.role || r.role === S.role) && (!S.q || normH([r.first, r.last, r.nid, r.hotel].join(' ')).includes(normH(S.q).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))));
 
+/* ═════ ثبت سریع: مدیران ثابتی که در سامانه حساب دارند + نام‌های ستون مدیر ثابت/آشپز اکسل هفتگی ═════ */
+function candidates() {
+  const nids = new Set(S.d.rows.filter(r => r.status === 'active').map(r => r.nid)), names = new Set(S.d.rows.filter(r => r.status === 'active').map(r => normH(nameOf(r))));
+  const split = n => { const p = normH(n).split(' '); return { first: p[0] || '', last: p.slice(1).join(' ') }; };
+  const out = [], seen = new Set();
+  for (const u of S.d.fms || []) { const k = normH(u.name); if (nids.has(u.nid) || names.has(k) || seen.has(k)) continue; seen.add(k); out.push({ ...split(u.name), nid: u.nid, role: S.d.roles.includes('مدیر ثابت') ? 'مدیر ثابت' : S.d.roles[0], hotel: u.hotels[0] || '', src: 'حساب سامانه' }); }
+  for (const x of S.d.suggest || []) { const k = normH(x.name); if (names.has(k) || seen.has(k)) continue; seen.add(k); out.push({ ...split(x.name), nid: '', role: S.d.roles.includes(x.role) ? x.role : S.d.roles[0], hotel: x.hotel || '', src: 'اکسل هفتگی' }); }
+  return out;
+}
+function quickCard() {
+  const C = candidates(); if (!C.length) return '';
+  const nf = C.filter(x => x.role === 'مدیر ثابت').length, nc = C.length - nf;
+  return `<div class="card st-quick"><div class="row" style="justify-content:space-between"><div><b>💡 ${fa(C.length)} نفر از عوامل فعلی هنوز این‌جا ثبت نشده‌اند</b>
+    <div class="hint">${nf ? fa(nf) + ' مدیر ثابت' : ''}${nf && nc ? ' و ' : ''}${nc ? fa(nc) + ' نفر دیگر (آشپز و …)' : ''}، از حساب‌های سامانه و اکسل هفتگی. نام، نقش و هتلشان آماده است؛ فقط تاریخ‌ها (و کد ملی کسانی که ندارند) را وارد کنید.</div></div>
+    <button class="btn" data-a="quick">⚡ ثبت سریع</button></div></div>`;
+}
+function quickDlg() {
+  const C = candidates(), H = hotelList().map(x => x.h);
+  const opt = (L, v) => L.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
+  const D = dlg('⚡ ثبت سریع عوامل فعلی', `
+    <p class="hint">کسانی را که نمی‌خواهید، تیکشان را بردارید. تاریخ شروع را یک بار برای همه بنویسید (بعد برای هر نفر قابل تغییر است)؛ تاریخ خروج ${fa(S.d.maxDays)} روز بعد پر می‌شود.</p>
+    <div class="row"><label class="label">تاریخ شروع همه</label><input class="st-all" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" style="width:130px"><button class="btn small ghost" data-a="all">اعمال برای همه</button></div>
+    <div class="tbl-wrap st-qt"><table><thead><tr><th></th><th>نام</th><th>نام خانوادگی</th><th>کد ملی</th><th>نقش</th><th>هتل</th><th>شروع</th><th>خروج</th></tr></thead><tbody>
+    ${C.map((x, i) => `<tr data-i="${i}"><td><input type="checkbox" data-k="on" checked aria-label="انتخاب"></td>
+      <td><input data-k="first" value="${esc(x.first)}"></td><td><input data-k="last" value="${esc(x.last)}"></td>
+      <td><input data-k="nid" value="${esc(x.nid)}" dir="ltr" inputmode="numeric" maxlength="12" placeholder="کد ملی" class="${x.nid ? '' : 'need'}"></td>
+      <td><select data-k="role">${opt(S.d.roles, x.role)}</select></td>
+      <td><select data-k="hotel"><option value="">—</option>${opt(H, x.hotel)}</select></td>
+      <td><input data-k="d_start" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" class="need"></td><td><input data-k="d_end" dir="ltr"></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="st-errs"></div>
+    <div class="rr-act"><button class="btn" data-a="go">✅ ثبت انتخاب‌شده‌ها</button><button class="btn ghost" data-a="x">انصراف</button></div>`, true);
+  const rowsEl = () => [...D.ov.querySelectorAll('tbody tr')];
+  const setStart = (tr, v) => { const s = tr.querySelector('[data-k=d_start]'), e = tr.querySelector('[data-k=d_end]'); s.value = v; s.classList.toggle('need', JD.num(v) == null);
+    const d = JD.num(v); if (d != null && !e.dataset.touched) e.value = faS(JD.str(d + S.d.maxDays - 1)); };
+  rowsEl().forEach(tr => { tr.querySelector('[data-k=d_start]').oninput = e => setStart(tr, e.target.value); tr.querySelector('[data-k=d_end]').oninput = e => e.target.dataset.touched = 1;
+    tr.querySelector('[data-k=nid]').oninput = e => e.target.classList.toggle('need', !e.target.value.trim()); });
+  D.$('[data-a=all]').onclick = () => { const v = D.$('.st-all').value; if (JD.num(v) == null) return toast('تاریخ را مثل ۱۴۰۵/۰۸/۱۰ بنویسید', true); rowsEl().forEach(tr => setStart(tr, faS(JD.str(JD.num(v))))); };
+  D.$('.st-all').onkeydown = e => { if (e.key === 'Enter') D.$('[data-a=all]').click(); };
+  D.$('[data-a=x]').onclick = D.close;
+  D.$('[data-a=go]').onclick = async () => {
+    const rows = rowsEl().filter(tr => tr.querySelector('[data-k=on]').checked).map(tr => { const g = k => tr.querySelector(`[data-k=${k}]`).value; return { first: g('first'), last: g('last'), nid: g('nid'), role: g('role'), hotel: g('hotel'), d_start: g('d_start'), d_end: g('d_end') }; });
+    if (!rows.length) return toast('کسی انتخاب نشده است.', true);
+    try {
+      const r = await api('/api/admin/staff/import', { body: { rows } });
+      if (!r.ok) { D.$('.st-errs').innerHTML = `<div class="err">${fa(r.nErr)} ردیف ایراد دارد (شماره‌ی ردیف به ترتیب همین جدولِ انتخاب‌شده‌هاست):</div><ul class="err" style="font-size:12px">${r.errors.map(x => `<li>${esc(x.replace(/^ردیف (\d+)/, (m, n) => 'ردیف ' + fa(n - 1)))}</li>`).join('')}</ul>`; return; }
+      toast(`✅ ${fa(r.added)} نفر ثبت شد`); D.close(); reload();
+    } catch (e) { toast(e.message, true); }
+  };
+}
+
 /* ═════ فهرست ═════ */
 function renderList() {
   const box = document.getElementById('st-body');
   const rows = (S.hist ? S.d.rows : active()).filter(match).sort((a, b) => (a.status !== 'active') - (b.status !== 'active') || JD.num(a.d_end) - JD.num(b.d_end));
-  box.innerHTML = `<div class="card">${roleChips()}
+  box.innerHTML = quickCard() + `<div class="card">${roleChips()}
     <label class="row dim" style="font-size:12.5px;gap:6px"><input type="checkbox" id="st-hist" ${S.hist ? 'checked' : ''}> دوره‌های تمام‌شده و تمدیدشده را هم نشان بده</label>
     <div class="tbl-wrap"><table class="st-tbl"><thead><tr><th>نام</th><th>نقش</th><th>هتل (برای جابجایی بزنید)</th><th>شروع</th><th>خروج</th><th>مانده</th><th></th></tr></thead><tbody>
     ${rows.map(r => { const L = lvl(r), n = left(r);
@@ -107,11 +158,12 @@ function renderList() {
         <td>${r.status === 'active' ? `<span class="pill ${L === 'over' ? 'bad' : L === 'near' ? 'bad' : n <= 10 ? 'warn' : 'ok'}">${daysTxt(n)}</span>` : `<span class="pill mute">${r.status === 'left' ? 'خارج شد' + (r.left_at ? ' ' + faS(r.left_at.slice(5)) : '') : 'تمدید شد'}</span>`}</td>
         <td class="st-act">${r.status === 'active' ? `<button class="btn small ghost" data-ext="${r.id}" title="دوره‌ی تازه برای همین نفر">🔁 تمدید</button><button class="btn small ghost" data-leave="${r.id}">🚪 خارج شد</button>` : r.status === 'left' ? `<button class="btn small ghost" data-unleave="${r.id}">↩️</button>` : ''}
           <button class="btn small ghost" data-edit="${r.id}" title="ویرایش">✏️</button><button class="btn small ghost" data-hist="${r.id}" title="سابقه">🕘</button></td></tr>`; }).join('')
-      || `<tr><td colspan="7" class="empty">${S.d.rows.length ? 'کسی با این جستجو پیدا نشد.' : 'هنوز نیرویی ثبت نشده است. از «➕ نیروی تازه» یا «📄 ورود از اکسل» شروع کنید.'}</td></tr>`}
+      || `<tr><td colspan="7" class="empty">${S.d.rows.length ? 'کسی با این جستجو پیدا نشد.' : 'هنوز نیرویی ثبت نشده است. از «⚡ ثبت سریع» بالا، «➕ نیروی تازه» یا «📄 ورود از اکسل» شروع کنید.'}</td></tr>`}
     </tbody></table></div>
     <div class="legend"><span><i style="background:var(--bad)"></i>${fa(NEAR)} روز یا کمتر تا خروج، یا گذشته</span><span><i style="background:var(--warn)"></i>کمتر از ۱۰ روز</span></div></div>`;
   bindChips(box, renderList);
   box.querySelector('#st-hist').onchange = e => { S.hist = e.target.checked; renderList(); };
+  const qb = box.querySelector('[data-a=quick]'); if (qb) qb.onclick = quickDlg;
   bindRowActions(box);
 }
 function bindRowActions(box) {
@@ -479,7 +531,7 @@ function injectCSS() {
   .st-pr button,.st-relo{border:1px solid #ccc;background:#f6f6f6;border-radius:8px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
   .st-relo{margin-top:4px;color:#666}
   .st-nogeo{border:1px dashed var(--line-s);background:var(--card2);border-radius:9px;padding:6px 8px;text-align:start}
-  .st-wide{max-width:760px!important}
+  .st-wide{max-width:min(1040px,96vw)!important}
   .st-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .st-form label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--dim)}
   .st-form input,.st-form select{border:1px solid var(--line-s);background:var(--card2);border-radius:9px;padding:8px;font-weight:500;color:var(--ink)}
@@ -489,6 +541,9 @@ function injectCSS() {
   .st-per{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px}
   .st-mv{margin:6px 0 0;padding-right:18px;font-size:12.5px}
   .st-roles{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0} .st-newrole{flex:1;border:1px solid var(--line-s);border-radius:9px;padding:6px 10px;background:var(--card2)}
+  .st-quick{border-color:var(--brass-l);background:var(--warn-soft)}
+  .st-qt{max-height:55vh} .st-qt input,.st-qt select{border:1px solid var(--line-s);background:var(--card2);border-radius:7px;padding:5px 6px;min-width:90px;font-size:12.5px} .st-qt input[data-k=on]{min-width:0}
+  .st-qt .need{border-color:var(--bad);background:var(--bad-soft)}
   .st-steps{margin:0;padding-right:18px;line-height:2}
   </style>`);
 }

@@ -943,10 +943,13 @@ async function api(req, url, u) {
       const hotels = [...new Set([...ent.map(e => normName(e.hotel)), ...rows.map(r => r.hotel)].filter(Boolean))];
       const names = new Map();
       for (const e of ent) { for (const [k, role] of [['home_mgr', 'مدیر ثابت'], ['cook', 'آشپز']]) for (const n of String(e[k] || '').split(/[،,\/\n]+|\s-\s/)) { const t = stS(n, 80); if (t && t.length > 3) names.set(t + '|' + role, { name: t, role, hotel: normName(e.hotel) }); } }
+      /* مدیران ثابتِ همین منطقه که در سامانه حساب دارند (با کد ملی و هتل‌های آخرین هفته) — برای ثبت سریع در عوامل */
+      const fms = await all(`SELECT u.name, u.nid, (SELECT group_concat(e.hotel, '|') FROM assign a JOIN entries e ON e.id = a.entry_id WHERE a.user_id = u.id AND e.week_id = ?) AS hotels
+        FROM users u WHERE u.region_id = ? AND u.role = 'fm' AND u.active = 1 ORDER BY u.name`, wk[0] ? wk[0].id : 0, R);
       const geo = await all('SELECT hotel, lat, lng FROM hotel_geo WHERE region_id = ?', R);
       const tb = await one('SELECT linked FROM team_bale WHERE user_id = ?', u.id);
       const region = await one('SELECT name FROM regions WHERE id = ?', R);
-      return { rows, moves, roles: await staffRoles(R), hotels, suggest: [...names.values()], geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
+      return { rows, moves, roles: await staffRoles(R), hotels, suggest: [...names.values()], fms: fms.map(x => ({ name: x.name, nid: x.nid, hotels: [...new Set(String(x.hotels || '').split('|').map(normName).filter(Boolean))] })), geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
     }
     if (p === '/api/admin/staff' && m === 'POST') {
       const b = await body(), roles = await staffRoles(R), v = staffRow(b, roles); if (v.err) fail(400, v.err);
