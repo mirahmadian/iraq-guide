@@ -26,7 +26,17 @@ let mgrPoll = null, mgrCode = '', mgrErr = '';
   .mg-search{width:100%;box-sizing:border-box;min-height:48px;border-radius:14px;border:1px solid var(--border-s);background:var(--card2);color:var(--text);
     font-family:var(--font);font-size:calc(14.5px * var(--fs,1));padding:0 14px;margin-bottom:8px}
   .mg-co{padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--border-s);margin-bottom:8px;line-height:1.9;font-size:calc(14px * var(--fs,1))}
-  .mg-co > b{font-size:calc(15px * var(--fs,1))}
+  .mg-co{padding:0}
+  .mg-co > summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;min-height:56px}
+  .mg-co > summary::-webkit-details-marker{display:none}
+  .mg-co-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.6}
+  .mg-co-t b{font-size:calc(15px * var(--fs,1))}
+  .mg-co-t small{font-size:calc(12px * var(--fs,1));color:var(--muted)}
+  .mg-chev{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex-shrink:0;margin-top:-5px}
+  .mg-co[open] .mg-chev{transform:rotate(-135deg);margin-top:5px}
+  .mg-co[open] > summary{border-bottom:1px dashed var(--border-s)}
+  .mg-co-b{padding:4px 14px 12px}
+  @media(prefers-reduced-motion:reduce){.mg-chev{transition:none}}
   .mg-row span{color:var(--muted);font-size:.92em}
   .mg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .mg-call,.mg-wa{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 12px;border-radius:12px;text-decoration:none;font-weight:800;font-size:calc(13.5px * var(--fs,1))}
@@ -157,6 +167,7 @@ function mgrRefreshUI() {
 }
 /* ── شرکت‌های مجری (داده از /mgr/data؛ روی گوشی نگه داشته می‌شود تا بدون اینترنت هم باشد) ── */
 let mgrQ = '';
+const mgrOpen = new Set();
 const mgrFa = s => String(s || '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 /* شماره برای واتس‌اپ: کد کشور بدون صفر (۰۹… ایران → ۹۸، ۰۷… عراق → ۹۶۴) */
 function mgrWa(p) {
@@ -180,14 +191,18 @@ function mgrList() {
   /* تماس با شماره‌ی بین‌المللی (+۹۶۴/+۹۸) تا با سیم‌کارت ایرانی در عراق هم وصل شود */
   const call = (ph, label, cls) => { if (!ph) return ''; const w = mgrWa(ph), shown = ph.replace(/^00/, '+');
     return `<span class="mg-pair"><a class="mg-call ${cls || ''}" href="tel:${w ? '+' + w : escHtml(shown)}" aria-label="تماس ${label}">📞 ${label} <span dir="ltr">${mgrFa(shown)}</span></a>${w ? `<a class="mg-wa" href="${waHref(w)}" data-wa="${w}" onclick="return waClick(this)" target="_blank" rel="noopener" aria-label="واتس‌اپ ${label}">${WA_SVG}</a>` : ''}</span>`; };
-  el.innerHTML = L.length ? L.map(c => { const R = reps(c); return `<div class="mg-co"><b>${escHtml(c.name)}</b>
-      ${c.ceo ? `<div class="mg-row"><span>مدیرعامل:</span> ${escHtml(c.ceo)}</div>` : ''}
+  /* هر شرکت جمع‌شونده است (بسته)؛ با جستجو، شرکت‌های پیداشده باز می‌شوند؛ باز/بسته بودن هنگام جستجو حفظ می‌شود */
+  const auto = q && L.length <= 5;
+  el.innerHTML = L.length ? L.map(c => { const R = reps(c), open = auto || mgrOpen.has(c.name);
+    const sub = [c.ceo ? 'مدیرعامل: ' + c.ceo : '', R.length ? `${mgrFa(R.length)} نماینده در عراق` : ''].filter(Boolean).join('، ');
+    return `<details class="mg-co" data-co="${escHtml(c.name)}" ${open ? 'open' : ''}><summary><span class="mg-co-t"><b>${escHtml(c.name)}</b>${sub ? `<small>${escHtml(sub)}</small>` : ''}</span><span class="mg-chev" aria-hidden="true"></span></summary><div class="mg-co-b">
       ${c.address ? `<div class="mg-row"><span>📍 آدرس:</span> ${escHtml(c.address)}</div>` : ''}
       ${c.phone ? `<div class="mg-btns">${call(c.phone, 'شرکت', 'alt')}</div>` : ''}
       ${R.length ? `<div class="mg-reps"><div class="mg-rh">👤 ${R.length > 1 ? 'نمایندگان' : 'نماینده'} در عراق</div>${R.map(r => `<div class="mg-rep"><b>${escHtml(r.name || 'نماینده')}</b>
         <div class="mg-btns">${call(r.iq, 'عراق')}${call(r.ir, 'ایران', 'alt')}</div></div>`).join('')}</div>` : ''}
-      ${c.note ? `<div class="mg-note">${escHtml(c.note)}</div>` : ''}</div>`; }).join('')
+      ${c.note ? `<div class="mg-note">${escHtml(c.note)}</div>` : ''}</div></details>`; }).join('')
     : '<div class="mg-soon">شرکتی با این نام پیدا نشد.</div>';
+  el.querySelectorAll('details[data-co]').forEach(d => d.addEventListener('toggle', () => { d.open ? mgrOpen.add(d.dataset.co) : mgrOpen.delete(d.dataset.co); }));
 }
 /* بررسی اعتبار + دریافت اطلاعات: اگر شماره از فهرست حذف شده یا تاریخش گذشته، بخش ویژه (و اطلاعاتش) از این گوشی پاک می‌شود */
 async function mgrCheck(force) {
