@@ -411,6 +411,7 @@
       <div class="side-h">مدیران و شرکت‌ها</div>
       <button class="tab-btn" onclick="switchTab('mgr',this)" title="مدیران کاروان"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18M10 12v2h4v-2"/></svg><span class="nl">مدیران کاروان</span></button>
       <button class="tab-btn" onclick="switchTab('mgrco',this)" title="شرکت‌های مجری"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5l8-2v18M12 8h8v13M2 21h20M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2"/></svg><span class="nl">شرکت‌های مجری</span></button>
+      <button class="tab-btn" onclick="switchTab('trips',this)" title="سفرهای مدیران راهنما"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span class="nl">سفرهای مدیران راهنما</span></button>
       <div class="side-h">بازخورد و آمار</div>
       <button class="tab-btn" onclick="switchTab('reviews',this)" title="نظرها"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M12 7.8l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z"/></svg><span class="nl">نظرها</span></button>
       <button class="tab-btn" onclick="switchTab('stats',this)" title="آمار و فضای سرور"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg><span class="nl">آمار و فضای سرور</span></button>
@@ -908,12 +909,20 @@
 </div><!-- /tab-mgr -->
 
 <div class="page" id="tab-mgrco" style="max-width:900px">
-  <div class="sec-card open" data-perm="mgr">
+  <div class="sec-card open" data-perm="mgrco">
     <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🏢</div>
       <div class="sec-head-info"><div class="sec-head-title">شرکت‌های مجری و نمایندگانشان در عراق</div><div class="sec-head-sub">نام شرکت، مدیرعامل، آدرس، تلفن، و نماینده یا نمایندگان در عراق با موبایل ایران و عراق — فقط مدیران کاروانِ واردشده در اپلیکیشن می‌بینند (زائران نه)</div></div></div>
     <div class="sec-body" style="display:block" id="mgrco-admin"></div>
   </div>
 </div><!-- /tab-mgrco -->
+
+<div class="page" id="tab-trips" style="max-width:900px">
+  <div class="sec-card open" data-perm="trips">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🧭</div>
+      <div class="sec-head-info"><div class="sec-head-title">سفرهای مدیران راهنما</div><div class="sec-head-sub">کاروان‌های هفته‌ی آینده از سامانه‌ی عتبات (با افزونه‌ی همیار کاروان): مدیر و موبایل، شرکت مجری، هتل‌ها و تاریخ‌ها؛ کاروان‌های لغوشده کنار گذاشته می‌شوند</div></div></div>
+    <div class="sec-body" style="display:block" id="trips-admin"></div>
+  </div>
+</div><!-- /tab-trips -->
 
 <div class="page" id="tab-stats" style="max-width:900px">
   <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
@@ -967,6 +976,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="flight-def.js"></script>
 <script src="admin-flight.js"></script>
 <script src="admin-mgr.js"></script>
+<script src="admin-trips.js"></script>
 <script src="admin-search.js"></script>
 <script src="admin-help.js"></script>
 <script src="admin-zyarat.js"></script>
@@ -993,6 +1003,7 @@ function switchTab(id, btn) {
   if (id === 'users') usersLoad();
   if (id === 'mgr' && typeof mgaLoad === 'function') mgaLoad();
   if (id === 'mgrco' && typeof mcoLoad === 'function') mcoLoad();
+  if (id === 'trips' && typeof trLoad === 'function') trLoad();
 }
 
 function toggleCard(key) {
