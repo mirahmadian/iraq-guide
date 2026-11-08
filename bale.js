@@ -76,9 +76,8 @@ function balePopDue() {
   return (s.n || 0) < BALE_POP_MAX && Date.now() >= (s.next || 0);
 }
 function balePopShow() {
-  if (!balePopDue() || document.querySelector('.overlay.open')) return;
-  try { sessionStorage.setItem(BALE_POP, '1'); } catch (e) {}
-  if (!BALE_TEST) { const s = balePopState(); try { localStorage.setItem(BALE_POP, JSON.stringify({ n: (s.n || 0) + 1, next: Date.now() + 2 * 864e5 })); } catch (e) {} }
+  /* اگر نسخه‌ی تازه‌ی برنامه در حال نصب است، صفحه الان یک بار خودش تازه می‌شود؛ بعد از آن نشان می‌دهیم */
+  if (!balePopDue() || document.querySelector('.overlay.open') || window.__swUpdating) return;
   document.body.insertAdjacentHTML('beforeend', `<div class="overlay open" id="balePop" role="dialog" aria-modal="true" aria-labelledby="balePopT" onclick="if(event.target===this)balePopClose()">
     <div class="modal bale-pop">
       <div class="modal-handle" aria-hidden="true"></div>
@@ -100,9 +99,14 @@ function balePopShow() {
     .bp-note{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:1.8;margin:6px 0 0}
   </style>`);
 }
+/* نمایش فقط وقتی شمرده می‌شود که کاربر پنجره را بسته (اگر صفحه وسطش تازه شد، دوباره و درست نشان داده می‌شود) */
 function balePopClose(never) {
-  const v = document.getElementById('balePop'); if (v) v.remove();
-  if (never && !BALE_TEST) baleSet('no');
+  const v = document.getElementById('balePop'); if (!v) return;
+  v.remove();
+  if (BALE_TEST) return;
+  try { sessionStorage.setItem(BALE_POP, '1'); } catch (e) {}
+  const st = balePopState(); try { localStorage.setItem(BALE_POP, JSON.stringify({ n: (st.n || 0) + 1, next: Date.now() + 2 * 864e5 })); } catch (e) {}
+  if (never) baleSet('no');
 }
 /* بعد از صفحه‌ی خوش‌آمد (اگر هست) و کمی مکث، تا کاربر اول برنامه را ببیند */
 (function balePopWait(t0) {

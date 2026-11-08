@@ -1616,8 +1616,10 @@ if ('serviceWorker' in navigator) {
       /* وقتی SW جدیدی نصب شد، فعالش کن */
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
+        if (navigator.serviceWorker.controller) window.__swUpdating = true;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            window.__swUpdating = true;   /* صفحه به‌زودی تازه می‌شود؛ پنجره‌های خودکار (مثل دعوت بله) صبر کنند */
             newWorker.postMessage('SKIP_WAITING');
           }
         });
