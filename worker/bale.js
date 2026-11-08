@@ -7,6 +7,7 @@
 ══════════════════════════════════════════ */
 import { guardBaleHook } from './guard.js';
 import { mgrBaleHook } from './mgr.js';
+import { teamBaleHook } from './teamstaff.js';
 const API = t => `https://tapi.bale.ai/bot${t}/`;
 export const BOT_USER = 'HamyarKaravan_Bot';
 const SEND_BATCH = 35; /* هر درخواست حداکثر ۵۰ زیردرخواست دارد (Workers رایگان) */
@@ -52,6 +53,7 @@ export async function handleBalePublic(p, req, env, body, dev, json, err, limite
     const chat = m.chat.id, from = m.from || {}, text = String(m.text || '').trim();
     const name = [from.first_name, from.last_name].filter(Boolean).join(' ').slice(0, 60);
     if (text && await guardBaleHook(env, chat, text)) return json({ ok: true });
+    if (await teamBaleHook(env, m, bale)) return json({ ok: true });
     if (await mgrBaleHook(env, m, bale)) return json({ ok: true });
 
     if (m.contact) {

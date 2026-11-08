@@ -65,3 +65,20 @@ CREATE TABLE IF NOT EXISTS region_ratings (
   stars INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 5), tags TEXT, note TEXT, user_id INTEGER REFERENCES users(id), updated INTEGER NOT NULL,
   PRIMARY KEY (week_id, hotel)
 );
+
+-- عوامل منطقه (مدیران ثابت، آشپزها و هر نقشی که مدیر منطقه تعریف کند): هر رکورد یک «دوره» است؛ تمدید = رکورد تازه با prev_id
+CREATE TABLE IF NOT EXISTS staff (
+  id INTEGER PRIMARY KEY, region_id INTEGER NOT NULL REFERENCES regions(id), first TEXT NOT NULL, last TEXT NOT NULL, nid TEXT NOT NULL,
+  role TEXT NOT NULL, hotel TEXT, d_start TEXT NOT NULL, d_end TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', left_at TEXT,
+  prev_id INTEGER, note TEXT, created INTEGER NOT NULL, updated INTEGER NOT NULL, by INTEGER
+);
+CREATE INDEX IF NOT EXISTS staff_region ON staff (region_id, status);
+CREATE INDEX IF NOT EXISTS staff_nid ON staff (region_id, nid);
+CREATE TABLE IF NOT EXISTS staff_moves (id INTEGER PRIMARY KEY, staff_id INTEGER NOT NULL, from_hotel TEXT, to_hotel TEXT, ts INTEGER NOT NULL, by INTEGER);
+CREATE INDEX IF NOT EXISTS staff_moves_s ON staff_moves (staff_id);
+CREATE TABLE IF NOT EXISTS staff_cfg (region_id INTEGER PRIMARY KEY, roles TEXT NOT NULL, updated INTEGER NOT NULL);
+-- موقعیت هتل روی نقشه که مدیر منطقه خودش گذاشته (بقیه از مختصات هتل‌های اپلیکیشن)
+CREATE TABLE IF NOT EXISTS hotel_geo (region_id INTEGER NOT NULL, hotel TEXT NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL, PRIMARY KEY (region_id, hotel));
+-- اتصال مدیر منطقه به بازوی بله برای هشدار تاریخ خروج (پیام را worker hamyar-reviews می‌فرستد)
+CREATE TABLE IF NOT EXISTS team_bale (user_id INTEGER PRIMARY KEY, chat_id INTEGER NOT NULL, linked INTEGER NOT NULL, last_sent TEXT);
+CREATE TABLE IF NOT EXISTS team_bale_links (code TEXT PRIMARY KEY, user_id INTEGER NOT NULL, exp INTEGER NOT NULL);

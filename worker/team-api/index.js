@@ -519,6 +519,50 @@ async function qualityOf(weekIds) {
   return { hotels: hotelList, companies, transport, sections: secs, avg: r1(avg(hotelList.map(h => h.score))) };
 }
 
+/* تاریخ شمسی «۱۴۰۵/۰۸/۱۷» ⇄ شماره‌ی روز (برای فاصله‌ی روزها) — الگوریتم jalaali */
+const JD = (() => {
+  const div = (a, b) => ~~(a / b), mod = (a, b) => a - ~~(a / b) * b;
+  const BR = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+  function cal(jy) {
+    let gy = jy + 621, leapJ = -14, jp = BR[0], jm, jump = 0, n, i;
+    for (i = 1; i < BR.length; i++) { jm = BR[i]; jump = jm - jp; if (jy < jm) break; leapJ += div(jump, 33) * 8 + div(mod(jump, 33), 4); jp = jm; }
+    n = jy - jp; leapJ += div(n, 33) * 8 + div(mod(n, 33) + 3, 4);
+    if (mod(jump, 33) === 4 && jump - n === 4) leapJ += 1;
+    const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150;
+    if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33;
+    let leap = mod(mod(n + 1, 33) - 1, 4); if (leap === -1) leap = 4;
+    return { gy, march: 20 + leapJ - leapG, leap };
+  }
+  const g2d = (gy, gm, gd) => { let d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * mod(gm + 9, 12) + 2, 5) + gd - 34840408; return d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752; };
+  const d2g = jdn => { let j = 4 * jdn + 139361631; j = j + div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908; const i = div(mod(j, 1461), 4) * 5 + 308, gd = div(mod(i, 153), 5) + 1, gm = mod(div(i, 153), 12) + 1; return { gy: div(j, 1461) - 100100 + div(8 - gm, 6), gm, gd }; };
+  const j2d = (jy, jm, jd) => { const r = cal(jy); return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1; };
+  const d2j = jdn => { const g = d2g(jdn); let jy = g.gy - 621; const r = cal(jy); let k = jdn - g2d(g.gy, 3, r.march), jm, jd;
+    if (k >= 0) { if (k <= 185) return { jy, jm: 1 + div(k, 31), jd: mod(k, 31) + 1 }; k -= 186; } else { jy -= 1; k += 179; if (r.leap === 1) k += 1; }
+    return { jy, jm: 7 + div(k, 30), jd: mod(k, 30) + 1 }; };
+  const p2 = n => String(n).padStart(2, '0');
+  const num = s => { const m = String(s || '').replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)).match(/^\s*(1[34]\d\d)\D(\d{1,2})\D(\d{1,2})\s*$/);
+    if (!m || +m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31) return null; const d = j2d(+m[1], +m[2], +m[3]), b = d2j(d); return b.jm === +m[2] && b.jd === +m[3] ? d : null; };
+  const str = d => { const j = d2j(d); return `${j.jy}/${p2(j.jm)}/${p2(j.jd)}`; };
+  const today = (tz = 'Asia/Baghdad') => { const o = {}; new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date()).forEach(p => o[p.type] = +p.value); return g2d(o.year, o.month, o.day); };
+  return { num, str, today, g2d, d2g };
+})();
+
+/* ── عوامل منطقه ── */
+const STAFF_ROLES = ['مدیر ثابت', 'آشپز'], STAFF_MAX_DAYS = 30;
+const stS = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+async function staffRoles(R) { const c = await one('SELECT roles FROM staff_cfg WHERE region_id = ?', R); const r = c ? json(c.roles) : []; return r.length ? r : STAFF_ROLES; }
+function staffRow(b, roles) {
+  const x = { first: stS(b.first, 40), last: stS(b.last, 60), nid: nidNormalize(b.nid), role: stS(b.role, 30), hotel: normName(stS(b.hotel, 120)), note: stS(b.note, 300) };
+  const ds = JD.num(b.d_start), de = JD.num(b.d_end);
+  if (!x.first || !x.last) return { err: 'نام و نام خانوادگی را بنویسید.' };
+  if (!nidValid(x.nid)) return { err: `کد ملی «${x.first} ${x.last}» درست نیست.` };
+  if (!roles.includes(x.role)) return { err: `نقش «${x.role || '—'}» تعریف نشده است.` };
+  if (ds == null) return { err: `تاریخ شروع «${x.first} ${x.last}» درست نیست (مثلاً ۱۴۰۵/۰۸/۱۷).` };
+  if (de == null) return { err: `تاریخ خروج «${x.first} ${x.last}» درست نیست.` };
+  if (de < ds) return { err: `تاریخ خروج «${x.first} ${x.last}» قبل از تاریخ شروع است.` };
+  return { x: { ...x, d_start: JD.str(ds), d_end: JD.str(de) } };
+}
+
 /* ── routes ── */
 async function api(req, url, u) {
   const p = url.pathname, m = req.method === 'POST' && ['PUT', 'DELETE'].includes(url.searchParams.get('_m')) ? url.searchParams.get('_m') : req.method;
@@ -890,6 +934,116 @@ async function api(req, url, u) {
       }
       return { rr: (await ratingsOf([wid])).get(R + '|' + hotel) || null };
     }
+    /* ═════ عوامل منطقه ═════ */
+    if (p === '/api/admin/staff' && m === 'GET') {
+      const rows = await all('SELECT * FROM staff WHERE region_id = ? ORDER BY status = \'active\' DESC, d_end, last LIMIT 5000', R);
+      const moves = await all('SELECT m.staff_id, m.from_hotel, m.to_hotel, m.ts, u2.name AS by FROM staff_moves m JOIN staff s ON s.id = m.staff_id LEFT JOIN users u2 ON u2.id = m.by WHERE s.region_id = ? ORDER BY m.ts DESC LIMIT 3000', R);
+      const wk = await all('SELECT id FROM weeks WHERE region_id = ? ORDER BY imported DESC LIMIT 4', R);
+      const ent = wk.length ? await all(`SELECT hotel, home_mgr, cook FROM entries WHERE week_id IN (${wk.map(() => '?').join(',')})`, ...wk.map(w => w.id)) : [];
+      const hotels = [...new Set([...ent.map(e => normName(e.hotel)), ...rows.map(r => r.hotel)].filter(Boolean))];
+      const names = new Map();
+      for (const e of ent) { for (const [k, role] of [['home_mgr', 'مدیر ثابت'], ['cook', 'آشپز']]) for (const n of String(e[k] || '').split(/[،,\/\n]+|\s-\s/)) { const t = stS(n, 80); if (t && t.length > 3) names.set(t + '|' + role, { name: t, role, hotel: normName(e.hotel) }); } }
+      const geo = await all('SELECT hotel, lat, lng FROM hotel_geo WHERE region_id = ?', R);
+      const tb = await one('SELECT linked FROM team_bale WHERE user_id = ?', u.id);
+      const region = await one('SELECT name FROM regions WHERE id = ?', R);
+      return { rows, moves, roles: await staffRoles(R), hotels, suggest: [...names.values()], geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
+    }
+    if (p === '/api/admin/staff' && m === 'POST') {
+      const b = await body(), roles = await staffRoles(R), v = staffRow(b, roles); if (v.err) fail(400, v.err);
+      const x = v.x, id = +b.id || 0, now = Date.now();
+      const dup = await one("SELECT id FROM staff WHERE region_id = ? AND nid = ? AND status = 'active' AND id != ?", R, x.nid, id);
+      if (dup) fail(400, `«${x.first} ${x.last}» با همین کد ملی الان یک دوره‌ی فعال دارد؛ همان را ویرایش یا تمدید کنید.`);
+      if (id) {
+        const old = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', id, R); if (!old) fail(404, 'پیدا نشد');
+        await run('UPDATE staff SET first = ?, last = ?, nid = ?, role = ?, hotel = ?, d_start = ?, d_end = ?, note = ?, updated = ?, by = ? WHERE id = ?', x.first, x.last, x.nid, x.role, x.hotel, x.d_start, x.d_end, x.note, now, u.id, id);
+        if ((old.hotel || '') !== (x.hotel || '')) await run('INSERT INTO staff_moves (staff_id, from_hotel, to_hotel, ts, by) VALUES (?, ?, ?, ?, ?)', id, old.hotel, x.hotel, now, u.id);
+        return { ok: true, id };
+      }
+      const r = await one('INSERT INTO staff (region_id, first, last, nid, role, hotel, d_start, d_end, note, created, updated, by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+        R, x.first, x.last, x.nid, x.role, x.hotel, x.d_start, x.d_end, x.note, now, now, u.id);
+      return { ok: true, id: r.id };
+    }
+    /* اکسل: ردیف‌ها در مرورگر خوانده می‌شود؛ کسی که دوره‌ی فعال دارد به‌روز می‌شود، بقیه اضافه */
+    if (p === '/api/admin/staff/import' && m === 'POST') {
+      const b = await body(2 << 20), roles = await staffRoles(R), now = Date.now(), errs = [], ok = [];
+      for (const [i, r] of (Array.isArray(b.rows) ? b.rows : []).slice(0, 2000).entries()) { const v = staffRow(r, roles); if (v.err) errs.push(`ردیف ${i + 2}: ${v.err}`); else ok.push(v.x); }
+      if (errs.length && !b.skipBad) return { ok: false, errors: errs.slice(0, 50), nErr: errs.length, nOk: ok.length };
+      const act = new Map((await all("SELECT id, nid, hotel FROM staff WHERE region_id = ? AND status = 'active'", R)).map(r => [r.nid, r]));
+      const q = []; let added = 0, updated = 0;
+      for (const x of ok) {
+        const a = act.get(x.nid);
+        if (a) { updated++; q.push(prep('UPDATE staff SET first = ?, last = ?, role = ?, hotel = ?, d_start = ?, d_end = ?, note = COALESCE(NULLIF(?, \'\'), note), updated = ?, by = ? WHERE id = ?', x.first, x.last, x.role, x.hotel, x.d_start, x.d_end, x.note, now, u.id, a.id));
+          if ((a.hotel || '') !== (x.hotel || '')) q.push(prep('INSERT INTO staff_moves (staff_id, from_hotel, to_hotel, ts, by) VALUES (?, ?, ?, ?, ?)', a.id, a.hotel, x.hotel, now, u.id)); }
+        else { added++; act.set(x.nid, { id: -1 }); q.push(prep('INSERT INTO staff (region_id, first, last, nid, role, hotel, d_start, d_end, note, created, updated, by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', R, x.first, x.last, x.nid, x.role, x.hotel, x.d_start, x.d_end, x.note, now, now, u.id)); }
+      }
+      for (let i = 0; i < q.length; i += 90) await DB.batch(q.slice(i, i + 90));
+      return { ok: true, added, updated, nErr: errs.length };
+    }
+    /* جابجایی یک یا چند نفر به هتل دیگر (سابقه در staff_moves) */
+    if (p === '/api/admin/staff/move' && m === 'POST') {
+      const b = await body(), hotel = normName(stS(b.hotel, 120)), ids = (Array.isArray(b.ids) ? b.ids : []).map(Number).filter(Boolean).slice(0, 200), now = Date.now();
+      if (!ids.length) fail(400, 'کسی انتخاب نشده است.');
+      const rows = await all(`SELECT id, hotel FROM staff WHERE region_id = ? AND status = 'active' AND id IN (${ids.map(() => '?').join(',')})`, R, ...ids);
+      const ch = rows.filter(r => (r.hotel || '') !== hotel);
+      if (ch.length) await DB.batch(ch.flatMap(r => [prep('UPDATE staff SET hotel = ?, updated = ?, by = ? WHERE id = ?', hotel, now, u.id, r.id), prep('INSERT INTO staff_moves (staff_id, from_hotel, to_hotel, ts, by) VALUES (?, ?, ?, ?, ?)', r.id, r.hotel, hotel, now, u.id)]));
+      return { ok: true, moved: ch.map(r => ({ id: r.id, from: r.hotel || '' })) };
+    }
+    /* تمدید: دوره‌ی فعلی «تمدیدشده» می‌شود و دوره‌ی تازه با همان مشخصات و تاریخ‌های تازه ساخته می‌شود */
+    if (p === '/api/admin/staff/extend' && m === 'POST') {
+      const b = await body(), old = await one("SELECT * FROM staff WHERE id = ? AND region_id = ? AND status = 'active'", +b.id, R); if (!old) fail(404, 'این دوره پیدا نشد یا دیگر فعال نیست.');
+      const ds = JD.num(b.d_start), de = JD.num(b.d_end); if (ds == null || de == null || de < ds) fail(400, 'تاریخ‌های دوره‌ی تازه درست نیست.');
+      const now = Date.now();
+      const r = await DB.batch([prep("UPDATE staff SET status = 'extended', updated = ?, by = ? WHERE id = ?", now, u.id, old.id),
+        prep('INSERT INTO staff (region_id, first, last, nid, role, hotel, d_start, d_end, note, prev_id, created, updated, by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+          R, old.first, old.last, old.nid, old.role, old.hotel, JD.str(ds), JD.str(de), old.note, old.id, now, now, u.id)]);
+      return { ok: true, id: r[1].results[0].id };
+    }
+    /* خروج: دوره بسته می‌شود (پاک نمی‌شود)؛ undo=1 برمی‌گرداند */
+    if (p === '/api/admin/staff/leave' && m === 'POST') {
+      const b = await body(), s0 = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', +b.id, R); if (!s0) fail(404, 'پیدا نشد');
+      if (b.undo) {
+        if (s0.status !== 'left') fail(400, 'این دوره بسته نشده است.');
+        if (await one("SELECT 1 FROM staff WHERE region_id = ? AND nid = ? AND status = 'active'", R, s0.nid)) fail(400, 'این نفر الان دوره‌ی فعال دیگری دارد.');
+        await run("UPDATE staff SET status = 'active', left_at = NULL, updated = ?, by = ? WHERE id = ?", Date.now(), u.id, s0.id); return { ok: true };
+      }
+      if (s0.status !== 'active') fail(400, 'این دوره فعال نیست.');
+      const d = b.date ? JD.num(b.date) : JD.today(); if (d == null) fail(400, 'تاریخ خروج درست نیست.');
+      await run("UPDATE staff SET status = 'left', left_at = ?, updated = ?, by = ? WHERE id = ?", JD.str(d), Date.now(), u.id, s0.id);
+      return { ok: true };
+    }
+    if (p === '/api/admin/staff/del' && m === 'POST') {
+      const b = await body(), s0 = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', +b.id, R); if (!s0) fail(404, 'پیدا نشد');
+      const q = [prep('DELETE FROM staff_moves WHERE staff_id = ?', s0.id), prep('DELETE FROM staff WHERE id = ?', s0.id)];
+      /* اگر دوره‌ی تمدیدشده‌ی قبلی دارد، همان دوباره فعال می‌شود */
+      if (s0.prev_id && s0.status === 'active') q.push(prep("UPDATE staff SET status = 'active' WHERE id = ? AND status = 'extended'", s0.prev_id));
+      q.push(prep('UPDATE staff SET prev_id = ? WHERE prev_id = ?', s0.prev_id, s0.id));
+      await DB.batch(q); return { ok: true };
+    }
+    if (p === '/api/admin/staff/roles' && m === 'POST') {
+      const b = await body(), roles = [...new Set((Array.isArray(b.roles) ? b.roles : []).map(r => stS(r, 30)).filter(Boolean))].slice(0, 20);
+      if (!roles.length) fail(400, 'دست‌کم یک نقش لازم است.');
+      const used = (await all("SELECT DISTINCT role FROM staff WHERE region_id = ? AND status = 'active'", R)).map(r => r.role).filter(r => !roles.includes(r));
+      if (used.length) fail(400, `نقش «${used[0]}» هنوز برای نیروهای فعال استفاده می‌شود و حذف نمی‌شود.`);
+      await run('INSERT OR REPLACE INTO staff_cfg (region_id, roles, updated) VALUES (?, ?, ?)', R, JSON.stringify(roles), Date.now());
+      return { ok: true, roles };
+    }
+    if (p === '/api/admin/hotel-geo' && m === 'POST') {
+      const b = await body(), hotel = normName(stS(b.hotel, 120)), lat = +b.lat, lng = +b.lng;
+      if (!hotel) fail(400, 'نام هتل لازم است.');
+      if (b.clear) { await run('DELETE FROM hotel_geo WHERE region_id = ? AND hotel = ?', R, hotel); return { ok: true }; }
+      if (!(lat > 29 && lat < 38 && lng > 38 && lng < 49)) fail(400, 'این نقطه داخل عراق نیست.');
+      await run('INSERT OR REPLACE INTO hotel_geo (region_id, hotel, lat, lng) VALUES (?, ?, ?, ?)', R, hotel, lat, lng);
+      return { ok: true };
+    }
+    /* اتصال به بله: کد یک‌بارمصرف → ble.ir/HamyarKaravan_Bot?start=t_کد (بازو در worker hamyar-reviews) */
+    if (p === '/api/admin/bale/link' && m === 'POST') {
+      const code = hex(rand(8));
+      await run('DELETE FROM team_bale_links WHERE exp < ? OR user_id = ?', Date.now(), u.id);
+      await run('INSERT INTO team_bale_links (code, user_id, exp) VALUES (?, ?, ?)', code, u.id, Date.now() + 15 * 6e4);
+      return { url: 'https://ble.ir/HamyarKaravan_Bot?start=t_' + code };
+    }
+    if (p === '/api/admin/bale' && m === 'GET') return { linked: !!await one('SELECT 1 FROM team_bale WHERE user_id = ?', u.id) };
+    if (p === '/api/admin/bale/off' && m === 'POST') { await run('DELETE FROM team_bale WHERE user_id = ?', u.id); return { ok: true }; }
     if ((mm = p.match(/^\/api\/admin\/defect\/(\d+)$/)) && m === 'GET') {
       const r = await canSeeReport(u, +mm[1]);
       return { notes: await notesOf(r.id), media: await mediaOf(r.entry_id, r.user_id) };

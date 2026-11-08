@@ -14,6 +14,7 @@ import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from
 import { handleFlight, flightTick } from './flight.js';
 import { handleMgr, handleMgrAdmin } from './mgr.js';
 import { handleTripsAdmin } from './trips.js';
+import { teamStaffTick } from './teamstaff.js';
 import { bale as baleSend } from './bale.js';
 
 const REPO = 'mirahmadian/iraq-guide';
@@ -120,7 +121,7 @@ const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, 
 
 export default {
   /* نگهبان سرور: هر ۵ دقیقه (guard.js) */
-  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); ctx.waitUntil(flightTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('flight', e && e.message))); },
+  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); ctx.waitUntil(flightTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('flight', e && e.message))); ctx.waitUntil(teamStaffTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('staff', e && e.message))); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
