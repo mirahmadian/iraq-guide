@@ -8,18 +8,24 @@ const baleState = () => { try { return localStorage.getItem(BALE_KEY) || ''; } c
 const baleSet = v => { try { localStorage.setItem(BALE_KEY, v); } catch (e) {} };
 
 /* نوار کوچک صفحه اول (فقط برای کسی که هنوز عضو نشده و نبسته؛ از روز دوم استفاده) */
+/* نمایش آزمایشی برای مدیر (که خودش عضو است): آدرس برنامه با ?test=bale — چیزی ذخیره نمی‌شود */
+const BALE_TEST = /[?&]test=bale\b/.test(location.search);
 function baleStripHTML() {
+  if (BALE_TEST) return baleStrip();
   if (baleState() || SHOW_HIDDEN) return '';
   let first = 0; try { first = +localStorage.getItem('caravan-first-open') || 0; if (!first) localStorage.setItem('caravan-first-open', Date.now()); } catch (e) {}
   if (!first || Date.now() - first < 864e5) return '';
+  return baleStrip();
+}
+function baleStrip() {
   return `<div class="notices"><div class="ntc" role="button" style="cursor:pointer" onclick="openBale()">
     <span class="ntc-ic" aria-hidden="true">${ico('bell')}</span>
     <div class="ntc-body"><b>اطلاعیه‌های فوری را در «بله» بگیرید</b><div class="ntc-meta"><span>هشدارها، تغییر ساعت‌ها و یادآوری‌های سفر</span></div></div>
-    <button class="ntc-x" onclick="event.stopPropagation();baleSet('no');this.closest('.notices').remove()" aria-label="بستن">${ico('x')}</button></div></div>`;
+    <button class="ntc-x" onclick="event.stopPropagation();if(!BALE_TEST)baleSet('no');this.closest('.notices').remove()" aria-label="بستن">${ico('x')}</button></div></div>`;
 }
 function openBale() {
   if (typeof closeMore === 'function') closeMore();
-  const on = baleState() === '1';
+  const on = baleState() === '1' && !BALE_TEST;
   openPage('اطلاعیه‌ها در بله', `
     <div class="cx-rate" style="line-height:2">
       ${on ? '✅ <b>شما عضو هستید.</b> اطلاعیه‌های مهم همیار کاروان را در بله دریافت می‌کنید.' : `با عضویت در بازوی بله <b dir="ltr">@HamyarKaravan_Bot</b>، اطلاعیه‌های مهم سفر را مستقیم در پیام‌رسان بله می‌گیرید:
@@ -45,7 +51,7 @@ async function baleJoin() {
       if (++n > 60 || !document.getElementById('baleMsg')) return clearInterval(baleTimer);
       if (document.visibilityState !== 'visible') return;
       const s = await rvFetch('/bale/status').catch(() => null);
-      if (s && s.linked) { clearInterval(baleTimer); baleSet('1'); openBale(); showToast('✅ عضویت در بله ثبت شد'); }
+      if (s && s.linked) { clearInterval(baleTimer); if (!BALE_TEST) baleSet('1'); openBale(); showToast('✅ عضویت در بله ثبت شد'); }
     }, 4000);
   } catch (e) { msg.textContent = navigator.onLine === false ? 'اینترنت وصل نیست.' : e.message; }
   btn.disabled = false;
