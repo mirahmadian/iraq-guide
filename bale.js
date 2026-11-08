@@ -62,3 +62,51 @@ setTimeout(() => {
   if (Date.now() - t < 864e5 || navigator.onLine === false) return;
   rvFetch('/bale/status').then(s => { try { localStorage.setItem('caravan-bale-chk', Date.now()); } catch (e) {} if (s.linked) baleSet('1'); else if (baleState() === '1') baleSet(''); }).catch(() => {});
 }, 5000);
+
+/* ── پنجره‌ی دعوت به بله در شروع برنامه (پاپ‌آپ) ──
+   برای کسی که عضو نیست: در شروع یک نوبتِ استفاده، بعد از صفحه‌ی خوش‌آمد. حداکثر ۳ بار؛ «بعداً» = دو روز بعد؛ «دیگر نشان نده» = تمام.
+   در پیش‌نمایش/دستگاه مدیر نمی‌آید (مگر با ?test=bale)، بدون اینترنت هم نمی‌آید. */
+const BALE_POP = 'caravan-bale-pop', BALE_POP_MAX = 3;
+function balePopState() { try { return JSON.parse(localStorage.getItem(BALE_POP) || '{}'); } catch (e) { return {}; } }
+function balePopDue() {
+  if (BALE_TEST) return true;
+  if (baleState() || SHOW_HIDDEN || navigator.onLine === false) return false;
+  try { if (sessionStorage.getItem(BALE_POP)) return false; } catch (e) {}
+  const s = balePopState();
+  return (s.n || 0) < BALE_POP_MAX && Date.now() >= (s.next || 0);
+}
+function balePopShow() {
+  if (!balePopDue() || document.querySelector('.overlay.open')) return;
+  try { sessionStorage.setItem(BALE_POP, '1'); } catch (e) {}
+  if (!BALE_TEST) { const s = balePopState(); try { localStorage.setItem(BALE_POP, JSON.stringify({ n: (s.n || 0) + 1, next: Date.now() + 2 * 864e5 })); } catch (e) {} }
+  document.body.insertAdjacentHTML('beforeend', `<div class="overlay open" id="balePop" role="dialog" aria-modal="true" aria-labelledby="balePopT" onclick="if(event.target===this)balePopClose()">
+    <div class="modal bale-pop">
+      <div class="modal-handle" aria-hidden="true"></div>
+      <div class="bp-ic" aria-hidden="true">${ico('bell')}</div>
+      <div class="modal-title" id="balePopT">اطلاعیه‌های فوری سفر را در «بله» بگیرید</div>
+      <ul class="bp-list"><li>هشدارها و بسته شدن مسیرها و ورودی‌ها</li><li>تغییر ساعت‌ها و برنامه‌ها</li><li>یادآوری‌های مهم سفر</li></ul>
+      <button class="rv-btn" style="min-height:52px;width:100%" onclick="balePopClose();openBale();baleJoin()">📩 عضویت در بله</button>
+      <button class="modal-close" style="margin-top:10px" onclick="balePopClose()">بعداً</button>
+      <button class="bp-never" onclick="balePopClose(true)">دیگر نشان نده</button>
+      <p class="bp-note">رایگان است؛ فقط یک بار در بله «📱 ارسال شماره من» را می‌زنید و هر وقت بخواهید با نوشتن «لغو» خارج می‌شوید.</p>
+    </div></div>
+  <style>
+    .bale-pop{text-align:center}
+    .bp-ic{width:56px;height:56px;margin:0 auto 10px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:var(--gold-dim);color:var(--gold)}
+    .bp-ic svg{width:28px;height:28px}
+    .bp-list{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:6px;font-size:calc(14px * var(--fs,1));color:var(--text);line-height:1.8}
+    .bp-list li::before{content:'✓ ';color:var(--gold);font-weight:900}
+    .bp-never{display:block;margin:8px auto 0;background:none;border:none;color:var(--muted);font-family:var(--font);font-size:calc(12.5px * var(--fs,1));text-decoration:underline;cursor:pointer;padding:8px}
+    .bp-note{font-size:calc(12px * var(--fs,1));color:var(--muted);line-height:1.8;margin:6px 0 0}
+  </style>`);
+}
+function balePopClose(never) {
+  const v = document.getElementById('balePop'); if (v) v.remove();
+  if (never && !BALE_TEST) baleSet('no');
+}
+/* بعد از صفحه‌ی خوش‌آمد (اگر هست) و کمی مکث، تا کاربر اول برنامه را ببیند */
+(function balePopWait(t0) {
+  const go = () => setTimeout(balePopShow, 1200);
+  const tick = () => { if (document.getElementById('splash') && Date.now() - t0 < 9000) return setTimeout(tick, 300); go(); };
+  if (document.readyState === 'complete') setTimeout(tick, 800); else window.addEventListener('load', () => setTimeout(tick, 800));
+})(Date.now());
