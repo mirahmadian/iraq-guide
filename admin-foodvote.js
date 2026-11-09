@@ -81,7 +81,7 @@ const fvTog = k => { fvOpen.has(k) ? fvOpen.delete(k) : fvOpen.add(k); fvRender(
 function fvMgrForm(kid) {
   const m = fvEditM && fvEditM.kid === kid ? fvEditM : null; if (!m) return '';
   return `<div class="fv-form"><input id="fvMName" placeholder="نام مدیر آشپزخانه" value="${fe(m.name || '')}"><input id="fvMPhone" placeholder="موبایل (اختیاری)" value="${fe(m.phone || '')}" inputmode="tel">
-    <input id="fvMFrom" placeholder="از تاریخ ۱۴۰۵/۰۸/۱۵" value="${fe(m.d_from ? fvJ(m.d_from) : '')}"><input id="fvMTo" placeholder="تا تاریخ (خالی = تا الان)" value="${fe(m.d_to ? fvJ(m.d_to) : '')}">
+    <input id="fvMFrom" data-jdp data-jdp-title="شروع دوره‌ی مدیر" placeholder="از تاریخ" value="${fe(m.d_from ? fvJ(m.d_from) : '')}"><input id="fvMTo" data-jdp data-jdp-clear data-jdp-title="پایان دوره (خالی = تا الان)" placeholder="تا تاریخ (خالی = تا الان)" value="${fe(m.d_to ? fvJ(m.d_to) : '')}">
     <button class="pub-btn" onclick="fvSaveM(${kid})">ذخیره</button><button class="lock-link" onclick="fvEditM=null;fvRender()">انصراف</button></div>`;
 }
 function fvKitchensHTML() {
@@ -103,7 +103,7 @@ const fvScore = g => g.n ? Math.round((g.v3 * 100 + g.v2 * 50) / g.n) : 0;
 const fvCnt = g => `😋 ${fvFa(g.v3)} · 😐 ${fvFa(g.v2)} · 😞 ${fvFa(g.v1)}`;
 function fvReportHTML() {
   const r = fvRep;
-  const form = `<div class="fv-form"><input id="fvFrom" value="${fe(fvRange.from)}" placeholder="از ۱۴۰۵/۰۸/۱۵" onchange="fvRange.from=this.value"><input id="fvTo" value="${fe(fvRange.to)}" placeholder="تا ۱۴۰۵/۰۸/۲۰" onchange="fvRange.to=this.value">
+  const form = `<div class="fv-form"><input id="fvFrom" data-jdp data-jdp-title="از تاریخ" value="${fe(fvFa(fvRange.from))}" placeholder="از تاریخ" onchange="fvRange.from=this.value"><input id="fvTo" data-jdp data-jdp-title="تا تاریخ" value="${fe(fvFa(fvRange.to))}" placeholder="تا تاریخ" onchange="fvRange.to=this.value">
     <select onchange="fvRange.city=this.value"><option value="">همه‌ی شهرها</option>${Object.entries(FV_CITY).map(([k, v]) => `<option value="${k}" ${fvRange.city === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <button class="pub-btn" onclick="fvReport()">نمایش</button></div>
     <div class="fv-pre"><button class="lock-link" onclick="fvPreset(1)">امروز</button><button class="lock-link" onclick="fvPreset(7)">۷ روز</button><button class="lock-link" onclick="fvPreset(30)">۳۰ روز</button><button class="lock-link" onclick="fvPreset(90)">۹۰ روز</button></div>`;

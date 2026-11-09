@@ -111,7 +111,7 @@ function flRender() {
       <label class="st-lbl">✈️ پرواز از کدام فرودگاه است؟</label>
       <div class="fl-chips">${Object.keys(FL_AIR).map(k => chip('air', k, FL_AIR[k])).join('')}</div>
       <label class="st-lbl">📅 تاریخ پرواز</label>
-      <select aria-label="تاریخ پرواز" onchange="flSet('day',+this.value)">${days.map(n => opt(n, (n === t ? 'امروز — ' : n === t + 1 ? 'فردا — ' : '') + flDayText(n), f.day === n)).join('')}</select>
+      <button type="button" class="jdp-btn" aria-label="تاریخ پرواز" onclick="JDP.open({ value: ${f.day} + 2440588, min: ${t} + 2440588, max: ${t + 30} + 2440588, title: 'تاریخ پرواز', onPick: d => d != null && flSet('day', d - 2440588) })">${(f.day === t ? 'امروز — ' : f.day === t + 1 ? 'فردا — ' : '') + flDayText(f.day)}</button>
       <label class="st-lbl">🕐 ساعت پرواز <span style="font-weight:700;color:var(--muted)">(به وقت عراق — همان ساعتی که روی بلیت است)</span></label>
       <div class="fl-time"><select aria-label="ساعت" onchange="flSet('h',+this.value)">${Array.from({ length: 24 }, (_, i) => opt(i, faDigits(String(i).padStart(2, '0')), f.h === i)).join('')}</select><b>:</b>
         <select aria-label="دقیقه" onchange="flSet('m',+this.value)">${Array.from({ length: 12 }, (_, i) => opt(i * 5, faDigits(String(i * 5).padStart(2, '0')), f.m === i * 5)).join('')}</select></div>

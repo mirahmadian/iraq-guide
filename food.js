@@ -184,6 +184,12 @@ function tripInfo() {
   const diff = Math.round((today0() - dOf(foodPrefs.start)) / 864e5);
   return { diff, trip: diff + 1, cycle: diff >= 0 ? (diff % 6) + 1 : 0 };
 }
+/* تقویم شمسی برای روز ورود کاروان */
+function foodPickStart() {
+  const t = JDP.fromDate(today0());
+  JDP.open({ value: foodPrefs.start ? JDP.fromDate(dOf(foodPrefs.start)) : null, min: t - 60, max: t + 60, title: 'روز اول ورود کاروان', clear: !!foodPrefs.start,
+    onPick: d => foodSet('start', d == null ? '' : isoOf(JDP.toDate(d))) });
+}
 function foodDateOptions() {
   const t = today0(), seen = new Set();
   const opts = ['<option value="">— انتخاب کنید —</option>'];
@@ -307,7 +313,7 @@ function foodSetupHTML() {
       <div class="fchips">${(f.grades || []).map(g =>
         `<button class="${foodPrefs.grade === g ? 'on' : ''}" onclick="foodSet('grade','${g}')">${faDigits(g)}</button>`).join('')}</div>
       <div class="flabel">روز اول ورود کاروان (برای نمایش خودکار برنامه امروز)</div>
-      <select class="fsel" onchange="foodSet('start',this.value)">${foodDateOptions()}</select>
+      <button type="button" class="jdp-btn" onclick="foodPickStart()">${foodPrefs.start ? faDateLong(dOf(foodPrefs.start)) : '📅 انتخاب روز ورود'}</button>
       <div class="flabel">تعداد زائران (اختیاری — برای محاسبه تعداد اقلام دورچین)</div>
       <input class="fnum" type="number" inputmode="numeric" min="1" value="${escHtml(foodPrefs.n || '')}" placeholder="مثلاً ۵۰" oninput="foodSetN(this.value)">
     </div>`;

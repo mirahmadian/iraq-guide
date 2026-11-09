@@ -162,11 +162,11 @@ function stRender(saved) {
     <div class="st-form">
       <div class="st-cal"><button class="${isJ ? 'on' : ''}" onclick="stSet('cal','j')">تاریخ شمسی</button><button class="${isJ ? '' : 'on'}" onclick="stSet('cal','g')">تاریخ میلادی (مُهر گذرنامه)</button></div>
       <label class="st-lbl">📥 تاریخ ورود به عراق</label>
-      <div class="st-date">
+      ${isJ ? `<button type="button" class="jdp-btn" aria-label="تاریخ ورود به عراق" onclick="stPickJ()">${ST_WD[stFromNo(entry).wd]} ${faDigits(D.d)} ${ST_JM[D.m - 1]} ${faDigits(D.y)}</button>` : `<div class="st-date">
         <select aria-label="روز" onchange="stSet('d',+this.value)">${Array.from({ length: len }, (_, i) => opt(i + 1, faDigits(i + 1), D.d === i + 1)).join('')}</select>
         <select aria-label="ماه" onchange="stSet('m',+this.value)">${(isJ ? ST_JM : ST_GM).map((n, i) => opt(i + 1, n, D.m === i + 1)).join('')}</select>
         <select aria-label="سال" onchange="stSet('y',+this.value)">${years.map(y => opt(y, faDigits(y), D.y === y)).join('')}</select>
-      </div>
+      </div>`}
       <div class="st-quick"><button onclick="stQuick(0)">امروز وارد شدم</button><button onclick="stQuick(1)">دیروز</button><button onclick="stQuick(2)">پریروز</button></div>
       <label class="st-lbl">⏳ مدت مجاز اقامت (روز)</label>
       <input type="number" inputmode="numeric" min="1" max="365" value="${o.days}" onchange="stSet('days',+this.value)" style="max-width:120px">
@@ -199,6 +199,15 @@ function stSet(k, v) {
   } else if (k === 'days') f.days = v;
   else (f.cal === 'j' ? f.j : f.g)[k] = v;
   stRender(true);
+}
+/* تقویم شمسی برای تاریخ ورود */
+function stPickJ() {
+  const f = stForm;
+  JDP.open({ value: JDP.num(`${f.j.y}/${f.j.m}/${f.j.d}`), max: stToday() + 2440588, title: 'تاریخ ورود به عراق', onPick: d => {
+    if (d == null) return;
+    const [y, m, dd] = JDP.str(d, false).split('/').map(Number), g = stFromNo(d - 2440588);
+    f.j = { y, m, d: dd }; f.g = { y: g.gy, m: g.gm, d: g.gd }; stRender(true);
+  } });
 }
 function stQuick(back) {
   const g = stFromNo(stToday() - back), j = stToJalali(g.gy, g.gm, g.gd);

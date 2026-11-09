@@ -112,14 +112,14 @@ function quickDlg() {
   const opt = (L, v) => L.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
   const D = dlg('⚡ ثبت سریع عوامل فعلی', `
     <p class="hint">کسانی را که نمی‌خواهید، تیکشان را بردارید. تاریخ شروع را یک بار برای همه بنویسید (بعد برای هر نفر قابل تغییر است)؛ تاریخ خروج ${fa(S.d.maxDays)} روز بعد پر می‌شود.</p>
-    <div class="row"><label class="label">تاریخ شروع همه</label><input class="st-all" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" style="width:130px"><button class="btn small ghost" data-a="all">اعمال برای همه</button></div>
+    <div class="row"><label class="label">تاریخ شروع همه</label><input class="st-all" data-jdp data-jdp-title="تاریخ شروع همه" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" style="width:130px"><button class="btn small ghost" data-a="all">اعمال برای همه</button></div>
     <div class="tbl-wrap st-qt"><table><thead><tr><th></th><th>نام</th><th>نام خانوادگی</th><th>کد ملی</th><th>نقش</th><th>هتل</th><th>شروع</th><th>خروج</th></tr></thead><tbody>
     ${C.map((x, i) => `<tr data-i="${i}"><td><input type="checkbox" data-k="on" checked aria-label="انتخاب"></td>
       <td><input data-k="first" value="${esc(x.first)}"></td><td><input data-k="last" value="${esc(x.last)}"></td>
       <td><input data-k="nid" value="${esc(x.nid)}" dir="ltr" inputmode="numeric" maxlength="12" placeholder="کد ملی" class="${x.nid ? '' : 'need'}"></td>
       <td><select data-k="role">${opt(S.d.roles, x.role)}</select></td>
       <td><select data-k="hotel"><option value="">—</option>${opt(H, x.hotel)}</select></td>
-      <td><input data-k="d_start" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" class="need"></td><td><input data-k="d_end" dir="ltr"></td></tr>`).join('')}
+      <td><input data-k="d_start" data-jdp data-jdp-title="تاریخ شروع" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۰" class="need"></td><td><input data-k="d_end" data-jdp data-jdp-title="تاریخ خروج" dir="ltr"></td></tr>`).join('')}
     </tbody></table></div>
     <div class="st-errs"></div>
     <div class="rr-act"><button class="btn" data-a="go">✅ ثبت انتخاب‌شده‌ها</button><button class="btn ghost" data-a="x">انصراف</button></div>`, true);
@@ -358,8 +358,8 @@ function editDlg(r) {
       <label>کد ملی<input data-f="nid" value="${esc(e.nid)}" inputmode="numeric" dir="ltr" maxlength="12"></label>
       <label>نقش<select data-f="role">${S.d.roles.map(x => `<option ${x === e.role ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
       <label class="st-full">هتل<button type="button" class="st-hbtn st-hsel" data-f="hotel" data-v="${esc(e.hotel || '')}">${e.hotel ? esc(e.hotel) : '<span class="dim">انتخاب هتل…</span>'}</button></label>
-      <label>تاریخ شروع<input data-f="d_start" value="${esc(faS(e.d_start))}" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۷"></label>
-      <label>تاریخ خروج<input data-f="d_end" value="${esc(faS(e.d_end))}" dir="ltr"></label>
+      <label>تاریخ شروع<input data-f="d_start" data-jdp data-jdp-title="تاریخ شروع" value="${esc(faS(e.d_start))}" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۷"></label>
+      <label>تاریخ خروج<input data-f="d_end" data-jdp data-jdp-title="تاریخ خروج" value="${esc(faS(e.d_end))}" dir="ltr"></label>
       <div class="st-full st-dh"></div>
       <label class="st-full">توضیح (اختیاری)<input data-f="note" value="${esc(e.note || '')}"></label>
     </div>
@@ -387,7 +387,7 @@ function extendDlg(r) {
   const s0 = plus(r.d_end, 1) < S.d.today ? S.d.today : plus(r.d_end, 1);
   const D = dlg('🔁 تمدید ' + nameOf(r), `
     <p class="hint">دوره‌ی فعلی (${faS(r.d_start)} تا ${faS(r.d_end)}) در سابقه می‌ماند و یک دوره‌ی تازه با همان نقش و هتل ساخته می‌شود.</p>
-    <div class="st-form"><label>شروع دوره‌ی تازه<input data-f="s" value="${faS(s0)}" dir="ltr"></label><label>خروج<input data-f="e" value="${faS(plus(s0, S.d.maxDays - 1))}" dir="ltr"></label><div class="st-full st-dh"></div></div>
+    <div class="st-form"><label>شروع دوره‌ی تازه<input data-f="s" data-jdp data-jdp-title="شروع دوره‌ی تازه" value="${faS(s0)}" dir="ltr"></label><label>خروج<input data-f="e" data-jdp data-jdp-title="خروج" value="${faS(plus(s0, S.d.maxDays - 1))}" dir="ltr"></label><div class="st-full st-dh"></div></div>
     <div class="rr-act"><button class="btn" data-a="ok">🔁 تمدید</button><button class="btn ghost" data-a="x">انصراف</button></div>`);
   const s = D.$('[data-f=s]'), e = D.$('[data-f=e]'); let t = false;
   const dh = () => D.$('.st-dh').innerHTML = dateHint(s.value, e.value);
@@ -397,7 +397,7 @@ function extendDlg(r) {
 }
 function leaveDlg(r) {
   const D = dlg('🚪 خروج ' + nameOf(r), `<p class="hint">دوره بسته می‌شود ولی اطلاعات و سابقه‌اش می‌ماند و دیگر هشداری برایش نمی‌آید.</p>
-    <div class="st-form"><label>تاریخ خروج واقعی<input data-f="d" value="${faS(S.d.today)}" dir="ltr"></label></div>
+    <div class="st-form"><label>تاریخ خروج واقعی<input data-f="d" data-jdp data-jdp-title="تاریخ خروج واقعی" value="${faS(S.d.today)}" dir="ltr"></label></div>
     <div class="rr-act"><button class="btn" data-a="ok">ثبت خروج</button><button class="btn ghost" data-a="x">انصراف</button></div>`);
   D.$('[data-a=x]').onclick = D.close;
   D.$('[data-a=ok]').onclick = async () => { try { await api('/api/admin/staff/leave', { body: { id: r.id, date: D.$('[data-f=d]').value } }); toast('خروج ثبت شد'); D.close(); reload(); } catch (er) { toast(er.message, true); } };
