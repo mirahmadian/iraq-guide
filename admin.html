@@ -931,6 +931,11 @@
     <div class="sec-body" style="display:block" id="guard-admin"></div>
   </div>
   <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">📦</div>
+      <div class="sec-head-info"><div class="sec-head-title">بکاپ کامل نزد خودتان</div><div class="sec-head-sub">کد برنامه و همه‌ی دیتابیس‌ها در یک فایل رمزدار — هفته‌ای یک بار</div></div></div>
+    <div class="sec-body" style="display:block" id="backup-admin"></div>
+  </div>
+  <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
     <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">☁️</div>
       <div class="sec-head-info"><div class="sec-head-title">Cloudflare — فضای داده و راهنما</div><div class="sec-head-sub">داده‌ها کجا هستند، چقدر جا مانده و چطور خودتان آن‌ها را ببینید</div></div></div>
     <div class="sec-body" style="display:block" id="cf-admin"></div>
@@ -981,6 +986,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-help.js"></script>
 <script src="admin-zyarat.js"></script>
 <script src="admin-guard.js"></script>
+<script src="admin-backup.js"></script>
 <script src="admin-notice.js"></script>
 <script src="admin-rate.js"></script>
 <script src="admin-guide.js"></script>
@@ -999,7 +1005,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
   sideTitle(btn); sideOpen(false);
   if (id === 'reviews') rvaLoad();
-  if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); }
+  if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); if (typeof bkInfo === 'function') { bkRender(); bkInfo(); } }
   if (id === 'users') usersLoad();
   if (id === 'mgr' && typeof mgaLoad === 'function') mgaLoad();
   if (id === 'mgrco' && typeof mcoLoad === 'function') mcoLoad();

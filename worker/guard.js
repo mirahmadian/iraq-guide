@@ -168,6 +168,11 @@ async function teamBackup(env, force) {
   return { mode: 'team', ts, bytes: gz.length };
 }
 
+/* بکاپ کاملی که مدیر خودش دانلود کرده (پنل ← آمار ← 📦)؛ بعد از ۷ روز یادآوری */
+async function localBk(env, now) {
+  const t = +(await cfgGet(env, 'bk:local')) || 0, days = t ? Math.floor((now - t) / D) : null;
+  return `\n📦 آخرین بکاپ کامل نزد خودتان: ${t ? (days ? days.toLocaleString('fa') + ' روز پیش' : 'امروز') : 'هنوز گرفته نشده'}${!t || days >= 7 ? '\n   ← یادآوری: از پنل، تب آمار، «📦 دانلود بکاپ کامل» را بزنید.' : ''}`;
+}
 async function daily(env, checks) {
   const now = Date.now(), today = new Date(now + 3.5 * H).toISOString().slice(0, 10), hr = new Date(now + 3.5 * H).getUTCHours();
   const bd = await cfgJson(env, 'bk:data', {}), bf = await cfgJson(env, 'bk:full', {}), bt = await cfgJson(env, 'bk:team', {}), cs = await cfgJson(env, 'cs:last', {});
@@ -181,7 +186,7 @@ async function daily(env, checks) {
   if (!tStale && tWarned) await env.DB.prepare("DELETE FROM config WHERE k = 'bk:team-warned'").run();
   if (hr === 9 && (await cfgGet(env, 'daily:sent')) !== today) {
     const down = checks.filter(c => !c.up);
-    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n💻 آخرین استفاده از Codespace: ${cs.at ? Math.floor((now - cs.at) / D).toLocaleString('fa') + ' روز پیش' : '—'}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
+    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n💻 آخرین استفاده از Codespace: ${cs.at ? Math.floor((now - cs.at) / D).toLocaleString('fa') + ' روز پیش' : '—'}${await localBk(env, now)}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
     await cfgSet(env, 'daily:sent', today);
   }
 }
