@@ -111,7 +111,7 @@ async function trImport(btn) {
   btn.disabled = true;
   try {
     const r = await adminFetch('/admin/mgr/trips/import', { from: trImp.from, to: trImp.to, rows: trImp.rows }, adminAuth());
-    showToast(`✅ ${mgaN(r.n)} کاروان ثبت شد (${trFa(r.from)} تا ${trFa(r.to)})`);
+    showToast(`✅ ${mgaN(r.n)} کاروان ثبت شد (${trFa(r.from)} تا ${trFa(r.to)})` + (r.sync && r.sync.n ? ` — ${mgaN(r.sync.n)} مدیر با سفر جاری یا آینده در «مدیران و دسترسی» مجاز شد${r.sync.added ? ` (${mgaN(r.sync.added)} نفر تازه)` : ''}` : ' — هیچ موبایل مدیری در فایل نبود'), 9000);
     trImp = null; trFrom = r.from; trTo = r.to; trLoad();
   } catch (e) { showToast(e.message); btn.disabled = false; }
 }

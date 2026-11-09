@@ -7,6 +7,7 @@
    هر شماره حداکثر روی ۲ گوشی؛ با حذف از فهرست یا پایان تاریخ، دسترسی در اولین بررسی قطع می‌شود.
 ══════════════════════════════════════════ */
 import { coReqInfo } from './coreq.js';
+import { JD } from './jdate.js';
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS mgr_people (phone TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT, company TEXT, city TEXT, until INTEGER,
     active INTEGER NOT NULL DEFAULT 1, chat_id INTEGER, created INTEGER NOT NULL, by TEXT, last_login INTEGER, logins INTEGER NOT NULL DEFAULT 0)`,
@@ -23,6 +24,8 @@ async function ensure(env) {
   await env.DB.batch(SCHEMA.map(q => env.DB.prepare(q)));
   /* ستون‌های بعداً اضافه‌شده (اگر هست، خطا را نادیده می‌گیریم) */
   for (const c of ['address TEXT', 'phone TEXT', 'reps TEXT']) { try { await env.DB.prepare('ALTER TABLE mgr_companies ADD COLUMN ' + c).run(); } catch (e) {} }
+  /* src = 'atabat' یعنی از روی سفرهای عتبات خودکار اضافه شده؛ valid_from = از کی فعال می‌شود؛ trip_to = پایان اعتبار طبق آخرین سفر */
+  for (const c of ['src TEXT', 'valid_from INTEGER', 'trip_to INTEGER']) { try { await env.DB.prepare('ALTER TABLE mgr_people ADD COLUMN ' + c).run(); } catch (e) {} }
   ready = true;
 }
 /* شرکت مجری برای خروجی: نمایندگان (چندتایی، هر کدام شماره‌ی ایران و عراق)؛ ردیف‌های قدیمی (یک نماینده + دو شماره) هم تبدیل می‌شوند */
@@ -44,6 +47,7 @@ const sha = async s => hex(await crypto.subtle.digest('SHA-256', new TextEncoder
 const randCode = () => [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
 const randOtp = () => String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
 /* شماره: ارقام فارسی/عربی → لاتین؛ +98/98 → 0 ؛ +964 → 00964 */
+export const mgrEnsure = env => ensure(env);
 export function mgrPhone(p) {
   let d = String(p || '').replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/[^\d+]/g, '');
   if (d.startsWith('+98')) d = '0' + d.slice(3); else if (d.startsWith('98') && d.length === 12) d = '0' + d.slice(2);
@@ -52,7 +56,7 @@ export function mgrPhone(p) {
   return d;
 }
 const phoneOk = p => /^0\d{10}$/.test(p) || /^00\d{9,15}$/.test(p);
-const validSql = '(active = 1 AND (until IS NULL OR until > ?))';
+const validSql = '(active = 1 AND (until IS NULL OR until > ?2) AND (valid_from IS NULL OR valid_from <= ?2))';
 const meOf = r => ({ name: r.name, role: r.role || '', company: r.company || '', city: r.city || '', until: r.until || null });
 
 async function issueToken(env, phone, dev) {
@@ -64,7 +68,7 @@ async function issueToken(env, phone, dev) {
   ]);
   return tok;
 }
-async function person(env, phone) { return env.DB.prepare(`SELECT * FROM mgr_people WHERE phone = ? AND ${validSql}`).bind(phone, Date.now()).first(); }
+async function person(env, phone) { return env.DB.prepare(`SELECT * FROM mgr_people WHERE phone = ?1 AND ${validSql}`).bind(phone, Date.now()).first(); }
 
 /* ── برنامه ── */
 export async function handleMgr(p, req, env, body, dev, json, err, limited, ip) {
@@ -126,7 +130,7 @@ export async function mgrAuth(env, req) {
   const t = (req.headers.get('Authorization') || '').match(/^mgr\s+([0-9a-f]{64})$/i);
   if (!t) return null;
   const h = await sha(t[1].toLowerCase());
-  const r = await env.DB.prepare(`SELECT p.* FROM mgr_devices d JOIN mgr_people p ON p.phone = d.phone WHERE d.tok = ? AND p.active = 1 AND (p.until IS NULL OR p.until > ?)`).bind(h, Date.now()).first();
+  const r = await env.DB.prepare(`SELECT p.* FROM mgr_devices d JOIN mgr_people p ON p.phone = d.phone WHERE d.tok = ?1 AND p.active = 1 AND (p.until IS NULL OR p.until > ?2) AND (p.valid_from IS NULL OR p.valid_from <= ?2)`).bind(h, Date.now()).first();
   if (r) await env.DB.prepare('UPDATE mgr_devices SET last = ? WHERE tok = ?').bind(Date.now(), h).run();
   return r;
 }
@@ -149,7 +153,7 @@ export async function mgrBaleHook(env, m, send) {
   if (start) {
     const l = await env.DB.prepare("SELECT * FROM mgr_links WHERE code = ? AND exp > ? AND state = 'wait'").bind(start[1].toLowerCase(), now).first();
     if (!l) { await say('این لینک منقضی شده است. در برنامه دوباره دکمه‌ی «ورود مدیران کاروان» را بزنید.'); return true; }
-    const known = await env.DB.prepare(`SELECT * FROM mgr_people WHERE chat_id = ? AND ${validSql}`).bind(chat, now).first();
+    const known = await env.DB.prepare(`SELECT * FROM mgr_people WHERE chat_id = ?1 AND ${validSql}`).bind(chat, now).first();
     if (known) { await verify(l, known); return true; }
     await env.DB.prepare('INSERT OR REPLACE INTO mgr_pending (chat_id, code, t) VALUES (?, ?, ?)').bind(chat, l.code, now).run();
     await say('🧳 ورود به بخش ویژه‌ی مدیران کاروان\n\nبرای تأیید، دکمه‌ی «📱 ارسال شماره من» را در پایین صفحه بزنید.', ASK_KB);
@@ -165,6 +169,8 @@ export async function mgrBaleHook(env, m, send) {
     const phone = mgrPhone(m.contact.phone_number), r = await person(env, phone);
     if (r) { await verify(l, r); return true; }
     await env.DB.prepare("UPDATE mgr_links SET state = 'no' WHERE code = ?").bind(l.code).run();
+    const soon = await env.DB.prepare('SELECT valid_from FROM mgr_people WHERE phone = ? AND active = 1 AND valid_from > ?').bind(phone, now).first();
+    if (soon) { await say(`شماره‌ی شما در فهرست مدیران کاروان هست، ولی دسترسی شما ۱۵ روز مانده به سفرتان باز می‌شود: از ${JD.str(Math.floor(soon.valid_from / 864e5) + 2440588).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d])}.\n\nاز آن روز دوباره دکمه‌ی «ورود مدیران کاروان» را بزنید.`); return true; }
     await say(`شماره‌ی شما (${phone}) در فهرست مدیران کاروان ثبت نشده است.\n\nاگر مدیر کاروان یا از عوامل اجرایی هستید، با ستاد تماس بگیرید تا شماره‌تان ثبت شود و بعد دوباره امتحان کنید.`);
     return true;
   }
@@ -177,7 +183,7 @@ export async function handleMgrAdmin(p, req, env, body, json, err, who) {
   await ensure(env);
   const now = Date.now();
   if (p === '/admin/mgr' && req.method === 'GET') {
-    const people = (await env.DB.prepare(`SELECT p.phone, p.name, p.role, p.company, p.city, p.until, p.active, p.created, p.by, p.last_login, p.logins, p.chat_id IS NOT NULL AS bale,
+    const people = (await env.DB.prepare(`SELECT p.phone, p.name, p.role, p.company, p.city, p.until, p.active, p.created, p.by, p.last_login, p.logins, p.chat_id IS NOT NULL AS bale, p.src, p.valid_from, p.trip_to,
       (SELECT COUNT(*) FROM mgr_devices d WHERE d.phone = p.phone) AS devices FROM mgr_people p ORDER BY p.created DESC LIMIT 5000`).all()).results;
     return json({ people, max: MAX_DEVICES });
   }

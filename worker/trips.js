@@ -5,7 +5,46 @@
    بارگذاری دوباره‌ی یک بازه، کاروان‌های همان بازه را جایگزین می‌کند؛ اصلاح دستی (لغو دستی، شماره) نگه داشته می‌شود.
    فقط در D1 (هرگز در data.js یا GitHub عمومی نیست).
 ══════════════════════════════════════════ */
-import { mgrPhone } from './mgr.js';
+import { mgrPhone, mgrEnsure } from './mgr.js';
+import { JD } from './jdate.js';
+
+/* مدیر راهنما = مدیر کاروان: موبایل مدیرِ هر سفرِ جاری یا آینده خودکار در «مدیران کاروان» مجاز می‌شود
+   از ۱۵ روز قبل از ورود به عراق تا ۱۰ روز بعد از آخرین خروج (اگر خروج ثبت نشده، ۱۰ روز بعد از ورود + ۱۰).
+   کسی که دستی ثبت شده: نام و شرکتش دست نمی‌خورد، فقط اعتبارش اگر کوتاه‌تر است تمدید می‌شود. کسی که غیرفعال شده، غیرفعال می‌ماند. */
+const BEFORE = 15, AFTER = 10;
+export async function syncMgrFromTrips(env, who) {
+  await mgrEnsure(env);
+  const today = JD.now();
+  const rows = (await env.DB.prepare(`SELECT entry, mgr, company, COALESCE(NULLIF(phone_fix, ''), phone) AS ph, hotels FROM mgr_trips
+    WHERE status != 'cancel' AND (manual IS NULL OR manual != 'cancel') AND COALESCE(NULLIF(phone_fix, ''), phone, '') != ''`).all()).results;
+  const by = new Map();
+  for (const r of rows) {
+    if (!/^09\d{9}$/.test(r.ph)) continue;
+    const e = JD.num(r.entry); if (!e) continue;
+    let out = 0; try { for (const h of JSON.parse(r.hotels || '[]')) { const o = JD.num(h.out); if (o > out) out = o; } } catch (x) {}
+    if (!out) out = e + 10;
+    if (out + AFTER < today) continue;
+    const x = by.get(r.ph) || { phone: r.ph, from: Infinity, to: 0, name: '', company: '', last: 0 };
+    x.from = Math.min(x.from, e - BEFORE); x.to = Math.max(x.to, out + AFTER);
+    if (e >= x.last && (r.mgr || '').trim()) { x.last = e; x.name = r.mgr.trim().slice(0, 80); x.company = String(r.company || '').trim().slice(0, 120); }
+    by.set(r.ph, x);
+  }
+  const list = [...by.values()].map(x => ({ phone: x.phone, name: x.name || ('مدیر کاروان ' + x.company).trim(), company: x.company, from: JD.ms(x.from), to: JD.ms(x.to + 1) }));
+  if (!list.length) return { n: 0, added: 0 };
+  const before = (await env.DB.prepare('SELECT COUNT(*) AS n FROM mgr_people').first()).n, J = "json_extract(value, '$.", now = Date.now();
+  for (let i = 0; i < list.length; i += 400) {
+    await env.DB.prepare(`INSERT INTO mgr_people (phone, name, role, company, until, active, created, by, src, valid_from, trip_to)
+      SELECT ${J}phone'), ${J}name'), 'مدیر کاروان', ${J}company'), ${J}to'), 1, ?2, ?3, 'atabat', ${J}from'), ${J}to') FROM json_each(?1) WHERE true
+      ON CONFLICT(phone) DO UPDATE SET trip_to = excluded.trip_to,
+        until = CASE WHEN mgr_people.src IS NULL AND mgr_people.until IS NULL THEN NULL ELSE MAX(COALESCE(mgr_people.until, 0), excluded.until) END,
+        valid_from = CASE WHEN mgr_people.src = 'atabat' THEN excluded.valid_from ELSE mgr_people.valid_from END,
+        name = CASE WHEN mgr_people.src = 'atabat' THEN excluded.name ELSE mgr_people.name END,
+        company = CASE WHEN mgr_people.src = 'atabat' OR COALESCE(mgr_people.company, '') = '' THEN excluded.company ELSE mgr_people.company END`)
+      .bind(JSON.stringify(list.slice(i, i + 400)), now, 'عتبات (' + who + ')').run();
+  }
+  const after = (await env.DB.prepare('SELECT COUNT(*) AS n FROM mgr_people').first()).n;
+  return { n: list.length, added: after - before };
+}
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS mgr_trips (key TEXT PRIMARY KEY, entry TEXT NOT NULL, status TEXT NOT NULL, manual TEXT, prov TEXT, border TEXT, pkg TEXT, route TEXT,
@@ -77,7 +116,8 @@ export async function handleTripsAdmin(p, req, env, url, body, json, err, who) {
         .bind(JSON.stringify(rows.slice(i, i + 500)), now, who));
     await env.DB.batch(q);
     const c = s => rows.filter(r => (r.manual === 'cancel' ? 'cancel' : r.status) === s).length;
-    return json({ ok: true, n: rows.length, from, to, kept, ok_n: c('ok'), empty: c('empty'), cancel: c('cancel'), nophone: rows.filter(r => !r.phone && !r.phone_fix).length });
+    let sync = { n: 0, added: 0 }; try { sync = await syncMgrFromTrips(env, who); } catch (e) { console.log('sync', e && e.message); }
+    return json({ ok: true, sync, n: rows.length, from, to, kept, ok_n: c('ok'), empty: c('empty'), cancel: c('cancel'), nophone: rows.filter(r => !r.phone && !r.phone_fix).length });
   }
   if (p === '/admin/mgr/trips/set' && req.method === 'POST') {
     const key = S(body.key, 900), r = await env.DB.prepare('SELECT key FROM mgr_trips WHERE key = ?').bind(key).first();
@@ -88,6 +128,7 @@ export async function handleTripsAdmin(p, req, env, url, body, json, err, who) {
       if (ph && !/^0\d{10}$/.test(ph)) return err('شماره موبایل درست نیست (مثلاً ۰۹۱۲۳۴۵۶۷۸۹).');
       await env.DB.prepare('UPDATE mgr_trips SET phone_fix = ?, updated = ?, by = ? WHERE key = ?').bind(ph || null, now, who, key).run();
     }
+    try { await syncMgrFromTrips(env, who); } catch (e) {}
     return json({ ok: true });
   }
   return null;

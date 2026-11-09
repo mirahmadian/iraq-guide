@@ -18,6 +18,7 @@ function mgaLoad() {
 function mgaStatus(x) {
   if (!x.active) return ['⛔ غیرفعال', '#B3261E'];
   if (x.until && x.until < Date.now()) return ['⌛ تاریخش گذشته', '#B25B12'];
+  if (x.valid_from && x.valid_from > Date.now()) return ['⏳ از ' + mgaDate(x.valid_from) + ' (۱۵ روز مانده به سفر)', '#6B5BA8'];
   return x.devices ? ['🟢 وارد شده', '#1E7D4F'] : ['⚪ هنوز وارد نشده', '#777'];
 }
 /* حالت نمایش: فیلتر وضعیت، تعداد ردیف نمایش‌داده، ردیف باز */
@@ -66,9 +67,10 @@ function mgaRowHTML(x) {
   return `<div class="mga-row ${open ? 'open' : ''}">
     <button type="button" class="mga-line" onclick="mgaOpen=mgaOpen==='${ph}'?'':'${ph}';mgaRenderList()" aria-expanded="${open}">
       <i style="background:${col}" title="${escH(st)}"></i><b>${escH(x.name)}</b><span dir="ltr" class="mga-ph">${escH(mgaFaPhone(x.phone))}</span>
-      <span class="mga-co">${escH(x.company || x.role || '')}</span><span class="mga-chev"></span></button>
+      <span class="mga-co">${x.src === 'atabat' || x.trip_to ? '<span class="mga-src" title="از سفرهای سامانه‌ی عتبات">🧭 عتبات</span> ' : ''}${escH(x.company || x.role || '')}</span><span class="mga-chev"></span></button>
     ${open ? `<div class="mga-det">
       <div class="mga-sub">${escH([x.role, x.company, MGA_CITIES[x.city] || x.city].filter(Boolean).join(' · ') || '—')}</div>
+      ${x.src === 'atabat' ? `<div class="mga-sub">🧭 خودکار از سفرهای عتبات: دسترسی از ${mgaDate(x.valid_from)} تا ${mgaDate(x.until)} (۱۵ روز قبل از ورود تا ۱۰ روز بعد از خروج)</div>` : x.trip_to ? `<div class="mga-sub">🧭 در سفرهای عتبات هم هست (سفر تا ${mgaDate(x.trip_to)})؛ چون دستی ثبت شده، نام و شرکتش دست نمی‌خورد.</div>` : ''}
       <div class="mga-sub"><span style="color:${col};font-weight:800">${st}</span>${x.devices ? `، روی ${mgaN(x.devices)} گوشی` : ''}، آخرین ورود: ${mgaAgo(x.last_login)}${x.until ? `، تا ${mgaDate(x.until)}` : ''}</div>
       <div class="mga-act"><button onclick="mgaEditOpen('${ph}')">✏️ ویرایش</button><button onclick="mgaOtp('${ph}')">🔑 کد یک‌بارمصرف</button>
         ${x.devices ? `<button onclick="mgaRevoke('${ph}')">⏏️ خروج از گوشی‌ها</button>` : ''}<button class="del" onclick="mgaDel('${ph}')">🗑 حذف</button></div></div>` : ''}</div>`;
@@ -202,6 +204,9 @@ async function mgaImport(btn) {
   .mga-box{padding:4px 0 12px}
   .mga-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   @media(max-width:560px){.mga-form{grid-template-columns:1fr}}
+  .mga-src{font-size:11px;background:#6B5BA81a;color:#5A4A96;border-radius:999px;padding:1px 6px;font-weight:700}
+  .mg-sub{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}.mg-sub button{flex:1 1 160px;border:1px solid var(--border-s);background:var(--card);border-radius:12px;padding:10px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;color:var(--text)}
+  .mg-sub button.on{background:#1E7D4F;color:#fff;border-color:#1E7D4F}.mg-hide{display:none!important}
   .mga-imp{margin-top:8px;padding:10px;border-radius:10px;background:var(--card2,#f6f1e7);font-size:13px;line-height:1.9}
   </style>`);
 })();
@@ -406,3 +411,15 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   .mco-n{width:26px;height:26px;border-radius:50%;background:var(--card2,#f6f1e7);display:grid;place-items:center;font-size:12px;font-weight:800}
   @media(max-width:620px){.mco-rep{grid-template-columns:28px 1fr 40px}.mco-rep [data-r="ir"],.mco-rep [data-r="iq"]{grid-column:2/3}}
 </style>`);
+
+/* ══ یک تب برای مدیران کاروان (= مدیران راهنما): «مدیران و دسترسی» و «سفرها از عتبات» ══ */
+function mgSubShow(k) {
+  const can = id => typeof STAFF === 'undefined' || !STAFF || STAFF.perms.has(id);
+  if (!can(k)) k = can('mgr') ? 'mgr' : 'trips';
+  try { localStorage.setItem('mg-sub', k); } catch (e) {}
+  document.querySelectorAll('#mgSub [data-k]').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  document.getElementById('card-mgr').classList.toggle('mg-hide', k !== 'mgr');
+  document.getElementById('card-trips').classList.toggle('mg-hide', k !== 'trips');
+  if (k === 'mgr') mgaLoad(); else if (typeof trLoad === 'function') trLoad();
+}
+function mgSubOpen(k) { let s = k; if (!s) try { s = localStorage.getItem('mg-sub'); } catch (e) {} mgSubShow(s || 'mgr'); }
