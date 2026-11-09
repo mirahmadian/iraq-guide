@@ -13,7 +13,8 @@ window.startRegion = (me, opts) => {
 };
 /* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
 const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
-const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS;
+/* فرم‌ساز فقط برای سرپرست مناطق و مدیر سامانه (وقتی پنل یک منطقه را باز می‌کنند)؛ مدیر منطقه آن را نمی‌بیند */
+const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS.filter(t => t[0] !== 'form');
 function shell() {
   const sup = !!A.opts.region;
   app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? (A.me.lead ? A.me.leadLabel : 'مدیر سامانه') + ' (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>

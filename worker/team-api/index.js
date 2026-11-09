@@ -865,7 +865,7 @@ async function api(req, url, u) {
     if (!await one('SELECT 1 FROM regions WHERE id = ?', R)) fail(400, 'منطقه را انتخاب کنید.');
     if (p === '/api/admin/form') {
       if (m === 'GET') return { ...(await formOf(R)), _roles: await staffRoles(R) };
-      if (m === 'PUT') { const f = validForm(await body(512 * 1024)); await run('INSERT OR REPLACE INTO forms (region_id, json, updated) VALUES (?, ?, ?)', R, JSON.stringify(f), Date.now()); return { ...f, _roles: await staffRoles(R) }; }
+      if (m === 'PUT') { if (u.role !== 'super') fail(403, 'تغییر فرم فقط با سرپرست مناطق است.'); const f = validForm(await body(512 * 1024)); await run('INSERT OR REPLACE INTO forms (region_id, json, updated) VALUES (?, ?, ?)', R, JSON.stringify(f), Date.now()); return { ...f, _roles: await staffRoles(R) }; }
     }
     if (p === '/api/admin/weeks' && m === 'GET') {
       return all(`SELECT w.id, w.title, w.file, w.imported, (SELECT COUNT(*) FROM entries e WHERE e.week_id = w.id) AS entries,
