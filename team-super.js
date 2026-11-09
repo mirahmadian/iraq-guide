@@ -4,7 +4,8 @@
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
 const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['users', '👥 همه‌ی کاربران'], ['account', '🔐 حساب من']];
-const tabs = () => U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS;
+/* سرپرستی که خودش هم هتل دارد (منطقه و شیت روی حسابش)، تب «هتل‌های من» هم دارد */
+const tabs = () => { const T = U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS.slice(); if (U.me.lead && U.me.region_id) T.splice(T.length - 1, 0, ['mine', '🏨 هتل‌های من']); return T; };
 
 window.startSuper = me => { app = document.getElementById('app'); U.me = me; HR.viewRegion = 0; shell(); go(U.tab); };
 function shell() {
@@ -14,6 +15,7 @@ function shell() {
 }
 const main = () => document.getElementById('main');
 function go(tab) {
+  if (tab === 'mine') { const me = U.me; return startFM(me, { onBack: () => { U.tab = 'regions'; startSuper(me); } }); }
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
@@ -115,11 +117,11 @@ async function loadUsers() {
 }
 /* ردیف ویرایش یک کاربر: نام، کد ملی (نام کاربری)، منطقه و شیت */
 function editRowHTML(x, R) {
-  const sup = x.role === 'super';
+  const sup = x.role === 'super' && !x.lead, lead = !!x.lead;
   return `<tr class="edit-row"><td colspan="11"><div class="row" style="align-items:flex-end">
     <div class="field" style="flex:1 1 200px"><label class="label" for="ed-name">نام و نام خانوادگی</label><input id="ed-name" value="${esc(x.name)}" maxlength="80"></div>
     <div class="field" style="flex:1 1 150px"><label class="label" for="ed-nid">کد ملی (نام کاربری)</label><input id="ed-nid" value="${esc(x.nid)}" inputmode="numeric" maxlength="12" dir="ltr"></div>
-    ${sup ? '' : `<div class="field" style="flex:1 1 150px"><label class="label" for="ed-region">منطقه</label><select id="ed-region">${regOptions(R, x.region_id)}</select></div>
+    ${sup ? '' : `<div class="field" style="flex:1 1 150px"><label class="label" for="ed-region">${lead ? 'منطقه‌ی هتل‌های خودش (اختیاری)' : 'منطقه'}</label><select id="ed-region">${lead ? '<option value="0">— ندارد —</option>' : ''}${regOptions(R, x.region_id)}</select></div>
     <div class="field" style="flex:1 1 120px"><label class="label" for="ed-sheet">نام شیت در اکسل</label><input id="ed-sheet" value="${esc(x.sheet || '')}" maxlength="60" dir="ltr"></div>`}
     <button class="btn" id="ed-save">ذخیره</button><button class="btn ghost" id="ed-cancel">انصراف</button></div>
     <p class="hint">${roleName(x.role, x.lead)} · اگر کد ملی را عوض کنید، این نفر از این به بعد با کد ملی تازه وارد می‌شود (رمزش همان قبلی است).</p><span class="err" id="ed-err"></span></td></tr>`;
@@ -134,7 +136,7 @@ function renderUsers() {
       ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleName(x.role, x.lead)}</td><td>${esc(x.city || (x.role === 'super' ? 'همه' : '—'))}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
         <td class="dim">${x.creator ? esc(x.creator) + (x.creator_role === 'region' ? ' (مدیر منطقه)' : x.creator_lead ? ` (${esc(leadL())})` : '') : 'اکسل یا سامانه'}</td><td>${statusPill(x)}</td><td class="num">${fa(x.reports)}</td><td class="dim">${x.last_login ? fmtTs(x.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-pw="${x.id}" placeholder="خالی=تصادفی" style="min-width:110px" autocomplete="new-password"><button class="btn small ghost" data-reset="${x.id}">تعیین</button></div></td>
-        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button><button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
+        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button>${full() && x.role !== 'super' ? `<button class="btn small ghost" data-lead="${x.id}" data-v="1" title="همین حساب ${esc(leadL())} شود؛ رمز، گزارش‌ها و هتل‌هایش می‌ماند">⬆️ ${esc(leadL())}</button>` : ''}${full() && x.lead ? `<button class="btn small ghost" data-lead="${x.id}" data-v="0" title="برگرداندن به مدیر منطقه">⬇️ مدیر منطقه</button>` : ''}<button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
           ${x.passkeys ? `<button class="btn small ghost" data-pk="${x.id}" title="حذف اثر انگشت‌های ثبت‌شده">☝️ ${fa(x.passkeys)}</button>` : ''}
           ${x.reports ? '' : `<button class="btn small danger" data-del="${x.id}">حذف</button>`}</div></td></tr>`).join('') || '<tr><td colspan="11" class="empty">کاربری نیست.</td></tr>'}</tbody></table></div></div>
     ${newUserForm(R, 'fm')}`;
@@ -145,7 +147,7 @@ function renderUsers() {
   const ec = m.querySelector('#ed-cancel'); if (ec) ec.onclick = () => { U.edit = 0; renderUsers(); };
   const es = m.querySelector('#ed-save'); if (es) es.onclick = async () => {
     const x = list.find(u => u.id === U.edit), err = m.querySelector('#ed-err'), body = { name: m.querySelector('#ed-name').value, nid: m.querySelector('#ed-nid').value };
-    if (x.role !== 'super') { body.region_id = +m.querySelector('#ed-region').value; body.sheet = m.querySelector('#ed-sheet').value; }
+    if (!(x.role === 'super' && !x.lead)) { body.region_id = +m.querySelector('#ed-region').value; body.sheet = m.querySelector('#ed-sheet').value; }
     es.disabled = true; err.textContent = '';
     try {
       const r = await api(`/api/super/users/${x.id}/edit`, { body });
@@ -154,6 +156,7 @@ function renderUsers() {
       loadUsers();
     } catch (e) { es.disabled = false; err.textContent = e.message; }
   };
+  m.querySelectorAll('[data-lead]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { await api(`/api/super/users/${b.dataset.lead}/lead`, { body: { on: b.dataset.v === '1' } }); toast(b.dataset.v === '1' ? `حساب به ${leadL()} ارتقا یافت؛ با ورود دوباره، پنل تازه را می‌بیند.` : 'به مدیر منطقه برگشت.'); U.O = null; loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.act}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-reset]').forEach(b => b.onclick = async () => { if (!sure(b)) return; b.disabled = true; try { U.temp = [await api(`/api/super/users/${b.dataset.reset}/reset`, { body: { password: m.querySelector(`[data-pw="${b.dataset.reset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; toast(e.message, true); } });
   m.querySelectorAll('[data-pk]').forEach(b => b.onclick = async () => { if (!sure(b)) return; try { await api(`/api/super/users/${b.dataset.pk}/passkeys`, { body: {} }); loadUsers(); } catch (e) { toast(e.message, true); } });
