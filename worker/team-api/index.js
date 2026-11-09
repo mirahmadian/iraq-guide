@@ -209,7 +209,19 @@ async function pickPeople(form, e) {
   }
   return out;
 }
-async function formOf(regionId) { const r = await one('SELECT json FROM forms WHERE region_id = ?', regionId); return r ? JSON.parse(r.json) : DEFAULT_FORM; }
+/* یک فرم واحد برای همه‌ی شهرها و مناطق (team_cfg.form) که سرپرست مناطق می‌سازد؛ فرم‌های قدیمیِ جدا برای هر منطقه فقط پشتیبان‌اند */
+async function formOf() {
+  const g = await one("SELECT v FROM team_cfg WHERE k = 'form'");
+  if (g) return JSON.parse(g.v);
+  const r = await one('SELECT json FROM forms ORDER BY updated DESC LIMIT 1');
+  return r ? JSON.parse(r.json) : DEFAULT_FORM;
+}
+/* نقش‌های عوامل در همه‌ی مناطق (برای «نام نفر را هم بپرس») */
+async function allStaffRoles() {
+  const set = new Set(STAFF_ROLES);
+  for (const c of await all('SELECT roles FROM staff_cfg')) for (const r of json(c.roles) || []) set.add(r);
+  return [...set];
+}
 const RATING = { great: 'عالی', good: 'خوب', mid: 'متوسط', poor: 'ضعیف' };
 function verdict(qn, v) {
   if (v == null || v === '') return null;
@@ -777,6 +789,10 @@ async function api(req, url, u) {
         FROM users x LEFT JOIN regions r ON r.id = x.region_id LEFT JOIN users c ON c.id = x.created_by
         WHERE x.id != ?1 AND x.nid != 'owner' AND (?2 = 0 OR x.region_id = ?2) AND (?3 = 1 OR x.role != 'super') ORDER BY x.role = 'super' DESC, r.city, r.name, x.role DESC, x.name`, u.id, rid, isFull(u) ? 1 : 0);
     }
+    if (p === '/api/super/form') {
+      if (m === 'GET') return { ...(await formOf()), _roles: await allStaffRoles() };
+      if (m === 'PUT') { const f = validForm(await body(512 * 1024)); await run("INSERT OR REPLACE INTO team_cfg (k, v) VALUES ('form', ?)", JSON.stringify(f)); return { ...f, _roles: await allStaffRoles() }; }
+    }
     if (p === '/api/super/cfg' && m === 'POST') {
       if (!isFull(u)) fail(403, 'این تنظیم فقط برای مدیر سامانه است.');
       const b = await body(), v = String(b.leadLabel || '').trim().slice(0, 40);
@@ -864,8 +880,8 @@ async function api(req, url, u) {
     const R = u.role === 'super' ? +url.searchParams.get('region') : u.region_id;
     if (!await one('SELECT 1 FROM regions WHERE id = ?', R)) fail(400, 'منطقه را انتخاب کنید.');
     if (p === '/api/admin/form') {
-      if (m === 'GET') return { ...(await formOf(R)), _roles: await staffRoles(R) };
-      if (m === 'PUT') { if (u.role !== 'super') fail(403, 'تغییر فرم فقط با سرپرست مناطق است.'); const f = validForm(await body(512 * 1024)); await run('INSERT OR REPLACE INTO forms (region_id, json, updated) VALUES (?, ?, ?)', R, JSON.stringify(f), Date.now()); return { ...f, _roles: await staffRoles(R) }; }
+      if (m === 'GET') return formOf(R);
+      fail(403, 'فرم برای همه‌ی مناطق یکی است و فقط سرپرست مناطق آن را در تب «🧩 فرم‌ساز» پنل خودش تغییر می‌دهد.');
     }
     if (p === '/api/admin/weeks' && m === 'GET') {
       return all(`SELECT w.id, w.title, w.file, w.imported, (SELECT COUNT(*) FROM entries e WHERE e.week_id = w.id) AS entries,

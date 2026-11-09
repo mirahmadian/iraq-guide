@@ -13,8 +13,11 @@ window.startRegion = (me, opts) => {
 };
 /* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
 const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
-/* فرم‌ساز فقط برای سرپرست مناطق و مدیر سامانه (وقتی پنل یک منطقه را باز می‌کنند)؛ مدیر منطقه آن را نمی‌بیند */
-const tabs = () => A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS.filter(t => t[0] !== 'form');
+/* فرم‌ساز یک فرم واحد برای همه‌ی مناطق است و در پنل خود سرپرست مناطق (team-super.js) باز می‌شود، نه در پنل منطقه */
+const tabs = () => (A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS).filter(t => t[0] !== 'form');
+let FORM_API = '/api/admin/form';
+window.openFormBuilder = me => { A.me = me; A.opts = A.opts || {}; A.tab = 'form'; FORM_API = '/api/super/form'; loadForm(); };
+window.leaveFormBuilder = () => { if (A.tab === 'form' && A.formDirty && !confirmLeave()) return false; A.tab = ''; window.onbeforeunload = null; return true; };
 function shell() {
   const sup = !!A.opts.region;
   app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? (A.me.lead ? A.me.leadLabel : 'مدیر سامانه') + ' (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
@@ -216,7 +219,8 @@ document.addEventListener('click', e => { if (e.target.id === 'tmp-x') { A.temp 
 
 /* ═════════ form builder ═════════ */
 async function loadForm() {
-  if (!A.form || !A.formDirty) { try { A.form = await api('/api/admin/form'); A.formDirty = false; A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; } catch (e) { return toast(e.message, true); } }
+  window.onbeforeunload = e => { if (A.formDirty) { e.preventDefault(); e.returnValue = ''; } };
+  if (!A.form || !A.formDirty) { try { A.form = await api(FORM_API); A.formDirty = false; A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; } catch (e) { return toast(e.message, true); } }
   if (A.tab !== 'form') return;
   renderForm();
 }
@@ -226,7 +230,7 @@ function renderForm() {
   const F = A.form, m = main();
   if (!allQ().find(x => x.q.id === A.qsel)) A.qsel = allQ()[0]?.q.id;
   const cur = allQ().find(x => x.q.id === A.qsel);
-  m.innerHTML = `<div class="row" style="justify-content:space-between"><div><h2 style="font-size:17px">فرم‌ساز</h2><p class="hint">بخش‌ها و سؤال‌ها، پاسخ‌های آماده، اشکال‌ها و اقدام‌های آماده را خودتان تعیین کنید. «روز وقوع»، «نتیجه» و «عکس و فیلم» برای هر نقص خودکار هست.</p></div>
+  m.innerHTML = `<div class="row" style="justify-content:space-between"><div><h2 style="font-size:17px">فرم‌ساز</h2><p class="hint"><b>این فرم برای همه‌ی شهرها و مناطق یکی است</b>؛ هر تغییر بلافاصله برای همه‌ی مدیران ثابت اعمال می‌شود. بخش‌ها و سؤال‌ها، پاسخ‌های آماده، اشکال‌ها و اقدام‌های آماده را خودتان تعیین کنید. «روز وقوع»، «نتیجه» و «عکس و فیلم» برای هر نقص خودکار هست.</p></div>
       <div class="row">${A.formDirty ? '<span class="dirty">● ذخیره نشده</span>' : '<span class="dim" style="font-size:12.5px">ذخیره شده</span>'}<button class="btn" id="fs-save" ${A.formDirty ? '' : 'disabled'}>ذخیره‌ی فرم</button></div></div>
     <div class="bd">
       <div class="card tree-panel"><div class="field"><label class="label" for="ft">نام فرم</label><input id="ft" class="inp" value="${esc(F.title)}" maxlength="120"></div>
@@ -285,7 +289,7 @@ function wireForm(cur) {
   const m = main(), F = A.form, dirty = (full = true) => { A.formDirty = true; if (full) renderForm(); else { m.querySelector('.preview').innerHTML = previewHTML(cur.q); const t = m.querySelector(`[data-qsel="${CSS.escape(cur.q.id)}"]`); if (t) t.innerHTML = `<span>${esc(cur.q.emoji || '•')}</span><span>${esc(cur.q.text)}</span>`;
       const sv = m.querySelector('#fs-save'); sv.disabled = false; sv.previousElementSibling.outerHTML = '<span class="dirty">● ذخیره نشده</span>'; } };
   const nid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  m.querySelector('#fs-save').onclick = async () => { try { A.form = await api('/api/admin/form', { method: 'PUT', body: A.form }); A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; A.formDirty = false; toast('فرم ذخیره شد. از همین حالا مدیران ثابت فرم تازه را می‌بینند.'); renderForm(); } catch (e) { toast(e.message, true); } };
+  m.querySelector('#fs-save').onclick = async () => { try { A.form = await api(FORM_API, { method: 'PUT', body: A.form }); A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; A.formDirty = false; toast('فرم ذخیره شد. از همین حالا مدیران ثابت همه‌ی مناطق فرم تازه را می‌بینند.'); renderForm(); } catch (e) { toast(e.message, true); } };
   m.querySelector('#ft').oninput = e => { F.title = e.target.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; };
   m.querySelectorAll('[data-stitle]').forEach(i => i.oninput = () => { F.sections[+i.dataset.stitle].title = i.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; });
   m.querySelectorAll('[data-semoji]').forEach(i => i.oninput = () => { F.sections[+i.dataset.semoji].emoji = i.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; });
