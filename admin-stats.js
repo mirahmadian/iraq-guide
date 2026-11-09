@@ -18,6 +18,7 @@ function statsLoad() {
   };
   go(); stTimer = setInterval(go, 30000);
 }
+const stSec = (k, ttl, body, def) => `<details class="gd-det" ${ccGet('st:' + k, def) ? 'open' : ''} ontoggle="ccSet('st:${k}', this.open)"><summary><b>${ttl}</b></summary><div style="padding:4px 0 8px">${body}</div></details>`;
 function renderStats() {
   const el = document.getElementById('stats-admin');
   if (!el) return;
@@ -28,12 +29,12 @@ function renderStats() {
     <span style="min-width:110px">${f(r)}</span><span style="flex:1;height:10px;background:#eef3f0;border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:${Math.round(r.n / mx * 100)}%;background:#2e8b63"></i></span>
     <b style="min-width:44px;text-align:left">${stN(r.n)}</b></div>`).join(''); };
   el.innerHTML = `
-  <div class="info-box"><strong>📊 آمار کاربران</strong>
+  <details class="gd-det"><summary>ℹ️ این عددها یعنی چه؟</summary><div class="empty-msg" style="line-height:2;padding:6px 2px">
     هر گوشی یا رایانه‌ای که برنامه را باز کند یک «بازدیدکننده» حساب می‌شود (بدون نام یا شماره). «نصب‌شده» یعنی برنامه را به صفحه گوشی اضافه کرده و از آنجا باز کرده است.
     «کاربر واقعی» یعنی دست‌کم در دو روز مختلف برنامه را باز کرده — دقیق‌ترین عدد برای کسانی که واقعاً از برنامه استفاده می‌کنند.
     یک نفر با دو دستگاه (یا بعد از پاک کردن حافظه مرورگر) دو بار شمرده می‌شود، و پاک کردن برنامه از گوشی معلوم نمی‌شود.
     «آنلاین» یعنی در ۵ دقیقه اخیر برنامه روی صفحه‌اش باز بوده. این صفحه هر ۳۰ ثانیه خودش به‌روز می‌شود.
-    ${d && d.since ? `<br>شمارش از ${new Date(d.since).toLocaleDateString('fa-IR')} شروع شده؛ کاربرانی که قبل از آن برنامه را داشتند، با اولین باز کردن دوباره شمرده می‌شوند.` : ''}</div>
+    ${d && d.since ? `<br>شمارش از ${new Date(d.since).toLocaleDateString('fa-IR')} شروع شده؛ کاربرانی که قبل از آن برنامه را داشتند، با اولین باز کردن دوباره شمرده می‌شوند.` : ''}</div></details>
   ${stErr ? `<div class="empty-msg" style="color:var(--red)">${escH(stErr)}</div>` : !d ? '<div class="empty-msg">در حال دریافت…</div>' : `
   <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
     ${box('🟢 ' + stN(d.online), 'الان آنلاین', '#1a9a4a')}
@@ -41,7 +42,7 @@ function renderStats() {
     ${box(stN(d.inst_real), 'نصب کرده و دوباره برگشته')}
     ${box(stN(d.inst), 'نصب‌شده (کل)')}
   </div>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
+  ${stSec('more', '🔢 عددهای بیشتر (۸ عدد)', `  <div style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0">
     ${box(stN(d.total), 'همه بازدیدکننده‌ها (نصب‌شده یا از مرورگر)', '#555')}
     ${box(stN(d.inst_active), 'نصب‌شده و فعال در ۳۰ روز اخیر', '#555')}
     ${box(stN(d.inst_once), 'نصب کرده، فقط چند دقیقه همان روز', '#999')}
@@ -52,13 +53,13 @@ function renderStats() {
     ${box(stN(d.week), 'کاربر در ۷ روز اخیر', '#555')}
     ${box(stN(d.new_today), 'کاربر جدید در ۲۴ ساعت اخیر', '#555')}
     ${box(stN(d.inst_today), 'نصب جدید در ۲۴ ساعت اخیر', '#555')}
-  </div>
-  ${d.city.length ? `<div class="field-label">شهر انتخاب‌شده کاربران (۲۴ ساعت اخیر)</div>${bars(d.city, r => escH(cityName(r.k)) + (r.online ? ` <small style="color:#1a9a4a">(${stN(r.online)} آنلاین)</small>` : ''))}` : ''}
-  ${(d.country || []).length ? `<div class="field-label" style="margin-top:14px">کشور (از روی اینترنت کاربر)</div>${bars(d.country, r => stCountry(r.k) + ` <small style="color:#1f6f50">(${stN(r.i)} نصب، ${stN(r.r)} کاربر واقعی)</small>`)}` : ''}
-  ${(d.instGeo || []).length ? `<div class="field-label" style="margin-top:14px">محل نصب (تقریبی)</div>${bars(d.instGeo, r => stGeo(r.k))}` : ''}
+  </div>`, false)}
+  ${d.city.length ? stSec('city', '🕌 شهر انتخاب‌شده کاربران (۲۴ ساعت اخیر)', bars(d.city, r => escH(cityName(r.k)) + (r.online ? ` <small style="color:#1a9a4a">(${stN(r.online)} آنلاین)</small>` : '')), true) : ''}
+  ${(d.country || []).length ? stSec('country', '🌍 کشور (از روی اینترنت کاربر)', bars(d.country, r => stCountry(r.k) + ` <small style="color:#1f6f50">(${stN(r.i)} نصب، ${stN(r.r)} کاربر واقعی)</small>`), false) : ''}
+  ${(d.instGeo || []).length ? stSec('geo', '📍 محل نصب (تقریبی)', bars(d.instGeo, r => stGeo(r.k))) : ''}
   ${(d.country || []).length ? `<div class="empty-msg" style="padding:4px 0">موقعیت از روی IP و تقریبی است: اینترنت همراه معمولاً شهر مرکز اپراتور (مثلاً تهران یا بغداد) را نشان می‌دهد و با فیلترشکن کشور دیگری دیده می‌شود. خود IP ذخیره نمی‌شود. از امروز ثبت می‌شود.</div>` : ''}
-  ${d.plat.length ? `<div class="field-label" style="margin-top:14px">نوع گوشی (۳۰ روز اخیر)</div>${bars(d.plat, r => ST_PLAT[r.k] || r.k)}` : ''}
-  ${d.days.length ? `<div class="field-label" style="margin-top:14px">کاربران جدید در ۱۴ روز اخیر</div>${bars(d.days.slice().reverse(), r => new Date(r.d * 864e5).toLocaleDateString('fa-IR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + ` <small style="color:#1f6f50">(${stN(r.i || 0)} نصب، ${stN(r.back || 0)} برگشته)</small>`)}` : ''}
+  ${d.plat.length ? stSec('plat', '📱 نوع گوشی (۳۰ روز اخیر)', bars(d.plat, r => ST_PLAT[r.k] || r.k)) : ''}
+  ${d.days.length ? stSec('days', '📈 کاربران جدید در ۱۴ روز اخیر', bars(d.days.slice().reverse(), r => new Date(r.d * 864e5).toLocaleDateString('fa-IR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) + ` <small style="color:#1f6f50">(${stN(r.i || 0)} نصب، ${stN(r.back || 0)} برگشته)</small>`), false) : ''}
   ${d.inst_evt ? `<div class="empty-msg" style="padding:6px 0">نصب‌هایی که مرورگر لحظه‌اش را خبر داده (از امروز به بعد): ${stN(d.inst_evt)}</div>` : ''}`}
   <button class="add-row-btn" onclick="statsLoad()">🔄 به‌روزرسانی</button>`;
 }

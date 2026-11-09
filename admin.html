@@ -928,6 +928,11 @@
 </div><!-- /tab-lost -->
 
 <div class="page" id="tab-stats" style="max-width:900px">
+  <div class="sec-card open" data-perm="stats" style="margin-bottom:14px">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">📊</div>
+      <div class="sec-head-info"><div class="sec-head-title">آمار کاربران</div><div class="sec-head-sub">چند نفر برنامه را باز کرده‌اند، نصب‌ها، شهر و نوع گوشی؛ هر ۳۰ ثانیه خودکار به‌روز می‌شود</div></div></div>
+    <div class="sec-body" style="display:block" id="stats-admin"></div>
+  </div>
   <div class="sec-card open" data-perm="owner" style="margin-bottom:14px">
     <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🛡️</div>
       <div class="sec-head-info"><div class="sec-head-title">سلامت سرور و پشتیبان‌ها</div><div class="sec-head-sub">سامانه‌های سرور ۱۸۸ (نواقص هتل‌ها، چاپ و بسته‌بندی، بیمه) — فقط برای مدیر اصلی</div></div></div>
@@ -948,7 +953,6 @@
       <div class="sec-head-info"><div class="sec-head-title">بسته نجات — اگر Claude در دسترس نبود</div><div class="sec-head-sub">گزارش آماده برای برنامه‌نویس یا هوش مصنوعی دیگر، و پرونده فنی کامل سامانه‌ها</div></div></div>
     <div class="sec-body" style="display:block" id="rescue-admin"></div>
   </div>
-  <div id="stats-admin"></div>
 </div><!-- /tab-stats -->
 
 <div class="page" id="tab-help" style="max-width:900px">
@@ -987,6 +991,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-trips.js"></script>
 <script src="jdp.js"></script>
 <script src="admin-foodvote.js"></script>
+<script src="admin-collapse.js"></script>
 <script src="face.js"></script>
 <script src="admin-lost.js"></script>
 <script src="admin-search.js"></script>

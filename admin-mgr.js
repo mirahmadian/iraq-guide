@@ -255,7 +255,7 @@ function mcoRender() {
   if (!mcoEdit) mcoEdit = mcoBlank();
   const e = mcoEdit, inp = (k, ph, x = '') => `<input data-f="${k}" class="input-full" placeholder="${ph}" value="${escH(e[k] || '')}" ${x}>`;
   el.innerHTML = mcoBotHTML() + `
-  <div class="mga-box" id="mcoForm"><div class="field-label">${e.id ? `✏️ ویرایش «${escH(e.name)}»` : '➕ افزودن شرکت مجری'}</div>
+  <details class="mga-sec" id="mcoForm" ${e.id || e.name || e.ceo ? 'open' : ''}><summary>${e.id ? `✏️ ویرایش «${escH(e.name)}»` : '➕ افزودن شرکت مجری'}</summary><div style="padding:0 0 12px">
     <div class="mga-form">
       ${inp('name', 'نام شرکت مجری', 'list="mcoSug"')}
       ${inp('ceo', 'نام و نام خانوادگی مدیرعامل')}
@@ -272,7 +272,7 @@ function mcoRender() {
       <button class="del-btn" title="حذف این نماینده" onclick="mcoRead();mcoEdit.reps.splice(${i},1);if(!mcoEdit.reps.length)mcoEdit.reps.push({name:'',ir:'',iq:''});mcoRender()">🗑</button></div>`).join('')}
     <button class="add-row-btn" onclick="mcoRead();mcoEdit.reps.push({name:'',ir:'',iq:''});mcoRender()">＋ نماینده‌ی دیگر</button>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="pub-btn" onclick="mcoSave(this)">${e.id ? '💾 ذخیره' : '➕ افزودن شرکت'}</button><button class="lock-link" onclick="mcoEdit=null;mcoRender()">${e.id ? 'انصراف' : 'پاک کردن فرم'}</button></div>
-    <div class="empty-msg" style="padding:6px 0 0">در اپلیکیشن کنار هر شماره دکمه‌ی تماس و واتس‌اپ ساخته می‌شود؛ تماس با پیش‌شماره‌ی بین‌المللی است تا با سیم‌کارت ایرانی در عراق هم وصل شود.</div></div>
+    <div class="empty-msg" style="padding:6px 0 0">در اپلیکیشن کنار هر شماره دکمه‌ی تماس و واتس‌اپ ساخته می‌شود؛ تماس با پیش‌شماره‌ی بین‌المللی است تا با سیم‌کارت ایرانی در عراق هم وصل شود.</div></div></details>
 
   ${mcoData.suggest.length ? `<details class="gd-det"><summary><b>💡 ${mgaN(mcoData.suggest.length)} شرکت مجری در اکسل‌های هفتگی سامانه‌ی نواقص هست که هنوز این‌جا ثبت نشده</b></summary>
     <div class="mco-sug">${mcoData.suggest.slice(0, 150).map((x, i) => `<button onclick="mcoEdit={...mcoBlank(),name:mcoData.suggest[${i}].name};mcoRender();document.querySelector('#mcoForm [data-f=ceo]').focus()">＋ ${escH(x.name)} <span>(${mgaN(x.n)} ردیف)</span></button>`).join('')}</div></details>` : ''}
@@ -287,10 +287,22 @@ function mcoRender() {
   </div></details>
 
   <div class="field-label" style="margin-top:14px">🏢 شرکت‌های ثبت‌شده (${mgaN(mcoData.list.length)})</div>
-  <input type="search" class="input-full" placeholder="🔎 جستجوی شرکت، مدیرعامل، نماینده یا شماره…" value="${escH(mcoQ)}" oninput="mcoQ=this.value;mcoList()" style="margin:6px 0 8px">
+  <input type="search" class="input-full" placeholder="🔎 جستجوی شرکت، مدیرعامل، نماینده یا شماره…" value="${escH(mcoQ)}" oninput="mcoQ=this.value;mcoLim=25;mcoList()" style="margin:6px 0 8px">
   <div id="mcoList"></div>`;
   mcoList();
 }
+document.head.insertAdjacentHTML('beforeend', `<style>
+  .mco-d{border:1px solid var(--border-s);border-radius:12px;margin:6px 0;background:var(--card);overflow:hidden}
+  .mco-d > summary{position:relative;display:block;padding:8px 12px 8px 30px;cursor:pointer;list-style:none;line-height:1.6}
+  .mco-d > summary::-webkit-details-marker{display:none}
+  .mco-d > summary::after{content:'▼';position:absolute;left:12px;top:50%;margin-top:-7px;font-size:10px;color:var(--dim);transition:transform .2s}
+  .mco-d[open] > summary::after{transform:rotate(180deg)}
+  .mco-d > summary small{display:block;color:var(--dim);font-size:12px}
+  .mco-d > .mga-row{border:0;border-top:1px solid var(--border-s);border-radius:0;margin:0}
+  .mco-d[open] > summary{background:var(--card2)}
+</style>`);
+const mcoOpen = new Set();
+let mcoLim = 25;
 function mcoList() {
   const el = document.getElementById('mcoList'); if (!el || !mcoData) return;
   const q = mcoQ.trim().replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
@@ -298,13 +310,14 @@ function mcoList() {
   const L = q ? mcoData.list.filter(c => hay(c).includes(q)) : mcoData.list;
   const P = v => v ? `<span dir="ltr">${escH(mgaFaPhone(v.replace(/^00/, '+')))}</span>` : '';
   const sb = id => (mcoData.bot && mcoData.bot.subs[id]) || {};
-  el.innerHTML = L.length ? L.map(c => `<div class="mga-row"><div class="mga-main"><b>${escH(c.name)}</b>${sb(c.id).bot ? ' <span class="mco-bb">🤖 از بله</span>' : ''}
+  const lim = q ? L.length : mcoLim;
+  el.innerHTML = L.length ? L.slice(0, lim).map(c => `<details class="mco-d" ${q || mcoOpen.has(c.id) ? 'open' : ''} ontoggle="this.open ? mcoOpen.add(${c.id}) : mcoOpen.delete(${c.id})"><summary><b>${escH(c.name)}</b>${sb(c.id).bot ? ' <span class="mco-bb">🤖 از بله</span>' : ''}<small>${c.ceo ? escH(c.ceo) : '<span style="color:#B25B12">مدیرعامل ثبت نشده</span>'}${c.reps.length ? ` · ${mgaN(c.reps.length)} نماینده` : ''}</small></summary><div class="mga-row"><div class="mga-main"><b>${escH(c.name)}</b>${sb(c.id).bot ? ' <span class="mco-bb">🤖 از بله</span>' : ''}
       <div class="mga-sub">${c.ceo ? `مدیرعامل: ${escH(c.ceo)}` : '<span style="color:#B25B12">مدیرعامل ثبت نشده</span>'}${c.phone ? `، تلفن شرکت: ${P(c.phone)}` : ''}</div>
       ${c.address ? `<div class="mga-sub">📍 ${escH(c.address)}</div>` : ''}
       ${c.reps.length ? c.reps.map(r => `<div class="mga-sub">👤 ${escH(r.name || 'نماینده')}${r.ir ? `، ایران: ${P(r.ir)}` : ''}${r.iq ? `، عراق: ${P(r.iq)}` : ''}</div>`).join('') : '<div class="mga-sub" style="color:#B25B12">نماینده ثبت نشده</div>'}</div>
     <div class="mga-act"><button onclick="mcoEdit=JSON.parse(JSON.stringify(mcoData.list.find(x=>x.id===${c.id})));if(!mcoEdit.reps.length)mcoEdit.reps.push({name:'',ir:'',iq:''});mcoRender();document.getElementById('mcoForm').scrollIntoView({behavior:'smooth'})" title="ویرایش">✏️</button>
       ${mcoData.bot ? `<button onclick="mcoInv(${c.id})" title="لینک اختصاصی این شرکت در بله">🔗</button>` : ''}
-      <button onclick="mcoDel(${c.id})" title="حذف">🗑</button></div></div>`).join('')
+      <button onclick="mcoDel(${c.id})" title="حذف">🗑</button></div></div></details>`).join('') + (L.length > lim ? `<button class="add-row-btn" style="width:100%;margin-top:8px" onclick="mcoLim+=25;mcoList()">▼ نمایش ${mgaN(Math.min(25, L.length - lim))} شرکت دیگر (از ${mgaN(L.length - lim)} شرکت باقی‌مانده)</button>` : '')
     : `<div class="empty-msg">${mcoData.list.length ? 'شرکتی با این جستجو پیدا نشد.' : 'هنوز شرکتی ثبت نشده است. از فرم بالا یا «ورود یک‌جا از اکسل» شروع کنید.'}</div>`;
 }
 /* 🤖 درخواست‌های بازوی بله: شرکت‌ها خودشان نماینده معرفی می‌کنند؛ این‌جا فقط تأیید/رد */
