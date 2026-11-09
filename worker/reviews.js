@@ -263,6 +263,12 @@ export default {
         if (p === '/admin/bale/setup' && req.method === 'POST') return json(await baleSetup(env, url.origin));
         if (p.startsWith('/admin/backup/')) { const k = await handleBackupAdmin(p, req, env, url, json, err, CORS, REPO); if (k) return k; }
         if (p.startsWith('/admin/guard')) { const g = await handleGuardAdmin(p, req, env, url, json, err); if (g) return g; }
+        /* افزونه‌ی عتبات برای همکارانِ «سفرها» (مخزن عمومی است، پس فایل افزونه فقط این‌جا و پشت ورود است) */
+        if (p === '/admin/mgr/trips/ext' && req.method === 'GET') {
+          const z = await env.DB.prepare("SELECT v FROM config WHERE k = 'ext_zip'").first();
+          if (!z) return err('فایل افزونه هنوز روی سرور گذاشته نشده است.', 404);
+          return new Response(Uint8Array.from(atob(z.v), c => c.charCodeAt(0)), { headers: { 'Content-Type': 'application/zip', 'Cache-Control': 'no-store', ...CORS } });
+        }
         const cr = await coReqAdmin(p, req, env, body, json, err, staff ? staff.user : 'مدیر اصلی', env.BALE_TOKEN ? baleSend : null);
         if (cr) return cr;
         const tr = await handleTripsAdmin(p, req, env, url, body, json, err, staff ? staff.user : 'owner');

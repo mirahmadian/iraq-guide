@@ -24,19 +24,15 @@ function trRender() {
   const el = document.getElementById('trips-admin'); if (!el) return;
   const last = trData && trData.last && trData.last.n ? `<div class="mga-sub" style="margin-bottom:8px">آخرین بارگذاری: <b>${mgaAgo(trData.last.t)}</b>؛ در کل ${mgaN(trData.last.n)} کاروان با ورود از ${trFa(trData.last.a)} تا ${trFa(trData.last.b)}</div>` : '';
   el.innerHTML = `${last}
-  <details class="gd-det"><summary><b>📘 روش کار (افزونه‌ی سامانه‌ی عتبات)</b></summary><div class="empty-msg" style="line-height:2.1;padding:6px 0">
-    ۱. در کروم یا Edge کامپیوتر وارد <b>سامانه‌ی عتبات</b> شوید (افزونه‌ی «همیار کاروان» باید یک بار نصب شده باشد).<br>
-    ۲. روی آیکون سبز همیار کاروان بالای مرورگر بزنید. بازه‌ی <b>هفت روز آینده</b> خودش پر شده؛ «جمع‌آوری» را بزنید.<br>
-    ۳. افزونه گزارش «تلفن همراه» (مدیر، شماره، هتل‌ها) و گزارش گروه‌ها (ردیف‌های قرمز = لغو) را می‌خواند و یک فایل اکسل می‌دهد.<br>
-    ۴. همان فایل را این‌جا در «بارگذاری اکسل افزونه» بگذارید و «ثبت» را بزنید. بارگذاری دوباره‌ی همان روزها، اطلاعات آن روزها را به‌روز می‌کند.<br>
-    افزونه فقط گزارش‌ها را می‌خواند و هیچ چیزی در سامانه‌ی عتبات ثبت یا تأیید نمی‌کند. از زائران هیچ اطلاعاتی برداشته نمی‌شود.</div></details>
 
   <details class="gd-det" ${trImp ? 'open' : ''}><summary><b>📄 بارگذاری اکسل افزونه</b></summary><div style="padding:8px 0">
     <input type="file" accept=".xlsx" onchange="trFile(this)">
     ${trImp ? `<div class="mga-imp">${trImp.err ? `<span style="color:#B3261E">${escH(trImp.err)}</span>` : `
       فایل <b>${trFa(trImp.from)}</b> تا <b>${trFa(trImp.to)}</b>: <b>${mgaN(trImp.rows.length)}</b> کاروان؛
       ${['ok', 'empty', 'cancel'].map(s => `${TR_ST[s][0]} ${mgaN(trImp.rows.filter(r => r.status === s).length)}`).join('، ')}؛
-      بدون شماره مدیر ${mgaN(trImp.rows.filter(r => !r.phone).length)}.
+      ${(() => { const np = trImp.rows.filter(r => !r.phone && r.status !== 'cancel').length, live = trImp.rows.filter(r => r.status !== 'cancel').length, ph = new Set(trImp.rows.filter(r => /^0?9\d{9}$/.test(r.phone) && r.status !== 'cancel').map(r => r.phone)).size;
+        return np && np >= live * 0.5 ? `<div class="tr-warn">⚠️ <b>${mgaN(np)} کاروان از ${mgaN(live)} شماره‌ی مدیر ندارند.</b> این فایل احتمالاً درست ساخته نشده؛ قبل از ثبت، ستون «موبایل مدیر» را در خود فایل نگاه کنید (یا فایل را برای پشتیبانی بفرستید).</div>`
+          : `<div class="tr-ok">📱 موبایل <b>${mgaN(ph)}</b> مدیر در فایل هست؛ بعد از ثبت، مدیرهای سفرهای جاری و آینده <b>خودکار</b> در «👥 مدیران و دسترسی» مجاز می‌شوند.${np ? ` (${mgaN(np)} کاروان بدون شماره)` : ''}</div>`; })()}
       <div style="margin-top:8px"><button class="pub-btn" onclick="trImport(this)">✅ ثبت ${mgaN(trImp.rows.length)} کاروان</button> <button class="lock-link" onclick="trImp=null;trRender()">انصراف</button></div>
       <div class="mga-sub">کاروان‌های همین روزها که قبلاً ثبت شده بودند با این فایل جایگزین می‌شوند؛ لغو دستی و شماره‌ای که خودتان اصلاح کرده‌اید می‌ماند.</div>`}</div>` : ''}
   </div></details>
@@ -112,7 +108,7 @@ async function trImport(btn) {
   try {
     const r = await adminFetch('/admin/mgr/trips/import', { from: trImp.from, to: trImp.to, rows: trImp.rows }, adminAuth());
     showToast(`✅ ${mgaN(r.n)} کاروان ثبت شد (${trFa(r.from)} تا ${trFa(r.to)})` + (r.sync && r.sync.n ? ` — ${mgaN(r.sync.n)} مدیر با سفر جاری یا آینده در «مدیران و دسترسی» مجاز شد${r.sync.added ? ` (${mgaN(r.sync.added)} نفر تازه)` : ''}` : ' — هیچ موبایل مدیری در فایل نبود'), 9000);
-    trImp = null; trFrom = r.from; trTo = r.to; trLoad();
+    trImp = null; trFrom = r.from; trTo = r.to; trLoad(); if (typeof mgGuideLoad === 'function') mgGuideLoad();
   } catch (e) { showToast(e.message); btn.disabled = false; }
 }
 async function trSet(key, body) {
@@ -153,3 +149,72 @@ function trPhone(key) {
   .tr-mini{border:1px solid var(--border-s);background:var(--card);border-radius:8px;padding:2px 10px;font-family:var(--font);font-size:12px;cursor:pointer;color:var(--text)}
   </style>`);
 })();
+
+/* ══ راهنمای سه‌قدمی بالای تب «مدیران کاروان»: دریافت افزونه ← اجرا در عتبات ← بارگذاری فایل ══ */
+let mgG = null, mgGOpen = null;
+function mgGuideLoad() {
+  const el = document.getElementById('mgGuide'); if (!el) return;
+  if (typeof STAFF !== 'undefined' && STAFF && !STAFF.perms.has('trips')) { el.innerHTML = ''; return; }
+  adminFetch('/admin/mgr/trips?from=1499/12/29&to=1499/12/29', null, adminAuth()).then(d => { mgG = d; mgGuideRender(); }).catch(() => {});
+  mgGuideRender();
+}
+function mgGuideRender() {
+  const el = document.getElementById('mgGuide'); if (!el) return;
+  const t = mgG && mgG.last && mgG.last.t, days = t ? Math.floor((Date.now() - t) / 864e5) : null, fresh = t && days < 7;
+  const open = mgGOpen === null ? !fresh : mgGOpen, ver = mgG && mgG.ext ? mgG.ext.ver : '';
+  el.innerHTML = `<div class="mgg ${fresh ? 'ok' : 'due'}">
+    <button class="mgg-h" onclick="mgGOpen=!${open};mgGuideRender()" aria-expanded="${open}">
+      <span>${!mgG ? '⏳' : fresh ? '✅' : '⏰'}</span>
+      <b>${!mgG ? 'کار هفتگی: فهرست مدیران را از سامانه‌ی عتبات به‌روز کنید' : fresh ? `فایل این هفته بارگذاری شده (${mgaAgo(t)})` : t ? `فایل این هفته هنوز بارگذاری نشده (آخرین: ${mgaAgo(t)})` : 'هنوز هیچ فایلی بارگذاری نشده'}</b>
+      <span class="mgg-t">${open ? 'بستن ▴' : 'راهنما ▾'}</span></button>
+    ${open ? `<div class="mgg-b">
+      <p class="mgg-i">هر هفته فقط همین سه قدم: مدیرهای کاروان‌ها <b>خودکار</b> از سامانه‌ی عتبات به فهرست اضافه می‌شوند و دیگر لازم نیست کسی شماره‌ها را دستی وارد کند.</p>
+      <div class="mgg-steps">
+        <div class="mgg-s"><div class="mgg-n">۱</div><b>دریافت و نصب افزونه</b><small>فقط بار اول، روی کامپیوتر (کروم یا Edge)</small>
+          <button class="pub-btn" onclick="mgExtGet(this)">⬇️ دانلود افزونه${ver ? ` (نسخه‌ی ${trFa(ver)})` : ''}</button>
+          <details><summary>روش نصب</summary><ol>
+            <li>فایل <b>hamyar-atabat-ext.zip</b> را از حالت فشرده خارج کنید (راست‌کلیک ← <b>Extract All</b>) و پوشه را جایی بگذارید که پاکش نکنید، مثلاً «اسناد».</li>
+            <li>در کروم بنویسید <b dir="ltr">chrome://extensions</b> (در Edge: <b dir="ltr">edge://extensions</b>) و Enter بزنید.</li>
+            <li>بالای صفحه <b>Developer mode</b> را روشن کنید.</li>
+            <li>دکمه‌ی <b>Load unpacked</b> را بزنید و پوشه‌ی <b>hamyar-atabat-ext</b> را انتخاب کنید.</li>
+            <li>روی آیکون پازل 🧩 کنار نوار آدرس بزنید و کنار «همیار کاروان» سنجاق 📌 را بزنید تا آیکون سبزش همیشه دیده شود.</li>
+            <li>برای نسخه‌ی تازه: همین فایل را دوباره دانلود کنید، روی همان پوشه بریزید و در صفحه‌ی extensions دکمه‌ی 🔄 افزونه را بزنید.</li></ol></details></div>
+        <div class="mgg-s"><div class="mgg-n">۲</div><b>اجرا در سامانه‌ی عتبات</b><small>هر هفته، حدود ۲ تا ۵ دقیقه</small>
+          <ol><li>با کروم وارد <b dir="ltr">atabatorg.haj.ir</b> شوید.</li><li>روی آیکون سبز <b>همیار کاروان</b> بالای مرورگر بزنید.</li>
+            <li>بازه‌ی تاریخ خودش پر شده؛ <b>«جمع‌آوری»</b> را بزنید و صبر کنید.</li><li>در آخر <b>«⬇ دریافت فایل اکسل»</b> را بزنید؛ فایلی به اسم <b dir="ltr">hamyar-trips-….xlsx</b> دانلود می‌شود.</li></ol>
+          <small>افزونه فقط گزارش‌ها را می‌خواند؛ چیزی در سامانه ثبت یا تأیید نمی‌کند و اطلاعات زائران را برنمی‌دارد.</small></div>
+        <div class="mgg-s"><div class="mgg-n">۳</div><b>بارگذاری فایل همین‌جا</b><small>فایل hamyar-trips-….xlsx</small>
+          <label class="pub-btn mgg-up">📄 انتخاب فایل اکسل افزونه<input type="file" accept=".xlsx" hidden onchange="mgGuideFile(this)"></label>
+          <small>خلاصه‌ی فایل نشان داده می‌شود؛ اگر درست بود «✅ ثبت» را بزنید. بعد از ثبت، تعداد مدیرهایی که مجاز شدند را می‌بینید.</small></div>
+      </div></div>` : ''}</div>`;
+}
+async function mgExtGet(btn) {
+  btn.disabled = true;
+  try {
+    const r = await fetch(RV_API + '/admin/mgr/trips/ext', { headers: { Authorization: adminAuth() }, cache: 'no-store' });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'دانلود ممکن نشد');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = 'hamyar-atabat-ext.zip'; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 30000);
+    showToast('افزونه دانلود شد ✅ حالا «روش نصب» را باز کنید');
+  } catch (e) { showToast(e.message); }
+  btn.disabled = false;
+}
+async function mgGuideFile(inp) {
+  if (typeof mgSubShow === 'function') mgSubShow('trips');
+  await trFile(inp);
+  mgGOpen = false; mgGuideRender();
+  setTimeout(() => { const x = document.querySelector('#trips-admin .mga-imp'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+}
+document.head.insertAdjacentHTML('beforeend', `<style>
+  .mgg{border:1.5px solid #B25B12;border-radius:14px;background:var(--card);margin-bottom:12px;overflow:hidden}.mgg.ok{border-color:#1E7D4F55}
+  .mgg-h{width:100%;display:flex;align-items:center;gap:8px;padding:12px 14px;border:0;background:#B25B1210;cursor:pointer;font-family:var(--font);font-size:14px;color:var(--text);text-align:right}
+  .mgg.ok .mgg-h{background:#1E7D4F0d}.mgg-h b{flex:1}.mgg-t{font-size:12px;color:var(--dim,#777);white-space:nowrap}
+  .mgg-b{padding:4px 14px 14px}.mgg-i{font-size:13px;line-height:2;margin:6px 0 10px}
+  .mgg-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  @media(max-width:760px){.mgg-steps{grid-template-columns:1fr}}
+  .mgg-s{border:1px solid var(--border-s);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.9;background:var(--card2,#f6f1e7)}
+  .mgg-s small{color:var(--dim,#777);font-size:12px}.mgg-s ol{margin:0;padding-inline-start:18px}.mgg-s details summary{cursor:pointer;font-weight:700;color:#1E5D8C}
+  .mgg-n{width:28px;height:28px;border-radius:50%;background:#1E7D4F;color:#fff;display:grid;place-items:center;font-weight:800}
+  .mgg-up{cursor:pointer;display:inline-flex;justify-content:center}
+  .tr-warn{margin-top:6px;background:#B3261E14;color:#B3261E;border-radius:8px;padding:6px 10px;line-height:1.9}.tr-ok{margin-top:6px;background:#1E7D4F12;color:#1E6B45;border-radius:8px;padding:6px 10px;line-height:1.9}
+</style>`);

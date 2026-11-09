@@ -901,6 +901,7 @@
 </div><!-- /tab-reviews -->
 
 <div class="page" id="tab-mgr" style="max-width:900px">
+  <div id="mgGuide" data-perm="trips"></div>
   <div class="mg-sub" id="mgSub"><button data-k="mgr" data-perm="mgr" onclick="mgSubShow('mgr')">👥 مدیران و دسترسی</button><button data-k="trips" data-perm="trips" onclick="mgSubShow('trips')">🧭 سفرها (از سامانه‌ی عتبات)</button></div>
   <div class="sec-card open" data-perm="mgr" id="card-mgr">
     <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🧳</div>
@@ -1015,7 +1016,7 @@ function switchTab(id, btn) {
   if (id === 'reviews') rvaLoad();
   if (id === 'stats') { statsLoad(); if (typeof guardLoad === 'function') guardLoad(); if (typeof bkInfo === 'function') { bkRender(); bkInfo(); } }
   if (id === 'users') usersLoad();
-  if (id === 'mgr' && typeof mgSubOpen === 'function') mgSubOpen();
+  if (id === 'mgr' && typeof mgSubOpen === 'function') { mgSubOpen(); if (typeof mgGuideLoad === 'function') mgGuideLoad(); }
   if (id === 'mgrco' && typeof mcoLoad === 'function') mcoLoad();
   if (id === 'lost' && typeof lostLoad === 'function') lostLoad();
 }

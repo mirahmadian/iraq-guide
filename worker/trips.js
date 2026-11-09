@@ -83,7 +83,8 @@ export async function handleTripsAdmin(p, req, env, url, body, json, err, who) {
     const from = jDate(url.searchParams.get('from')) || '0000/00/00', to = jDate(url.searchParams.get('to')) || '9999/99/99';
     const rows = (await env.DB.prepare('SELECT * FROM mgr_trips WHERE entry BETWEEN ? AND ? ORDER BY entry, company, agent LIMIT 5000').bind(from, to).all()).results.map(tripOut);
     const last = await env.DB.prepare('SELECT MAX(updated) AS t, MIN(entry) AS a, MAX(entry) AS b, COUNT(*) AS n FROM mgr_trips').first();
-    return json({ rows, last });
+    let ext = null; try { const e = await env.DB.prepare("SELECT v FROM config WHERE k = 'ext_ver'").first(); ext = e ? JSON.parse(e.v) : null; } catch (x) {}
+    return json({ rows, last, ext });
   }
   if (p === '/admin/mgr/trips/import' && req.method === 'POST') {
     const seen = new Map();
