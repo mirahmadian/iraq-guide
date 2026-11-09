@@ -128,6 +128,33 @@ function cfLoad() {
 const cfBar = (pct, col) => `<div style="height:10px;border-radius:6px;background:#eee;overflow:hidden;margin:4px 0"><i style="display:block;height:100%;width:${Math.max(1, Math.min(100, pct))}%;background:${col}"></i></div>`;
 const cfCol = pct => pct > 85 ? '#B3261E' : pct > 60 ? '#B25B12' : '#1E7D4F';
 const cfPct = x => (x < 1 ? x.toFixed(2) : x < 10 ? x.toFixed(1) : Math.round(x)).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]).replace('.', '٫');
+/* 💾 نگهبان فضا: پیش‌بینی، نمودار رشد، آخرین پاک‌سازی خودکار، پرجمعیت‌ترین جدول‌ها */
+function cfSpaceHTML(d) {
+  const sp = d.space; if (!sp) return '';
+  const H = sp.hist || [], tot = h => Object.values(h.s || {}).reduce((a, b) => a + b, 0), mx = Math.max(1, ...H.map(tot));
+  const f = sp.forecast && sp.forecast.worst, yrs = f ? f.left / 365 : 0;
+  const proj = !f ? 'از فردا اندازه‌گیری روزانه شروع می‌شود.' : !sp.forecast.sample ? 'روند رشد از چند روز دیگر محاسبه می‌شود.' : f.left === Infinity ? 'در ۳۰ روز اخیر رشدی نداشته است.'
+    : yrs >= 10 ? 'با روند فعلی <b>بیش از ۱۰ سال</b> جا داریم.' : yrs >= 1 ? `با روند فعلی حدود <b>${gFa(Math.floor(yrs))} سال</b> دیگر پر می‌شود.` : `<b style="color:#B3261E">با روند فعلی حدود ${gFa(Math.ceil(f.left))} روز دیگر پر می‌شود.</b>`;
+  const bars = H.length > 1 ? `<svg viewBox="0 0 ${H.length * 6} 40" preserveAspectRatio="none" style="width:100%;height:46px;display:block;margin:6px 0" aria-label="رشد حجم در روزهای اخیر">${H.map((h, i) => { const v = Math.max(1, tot(h) / mx * 38); return `<rect x="${i * 6 + 1}" y="${40 - v}" width="4" height="${v}" rx="1" fill="#1E7D4F"><title>${h.d}: ${gKb(tot(h))}</title></rect>`; }).join('')}</svg>
+    <div dir="ltr" style="display:flex;justify-content:space-between;font-size:11px;color:#888"><span>${escH(H[0].d)}</span><span>${escH(H[H.length - 1].d)}</span></div>` : '';
+  const L = sp.last;
+  return `<div style="border:1px solid #e5dccb;border-radius:12px;padding:12px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:15px">🛡️ نگهبان فضا (خودکار، روزی یک بار)</b>
+      <button class="lock-link" onclick="cfSpaceRun(this)">🧹 همین الان اجرا شود</button></div>
+    <div>${proj}${f ? ` <span style="color:#666">(پرترین: ${escH(f.what)}، ${f.pct < 1 ? 'کمتر از ۱' : gFa(Math.round(f.pct))}٪)</span>` : ''}</div>
+    ${bars}
+    <div>🧹 <b>آخرین پاک‌سازی:</b> ${L ? `${gAgo(L.at)} — ${L.removed && L.removed.length ? L.removed.map(r => `${escH(r.label)}: ${gFa(r.n)}`).join('، ') : 'چیز کهنه‌ای برای پاک کردن نبود'}` : 'هنوز اجرا نشده'}</div>
+    <div style="color:#666;font-size:12px">در بله: هشدار وقتی هر پایگاه به ۶۰٪ و ۸۰٪ برسد یا در یک روز بیش از ۲۰ مگ بزرگ شود؛ و یک خط «💾 فضا» در گزارش صبح.</div>
+    ${sp.tables && sp.tables.length ? `<details class="gd-det"><summary>پرجمعیت‌ترین جدول‌های پایگاه اصلی</summary><div style="padding:6px 2px;font-size:12.5px">${sp.tables.map(t => `<div style="display:flex;justify-content:space-between"><span dir="ltr">${escH(t.t)}</span><span>${gFa(t.n)} ردیف</span></div>`).join('')}</div></details>` : ''}
+    <details class="gd-det"><summary>چه چیزهایی خودکار پاک می‌شود؟</summary><div style="padding:6px 2px;line-height:2">
+      سوابق محدودیت تلاش و لینک‌ها و کدهای منقضی (فوراً)، پیش‌نویس‌های نیمه‌کاره‌ی ربات شرکت‌ها (۲ روز)، درخواست‌های بررسی‌شده‌ی ربات شرکت‌ها (۱ سال)، سفرهای عتبات (۱ سال بعد از سفر)، مدیرانی که از عتبات آمده‌اند (۶ ماه بعد از پایان دسترسی)، عکس و فیلم نواقص (۷ روز)، خطاهای ثبت‌شده (۳۰ روز) و پشتیبان‌های قدیمی سرور.<br>
+      <b>هرگز خودکار پاک نمی‌شود:</b> نظرات زائران، مدیرانی که دستی ثبت شده‌اند، شرکت‌ها، کاربران و همکاران، گزارش‌های نواقص و آمار.</div></details>
+  </div>`;
+}
+async function cfSpaceRun(btn) {
+  btn.disabled = true; btn.textContent = '⏳ در حال اجرا…';
+  try { await adminFetch('/admin/guard/space', {}, adminAuth()); showToast('نگهبان فضا اجرا شد ✅'); cfLoad(); } catch (e) { showToast(e.message); btn.disabled = false; }
+}
 function cfRender() {
   const el = document.getElementById('cf-admin'), d = cfData; if (!el || !d) return;
   const used = d.dbs.reduce((a, x) => a + (x.bytes || 0), 0), tp = used / d.limits.total * 100;
@@ -139,6 +166,7 @@ function cfRender() {
       ${cfBar(tp, cfCol(tp))}
       <div>مصرف‌شده: <b>${gKb(used)}</b> از <b>۵ گیگ</b> رایگان (هر پایگاه حداکثر ۵۰۰ مگ)</div>
     </div>
+    ${cfSpaceHTML(d)}
     ${d.dbs.map(x => { const p = (x.bytes || 0) / d.limits.db * 100; return `<div style="padding:8px 0;border-bottom:1px solid #eee">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b dir="ltr">${escH(x.name)}</b><span>${x.error ? '<span style="color:#B3261E">خوانده نشد</span>' : `${gKb(x.bytes)} از ۵۰۰ مگ، ${gFa(x.tables)} جدول`}</span></div>
       <div style="color:#666;font-size:12px">${escH(x.what)}</div>${x.error ? '' : cfBar(p, cfCol(p))}</div>`; }).join('')}

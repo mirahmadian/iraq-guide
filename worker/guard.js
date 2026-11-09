@@ -8,6 +8,7 @@
    رازها: BACKUP_KEY (همان کلید nginx سرور). مدیر اصلی با فرستادن کد owner_code به بازوی بله ثبت می‌شود (config: owner_chat).
 ══════════════════════════════════════════ */
 /* sslip.io نه nip.io: فیلترینگ ایران nip.io را از خارج قطع می‌کند (proxy.js را ببینید) */
+import { spaceTick, spaceLine, spaceInfo } from './space.js';
 import { HANDOVER, OWNER_STEPS } from './handover.js';
 import { ERRLOG, logError } from './errlog.js';
 import { ghToken } from './staff.js';
@@ -186,7 +187,7 @@ async function daily(env, checks) {
   if (!tStale && tWarned) await env.DB.prepare("DELETE FROM config WHERE k = 'bk:team-warned'").run();
   if (hr === 9 && (await cfgGet(env, 'daily:sent')) !== today) {
     const down = checks.filter(c => !c.up);
-    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n💻 آخرین استفاده از Codespace: ${cs.at ? Math.floor((now - cs.at) / D).toLocaleString('fa') + ' روز پیش' : '—'}${await localBk(env, now)}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
+    await notify(env, `☀️ گزارش روزانه سرور\n\n${checks.map(c => `${c.up ? '✅' : '🔴'} ${c.name}`).join('\n')}\n\n💾 آخرین پشتیبان ساعتی: ${bd.at ? tehran(bd.at) : '—'}\n💾 آخرین پشتیبان کامل: ${bf.at ? tehran(bf.at) : '—'}\n🏨 آخرین پشتیبان سامانه نواقص هتل‌ها: ${bt.at ? tehran(bt.at) : '—'}\n💻 آخرین استفاده از Codespace: ${cs.at ? Math.floor((now - cs.at) / D).toLocaleString('fa') + ' روز پیش' : '—'}${await localBk(env, now)}${await spaceLine(env).catch(() => '')}\n\n${down.length ? 'یک یا چند سامانه قطع است؛ به Claude بگویید.' : 'همه چیز مرتب است. 🌷'}`);
     await cfgSet(env, 'daily:sent', today);
   }
 }
@@ -267,6 +268,7 @@ export async function guardRun(env, force) {
   if (new Date().getUTCMinutes() % 15 < 5) await errorAlert(env);   /* هر ربع ساعت */
   try { await csCheck(env, false); } catch (e) {}
   await daily(env, checks);
+  try { await spaceTick(env, notify); } catch (e) { console.log('space', e && e.message); }
   if (new Date().getUTCMinutes() < 5) { await cleanup(env); for (const db of [env.DB, env.HDB]) if (db) try { await db.prepare(ERRLOG).run(); await db.prepare('DELETE FROM errlog WHERE ts < ?').bind(Date.now() - 30 * D).run(); } catch (e) {} }
   return { checks, backups: res, budgetLeft: budget.n };
 }
@@ -299,7 +301,8 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
       try { const r = await env[b].prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite%' AND name NOT LIKE '_cf%'").all();
         dbs.push({ name, what, bytes: r.meta.size_after || 0, tables: r.results[0].n }); } catch (e) { dbs.push({ name, what, error: String(e.message || e).slice(0, 120) }); }
     }
-    return json({ dbs, limits: { db: 500 * 1048576, total: 5 * 1073741824 } });
+    let space = null; try { space = await spaceInfo(env); } catch (e) {}
+    return json({ dbs, space, limits: { db: 500 * 1048576, total: 5 * 1073741824 } });
   }
   if (p === '/admin/guard/get' && req.method === 'GET') {
     const k = url.searchParams.get('k') || '';
@@ -312,6 +315,7 @@ export async function handleGuardAdmin(p, req, env, url, json, err) {
   }
   if (p === '/admin/guard/report' && req.method === 'GET') return new Response(await report(env), { headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' } });
   if (p === '/admin/guard/run' && req.method === 'POST') { try { await csCheck(env, true); } catch (e) {} return json(await guardRun(env, true)); }
+  if (p === '/admin/guard/space' && req.method === 'POST') return json(await spaceTick(env, notify, true));
   if (p === '/admin/guard/test' && req.method === 'POST') return json({ sent: await notify(env, '🔔 پیام آزمایشی نگهبان سرور همیار — اگر این را می‌بینید، هشدارها درست به شما می‌رسد.') });
   return null;
 }
