@@ -20,26 +20,31 @@ function mgaStatus(x) {
   if (x.until && x.until < Date.now()) return ['⌛ تاریخش گذشته', '#B25B12'];
   return x.devices ? ['🟢 وارد شده', '#1E7D4F'] : ['⚪ هنوز وارد نشده', '#777'];
 }
+/* حالت نمایش: فیلتر وضعیت، تعداد ردیف نمایش‌داده، ردیف باز */
+let mgaF = '', mgaShow = 30, mgaOpen = '';
+const MGA_FILTERS = [['all', 'همه', '#555'], ['on', '🟢 وارد شده', '#1E7D4F'], ['wait', '⚪ هنوز وارد نشده', '#777'], ['off', '⛔ غیرفعال / تمام‌شده', '#B3261E']];
+const mgaDead = x => !x.active || (x.until && x.until < Date.now());
+const mgaFState = x => mgaDead(x) ? 'off' : x.devices ? 'on' : 'wait';
+const mgaNorm = s => String(s || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+  .replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[‌\s]+/g, ' ').trim().toLowerCase();
+function mgaFiltered() {
+  const q = mgaNorm(mgaQ), qd = q.replace(/\D/g, '');
+  return mgaData.people.filter(x => (!mgaF || mgaF === 'all' || mgaFState(x) === mgaF) && (!q || mgaNorm([x.name, x.role, x.company].join(' ')).includes(q) || (qd.length >= 3 && String(x.phone).includes(qd.replace(/^0/, '')))));
+}
 function mgaRender() {
   const el = document.getElementById('mgr-admin'); if (!el) return;
   if (mgaErr) { el.innerHTML = `<div class="empty-msg" style="color:#B3261E">${escH(mgaErr)}</div><button class="add-row-btn" onclick="mgaLoad()">🔄 دوباره</button>`; return; }
   if (!mgaData) { el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>'; return; }
-  const P = mgaData.people, q = mgaQ.trim().replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
-  const L = q ? P.filter(x => [x.name, x.phone, x.role, x.company].some(v => String(v || '').includes(q))) : P;
-  const on = P.filter(x => x.devices).length;
+  const P = mgaData.people, cnt = k => k !== 'all' ? P.filter(x => mgaFState(x) === k).length : P.length;
   el.innerHTML = `
-  <div class="mga-sum"><div><b>${mgaN(P.length)}</b><span>نفر در فهرست</span></div><div><b>${mgaN(on)}</b><span>وارد شده‌اند</span></div><div><b>${mgaN(P.filter(x => !x.active || (x.until && x.until < Date.now())).length)}</b><span>غیرفعال / تمام‌شده</span></div></div>
-  <details class="gd-det"><summary><b>📘 مدیران چطور وارد می‌شوند؟</b></summary><div class="empty-msg" style="line-height:2;padding:6px 0">
-    ۱. شماره‌ی موبایل مدیر را این‌جا ثبت کنید (همان شماره‌ای که با آن در بله است).<br>
-    ۲. مدیر در برنامه: منوی «بیشتر» ← <b>«🔐 ورود مدیران کاروان»</b> ← «ورود با بازوی بله» ← در بله «📱 ارسال شماره من».<br>
-    ۳. اگر شماره در فهرست باشد، بخش ویژه روی گوشی‌اش باز می‌شود (حداکثر ${mgaN(mgaData.max || 2)} گوشی برای هر شماره).<br>
-    اگر کسی بله ندارد، کنار نامش «🔑 کد یک‌بارمصرف» را بزنید و کد را تلفنی به او بگویید (۲۴ ساعت اعتبار دارد).<br>
-    با «غیرفعال کردن» یا حذف، دسترسی در اولین اتصال گوشی به اینترنت قطع می‌شود.</div></details>
+  <div class="mga-sum">${MGA_FILTERS.map(([k, l, c]) => `<button type="button" class="${mgaF === k ? 'on' : ''}" style="--c:${c}" onclick="mgaSetF('${k}')"><b>${mgaN(cnt(k))}</b><span>${l}</span></button>`).join('')}</div>
+  <div class="mga-search"><input type="search" id="mgaQ" placeholder="🔎 نام، شماره‌ی موبایل یا شرکت را بنویسید…" value="${escH(mgaQ)}" oninput="mgaQ=this.value;mgaShow=30;mgaRenderList()" autocomplete="off"></div>
+  <div id="mgaList"></div>
 
-  <div class="mga-box">${mgaFormHTML()}</div>
+  <details class="mga-sec" id="mgaAdd" ${mgaEdit ? 'open' : ''}><summary>${mgaEdit ? '✏️ ویرایش مدیر' : '➕ افزودن یک نفر'}</summary><div class="mga-box">${mgaFormHTML()}</div></details>
 
-  <details class="gd-det" ${mgaImp ? 'open' : ''}><summary><b>📄 ورود یک‌جا از اکسل</b></summary><div style="padding:8px 0">
-    <div class="empty-msg" style="padding:0 0 8px;line-height:2">فایل اکسل (xlsx) یا CSV با ستون‌های <b>نام</b> و <b>موبایل</b> (و اگر دارید: سمت، شرکت، شهر). ردیف اول باید عنوان ستون‌ها باشد. شماره‌ای که از قبل هست، به‌روز می‌شود.</div>
+  <details class="mga-sec" ${mgaImp ? 'open' : ''}><summary>📄 ورود یک‌جا از اکسل</summary><div style="padding:8px 2px">
+    <div class="empty-msg" style="padding:0 0 8px;line-height:2;text-align:right">فایل اکسل (xlsx) یا CSV با ستون‌های <b>نام</b> و <b>موبایل</b> (و اگر دارید: سمت، شرکت، شهر). ردیف اول باید عنوان ستون‌ها باشد. شماره‌ای که از قبل هست، به‌روز می‌شود.</div>
     <input type="file" id="mgaFile" accept=".xlsx,.xls,.csv" onchange="mgaFile(this)">
     ${mgaImp ? `<div class="mga-imp">${mgaImp.err ? `<span style="color:#B3261E">${escH(mgaImp.err)}</span>` : `<b>${mgaN(mgaImp.rows.length)}</b> ردیف درست پیدا شد${mgaImp.bad ? `؛ ${mgaN(mgaImp.bad)} ردیف بدون نام یا شماره‌ی درست کنار گذاشته شد` : ''}.
       <div style="max-height:160px;overflow:auto;margin:6px 0;font-size:12.5px">${mgaImp.rows.slice(0, 50).map(r => `<div>${escH(r.name)} — <span dir="ltr">${escH(mgaFaPhone(r.phone))}</span> ${escH([r.role, r.company, MGA_CITIES[r.city]].filter(Boolean).join('، '))}</div>`).join('')}${mgaImp.rows.length > 50 ? '<div>…</div>' : ''}</div>
@@ -47,21 +52,43 @@ function mgaRender() {
       <button class="pub-btn" onclick="mgaImport(this)">✅ افزودن ${mgaN(mgaImp.rows.length)} نفر</button><button class="lock-link" onclick="mgaImp=null;mgaRender()">انصراف</button></div>`}</div>` : ''}
   </div></details>
 
-  <input type="search" class="input-full" placeholder="🔎 جستجوی نام، شماره، سمت یا شرکت…" value="${escH(mgaQ)}" oninput="mgaQ=this.value;mgaRenderList()" style="margin:12px 0 8px">
-  <div id="mgaList"></div>`;
+  <details class="mga-sec"><summary>📘 مدیران چطور وارد می‌شوند؟</summary><div class="empty-msg" style="line-height:2;padding:6px 2px;text-align:right">
+    ۱. شماره‌ی موبایل مدیر را این‌جا ثبت کنید (همان شماره‌ای که با آن در بله است).<br>
+    ۲. مدیر در برنامه: منوی «بیشتر» ← <b>«🔐 ورود مدیران کاروان»</b> ← «ورود با بازوی بله» ← در بله «📱 ارسال شماره من».<br>
+    ۳. اگر شماره در فهرست باشد، بخش ویژه روی گوشی‌اش باز می‌شود (حداکثر ${mgaN(mgaData.max || 2)} گوشی برای هر شماره).<br>
+    اگر کسی بله ندارد، روی نامش بزنید و «🔑 کد یک‌بارمصرف» را بزنید و کد را تلفنی به او بگویید (۲۴ ساعت اعتبار دارد).<br>
+    با «غیرفعال کردن» یا حذف، دسترسی در اولین اتصال گوشی به اینترنت قطع می‌شود.</div></details>`;
   mgaRenderList();
+}
+function mgaSetF(k) { mgaF = mgaF === k ? '' : k; mgaShow = 30; mgaRender(); }
+function mgaRowHTML(x) {
+  const [st, col] = mgaStatus(x), open = mgaOpen === x.phone, ph = escH(x.phone);
+  return `<div class="mga-row ${open ? 'open' : ''}">
+    <button type="button" class="mga-line" onclick="mgaOpen=mgaOpen==='${ph}'?'':'${ph}';mgaRenderList()" aria-expanded="${open}">
+      <i style="background:${col}" title="${escH(st)}"></i><b>${escH(x.name)}</b><span dir="ltr" class="mga-ph">${escH(mgaFaPhone(x.phone))}</span>
+      <span class="mga-co">${escH(x.company || x.role || '')}</span><span class="mga-chev"></span></button>
+    ${open ? `<div class="mga-det">
+      <div class="mga-sub">${escH([x.role, x.company, MGA_CITIES[x.city] || x.city].filter(Boolean).join(' · ') || '—')}</div>
+      <div class="mga-sub"><span style="color:${col};font-weight:800">${st}</span>${x.devices ? `، روی ${mgaN(x.devices)} گوشی` : ''}، آخرین ورود: ${mgaAgo(x.last_login)}${x.until ? `، تا ${mgaDate(x.until)}` : ''}</div>
+      <div class="mga-act"><button onclick="mgaEditOpen('${ph}')">✏️ ویرایش</button><button onclick="mgaOtp('${ph}')">🔑 کد یک‌بارمصرف</button>
+        ${x.devices ? `<button onclick="mgaRevoke('${ph}')">⏏️ خروج از گوشی‌ها</button>` : ''}<button class="del" onclick="mgaDel('${ph}')">🗑 حذف</button></div></div>` : ''}</div>`;
 }
 function mgaRenderList() {
   const el = document.getElementById('mgaList'); if (!el || !mgaData) return;
-  const q = mgaQ.trim().replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
-  const L = q ? mgaData.people.filter(x => [x.name, x.phone, x.role, x.company].some(v => String(v || '').includes(q))) : mgaData.people;
-  el.innerHTML = L.length ? L.slice(0, 300).map(x => { const [st, col] = mgaStatus(x); return `<div class="mga-row">
-    <div class="mga-main"><b>${escH(x.name)}</b> <span dir="ltr" class="mga-ph">${escH(mgaFaPhone(x.phone))}</span>
-      <div class="mga-sub">${escH([x.role, x.company, MGA_CITIES[x.city] || x.city].filter(Boolean).join(' · ') || '—')}</div>
-      <div class="mga-sub"><span style="color:${col};font-weight:800">${st}</span>${x.devices ? `، روی ${mgaN(x.devices)} گوشی` : ''}، آخرین ورود: ${mgaAgo(x.last_login)}${x.until ? `، تا ${mgaDate(x.until)}` : ''}</div></div>
-    <div class="mga-act"><button onclick="mgaEditOpen('${escH(x.phone)}')" title="ویرایش">✏️</button><button onclick="mgaOtp('${escH(x.phone)}')" title="کد یک‌بارمصرف برای کسی که بله ندارد">🔑</button>
-      ${x.devices ? `<button onclick="mgaRevoke('${escH(x.phone)}')" title="خروج از همه‌ی گوشی‌ها">⏏️</button>` : ''}<button onclick="mgaDel('${escH(x.phone)}')" title="حذف از فهرست">🗑</button></div></div>`; }).join('') + (L.length > 300 ? `<div class="empty-msg">${mgaN(L.length - 300)} نفر دیگر — برای دیدن، جستجو کنید.</div>` : '')
-    : `<div class="empty-msg">${mgaData.people.length ? 'کسی با این جستجو پیدا نشد.' : 'هنوز کسی ثبت نشده است. از فرم بالا یا «ورود یک‌جا از اکسل» شروع کنید.'}</div>`;
+  const P = mgaData.people;
+  if (!P.length) { el.innerHTML = '<div class="empty-msg">هنوز کسی ثبت نشده است. از «➕ افزودن یک نفر» یا «📄 ورود یک‌جا از اکسل» در پایین شروع کنید.</div>'; return; }
+  /* بدون جستجو و فیلتر، فهرست کامل نمایش داده نمی‌شود؛ فقط چند ورود اخیر */
+  if (!mgaQ.trim() && !mgaF) {
+    const R = P.filter(x => x.last_login).sort((a, b) => b.last_login - a.last_login).slice(0, 5);
+    el.innerHTML = `<div class="mga-hint">برای پیدا کردن یک نفر، نام یا شماره‌اش را در کادر بالا بنویسید؛ یا روی یکی از خانه‌های بالا بزنید.</div>
+      ${R.length ? `<div class="mga-cap">آخرین ورودها</div><div class="mga-list">${R.map(mgaRowHTML).join('')}</div>` : ''}`;
+    return;
+  }
+  const L = mgaFiltered();
+  el.innerHTML = L.length ? `<div class="mga-cap">${mgaN(L.length)} نفر${L.length > mgaShow ? ` · نمایش ${mgaN(mgaShow)} نفر اول` : ''}</div>
+    <div class="mga-list">${L.slice(0, mgaShow).map(mgaRowHTML).join('')}</div>
+    ${L.length > mgaShow ? `<button class="add-row-btn" onclick="mgaShow+=30;mgaRenderList()">نمایش ${mgaN(Math.min(30, L.length - mgaShow))} نفر بیشتر</button>` : ''}`
+    : '<div class="empty-msg">کسی با این جستجو پیدا نشد.</div>';
 }
 function mgaFormHTML() {
   const e = mgaEdit || {}, old = e.phone || '';
@@ -78,7 +105,7 @@ function mgaFormHTML() {
     ${old ? `<label style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:13px"><input type="checkbox" id="mgaActive" ${e.active ? 'checked' : ''}> فعال (اگر بردارید، از همه‌ی گوشی‌ها خارج می‌شود)</label>` : ''}
     <div style="display:flex;gap:8px;margin-top:8px"><button class="pub-btn" onclick="mgaSave(this)">${old ? '💾 ذخیره' : '➕ افزودن'}</button>${old ? '<button class="lock-link" onclick="mgaEdit=null;mgaRender()">انصراف</button>' : ''}</div>`;
 }
-function mgaEditOpen(phone) { mgaEdit = mgaData.people.find(x => x.phone === phone) || null; mgaRender(); document.querySelector('.mga-box').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+function mgaEditOpen(phone) { mgaEdit = mgaData.people.find(x => x.phone === phone) || null; mgaRender(); document.getElementById('mgaAdd').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 async function mgaSave(btn) {
   const v = id => document.getElementById(id).value, e = mgaEdit, u = v('mgaUntil');
   const body = { name: v('mgaName').trim(), phone: v('mgaPhone'), role: v('mgaRole'), company: v('mgaCo').trim(), city: v('mgaCity'),
@@ -145,18 +172,37 @@ async function mgaImport(btn) {
 
 (function injectMgaCSS() {
   document.head.insertAdjacentHTML('beforeend', `<style>
-  .mga-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-  .mga-sum>div{background:var(--card2,#f6f1e7);border-radius:12px;padding:10px;text-align:center;display:flex;flex-direction:column}
-  .mga-sum b{font-size:22px}.mga-sum span{font-size:12px;color:var(--dim,#777)}
-  .mga-box{border:1px solid var(--border-s);border-radius:14px;padding:12px;margin:12px 0}
+  .mga-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  @media(max-width:560px){.mga-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .mga-sum>button{background:var(--card2,#f6f1e7);border:1.5px solid transparent;border-radius:12px;padding:9px 6px;text-align:center;display:flex;flex-direction:column;cursor:pointer;font:inherit;color:inherit}
+  .mga-sum>button.on{border-color:var(--c);box-shadow:inset 0 -3px 0 var(--c)}
+  .mga-sum b{font-size:21px}.mga-sum span{font-size:12px;color:var(--dim,#777)}
+  .mga-search input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border-s);background:var(--card)}
+  .mga-search input:focus{outline:none;border-color:var(--pri,#0E5A44)}
+  .mga-hint{font-size:13px;color:var(--dim,#777);padding:12px 4px;line-height:1.9}
+  .mga-cap{font-size:12px;color:var(--dim,#777);margin:12px 2px 4px;font-weight:700}
+  .mga-list{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .mga-row{border-bottom:1px solid var(--border)}.mga-row:last-child{border-bottom:0}
+  .mga-row.open{background:var(--card2,#f6f1e7)}
+  .mga-line{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:0;background:none;font:inherit;color:inherit;text-align:right;cursor:pointer;min-height:44px}
+  .mga-line i{width:9px;height:9px;border-radius:50%;flex:none}
+  .mga-line b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .mga-ph{color:var(--dim,#777);font-size:12.5px;flex:none}
+  .mga-co{flex:1;min-width:0;font-size:12px;color:var(--dim,#777);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mga-chev{margin-inline-start:auto;width:7px;height:7px;border-left:2px solid var(--dim,#777);border-bottom:2px solid var(--dim,#777);transform:rotate(-45deg);flex:none;transition:transform .2s}
+  .mga-row.open .mga-chev{transform:rotate(135deg)}
+  @media(max-width:560px){.mga-co{display:none}}
+  .mga-det{padding:0 12px 10px 12px}
+  .mga-sub{font-size:12.5px;color:var(--dim,#777);line-height:1.9}
+  .mga-act{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .mga-act button{border:1px solid var(--border-s);background:var(--card);border-radius:9px;min-height:36px;padding:0 10px;cursor:pointer;font:inherit;font-size:13px}
+  .mga-act button.del{color:#B3261E;border-color:#B3261E55}
+  .mga-sec{margin-top:10px;border:1px solid var(--border);border-radius:12px;padding:0 12px}
+  .mga-sec>summary{cursor:pointer;padding:12px 0;font-weight:800;font-size:14px}
+  .mga-box{padding:4px 0 12px}
   .mga-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   @media(max-width:560px){.mga-form{grid-template-columns:1fr}}
   .mga-imp{margin-top:8px;padding:10px;border-radius:10px;background:var(--card2,#f6f1e7);font-size:13px;line-height:1.9}
-  .mga-row{display:flex;gap:8px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
-  .mga-main{flex:1;min-width:0;font-size:14px}.mga-ph{color:var(--dim,#777);font-size:13px}
-  .mga-sub{font-size:12px;color:var(--dim,#777);line-height:1.8}
-  .mga-act{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
-  .mga-act button{border:1px solid var(--border-s);background:var(--card);border-radius:8px;min-width:36px;min-height:34px;cursor:pointer;font-size:15px}
   </style>`);
 })();
 
