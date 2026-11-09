@@ -70,8 +70,10 @@ async function ghPut(env, path, b64, message, sha) {
 /* ── ورود همکار ── */
 export async function staffSession(env, tok) {
   if (!/^[0-9a-f]{64}$/.test(tok)) return null;
-  const s = await env.DB.prepare('SELECT s.user, s.exp, u.name, u.perms, u.active, u.must_change FROM sessions s JOIN staff u ON u.user = s.user WHERE s.tok = ?').bind(await sha(env.SALT + tok)).first();
+  const s = await env.DB.prepare('SELECT s.user, s.exp, u.name, u.perms, u.active, u.must_change, u.last_seen FROM sessions s JOIN staff u ON u.user = s.user WHERE s.tok = ?').bind(await sha(env.SALT + tok)).first();
   if (!s || s.exp < Date.now() || !s.active) return null;
+  /* ورود با رمز ۳۰ روز می‌ماند؛ پس «آخرین استفاده» جدا ثبت می‌شود (حداکثر هر ۱۰ دقیقه یک بار) */
+  if (!s.last_seen || Date.now() - s.last_seen > 6e5) await env.DB.prepare('UPDATE staff SET last_seen = ? WHERE user = ?').bind(Date.now(), s.user).run().catch(() => {});
   return { user: s.user, name: s.name, perms: new Set(JSON.parse(s.perms || '[]')), mustChange: !!s.must_change };
 }
 
@@ -134,7 +136,7 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
     const tok = randHex(32);
     await env.DB.batch([
       env.DB.prepare('INSERT INTO sessions (tok, user, exp) VALUES (?, ?, ?)').bind(await sha(env.SALT + tok), user, Date.now() + SESSION_DAYS * 864e5),
-      env.DB.prepare('UPDATE staff SET last_login = ? WHERE user = ?').bind(Date.now(), user),
+      env.DB.prepare('UPDATE staff SET last_login = ?1, last_seen = ?1 WHERE user = ?2').bind(Date.now(), user),
       env.DB.prepare('DELETE FROM sessions WHERE exp < ?').bind(Date.now())
     ]);
     return json({ token: tok, name: u.name, user, perms: JSON.parse(u.perms || '[]'), mustChange: !!u.must_change });
@@ -207,7 +209,7 @@ export async function handleStaff(p, req, env, body, json, err, limited, ip) {
 export async function handleUsers(p, req, env, body, json, err) {
   const defs = permDefs(['najaf', 'karbala', 'kadhimiya', 'samarra']), valid = new Set(defs.map(d => d.key));
   if (p === '/admin/users' && req.method === 'GET') {
-    const { results } = await env.DB.prepare('SELECT user, name, perms, active, created, last_login, must_change, reset_req FROM staff ORDER BY reset_req IS NULL, created').all();
+    const { results } = await env.DB.prepare('SELECT user, name, perms, active, created, last_login, last_seen, must_change, reset_req FROM staff ORDER BY reset_req IS NULL, created').all();
     return json({ users: results.map(u => ({ ...u, perms: JSON.parse(u.perms || '[]') })) });
   }
   if (p === '/admin/users' && req.method === 'POST') {

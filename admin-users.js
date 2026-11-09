@@ -363,18 +363,19 @@ function uPermSummary(perms) {
 function userRowHTML(u, ago) {
   const open = uOpen === u.user, n = u.perms.length, tot = permKeys().length;
   const pill = !u.active ? '<span class="u-pill u-bad">⛔ غیرفعال</span>' : u.reset_req ? '<span class="u-pill u-warn">🔑 رمز را فراموش کرده</span>'
-    : !u.last_login ? '<span class="u-pill u-warn">هنوز وارد نشده</span>' : '<span class="u-pill u-ok">فعال</span>';
+    : !u.last_login && !u.last_seen ? '<span class="u-pill u-warn">هنوز وارد نشده</span>' : '<span class="u-pill u-ok">فعال</span>';
   return `<div class="u-row" style="${u.active ? '' : 'opacity:.65'}">
     <div class="u-head" onclick="uOpen=uOpen==='${escH(u.user)}'?'':'${escH(u.user)}';renderUsers()" role="button" aria-expanded="${open}">
       <span class="u-name">👤 ${escH(u.name)}</span>
       ${pill}
       <span class="u-meta">${n === tot ? 'همه دسترسی‌ها' : n.toLocaleString('fa') + ' دسترسی'}</span>
       <span class="u-meta" dir="ltr">${escH(u.user)}</span>
+      ${u.last_seen ? `<span class="u-meta">آخرین استفاده: ${ago(u.last_seen)}</span>` : ''}
       <span class="u-meta">${open ? '▴' : '▾'}</span>
     </div>
     ${!open ? '' : `<div class="u-body">
       <div class="u-perms">${uPermSummary(u.perms)}</div>
-      <div class="u-meta">آخرین ورود به پنل ادمین: ${ago(u.last_login)}${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
+      <div class="u-meta">آخرین استفاده از پنل: ${u.last_seen ? ago(u.last_seen) : 'از این به بعد ثبت می‌شود'} · آخرین ورود با رمز: ${ago(u.last_login)} <span title="هر ورود با رمز تا ۳۰ روز روی همان دستگاه می‌ماند؛ در این مدت لازم نیست دوباره رمز بزند">(ورود ۳۰ روز می‌ماند)</span>${u.must_change ? ' · ⏳ هنوز رمز موقت را عوض نکرده' : ''}</div>
       ${u.reset_req ? `<div style="padding:8px 10px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:13px;font-weight:800">🔑 درخواست فراموشی رمز — ${ago(u.reset_req)}</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="add-row-btn" style="margin:0;width:auto;flex:1" onclick="userEdit('${escH(u.user)}')">✏️ ویرایش دسترسی‌ها</button>
