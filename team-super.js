@@ -38,36 +38,69 @@ const wireTemp = m => { const x = m.querySelector('#tmp-x'); if (x) x.onclick = 
 
 /* ═════════ regions ═════════ */
 async function loadRegions() { try { U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } if (U.tab === 'regions') renderRegions(); }
-function renderRegions() {
-  const m = main(), R = U.O.regions;
-  const tot = k => R.reduce((a, r) => a + (r[k] || 0), 0);
-  m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
-    <div class="kpis">
-      <div class="kpi"><span class="v num">${fa(new Set(R.map(r => r.city)).size)}</span><span class="k">شهر</span></div>
-      <div class="kpi"><span class="v num">${fa(R.length)}</span><span class="k">منطقه</span></div>
-      <div class="kpi"><span class="v num">${fa(R.reduce((a, r) => a + r.managers.length, 0))}</span><span class="k">مدیر منطقه</span></div>
-      <div class="kpi"><span class="v num">${fa(tot('fm'))}</span><span class="k">مدیر ثابت (${fa(tot('fm_active'))} فعال)</span></div>
-      <div class="kpi"><span class="v num">${fa(tot('reports'))}</span><span class="k">گزارش ثبت‌شده</span></div>
-      <div class="kpi"><span class="v num">${fa(tot('defects'))}</span><span class="k">نقص ثبت‌شده</span></div>
+/* هر شهر یک رنگ ثابت (در همه‌ی صفحه‌ها یکسان) */
+const cityCls = c => 'cc' + Math.max(0, (U.O ? U.O.cities : []).indexOf(c));
+const cityTag = c => c ? `<span class="ctag ${cityCls(c)}"><i></i>${esc(c)}</span>` : '<span class="dim">—</span>';
+/* نشان نقش: سرپرست طلایی، مدیر منطقه آبی، مدیر ثابت سبز */
+const roleTag = (r, lead) => lead ? `<span class="rb lead">⭐ ${esc(leadL())}</span>` : r === 'region' ? '<span class="rb reg">👔 مدیر منطقه</span>' : r === 'fm' ? '<span class="rb fm">🏨 مدیر ثابت</span>' : `<span class="rb sys">${esc(roleName(r, lead))}</span>`;
+const lsGet = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+function personRow(x, extra) {
+  return `<li><span class="pn"><b>${esc(x.name)}</b> ${extra || ''}</span><span class="pm">${x.hotels ? `<span class="num">${fa(x.hotels)}</span> هتل` : ''} ${statusPill(x)}</span></li>`;
+}
+function regionCard(r) {
+  const P = r.people || [], mgr = P.filter(x => x.role === 'region'), hot = P.filter(x => x.role === 'fm' || x.sheet);
+  const st = r.staff || [], stN = st.reduce((a, x) => a + x.n, 0), stSoon = st.reduce((a, x) => a + x.soon, 0);
+  return `<div class="card rg ${cityCls(r.city)}"><div class="card-h"><h2>🗺️ ${esc(r.name)} ${r.city !== r.name ? cityTag(r.city) : ''}</h2>
+      <div class="row"><button class="btn small" data-open="${r.id}">ورود به پنل این منطقه ←</button><button class="btn small ghost" data-users="${r.id}">👥 کاربران</button></div></div>
+    <div class="rg-stats"><span>هفته‌ی واردشده <b class="num">${fa(r.weeks)}</b></span><span>گزارش <b class="num">${fa(r.reports)}</b></span><span>نقص <b class="num">${fa(r.defects)}</b></span>
+      <span class="${r.open ? 'bad' : ''}">نقص باز <b class="num">${fa(r.open || 0)}</b></span><span class="dim">آخرین گزارش: ${r.last_report ? fmtTs(r.last_report) : '—'}</span></div>
+    <div class="rg-grid">
+      <section class="rg-sec reg"><h3>👔 مدیر منطقه <span class="dim">(${fa(mgr.length)})</span></h3><ul>${mgr.map(x => personRow(x, x.sheet ? '<span class="rb fm sm">+ مدیر ثابت</span>' : '')).join('') || '<li class="dim">هنوز مدیر منطقه ندارد.</li>'}</ul></section>
+      <section class="rg-sec fm"><h3>🏨 مدیران ثابت <span class="dim">(${fa(hot.length)})</span></h3><ul>${hot.map(x => personRow(x, x.lead ? `<span class="rb lead sm">⭐ ${esc(leadL())}</span>` : x.role === 'region' ? '<span class="rb reg sm">مدیر منطقه</span>' : '')).join('') || '<li class="dim">هنوز مدیر ثابتی ندارد.</li>'}</ul></section>
+      <section class="rg-sec st"><h3>👷 عوامل <span class="dim">(${fa(stN)})</span></h3><ul>${st.map(x => `<li><span class="pn"><b>${esc(x.role)}</b></span><span class="pm"><span class="num">${fa(x.n)}</span> نفر ${x.soon ? `<span class="pill bad">${fa(x.soon)} نزدیک خروج</span>` : ''}</span></li>`).join('') || '<li class="dim">هنوز ثبت نشده (در پنل منطقه، تب «👷 عوامل»).</li>'}</ul>
+        ${stSoon ? `<p class="hint" style="color:var(--bad)">⚠️ ${fa(stSoon)} نفر تا ۵ روز دیگر باید از عراق خارج شوند.</p>` : ''}</section>
     </div>
-    ${[...new Set(R.map(r => r.city || ''))].map(c => `<h2 class="city-h">🕌 ${esc(c || 'بدون شهر')} <span class="dim" style="font-size:13px;font-weight:500">(${fa(R.filter(r => (r.city || '') === c).length)} منطقه)</span></h2>
-    ${R.filter(r => (r.city || '') === c).map(r => `<div class="card"><div class="card-h"><h2>🗺️ ${esc(r.name)}</h2><div class="row"><button class="btn small" data-open="${r.id}">ورود به پنل این منطقه</button><button class="btn small ghost" data-users="${r.id}">کاربران</button></div></div>
-      <div class="row" style="gap:6px 18px;font-size:13px"><span>مدیر ثابت: <b class="num">${fa(r.fm)}</b> <span class="dim">(${fa(r.fm_active)} فعال · ${fa(r.fm_by_region)} نفر را مدیر منطقه ساخته)</span></span>
-        <span>هفته‌ی واردشده: <b class="num">${fa(r.weeks)}</b></span><span>گزارش: <b class="num">${fa(r.reports)}</b></span><span>نقص: <b class="num">${fa(r.defects)}</b></span>
-        <span class="dim">آخرین گزارش: ${r.last_report ? fmtTs(r.last_report) : '—'}</span></div>
-      <div class="tbl-wrap"><table><thead><tr><th>مدیر منطقه</th><th>کد ملی</th><th>وضعیت</th><th>آخرین ورود</th></tr></thead><tbody>
-        ${r.managers.map(x => `<tr><td><b>${esc(x.name)}</b></td><td class="num">${faS(x.nid)}</td><td>${statusPill(x)}</td><td class="dim">${x.last_login ? fmtTs(x.last_login) : '—'}</td></tr>`).join('') || '<tr><td colspan="4" class="dim">هنوز مدیر منطقه ندارد.</td></tr>'}</tbody></table></div>
-      ${full() ? `<div class="row"><select class="sel" data-rcity="${r.id}" aria-label="شهر">${U.O.cities.map(x => `<option ${x === r.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select><input class="inp" style="max-width:220px" data-rname="${r.id}" value="${esc(r.name)}" maxlength="80" aria-label="نام منطقه"><button class="btn small ghost" data-rsave="${r.id}">ذخیره‌ی شهر و نام</button></div>` : ''}</div>`).join('')}`).join('')}
+    ${full() ? `<details class="rg-edit"><summary>✏️ تغییر نام یا شهر این منطقه</summary><div class="row"><select class="sel" data-rcity="${r.id}" aria-label="شهر">${U.O.cities.map(x => `<option ${x === r.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select><input class="inp" style="max-width:220px" data-rname="${r.id}" value="${esc(r.name)}" maxlength="80" aria-label="نام منطقه"><button class="btn small ghost" data-rsave="${r.id}">ذخیره</button></div></details>` : ''}</div>`;
+}
+function renderRegions() {
+  const m = main(), RA = U.O.regions, L = U.O.leads || [];
+  const cities = U.O.cities.filter(c => RA.some(r => r.city === c)).concat(RA.some(r => !U.O.cities.includes(r.city)) ? [''] : []);
+  if (U.city === undefined) U.city = lsGet('team-city');
+  if (U.city && !cities.includes(U.city)) U.city = '';
+  const inCity = (r, c) => c === '' ? !U.O.cities.includes(r.city) : r.city === c;
+  const R = U.city ? RA.filter(r => inCity(r, U.city)) : RA;
+  const tot = k => R.reduce((a, r) => a + (r[k] || 0), 0), cnt = f => R.reduce((a, r) => a + (r.people || []).filter(f).length, 0);
+  const openOf = c => RA.filter(r => inCity(r, c)).reduce((a, r) => a + (r.open || 0), 0);
+  m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
+    ${L.length ? `<div class="card leads"><div class="card-h"><h2>⭐ ${esc(leadL())} <span class="dim" style="font-size:12.5px;font-weight:500">(همه‌ی شهرها)</span></h2></div>
+      <ul class="lead-list">${L.map(x => `<li><b>${esc(x.name)}</b> ${statusPill(x)}${x.region_id ? ` <span class="dim">· خودش مدیر ثابت در</span> ${cityTag(x.city)} ${x.city !== x.region ? `<span class="dim">${esc(x.region)}</span>` : ''}` : ''}</li>`).join('')}</ul></div>` : ''}
+    <nav class="city-tabs" aria-label="شهرها"><button data-city="__all" aria-pressed="${!U.city}">همه‌ی شهرها <span class="n">${fa(RA.length)} منطقه</span></button>
+      ${cities.map(c => { const o = openOf(c); return `<button class="${cityCls(c)}" data-city="${esc(c)}" aria-pressed="${U.city === c}"><i></i>${esc(c || 'بدون شهر')} <span class="n">${fa(RA.filter(r => inCity(r, c)).length)} منطقه</span>${o ? `<span class="ob" title="نقص باز">${fa(o)}</span>` : ''}</button>`; }).join('')}</nav>
+    <div class="kpis k6">
+      <div class="kpi"><span class="v num">${fa(R.length)}</span><span class="k">منطقه</span></div>
+      <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'region'))}</span><span class="k">👔 مدیر منطقه</span></div>
+      <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'fm' || x.sheet))}</span><span class="k">🏨 مدیر ثابت</span></div>
+      <div class="kpi"><span class="v num">${fa(R.reduce((a, r) => a + (r.staff || []).reduce((b, x) => b + x.n, 0), 0))}</span><span class="k">👷 عوامل</span></div>
+      <div class="kpi"><span class="v num">${fa(tot('reports'))}</span><span class="k">گزارش ثبت‌شده</span></div>
+      <div class="kpi"><span class="v num" style="${tot('open') ? 'color:var(--bad)' : ''}">${fa(tot('open'))}</span><span class="k">نقص باز (از ${fa(tot('defects'))})</span></div>
+    </div>
+    ${(U.city ? [U.city] : cities).map(c => `<h2 class="city-h ${cityCls(c)}"><i></i>🕌 ${esc(c || 'بدون شهر')} <span class="dim" style="font-size:13px;font-weight:500">(${fa(RA.filter(r => inCity(r, c)).length)} منطقه)</span></h2>
+      ${RA.filter(r => inCity(r, c)).map(regionCard).join('')}`).join('') || '<div class="empty">هنوز منطقه‌ای ساخته نشده.</div>'}
+    <details class="card setx" ${U.setOpen ? 'open' : ''}><summary><h2>⚙️ تنظیمات و افزودن</h2><span class="dim">کاربر جدید${full() ? '، منطقه‌ی جدید، عنوان نقش' : ''}</span></summary>
+    ${newUserForm(RA, 'region')}
     ${full() ? `<form class="card" id="nr" novalidate><div class="card-h"><h2>➕ منطقه‌ی جدید</h2></div>
-      <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 160px"><label class="label" for="nr-city">شهر</label><select id="nr-city">${U.O.cities.map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
+      <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 160px"><label class="label" for="nr-city">شهر</label><select id="nr-city">${U.O.cities.map(x => `<option ${x === U.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
         <div class="field" style="flex:1 1 220px"><label class="label" for="nr-name">نام منطقه</label><input id="nr-name" maxlength="80" placeholder="مثلاً کربلا ۲ (بین‌الحرمین)"></div><button class="btn" type="submit">ساختن</button></div>
       <p class="hint">هر شهر می‌تواند یک یا چند منطقه داشته باشد. نام منطقه باید یکتا باشد.</p><span class="err" id="nr-err"></span></form>
     <form class="card" id="ll" novalidate><div class="card-h"><h2>🏷️ عنوان نقش «${esc(leadL())}»</h2></div>
       <p class="hint">نقشی یک سطح بالاتر از مدیر منطقه: پنل همه‌ی شهرها و مناطق را می‌بیند (داشبورد، کیفیت، اکسل هفتگی، عوامل) و مدیر منطقه و مدیر ثابت می‌سازد؛ ولی منطقه نمی‌سازد و به حساب شما و هم‌سطح‌هایش دسترسی ندارد.</p>
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 220px"><label class="label" for="ll-v">عنوان</label><input id="ll-v" maxlength="40" value="${esc(leadL())}"></div><button class="btn ghost" type="submit">ذخیره</button></div></form>` : ''}
-    ${newUserForm(R, 'region')}`;
+    </details>`;
   wireTemp(m);
-  m.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const r = R.find(x => x.id === +b.dataset.open); startRegion(U.me, { region: r.id, regionName: regLabel(r), onBack: () => startSuper(U.me) }); });
+  m.querySelector('.setx').ontoggle = e => U.setOpen = e.target.open;
+  m.querySelectorAll('[data-city]').forEach(b => b.onclick = () => { U.city = b.dataset.city === '__all' ? '' : b.dataset.city; lsSet('team-city', U.city); renderRegions(); });
+  m.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const r = RA.find(x => x.id === +b.dataset.open); startRegion(U.me, { region: r.id, regionName: regLabel(r), onBack: () => startSuper(U.me) }); });
   m.querySelectorAll('[data-users]').forEach(b => b.onclick = () => { U.region = +b.dataset.users; go('users'); });
   m.querySelectorAll('[data-rsave]').forEach(b => b.onclick = async () => { try { await api('/api/super/regions/' + b.dataset.rsave, { body: { name: m.querySelector(`[data-rname="${b.dataset.rsave}"]`).value, city: m.querySelector(`[data-rcity="${b.dataset.rsave}"]`).value } }); toast('ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   const nr = m.querySelector('#nr'); if (nr) nr.onsubmit = async e => { e.preventDefault(); try { await api('/api/super/regions', { body: { city: m.querySelector('#nr-city').value, name: m.querySelector('#nr-name').value } }); toast('منطقه ساخته شد.'); loadRegions(); } catch (x) { m.querySelector('#nr-err').textContent = x.message; } };
@@ -78,7 +111,7 @@ function newUserForm(R, role) {
   return `<form class="card" id="nu" novalidate><div class="card-h"><h2>➕ کاربر جدید</h2></div>
     <div class="row" style="align-items:flex-end">
       <div class="field" style="flex:1 1 140px"><label class="label" for="nu-role">نقش</label><select id="nu-role"><option value="region" ${role === 'region' ? 'selected' : ''}>مدیر منطقه</option><option value="fm" ${role === 'fm' ? 'selected' : ''}>مدیر ثابت</option>${full() ? `<option value="lead">${esc(leadL())} (همه‌ی شهرها)</option>` : ''}</select></div>
-      <div class="field nu-reg" style="flex:1 1 140px"><label class="label" for="nu-city">شهر</label><select id="nu-city">${U.O.cities.filter(c => R.some(r => r.city === c)).map(c => `<option ${(R.find(r => r.id === U.region) || R[0] || {}).city === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field nu-reg" style="flex:1 1 140px"><label class="label" for="nu-city">شهر</label><select id="nu-city">${U.O.cities.filter(c => R.some(r => r.city === c)).map(c => `<option ${(U.region ? (R.find(r => r.id === U.region) || {}).city : U.city || (R[0] || {}).city) === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="field nu-reg" style="flex:1 1 160px"><label class="label" for="nu-region">منطقه</label><select id="nu-region"></select></div>
       <div class="field" style="flex:1 1 200px"><label class="label" for="nu-name">نام و نام خانوادگی</label><input id="nu-name" maxlength="80"></div>
       <div class="field" style="flex:1 1 150px"><label class="label" for="nu-nid">کد ملی</label><input id="nu-nid" inputmode="numeric" maxlength="12"></div>
@@ -133,7 +166,7 @@ function renderUsers() {
       <div class="filters"><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>شهر</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>
-      ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleName(x.role, x.lead)}</td><td>${esc(x.city || (x.role === 'super' ? 'همه' : '—'))}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
+      ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleTag(x.role, x.lead)}${x.role !== 'fm' && x.sheet ? ' <span class="rb fm sm">+ مدیر ثابت</span>' : ''}</td><td>${x.city ? cityTag(x.city) : x.role === 'super' ? 'همه' : '—'}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
         <td class="dim">${x.creator ? esc(x.creator) + (x.creator_role === 'region' ? ' (مدیر منطقه)' : x.creator_lead ? ` (${esc(leadL())})` : '') : 'اکسل یا سامانه'}</td><td>${statusPill(x)}</td><td class="num">${fa(x.reports)}</td><td class="dim">${x.last_login ? fmtTs(x.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-pw="${x.id}" placeholder="خالی=تصادفی" style="min-width:110px" autocomplete="new-password"><button class="btn small ghost" data-reset="${x.id}">تعیین</button></div></td>
         <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button>${full() && x.role !== 'super' ? `<button class="btn small ghost" data-lead="${x.id}" data-v="1" title="همین حساب ${esc(leadL())} شود؛ رمز، گزارش‌ها و هتل‌هایش می‌ماند">⬆️ ${esc(leadL())}</button>` : ''}${full() && x.lead ? `<button class="btn small ghost" data-lead="${x.id}" data-v="0" title="برگرداندن به مدیر منطقه">⬇️ مدیر منطقه</button>` : ''}<button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>

@@ -718,8 +718,23 @@ async function api(req, url, u) {
           (SELECT MAX(rp.updated) FROM reports rp JOIN users x ON x.id = rp.user_id WHERE x.region_id = r.id) AS last_report
         FROM regions r ORDER BY r.city, r.name`);
       const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login FROM users WHERE role = 'region' ORDER BY name");
-      regions.forEach(r => r.managers = managers.filter(x => x.region_id === r.id));
-      return { regions, cities: CITIES, leadLabel: await leadLabel(), full: isFull(u) };
+      /* نمای شهرها: افراد هر منطقه با نقششان، تعداد هتل هفته‌ی آخر، نقص باز و عوامل نزدیک خروج */
+      const people = await all(`SELECT x.id, x.region_id, x.name, x.nid, x.role, x.lead, x.sheet, x.active, x.last_login,
+          (SELECT COUNT(*) FROM assign a JOIN entries e ON e.id = a.entry_id WHERE a.user_id = x.id
+            AND e.week_id = (SELECT w.id FROM weeks w WHERE w.region_id = x.region_id ORDER BY w.imported DESC LIMIT 1)) AS hotels
+        FROM users x WHERE x.region_id IS NOT NULL AND (x.role IN ('fm', 'region') OR x.lead = 1) ORDER BY x.lead DESC, x.role DESC, x.name`);
+      const open = await all(`SELECT x.region_id, COUNT(*) AS n FROM items i JOIN reports rp ON rp.id = i.report_id JOIN users x ON x.id = rp.user_id
+        WHERE i.is_defect = 1 AND IFNULL(i.result, '') != 'fixed' GROUP BY x.region_id`);
+      const today = JD.str(JD.today()), soon = JD.str(JD.today() + 5);
+      const staff = await all("SELECT region_id, role, COUNT(*) AS n, SUM(d_end <= ?) AS soon FROM staff WHERE status = 'active' GROUP BY region_id, role", soon);
+      regions.forEach(r => {
+        r.managers = managers.filter(x => x.region_id === r.id);
+        r.people = people.filter(x => x.region_id === r.id);
+        r.open = open.find(x => x.region_id === r.id)?.n || 0;
+        r.staff = staff.filter(x => x.region_id === r.id).map(x => ({ role: x.role, n: x.n, soon: x.soon || 0 }));
+      });
+      const leads = await all("SELECT x.id, x.name, x.nid, x.region_id, x.sheet, x.active, x.last_login, r.name AS region, r.city FROM users x LEFT JOIN regions r ON r.id = x.region_id WHERE x.role = 'super' AND x.lead = 1 ORDER BY x.name");
+      return { regions, leads, today, cities: CITIES, leadLabel: await leadLabel(), full: isFull(u) };
     }
     /* کیفیت در همه‌ی مناطق: آخرین هفته‌ی هر منطقه (یا week=all برای همه‌ی هفته‌ها) */
     if (p === '/api/super/quality' && m === 'GET') {
