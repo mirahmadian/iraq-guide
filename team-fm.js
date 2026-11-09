@@ -59,7 +59,7 @@ async function openEntry(id) {
   const items = {}; r.items.forEach(i => items[i.qid] = i);
   let restored = false;
   try { const d = JSON.parse(localStorage.getItem(draftKey(id)) || 'null'); if (d && (!r.report || d.at > r.report.updated)) { Object.assign(items, d.items); r.report = { ...(r.report || {}), descr: d.descr }; restored = true; } } catch (e) {}
-  S.E = { id, entry: r.entry, form: r.form, items, descr: r.report?.descr || '', reportId: r.report?.id || null, media: r.media, notes: r.notes, uploads: [], restored, error: '' };
+  S.E = { id, entry: r.entry, form: r.form, items, descr: r.report?.descr || '', reportId: r.report?.id || null, media: r.media, notes: r.notes, uploads: [], restored, error: '', people: r.people || {}, pkm: {}, pkq: {} };
   renderEntry(); window.scrollTo(0, 0);
 }
 let saveT;
@@ -85,6 +85,24 @@ function mediaHTML(qid) {
     <label class="add-media">📷 عکس<input type="file" accept="image/*" multiple data-img="${qid}"></label>
     <label class="add-media">🎬 فیلم<input type="file" accept="video/*" data-vid="${qid}"></label></div>`;
 }
+/* سؤالی که بعد از یک پاسخ نام نفر را می‌پرسد (مثلاً «کدام آشپز؟»): از فهرست عوامل، یا نوشتن دستی */
+const PK_MAX = 12;
+const pkNorm = x => String(x || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[\s‌]+/g, ' ').trim();
+function pickChips(q, a) {
+  const all = S.E.people[q.pick.role] || [], f = pkNorm(S.E.pkq[q.id]);
+  const L = (f ? all.filter(p => pkNorm(p.n).includes(f)) : all).slice(0, PK_MAX);
+  return L.map(p => `<button type="button" class="chip" aria-pressed="${a.pick === p.n}" data-q="${q.id}" data-pk="${esc(p.n)}">${esc(p.n)}${p.tag ? ` <small class="dim">${p.tag === 'xl' ? '· اکسل این هفته' : '· همین هتل'}</small>` : ''}</button>`).join('')
+    || `<span class="dim" style="font-size:12.5px">${all.length ? 'با این جستجو کسی پیدا نشد.' : `در فهرست عوامل منطقه ${esc(q.pick.role)}ی ثبت نشده است.`}</span>`;
+}
+function pickHTML(q, a) {
+  if (!q.pick || a.v !== q.pick.on) return '';
+  const all = S.E.people[q.pick.role] || [], inList = a.pick && all.some(p => p.n === a.pick), manual = S.E.pkm[q.id] || (a.pick && !inList) || !all.length;
+  return `<div class="block pick" style="gap:6px;margin-top:8px"><span class="label">👤 ${esc(q.pick.label || 'کدام ' + q.pick.role + '؟')} ${S.E.error === 'pk:' + q.id ? '<span class="err">· نام را انتخاب کنید یا بنویسید</span>' : ''}</span>
+    ${all.length > PK_MAX ? `<input type="search" class="inp pk-q" data-pkq="${q.id}" value="${esc(S.E.pkq[q.id] || '')}" placeholder="🔎 جستجوی نام…" maxlength="40">` : ''}
+    ${all.length ? `<div class="cos" id="pkc-${q.id}">${pickChips(q, a)}</div>` : ''}
+    ${manual ? `<div class="voice"><input type="text" id="pk-${q.id}" data-q="${q.id}" data-txt="pick" value="${esc(inList ? '' : a.pick || '')}" placeholder="نام و نام خانوادگی ${esc(q.pick.role)}" maxlength="80"><button type="button" class="mic" data-mic="pk-${q.id}" aria-label="تایپ صوتی">🎤</button></div>`
+      : `<button type="button" class="chip" data-pkman="${q.id}">✏️ در فهرست نیست؛ خودم می‌نویسم</button>`}</div>`;
+}
 function qHTML(q, days) {
   const a = S.E.items[q.id] || {}, vd = verdict(q, a), bad = vd === 'bad';
   let ans;
@@ -102,7 +120,7 @@ function qHTML(q, days) {
       <div class="res">${Object.entries(RESULT).map(([k, [l, ic, c]]) => `<button type="button" class="${c}" aria-pressed="${a.result === k}" data-q="${q.id}" data-res="${k}">${ic} ${l}</button>`).join('')}</div>
       ${a.result ? `<div class="voice"><input type="text" id="rn-${q.id}" data-q="${q.id}" data-txt="resultNote" value="${esc(a.resultNote)}" maxlength="1000" placeholder="${a.result === 'fixed' ? 'چطور و کی رفع شد؟ (اختیاری)' : 'چرا هنوز رفع نشده؟ (اختیاری)'}"><button type="button" class="mic" data-mic="rn-${q.id}" aria-label="تایپ صوتی">🎤</button></div>` : ''}</div>
     ${mediaHTML(q.id)}</div>`;
-  return `<div class="q ${bad ? 'isbad' : vd === 'good' ? 'isgood' : ''}" id="q-${q.id}"><div class="q-t"><span class="e">${esc(q.emoji || '•')}</span><span>${esc(q.text)}</span></div>${ans}${def}</div>`;
+  return `<div class="q ${bad ? 'isbad' : vd === 'good' ? 'isgood' : ''}" id="q-${q.id}"><div class="q-t"><span class="e">${esc(q.emoji || '•')}</span><span>${esc(q.text)}</span></div>${ans}${pickHTML(q, a)}${def}</div>`;
 }
 function renderEntry() {
   const E = S.E, e = E.entry, days = daysOf(e.d_in, e.d_out);
@@ -136,6 +154,10 @@ function wireEntry() {
   app.querySelectorAll('[data-q][data-res]').forEach(b => b.onclick = () => { const a = it(b.dataset.q); a.result = a.result === b.dataset.res ? '' : b.dataset.res; if (E.error === b.dataset.q) E.error = ''; redo(); });
   app.querySelectorAll('[data-q][data-txt]').forEach(i => i.oninput = () => { it(i.dataset.q)[i.dataset.txt] = i.value; keepDraft(); });
   app.querySelector('#desc').oninput = e => { E.descr = e.target.value; keepDraft(); };
+  const pkWire = root => root.querySelectorAll('[data-q][data-pk]').forEach(b => b.onclick = () => { const a = it(b.dataset.q); a.pick = a.pick === b.dataset.pk ? '' : b.dataset.pk; E.pkm[b.dataset.q] = false; if (E.error === 'pk:' + b.dataset.q) E.error = ''; redo(); });
+  pkWire(app);
+  app.querySelectorAll('[data-pkman]').forEach(b => b.onclick = () => { E.pkm[b.dataset.pkman] = true; const a = it(b.dataset.pkman); if ((E.people[(E.form.sections.flatMap(s => s.questions).find(q => q.id === b.dataset.pkman) || {}).pick?.role] || []).some(p => p.n === a.pick)) a.pick = ''; redo(); setTimeout(() => document.getElementById('pk-' + b.dataset.pkman)?.focus(), 0); });
+  app.querySelectorAll('[data-pkq]').forEach(i => i.oninput = () => { const id = i.dataset.pkq, q = E.form.sections.flatMap(s => s.questions).find(x => x.id === id); E.pkq[id] = i.value; const c = document.getElementById('pkc-' + id); if (c) { c.innerHTML = pickChips(q, it(id)); pkWire(c); } });
   app.querySelectorAll('[data-mic]').forEach(b => b.onclick = () => voiceInto(document.getElementById(b.dataset.mic), b));
   app.querySelectorAll('[data-secok]').forEach(b => b.onclick = () => { E.form.sections.find(s => s.id === b.dataset.secok).questions.forEach(q => { const a = E.items[q.id]; if (!a || !a.v) E.items[q.id] = { v: goodValue(q) }; }); redo(); });
   app.querySelectorAll('[data-mrm]').forEach(b => b.onclick = async () => { try { await api('/api/fm/media/' + b.dataset.mrm, { method: 'DELETE' }); E.media = E.media.filter(m => m.id !== +b.dataset.mrm); renderEntry(); } catch (e) { toast(e.message, true); } });
@@ -176,6 +198,8 @@ async function save() {
   const E = S.E, qs = E.form.sections.flatMap(s => s.questions);
   const missing = qs.find(q => verdict(q, E.items[q.id]) === 'bad' && !E.items[q.id].result);
   if (missing) { E.error = missing.id; renderEntry(); document.getElementById('q-' + missing.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return toast('برای هر نقص بگویید رفع شد یا نه.', true); }
+  const noPick = qs.find(q => q.pick && E.items[q.id] && E.items[q.id].v === q.pick.on && !String(E.items[q.id].pick || '').trim());
+  if (noPick) { E.error = 'pk:' + noPick.id; renderEntry(); document.getElementById('q-' + noPick.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return toast(`${noPick.pick.label || 'کدام ' + noPick.pick.role + '؟'} — نام را انتخاب کنید یا بنویسید.`, true); }
   if (!qs.some(q => E.items[q.id] && E.items[q.id].v)) return toast('دست‌کم به یک سؤال جواب بدهید، یا «بدون نقص» بزنید.', true);
   if (E.uploads.some(u => !u.err)) return toast('صبر کنید ارسال عکس یا فیلم تمام شود.', true);
   const b = app.querySelector('#save'); b.disabled = true; b.textContent = 'در حال ثبت…';

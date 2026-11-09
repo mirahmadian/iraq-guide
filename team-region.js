@@ -215,7 +215,7 @@ document.addEventListener('click', e => { if (e.target.id === 'tmp-x') { A.temp 
 
 /* ═════════ form builder ═════════ */
 async function loadForm() {
-  if (!A.form || !A.formDirty) { try { A.form = await api('/api/admin/form'); A.formDirty = false; } catch (e) { return toast(e.message, true); } }
+  if (!A.form || !A.formDirty) { try { A.form = await api('/api/admin/form'); A.formDirty = false; A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; } catch (e) { return toast(e.message, true); } }
   if (A.tab !== 'form') return;
   renderForm();
 }
@@ -247,6 +247,7 @@ function editorHTML(q, s) {
     <div class="field"><span class="label">نوع پاسخ</span><div class="types">${TYPES.map(t => `<button type="button" data-type="${t.t}" aria-pressed="${q.type === t.t}"><b>${t.l}</b><span>${t.d}</span></button>`).join('')}</div></div>
     ${q.type === 'yesno' ? `<div class="field"><span class="label">جواب خوب</span><div class="seg2"><button type="button" data-good="yes" aria-pressed="${q.good === 'yes'}">بله</button><button type="button" data-good="no" aria-pressed="${q.good === 'no'}">خیر</button></div></div>` : ''}
     ${q.type === 'choice' ? `<div class="field"><span class="label">پاسخ‌های آماده (⚠ یعنی این پاسخ نقص است؛ برای تغییر روی علامت بزنید)</span><div class="chips-edit">${(q.options || []).map((o, i) => `<span class="chip">${esc(o.l)} <button type="button" data-obad="${i}" title="نقص هست یا نه">${o.bad ? '⚠️' : '✅'}</button><button type="button" data-orm="${i}" aria-label="حذف">✕</button></span>`).join('')}<input id="e-opt" placeholder="پاسخ جدید + Enter" maxlength="80"></div></div>` : ''}
+    ${q.type === 'yesno' || q.type === 'choice' ? pickEditHTML(q) : ''}
     <div class="field"><span class="label">اشکال‌های آماده (بعد از جواب بد نشان داده می‌شوند)</span>${chips(q.reasons, 'reasons', 'اشکال جدید + Enter')}</div>
     <div class="field"><span class="label">اقدام‌های آماده</span>${chips(q.actions, 'actions', 'اقدام جدید + Enter')}</div>
     <label class="row" style="font-size:13px"><input type="checkbox" id="e-na" ${q.na ? 'checked' : ''}> گزینه‌ی «موضوعیت ندارد» هم باشد</label>
@@ -254,12 +255,24 @@ function editorHTML(q, s) {
     <div class="row"><button class="btn ghost small" data-mv="-1">↑ بالاتر</button><button class="btn ghost small" data-mv="1">↓ پایین‌تر</button><button class="btn small danger" id="e-del">حذف سؤال</button></div>
     <p class="hint">گزارش‌های قبلی با متن همان زمان خودشان نگه داشته می‌شوند؛ تغییر یا حذف سؤال آن‌ها را خراب نمی‌کند.</p>`;
 }
+/* «بعد از این پاسخ، نام نفر را بپرس» — مثلاً «آیا آشپز تعیین شده بود؟ بله ← کدام آشپز؟» */
+const pickRoles = q => [...new Set([...(A.formRoles || ['مدیر ثابت', 'آشپز']), ...(q.pick ? [q.pick.role] : [])])];
+const pickOns = q => q.type === 'yesno' ? [['yes', 'بله'], ['no', 'خیر']] : (q.options || []).map(o => [o.l, o.l]);
+function pickEditHTML(q) {
+  const p = q.pick;
+  return `<div class="field pk-ed"><label class="row" style="font-size:13px"><input type="checkbox" id="e-pk" ${p ? 'checked' : ''}> <span>👤 بعد از یک پاسخ، <b>نام نفر</b> را هم بپرس (مثلاً نام آشپز)</span></label>
+    ${p ? `<div class="pk-row"><span>وقتی جواب</span><select id="e-pkon" class="inp">${pickOns(q).map(([v, l]) => `<option value="${esc(v)}" ${p.on === v ? 'selected' : ''}>«${esc(l)}»</option>`).join('')}</select>
+      <span>بود، از فهرست</span><select id="e-pkrole" class="inp">${pickRoles(q).map(r => `<option ${p.role === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select><span>انتخاب کند.</span></div>
+      <input id="e-pklabel" class="inp" maxlength="80" value="${esc(p.label || '')}" placeholder="متن پرسش (اختیاری؛ پیش‌فرض: «کدام ${esc(p.role)}؟»)">
+      <p class="hint" style="margin:0">مدیر ثابت نام‌ها را از فهرست <b>عوامل</b> منطقه (اول نام‌های اکسل همین ورودی و عوامل همین هتل) می‌بیند و اگر نفر در فهرست نبود، خودش نام و نام خانوادگی را می‌نویسد.</p>` : ''}</div>`;
+}
 function previewHTML(q) {
   let ans;
   if (q.type === 'rating') ans = `<div class="ans">${RATING.map(r => `<button type="button" class="${r.c}" aria-pressed="${r.v === 'poor'}"><span class="em">${r.em}</span>${r.l}</button>`).join('')}${q.na ? '<button type="button" class="n"><span class="em">➖</span>' + esc(q.na) + '</button>' : ''}</div>`;
   else if (q.type === 'yesno') ans = `<div class="ans yn">${['yes', 'no'].map(v => `<button type="button" class="${v === q.good ? 'g' : 'b'}" aria-pressed="${v !== q.good}">${v === 'yes' ? '✔ بله' : '✖ خیر'}</button>`).join('')}${q.na ? '<button type="button" class="n">' + esc(q.na) + '</button>' : ''}</div>`;
   else { const firstBad = (q.options || []).find(o => o.bad); ans = `<div class="ans ch">${(q.options || []).map(o => `<button type="button" class="${o.bad ? 'b' : 'g'}" aria-pressed="${o === firstBad}">${esc(o.l)}</button>`).join('')}</div>`; }
-  return `<div class="q isbad"><div class="q-t"><span class="e">${esc(q.emoji || '•')}</span><span>${esc(q.text)}</span></div>${ans}
+  const pk = q.pick ? `<div class="block pick" style="gap:5px;margin-top:8px"><span class="label">👤 ${esc(q.pick.label || 'کدام ' + q.pick.role + '؟')} <span class="dim">(بعد از «${esc(pickOns(q).find(x => x[0] === q.pick.on)?.[1] || q.pick.on)}»)</span></span><div class="cos"><span class="chip" aria-pressed="true">علی رضایی</span><span class="chip">حسن کریمی</span><span class="chip">✏️ نام دیگر…</span></div></div>` : '';
+  return `<div class="q isbad"><div class="q-t"><span class="e">${esc(q.emoji || '•')}</span><span>${esc(q.text)}</span></div>${ans}${pk}
     <div class="defect">${(q.reasons || []).length ? `<div class="block" style="gap:5px"><span class="label">چه اشکالی بود؟</span><div class="cos">${q.reasons.map(r => `<span class="chip">${esc(r)}</span>`).join('')}</div></div>` : ''}
       <div class="block" style="gap:5px"><span class="label">چه روزی؟</span><div class="cos"><span class="chip">۳ آبان</span><span class="chip">۴ آبان</span><span class="chip">۵ آبان</span></div></div>
       <div class="block" style="gap:5px"><span class="label">چه اقدامی انجام دادید؟</span><div class="cos">${(q.actions || []).map(r => `<span class="chip">${esc(r)}</span>`).join('') || '<span class="dim">فقط متن آزاد</span>'}</div></div>
@@ -271,7 +284,7 @@ function wireForm(cur) {
   const m = main(), F = A.form, dirty = (full = true) => { A.formDirty = true; if (full) renderForm(); else { m.querySelector('.preview').innerHTML = previewHTML(cur.q); const t = m.querySelector(`[data-qsel="${CSS.escape(cur.q.id)}"]`); if (t) t.innerHTML = `<span>${esc(cur.q.emoji || '•')}</span><span>${esc(cur.q.text)}</span>`;
       const sv = m.querySelector('#fs-save'); sv.disabled = false; sv.previousElementSibling.outerHTML = '<span class="dirty">● ذخیره نشده</span>'; } };
   const nid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  m.querySelector('#fs-save').onclick = async () => { try { A.form = await api('/api/admin/form', { method: 'PUT', body: A.form }); A.formDirty = false; toast('فرم ذخیره شد. از همین حالا مدیران ثابت فرم تازه را می‌بینند.'); renderForm(); } catch (e) { toast(e.message, true); } };
+  m.querySelector('#fs-save').onclick = async () => { try { A.form = await api('/api/admin/form', { method: 'PUT', body: A.form }); A.formRoles = A.form._roles || A.formRoles; delete A.form._roles; A.formDirty = false; toast('فرم ذخیره شد. از همین حالا مدیران ثابت فرم تازه را می‌بینند.'); renderForm(); } catch (e) { toast(e.message, true); } };
   m.querySelector('#ft').oninput = e => { F.title = e.target.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; };
   m.querySelectorAll('[data-stitle]').forEach(i => i.oninput = () => { F.sections[+i.dataset.stitle].title = i.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; });
   m.querySelectorAll('[data-semoji]').forEach(i => i.oninput = () => { F.sections[+i.dataset.semoji].emoji = i.value; A.formDirty = true; m.querySelector('#fs-save').disabled = false; });
@@ -284,14 +297,20 @@ function wireForm(cur) {
   const q = cur.q, s = cur.s;
   m.querySelector('#e-text').oninput = e => { q.text = e.target.value; dirty(false); };
   m.querySelector('#e-emoji').oninput = e => { q.emoji = e.target.value; dirty(false); };
-  m.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { q.type = b.dataset.type; if (q.type === 'yesno' && !q.good) q.good = 'yes'; if (q.type === 'choice' && !(q.options || []).length) q.options = [{ l: 'کامل', bad: false }, { l: 'ناقص', bad: true }]; dirty(); });
+  m.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { q.type = b.dataset.type; if (q.type === 'yesno' && !q.good) q.good = 'yes'; if (q.type === 'choice' && !(q.options || []).length) q.options = [{ l: 'کامل', bad: false }, { l: 'ناقص', bad: true }];
+    if (q.pick) { if (q.type === 'rating') delete q.pick; else if (!pickOns(q).some(x => x[0] === q.pick.on)) q.pick.on = pickOns(q)[0]?.[0] || ''; } dirty(); });
   m.querySelectorAll('[data-good]').forEach(b => b.onclick = () => { q.good = b.dataset.good; dirty(); });
-  m.querySelectorAll('[data-orm]').forEach(b => b.onclick = () => { q.options.splice(+b.dataset.orm, 1); dirty(); });
+  m.querySelectorAll('[data-orm]').forEach(b => b.onclick = () => { q.options.splice(+b.dataset.orm, 1); if (q.pick && !pickOns(q).some(x => x[0] === q.pick.on)) q.pick.on = pickOns(q)[0]?.[0] || ''; dirty(); });
   m.querySelectorAll('[data-obad]').forEach(b => b.onclick = () => { const o = q.options[+b.dataset.obad]; o.bad = !o.bad; dirty(); });
   m.querySelectorAll('[data-crm]').forEach(b => b.onclick = () => { q[b.dataset.crm].splice(+b.dataset.i, 1); dirty(); });
   const onEnter = (el, sel, fn) => { if (el) el.onkeydown = e => { if (e.key === 'Enter' && el.value.trim()) { e.preventDefault(); fn(el.value.trim()); dirty(); setTimeout(() => m.querySelector(sel)?.focus(), 0); } }; };
   m.querySelectorAll('[data-cadd]').forEach(el => onEnter(el, `[data-cadd="${el.dataset.cadd}"]`, v => (q[el.dataset.cadd] = q[el.dataset.cadd] || []).push(v)));
   onEnter(m.querySelector('#e-opt'), '#e-opt', v => (q.options = q.options || []).push({ l: v, bad: false }));
+  const pk = m.querySelector('#e-pk');
+  if (pk) pk.onchange = () => { if (pk.checked) q.pick = { role: pickRoles(q).includes('آشپز') ? 'آشپز' : pickRoles(q)[0], on: q.type === 'yesno' ? 'yes' : (q.options || [])[0]?.l || '', label: '' }; else delete q.pick; dirty(); };
+  const pkon = m.querySelector('#e-pkon'); if (pkon) pkon.onchange = () => { q.pick.on = pkon.value; dirty(); };
+  const pkr = m.querySelector('#e-pkrole'); if (pkr) pkr.onchange = () => { q.pick.role = pkr.value; dirty(); };
+  const pkl = m.querySelector('#e-pklabel'); if (pkl) pkl.oninput = () => { q.pick.label = pkl.value; dirty(false); };
   m.querySelector('#e-na').onchange = e => { if (e.target.checked) q.na = 'موضوعیت ندارد'; else delete q.na; dirty(); };
   const nal = m.querySelector('#e-nal'); if (nal) nal.oninput = () => { q.na = nal.value || 'موضوعیت ندارد'; dirty(false); };
   m.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const a = s.questions, i = a.indexOf(q), j = i + +b.dataset.mv; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; dirty(); });

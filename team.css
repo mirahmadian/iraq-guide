@@ -309,3 +309,7 @@ details.setx>summary::after{content:"";width:8px;height:8px;border-left:2px soli
 details.setx[open]>summary::after{transform:rotate(135deg)}
 details.setx .card{background:var(--card2)}
 @media (max-width:820px){.rg-grid{grid-template-columns:minmax(0,1fr)}}
+/* سؤال «نام نفر» (فرم‌ساز ← مثلاً کدام آشپز) */
+.pk-ed{gap:6px}.pk-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}.pk-row select{width:auto;min-width:0}
+.q .pick{background:var(--card2);border-radius:10px;padding:8px}.q .pick .pk-q{max-width:260px}
+label.row>input[type=checkbox]{width:auto;flex:none;margin:0}.pk-ed label.row{flex-wrap:nowrap;align-items:center;gap:8px}

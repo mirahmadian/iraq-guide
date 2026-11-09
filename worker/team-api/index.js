@@ -189,6 +189,26 @@ const DEFAULT_FORM = (() => {
       { id: 'q13', emoji: '🕒', text: 'اتوبوس‌ها سر وقت حاضر شدند؟', type: 'yesno', good: 'yes', reasons: ['تأخیر کمتر از نیم ساعت', 'تأخیر بیش از نیم ساعت', 'اتوبوس نیامد'], actions: TR, na: 'جابه‌جایی نداشتیم' },
       { id: 'q14', emoji: '🚍', text: 'وضعیت اتوبوس‌ها', type: 'rating', reasons: ['کولر خراب', 'اتوبوس کثیف', 'صندلی خراب'], actions: TR, na: 'جابه‌جایی نداشتیم' }]}]};
 })();
+const pickOf = (qn, a) => qn.pick && a && String(a.v) === qn.pick.on ? String(a.pick || '').replace(/\s+/g, ' ').trim().slice(0, 100) : '';
+/* فهرست نام‌ها برای سؤال‌هایی که نام نفر می‌پرسند: اول نام‌های اکسل همین ورودی (ستون آشپز/مدیر ثابت)، بعد عوامل فعال همان هتل، بعد بقیه‌ی منطقه */
+async function pickPeople(form, e) {
+  const roles = [...new Set(form.sections.flatMap(s => s.questions).filter(q => q.pick).map(q => q.pick.role))];
+  const out = {};
+  if (!roles.length) return out;
+  const rows = await all(`SELECT first, last, role, hotel FROM staff WHERE region_id = ? AND status = 'active' AND role IN (${roles.map(() => '?').join(',')}) ORDER BY last, first`, e.region_id, ...roles);
+  const H = normName(e.hotel);
+  for (const role of roles) {
+    const seen = new Set(), list = [];
+    const add = (name, tag) => { const n = normName(name).slice(0, 80); if (n.length > 2 && !seen.has(n)) { seen.add(n); list.push({ n, tag }); } };
+    const xl = role === 'آشپز' ? e.cook : role === 'مدیر ثابت' ? e.home_mgr : '';
+    for (const n of String(xl || '').split(/[،,\/\n]+|\s-\s/)) add(n, 'xl');
+    const mine = rows.filter(r => r.role === role);
+    for (const r of mine.filter(r => normName(r.hotel) === H)) add(`${r.first} ${r.last}`, 'hotel');
+    for (const r of mine) add(`${r.first} ${r.last}`, '');
+    out[role] = list.slice(0, 300);
+  }
+  return out;
+}
 async function formOf(regionId) { const r = await one('SELECT json FROM forms WHERE region_id = ?', regionId); return r ? JSON.parse(r.json) : DEFAULT_FORM; }
 const RATING = { great: 'عالی', good: 'خوب', mid: 'متوسط', poor: 'ضعیف' };
 function verdict(qn, v) {
@@ -213,6 +233,12 @@ function validForm(f) {
       if (type === 'yesno') o.good = qn.good === 'no' ? 'no' : 'yes';
       if (type === 'choice') { o.options = (qn.options || []).map(x => ({ l: str(x.l, 80), bad: !!x.bad })).filter(x => x.l).slice(0, 12); if (o.options.length < 2) fail(400, `سؤال «${o.text}» دست‌کم دو پاسخ آماده لازم دارد.`); }
       if (qn.na) o.na = str(qn.na, 60);
+      /* بعد از یک پاسخ مشخص، نام نفر پرسیده می‌شود (از فهرست عوامل همان نقش، یا نوشتن دستی) */
+      if (qn.pick && (type === 'yesno' || type === 'choice')) {
+        const role = str(qn.pick.role, 40).trim(), on = str(qn.pick.on, 80);
+        const okOn = type === 'yesno' ? ['yes', 'no'].includes(on) : o.options.some(x => x.l === on);
+        if (role && okOn) o.pick = { role, on, label: str(qn.pick.label, 80).trim() };
+      }
       sec.questions.push(o);
     }
     out.sections.push(sec);
@@ -646,8 +672,8 @@ async function api(req, url, u) {
       const e = await fmEntry(u, +mm[1]), form = await formOf(u.region_id);
       if (m === 'GET') {
         const r = await one('SELECT * FROM reports WHERE entry_id = ? AND user_id = ?', e.id, u.id);
-        const items = r ? (await all('SELECT * FROM items WHERE report_id = ?', r.id)).map(i => ({ qid: i.qid, v: i.answer, reasons: json(i.reasons), day: i.day, actions: json(i.actions), actionText: i.action_text, result: i.result, resultNote: i.result_note })) : [];
-        return { entry: e, form, report: r ? { id: r.id, descr: r.descr, updated: r.updated } : null, items, media: await mediaOf(e.id, u.id), notes: r ? await notesOf(r.id) : [] };
+        const items = r ? (await all('SELECT * FROM items WHERE report_id = ?', r.id)).map(i => ({ qid: i.qid, v: i.answer, reasons: json(i.reasons), day: i.day, actions: json(i.actions), actionText: i.action_text, result: i.result, resultNote: i.result_note, pick: i.pick || '' })) : [];
+        return { entry: e, form, report: r ? { id: r.id, descr: r.descr, updated: r.updated } : null, items, media: await mediaOf(e.id, u.id), notes: r ? await notesOf(r.id) : [], people: await pickPeople(form, e) };
       }
       if (m === 'PUT') {
         const b = await body(), now = Date.now(), qs = new Map(form.sections.flatMap(s => s.questions.map(x => [x.id, { ...x, sec: s.title }])));
@@ -664,9 +690,10 @@ async function api(req, url, u) {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (report_id, qid) DO UPDATE SET section = excluded.section, question = excluded.question,
              answer = excluded.answer, answer_label = excluded.answer_label, is_defect = excluded.is_defect, reasons = excluded.reasons, day = excluded.day,
              actions = excluded.actions, action_text = excluded.action_text, result = excluded.result, result_note = excluded.result_note, updated = excluded.updated`,
-            r.id, qid, qn.sec, qn.text, String(a.v), answerLabel(qn, a.v), def ? 1 : 0, def ? arr(a.reasons, 20) : '[]', def && /^\d{4}\/\d{2}\/\d{2}$/.test(a.day || '') ? a.day : null,
+            r.id, qid, qn.sec, qn.text, String(a.v), pickOf(qn, a) ? `${answerLabel(qn, a.v)} · ${qn.pick.role}: ${pickOf(qn, a)}` : answerLabel(qn, a.v), def ? 1 : 0, def ? arr(a.reasons, 20) : '[]', def && /^\d{4}\/\d{2}\/\d{2}$/.test(a.day || '') ? a.day : null,
             def ? arr(a.actions, 20) : '[]', def ? String(a.actionText || '').slice(0, 1000) : '', def && RESULT[a.result] ? a.result : null, def ? String(a.resultNote || '').slice(0, 1000) : '', now));
         }
+        for (const [qid, qn] of qs) { const a = items[qid]; if (a && verdict(qn, a.v)) st.push(prep('UPDATE items SET pick = ? WHERE report_id = ? AND qid = ?', pickOf(qn, a) || null, r.id, qid)); }
         if (st.length) await DB.batch(st);
         return { ok: true, report_id: r.id };
       }
@@ -837,8 +864,8 @@ async function api(req, url, u) {
     const R = u.role === 'super' ? +url.searchParams.get('region') : u.region_id;
     if (!await one('SELECT 1 FROM regions WHERE id = ?', R)) fail(400, 'منطقه را انتخاب کنید.');
     if (p === '/api/admin/form') {
-      if (m === 'GET') return formOf(R);
-      if (m === 'PUT') { const f = validForm(await body(512 * 1024)); await run('INSERT OR REPLACE INTO forms (region_id, json, updated) VALUES (?, ?, ?)', R, JSON.stringify(f), Date.now()); return f; }
+      if (m === 'GET') return { ...(await formOf(R)), _roles: await staffRoles(R) };
+      if (m === 'PUT') { const f = validForm(await body(512 * 1024)); await run('INSERT OR REPLACE INTO forms (region_id, json, updated) VALUES (?, ?, ?)', R, JSON.stringify(f), Date.now()); return { ...f, _roles: await staffRoles(R) }; }
     }
     if (p === '/api/admin/weeks' && m === 'GET') {
       return all(`SELECT w.id, w.title, w.file, w.imported, (SELECT COUNT(*) FROM entries e WHERE e.week_id = w.id) AS entries,

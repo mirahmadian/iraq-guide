@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS items (
   report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE, qid TEXT NOT NULL,
   section TEXT, question TEXT, answer TEXT, answer_label TEXT, is_defect INTEGER NOT NULL DEFAULT 0,
-  reasons TEXT, day TEXT, actions TEXT, action_text TEXT, result TEXT, result_note TEXT, updated INTEGER NOT NULL,
+  reasons TEXT, day TEXT, actions TEXT, action_text TEXT, result TEXT, result_note TEXT, updated INTEGER NOT NULL, pick TEXT,
   PRIMARY KEY (report_id, qid)
 );
 CREATE TABLE IF NOT EXISTS notes (
