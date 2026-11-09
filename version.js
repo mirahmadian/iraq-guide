@@ -1,2 +1,2 @@
 /* این فایل خودکار ساخته می‌شود (.github/workflows/version.yml) — دستی تغییر ندهید */
-window.APP_VERSION = {"version": "2.86", "date": "1405/08/18", "time": "03:40"};
+window.APP_VERSION = {"version": "2.87", "date": "1405/08/18", "time": "04:01"};
