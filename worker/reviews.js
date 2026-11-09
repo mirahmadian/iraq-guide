@@ -9,7 +9,7 @@
 ══════════════════════════════════════════ */
 import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { guardRun, handleGuardAdmin, notify as ownerNotify } from './guard.js';
-import { handleLostAdmin, handleLostMgr } from './lostcase.js';
+import { handleLostAdmin, handleLostMgr, lostTick } from './lostcase.js';
 import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 import { handleFlight, flightTick } from './flight.js';
@@ -124,7 +124,7 @@ const pub = r => ({ id: r.id, name: r.name || '', stars: r.stars, text: r.text, 
 
 export default {
   /* نگهبان سرور: هر ۵ دقیقه (guard.js) */
-  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); ctx.waitUntil(flightTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('flight', e && e.message))); ctx.waitUntil(teamStaffTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('staff', e && e.message))); },
+  async scheduled(ev, env, ctx) { ctx.waitUntil(guardRun(env, false).catch(e => console.log('guard', e && e.message))); ctx.waitUntil(flightTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('flight', e && e.message))); ctx.waitUntil(teamStaffTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('staff', e && e.message))); ctx.waitUntil(lostTick(env, env.BALE_TOKEN ? baleSend : null).catch(e => console.log('lost', e && e.message))); },
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
     const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
@@ -237,7 +237,7 @@ export default {
       }
 
       /* ── بازوی بله ── */
-      if (p === '/mgr/lost/match') return await handleLostMgr(p, req, env, body, json, err, limited, await mgrAuth(env, req), ownerNotify) || err('یافت نشد', 404);
+      if (p.startsWith('/mgr/lost/')) return await handleLostMgr(p, req, env, body, json, err, limited, await mgrAuth(env, req), ownerNotify, env.BALE_TOKEN ? baleSend : null, url) || err('یافت نشد', 404);
       if (p.startsWith('/mgr/')) { const r = await handleMgr(p, req, env, body, dev, json, err, limited, ip); if (r) return r; }
       if (p.startsWith('/flight/')) { const r = await handleFlight(p, req, env, body, dev, json, err, limited); if (r) return r; }
       if (p.startsWith('/bale/')) { const r = await handleBalePublic(p, req, env, body, dev, json, err, limited, ip, sha); if (r) return r; }

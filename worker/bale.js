@@ -9,6 +9,8 @@ import { guardBaleHook } from './guard.js';
 import { mgrBaleHook } from './mgr.js';
 import { teamBaleHook } from './teamstaff.js';
 import { coBaleHook, coBaleCallback } from './coreq.js';
+import { lostBaleHook, lostBaleCallback } from './lostcase.js';
+import { notify as ownerNotify } from './guard.js';
 const API = t => `https://tapi.bale.ai/bot${t}/`;
 export const BOT_USER = 'HamyarKaravan_Bot';
 const SEND_BATCH = 35; /* هر درخواست حداکثر ۵۰ زیردرخواست دارد (Workers رایگان) */
@@ -49,12 +51,13 @@ export async function handleBalePublic(p, req, env, body, dev, json, err, limite
 
   /* پیام‌های بله (webhook) */
   if (p === '/bale/hook/' + env.BALE_HOOK && req.method === 'POST') {
-    if (body.callback_query) { await coBaleCallback(env, body.callback_query, bale); return json({ ok: true }); }
+    if (body.callback_query) { if (!(await lostBaleCallback(env, body.callback_query, bale, ownerNotify))) await coBaleCallback(env, body.callback_query, bale); return json({ ok: true }); }
     const m = body.message;
     if (!m || !m.chat) return json({ ok: true });
     const chat = m.chat.id, from = m.from || {}, text = String(m.text || '').trim();
     const name = [from.first_name, from.last_name].filter(Boolean).join(' ').slice(0, 60);
     if (text && await guardBaleHook(env, chat, text)) return json({ ok: true });
+    if (await lostBaleHook(env, m, bale)) return json({ ok: true });
     if (await teamBaleHook(env, m, bale)) return json({ ok: true });
     if (await mgrBaleHook(env, m, bale)) return json({ ok: true });
     if (await coBaleHook(env, m, bale)) return json({ ok: true });

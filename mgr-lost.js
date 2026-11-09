@@ -22,7 +22,7 @@ async function mlFind(inp) {
     await mlFace(); mlState = 'ok';
     const faces = await faceFromFile(f);
     if (!faces.length) throw new Error('در این عکس چهره‌ای پیدا نشد. از نزدیک‌تر و روبه‌رو، در نور کافی عکس بگیرید.');
-    mlQ = { faces: faces.map(x => ({ thumb: lostThumb(x.crop, 110), desc: x.desc, px: x.px })), sel: 0, M: {} };
+    mlQ = { faces: faces.map(x => ({ thumb: lostThumb(x.crop, 110), img: lostImg(x.crop), desc: x.desc, px: x.px })), sel: 0, M: {}, sent: {} };
     await mlPick(0, true);
   } catch (e) {
     if (e.status === 401) { mgrSave(null); showToast('دسترسی بخش مدیران شما فعال نیست.'); mlBusy = false; return openMgr(); }
@@ -41,6 +41,29 @@ async function mlPick(i, quiet) {
   }
   mlRender();
 }
+/* ── تأیید خانواده در بله (فقط شباهت زیاد و فقط اگر خانواده با لینک پرونده در بله وصل شده باشد) ── */
+function mlFamHTML(i, m) {
+  const st = mlQ.sent[m.id];
+  if (st) return `<div class="fm-fam fm-fs ${st.ans === 'y' ? 'ok' : st.ans === 'n' ? 'no' : ''}">${st.ans === 'y' ? '✅ خانواده در بله تأیید کردند که خودش است. شماره‌ی شما برایشان فرستاده شد؛ قبل از تحویل با چند سؤال مطمئن شوید.' : st.ans === 'n' ? '❌ خانواده گفتند او نیست. با ستاد تماس بگیرید.' : st.ans === 'x' ? 'خانواده در ۲۴ ساعت جواب ندادند؛ با شماره‌ی پرونده تماس بگیرید.' : '⏳ عکس برای خانواده فرستاده شد؛ منتظر جواب… (جواب در بله هم برایتان می‌آید)'}</div>`;
+  if (!m.fam) return '<div class="fm-info">خانواده‌ی این پرونده در بله وصل نیست؛ با شماره‌ی بالا تماس بگیرید.</div>';
+  return `<div class="fm-fam"><button onclick="mlSend(${i})">📤 فرستادن عکس برای خانواده جهت تأیید</button></div>`;
+}
+async function mlSend(i) {
+  const q = mlQ, m = q && q.M[q.sel] && q.M[q.sel][i]; if (!m) return;
+  if (!confirm(`فقط برشِ چهره‌ی این فرد، در بله برای خانواده‌ی «${m.name}» فرستاده می‌شود تا بگویند خودش است یا نه.\n\nبفرستم؟`)) return;
+  const face = q.faces[q.sel];
+  try {
+    const r = await mgrFetch('/mgr/lost/send', { id: m.id, desc: face.desc, photo: face.img });
+    q.sent[m.id] = { sid: r.sid, ans: '' }; showToast(r.already ? 'عکس قبلاً فرستاده شده؛ منتظر جواب خانواده' : 'برای خانواده فرستاده شد ✅'); mlRender(); mlPoll(m.id);
+  } catch (e) { showToast(e.message); }
+}
+function mlPoll(id, n = 0) {
+  const st = mlQ && mlQ.sent[id]; if (!st || st.ans || n > 360 || !document.getElementById('mlBody')) return;
+  setTimeout(async () => {
+    try { const r = await mgrFetch('/mgr/lost/sent?sid=' + st.sid); if (r.ans) { st.ans = r.ans; mlRender(); return; } } catch (e) {}
+    mlPoll(id, n + 1);
+  }, 5000);
+}
 function mlRender() {
   const box = document.getElementById('mlBody'); if (!box) return;
   const st = mlState === 'load' ? '<div class="ml-st">⏳ آماده‌سازی ابزار تشخیص چهره… (بار اول حدود ۱۲ مگ دانلود می‌شود)</div>'
@@ -51,9 +74,9 @@ function mlRender() {
     <label class="lost-btn ml-cam">📷 گرفتن عکس از فرد پیداشده<input type="file" accept="image/*" capture="environment" hidden onchange="mlFind(this)"></label>
     <label class="lost-btn alt ml-cam">🖼 انتخاب عکس از گالری<input type="file" accept="image/*" hidden onchange="mlFind(this)"></label>
     ${mlBusy ? '<div class="ml-st">⏳ در حال پیدا کردن چهره و مقایسه…</div>' : ''}
-    ${q && !mlBusy ? `<div class="ml-res">${facePickHTML(q.faces, q.sel, 'mlPick')}<div class="fm-lbl">شبیه‌ترین پرونده‌ها</div>${q.M[q.sel] ? faceMatchHTML(face, q.M[q.sel]) : ''}</div>` : ''}
+    ${q && !mlBusy ? `<div class="ml-res">${facePickHTML(q.faces, q.sel, 'mlPick')}<div class="fm-lbl">شبیه‌ترین پرونده‌ها</div>${q.M[q.sel] ? faceMatchHTML(face, q.M[q.sel], { fam: mlFamHTML }) : ''}</div>` : ''}
     <ul class="st-tips"><li>از <b>روبه‌رو، از نزدیک و در نور کافی</b> عکس بگیرید؛ عینک آفتابی و ماسک را اگر ممکن است بردارید.</li>
-      <li>خود عکس روی گوشی شما می‌ماند و به سرور نمی‌رود؛ فقط برای مقایسه از آن عدد ساخته می‌شود.</li>
+      <li>خود عکس روی گوشی شما می‌ماند و به سرور نمی‌رود؛ فقط برای مقایسه از آن عدد ساخته می‌شود. تنها استثنا: اگر شباهت «زیاد» بود و خودتان «📤 فرستادن برای خانواده» را زدید، فقط برش چهره برای همان خانواده در بله فرستاده می‌شود و بعد از جواب یا ۲۴ ساعت پاک می‌شود.</li>
       <li>اگر شباهت «زیاد» باشد، ستاد همان لحظه با نام و شماره‌ی شما خبردار می‌شود.</li>
       <li>نتیجه فقط پیشنهاد است؛ قبل از سپردن فرد، با شماره‌ی پرونده تماس بگیرید و هویت را تأیید کنید.</li>
       <li>اگر پرونده‌ای پیدا نشد، با ستاد تماس بگیرید؛ شاید خانواده هنوز گم شدن را اعلام نکرده‌اند.</li></ul>`;

@@ -26,7 +26,7 @@ async function lostAdd(btn) {
     if (!faces.length) throw new Error('در این عکس چهره‌ای پیدا نشد. عکسی واضح‌تر و از روبه‌رو انتخاب کنید.');
     const F = faces[0];
     await adminFetch('/admin/lost/add', { name, info: v('lostInfo'), contact: v('lostContact'), thumb: lostThumb(F.crop), desc: F.desc }, adminAuth());
-    showToast(F.px < 90 ? 'ثبت شد، ولی چهره در این عکس کوچک است؛ اگر عکس نزدیک‌تری دارید با «➕ عکس دیگر» اضافه کنید.' : faces.length > 1 ? `${lostFa(faces.length)} چهره در عکس بود؛ بزرگ‌ترین چهره ثبت شد. اگر نفر دیگری منظور بود، عکس را برش بزنید.` : 'پرونده ثبت شد ✅ — مدیران کاروان از همین الان می‌توانند جستجو کنند');
+    showToast(F.px < 90 ? 'ثبت شد، ولی چهره در این عکس کوچک است؛ اگر عکس نزدیک‌تری دارید با «➕ عکس دیگر» اضافه کنید.' : faces.length > 1 ? `${lostFa(faces.length)} چهره در عکس بود؛ بزرگ‌ترین چهره ثبت شد. اگر نفر دیگری منظور بود، عکس را برش بزنید.` : 'پرونده ثبت شد ✅ حالا «کپی لینک بله» را بزنید و برای خانواده بفرستید');
     ['lostName', 'lostInfo', 'lostContact', 'lostFile'].forEach(id => { document.getElementById(id).value = ''; });
     lostList();
   } catch (e) { showToast(e.message); }
@@ -67,6 +67,10 @@ async function lostPick(i) {
   if (!q.M[i]) { try { q.M[i] = (await adminFetch('/admin/lost/match', { desc: q.faces[i].desc }, adminAuth())).matches; } catch (e) { showToast(e.message); q.M[i] = []; } }
   lostRender();
 }
+function lostCopy(link) {
+  const t = `برای اینکه اگر عزیزتان پیدا شد عکسش برای تأیید به شما برسد، این لینک را در بله باز کنید و «شروع» را بزنید:\n${link}`;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => showToast('متن و لینک کپی شد ✅ برای خانواده بفرستید'), () => prompt('این متن را کپی کنید:', t));
+}
 const lostAgo = t => { const h = Math.floor((Date.now() - t) / 36e5); return h < 1 ? 'کمتر از یک ساعت پیش' : h < 24 ? `${lostFa(h)} ساعت پیش` : `${lostFa(Math.floor(h / 24))} روز پیش`; };
 function lostResultHTML() {
   if (lostBusy) return '<div class="empty-msg">⏳ در حال پیدا کردن چهره و مقایسه…</div>';
@@ -83,6 +87,8 @@ function lostCasesHTML() {
       <img src="${escH(c.thumb)}" alt="">
       <div class="lost-ct"><b>${escH(c.name)}</b>${c.info ? `<small>${escH(c.info)}</small>` : ''}${c.contact ? `<small>📞 ${escH(c.contact)}</small>` : ''}
         <small class="dim">${escH(c.by || '')} · ${lostAgo(c.created)} · ${lostFa(c.n)} عکس · ${c.left <= 2 ? '<b style="color:#B3261E">' : ''}${lostFa(c.left)} روز تا پاک شدن${c.left <= 2 ? '</b>' : ''}${c.hits ? ` · ${lostFa(c.hits)} بار شبیه‌ترین نتیجه` : ''}</small>
+        ${c.fam ? '<small style="color:#1E7D4F">👪 خانواده در بله وصل است؛ اگر مدیری شباهت زیاد پیدا کند، می‌تواند عکس را برای تأیید بفرستد.</small>' : c.link ? `<small>👪 خانواده هنوز در بله وصل نیست. <button class="lock-link" onclick="lostCopy('${escH(c.link)}')">📋 کپی لینک بله برای خانواده</button></small>` : ''}
+        ${c.last ? `<small>${c.last.ans === 'y' ? '✅ خانواده عکس را تأیید کرد' : c.last.ans === 'n' ? '❌ خانواده گفت او نیست' : c.last.ans === 'x' ? '⌛ خانواده جواب نداد' : '⏳ عکس برای خانواده فرستاده شده، منتظر جواب'} (${escH(c.last.mgr_name || 'مدیر')} · ${lostAgo(c.last.created)})</small>` : ''}
         <div class="lost-cb"><button class="pub-btn" onclick="lostDone('${c.id}',1)">✅ پیدا شد</button>
           ${c.n < 3 ? `<label class="lock-link">➕ عکس دیگر<input type="file" accept="image/*" hidden onchange="lostPhoto(this,'${c.id}')"></label>` : ''}
           <button class="lock-link" style="color:#B3261E" onclick="lostDone('${c.id}',0)">🗑 حذف</button></div></div></div>`).join('')}</div>`;
@@ -94,7 +100,7 @@ function lostRender() {
     : lostState === 'ok' ? '<div class="lost-st ok">✅ مدل تشخیص چهره آماده است.</div>' : '';
   const n = lostData ? lostData.cases.length : 0;
   el.innerHTML = `
-  <div class="lost-test">🔒 پرونده‌ها روی سرور و <b>مشترک بین ستاد و مدیران کاروان</b> است. مدیران فقط می‌توانند با عکس <b>جستجو</b> کنند و فقط ۳ نتیجه‌ی شبیه‌تر را می‌بینند، نه فهرست کامل. هر پرونده با «پیدا شد» یا بعد از <b>${lostFa(lostData ? lostData.days : 15)} روز</b> خودکار پاک می‌شود. اگر مدیری شباهت زیاد پیدا کند، فوراً در بله خبر می‌رسد.</div>
+  <div class="lost-test">🔒 پرونده‌ها روی سرور و <b>مشترک بین ستاد و مدیران کاروان</b> است. مدیران فقط می‌توانند با عکس <b>جستجو</b> کنند و فقط ۳ نتیجه‌ی شبیه‌تر را می‌بینند، نه فهرست کامل. هر پرونده با «پیدا شد» یا بعد از <b>${lostFa(lostData ? lostData.days : 15)} روز</b> خودکار پاک می‌شود. اگر مدیری شباهت زیاد پیدا کند، فوراً در بله خبر می‌رسد. <b>لینک بله‌ی هر پرونده</b> را برای خانواده بفرستید تا اگر پیدا شد، مدیر بتواند عکس چهره را برای تأیید به خودشان بفرستد.</div>
   ${st}
   <div class="mga-box"><div class="field-label">۱. ثبت پرونده — عکسی که خانواده به ستاد داده</div>
     <div class="mga-form"><input id="lostName" class="input-full" placeholder="نام و نام خانوادگی" maxlength="80">

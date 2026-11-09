@@ -99,11 +99,12 @@ const lostImg = crop => { const t = document.createElement('canvas'); t.width = 
 /* کارت نتیجه (مشترک): عکس فرد پیداشده ⟷ تصویر پرونده، سطح شباهت، مشخصات و تماس */
 const fmEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmTel = s => { const d = String(s || '').replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\d+]/g, ''); return d.length >= 8 ? d : ''; };
-function faceMatchHTML(face, M) {
+/* opt.fam(i, m) ← HTML بخش «فرستادن برای خانواده» (فقط اپ مدیران) */
+function faceMatchHTML(face, M, opt = {}) {
   if (!M.length) return '<div class="fm-note">هنوز هیچ پرونده‌ی گمشده‌ای ثبت نشده است.</div>';
   return `${M.map((m, i) => { const [lv, cls] = lostLevel(m.s), t = fmTel(m.contact); return `<div class="fm-m ${cls}"><img src="${face.thumb}" alt="عکس فرد پیداشده"><span class="fm-vs">⟷</span><img src="${fmEsc(m.thumb)}" alt="عکس پرونده">
       <div class="fm-tx"><b>${i === 0 && cls !== 'lo' ? '🥇 ' : ''}${fmEsc(m.name)}</b>${m.info ? `<div class="fm-info">${fmEsc(m.info)}</div>` : ''}<div class="fm-pct">شباهت ${lv} — حدود ٪${lostFa(lostPct(m.s))}</div>
-      ${cls !== 'lo' && m.contact ? `<div class="fm-info">📞 ${t ? `<a href="tel:${t}" dir="ltr">${fmEsc(m.contact)}</a>` : fmEsc(m.contact)}</div>` : ''}</div></div>`; }).join('')}
+      ${cls !== 'lo' && m.contact ? `<div class="fm-info">📞 ${t ? `<a href="tel:${t}" dir="ltr">${fmEsc(m.contact)}</a>` : fmEsc(m.contact)}</div>` : ''}${opt.fam && cls === 'hi' ? opt.fam(i, m) : ''}</div></div>`; }).join('')}
     ${M[1] && M[0].s >= LOST_MID && M[0].s - M[1].s < 0.01 ? '<div class="fm-note warn">⚠️ دو پرونده‌ی اول خیلی به هم نزدیک‌اند؛ سامانه نمی‌تواند بین آن‌ها تصمیم بگیرد. با هر دو تماس بگیرید یا عکس واضح‌تری بگیرید.</div>' : ''}
     ${face.px < 90 ? '<div class="fm-note warn">📏 چهره در این عکس کوچک است (از دور گرفته شده)؛ برای نتیجه‌ی مطمئن‌تر از نزدیک‌تر عکس بگیرید.</div>' : ''}
     <div class="fm-note">${M[0].s >= LOST_MID ? '⚠️ این فقط پیشنهاد است. قبل از سپردن فرد، با شماره‌ی پرونده تماس بگیرید و هویت را با نشانه‌ها (لباس، نام همراهان، کاروان) تأیید کنید.' : 'هیچ پرونده‌ای شباهت کافی ندارد. شاید خانواده‌ی این نفر هنوز گم شدنش را اعلام نکرده‌اند، یا عکس واضح نیست؛ یک عکس دیگر از روبه‌رو و از نزدیک بگیرید.'}</div>`;
@@ -121,5 +122,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   .fm-tx{min-width:0;line-height:1.7}.fm-info{font-size:12.5px;color:var(--muted,#666)}.fm-info a{color:#0E5A44;font-weight:800}
   .fm-m.hi{border-color:#1E7D4F;background:#1E7D4F14}.fm-m.mid{border-color:#B25B12}.fm-m.lo{opacity:.7}
   .fm-pct{font-size:13px;font-weight:700}.fm-m.hi .fm-pct{color:#1E7D4F}.fm-m.mid .fm-pct{color:#B25B12}
+  .fm-fam{margin-top:6px}.fm-fam button{border:0;border-radius:10px;padding:7px 12px;background:#0E5A44;color:#fff;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+  .fm-fs{font-size:12.5px;font-weight:700;line-height:1.8}.fm-fs.ok{color:#1E7D4F}.fm-fs.no{color:#B3261E}
   .fm-note{font-size:12.5px;line-height:1.9;background:var(--card2,#f6f1e7);color:var(--text,#222);border-radius:10px;padding:8px 10px;margin-top:6px}.fm-note.warn{color:#8A4A10}
 </style>`);
