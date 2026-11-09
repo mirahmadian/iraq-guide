@@ -10,6 +10,7 @@
 import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { guardRun, handleGuardAdmin, notify as ownerNotify } from './guard.js';
 import { handleLostAdmin, handleLostMgr, lostTick } from './lostcase.js';
+import { handleFoodPublic, handleFoodAdmin } from './foodvote.js';
 import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 import { handleFlight, flightTick } from './flight.js';
@@ -237,6 +238,7 @@ export default {
       }
 
       /* ── بازوی بله ── */
+      if (p.startsWith('/food/')) { const r = await handleFoodPublic(p, req, env, body, dev, json, err, limited); if (r) return r; }
       if (p.startsWith('/mgr/lost/')) return await handleLostMgr(p, req, env, body, json, err, limited, await mgrAuth(env, req), ownerNotify, env.BALE_TOKEN ? baleSend : null, url) || err('یافت نشد', 404);
       if (p.startsWith('/mgr/')) { const r = await handleMgr(p, req, env, body, dev, json, err, limited, ip); if (r) return r; }
       if (p.startsWith('/flight/')) { const r = await handleFlight(p, req, env, body, dev, json, err, limited); if (r) return r; }
@@ -252,7 +254,7 @@ export default {
         const owner = !sm && await isAdmin(env, req);
         if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
         if (staff && staff.mustChange) return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
-        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : p.startsWith('/admin/mgr/co') ? 'mgrco' : p.startsWith('/admin/mgr/trips') ? 'trips' : p.startsWith('/admin/mgr') ? 'mgr' : p.startsWith('/admin/lost/') ? 'lost' : 'owner';
+        const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : p.startsWith('/admin/mgr/co') ? 'mgrco' : p.startsWith('/admin/mgr/trips') ? 'trips' : p.startsWith('/admin/mgr') ? 'mgr' : p.startsWith('/admin/lost/') ? 'lost' : p.startsWith('/admin/food/') ? 'food' : 'owner';
         if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
         if (p === '/admin/gh-register' && req.method === 'POST') {
           /* کلید GitHub مدیر اصلی برای انتشارهای همکاران (رمزگذاری‌شده) */
@@ -271,6 +273,8 @@ export default {
           if (!z) return err('فایل افزونه هنوز روی سرور گذاشته نشده است.', 404);
           return new Response(Uint8Array.from(atob(z.v), c => c.charCodeAt(0)), { headers: { 'Content-Type': 'application/zip', 'Cache-Control': 'no-store', ...CORS } });
         }
+        const fo = await handleFoodAdmin(p, req, env, url, body, json, err, staff ? (staff.name || staff.user) : 'مدیر اصلی');
+        if (fo) return fo;
         const lo = await handleLostAdmin(p, req, env, body, json, err, staff ? (staff.name || staff.user) : 'مدیر اصلی');
         if (lo) return lo;
         const cr = await coReqAdmin(p, req, env, body, json, err, staff ? staff.user : 'مدیر اصلی', env.BALE_TOKEN ? baleSend : null);

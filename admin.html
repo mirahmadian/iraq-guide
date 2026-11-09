@@ -882,6 +882,7 @@
 <!-- ══ TAB: FOOD ══ -->
 <div class="page" id="tab-food" style="max-width:1100px">
   <div id="food-admin"></div>
+  <div id="foodvote-admin" data-perm="food"></div>
 </div><!-- /tab-food -->
 
 <div class="page" id="tab-besat" style="max-width:900px">
@@ -984,6 +985,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="admin-flight.js"></script>
 <script src="admin-mgr.js"></script>
 <script src="admin-trips.js"></script>
+<script src="admin-foodvote.js"></script>
 <script src="face.js"></script>
 <script src="admin-lost.js"></script>
 <script src="admin-search.js"></script>
@@ -1014,6 +1016,7 @@ function switchTab(id, btn) {
   if (id === 'mgr' && typeof mgSubOpen === 'function') { mgSubOpen(); if (typeof mgGuideLoad === 'function') mgGuideLoad(); }
   if (id === 'mgrco' && typeof mcoLoad === 'function') mcoLoad();
   if (id === 'lost' && typeof lostLoad === 'function') lostLoad();
+  if (id === 'food' && typeof fvLoad === 'function') fvLoad();
 }
 
 function toggleCard(key) {
@@ -1145,6 +1148,7 @@ async function uploadPendingHotelCards(token){
 }
 async function uploadPendingPhotos(token){
   await uploadPendingHotelCards(token);
+  if(typeof uploadPendingFoodPhotos==='function') await uploadPendingFoodPhotos(token);
   const pending=allContactObjects().filter(c=>c.photoData);
   for(const c of pending){
     const path='people/p-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';

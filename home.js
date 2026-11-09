@@ -230,6 +230,7 @@ function renderHome() {
     ${typeof zyStripHTML === 'function' ? zyStripHTML() : ''}
     ${typeof stayAlertHTML === 'function' ? stayAlertHTML() : ''}
     ${typeof flightAlertHTML === 'function' ? flightAlertHTML() : ''}
+    ${typeof foodTodayHTML === 'function' ? foodTodayHTML() : ''}
     ${typeof mgrStripHTML === 'function' ? mgrStripHTML() : ''}
     ${typeof baleStripHTML === 'function' ? baleStripHTML() : ''}
     ${homeSlideList.length ? `<div class="hslider"><div class="hslides" id="hslides" onscroll="slideDotsSync()">${homeSlideList.map((x, i) => `

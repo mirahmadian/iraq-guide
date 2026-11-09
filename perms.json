@@ -32,7 +32,7 @@
       { "k": "hotels", "label": "هتل‌ها", "p": ["hotels"], "files": ["hotels/", "people/"], "noSamarra": true }
     ]},
     { "id": "other", "label": "📚 سایر بخش‌ها", "items": [
-      { "k": "food", "label": "برنامه غذایی", "p": ["food"] },
+      { "k": "food", "label": "برنامه غذایی", "p": ["food"], "files": ["food/"] },
       { "k": "besat", "label": "بعثه", "p": ["besat"], "files": ["besat/"] },
       { "k": "guide", "label": "راهنمای زائر", "p": ["guide"] },
       { "k": "zyarat", "label": "زیارت‌نامه‌ها (مکان‌ها و متن‌ها)", "p": ["zyarat"] },

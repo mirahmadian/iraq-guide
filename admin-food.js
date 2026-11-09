@@ -38,6 +38,12 @@
   .fswitch input:checked + .fsw-track{background:var(--gold)}
   .fswitch input:checked + .fsw-track .fsw-dot{right:23px}
   .fdishes{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 4px}
+  .ftimes{display:grid;gap:8px;padding:8px 16px}.ftime{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border-s);border-radius:10px;background:var(--bg)}
+  .ftime b{min-width:80px}.ftime label{display:inline-flex;align-items:center;gap:6px;font-size:13px}.ftime input{padding:5px 8px;border:1px solid var(--border-s);border-radius:8px;font:inherit;background:var(--card);color:inherit}
+  .fphotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:8px 16px 14px}
+  .fphoto{border:1px solid var(--border-s);border-radius:12px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .fphoto img,.fph-empty{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.fph-empty{display:flex;align-items:center;justify-content:center;color:var(--dim,#888);font-size:12px;background:var(--card)}
+  .fphoto span{font-size:12.5px;font-weight:700;padding:6px 8px 2px;line-height:1.6}.fph-b{display:flex;gap:6px;align-items:center;padding:4px 8px 8px}
   .fdish{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 12px;border:1px solid var(--border-s);border-radius:100px;font-size:12.5px;background:var(--bg)}
   .fdish button{border:none;background:var(--red-bg);color:var(--red);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:10px}
   .frow-add{display:flex;gap:6px;padding:8px 16px 14px}
@@ -245,6 +251,8 @@ function normalizeFood(f) {
       days: Array.from({ length: 6 }, (_, d) => normFoodDay((p.days || [])[d]))
     })),
     items: (f.items || []).map(i => ({ name: i.name || '', q: i.q || '' })),
+    times: ['breakfast', 'lunch', 'dinner'].reduce((o, m) => { const t = (f.times || {})[m] || {}; o[m] = { from: t.from || '', to: t.to || '' }; return o; }, {}),
+    photos: Object.assign({}, f.photos || {}),
     dishes: (f.dishes || []).slice(),
     recipes: (f.recipes || []).map(r => ({
       id: r.id || fid(), name: r.name || '', kind: r.kind || 'other',
@@ -269,6 +277,13 @@ function getFoodData() {
     });
   });
   f.items = f.items.filter(i => i.name.trim());
+  /* ساعت سرو: فقط وعده‌هایی که هر دو ساعت را دارند */
+  const T = {}; for (const m of ['breakfast', 'lunch', 'dinner']) { const t = f.times[m]; if (/^\d{2}:\d{2}$/.test(t.from) && /^\d{2}:\d{2}$/.test(t.to)) T[m] = { from: t.from, to: t.to }; }
+  f.times = T;
+  /* عکس غذاها: عکس‌های هنوز آپلودنشده فقط در پیش‌نمایش */
+  const P = {}; for (const [k, v] of Object.entries(f.photos)) if (v) P[k] = v;
+  if (typeof BUILD_PENDING !== 'undefined' && BUILD_PENDING) Object.assign(P, foodPhotoData);
+  f.photos = P;
   f.dishes = f.dishes.filter(d => d && d.trim());
   return f;
 }
@@ -289,6 +304,8 @@ function renderFoodAdmin() {
     <datalist id="dl-ffruits">${opts([...used])}</datalist>
     <datalist id="dl-funits">${opts(['گرم', 'عدد', 'کیلوگرم', 'میلی‌لیتر', 'لیتر', 'حبه'])}</datalist>
     ${foodVisCard()}
+    ${foodCard('times', '⏰', 'ساعت سرو غذا', 'در بخش برنامه غذایی به زائر گفته می‌شود وعده‌ی بعدی چه ساعتی است', foodTimesBody)}
+    ${foodCard('photos', '📷', 'عکس غذاها', 'کنار هر غذا در منو نمایش داده می‌شود؛ زائر با لمس، عکس را بزرگ می‌بیند', foodPhotosBody)}
     ${foodCard('plans', '📅', 'برنامه‌های غذایی و دورچین', 'هر برنامه: نوع کاروان + درجه هتل + منوی ۶ روز', foodPlansBody)}
     ${foodCard('recipes', '🧮', 'آنالیز صبحانه گرم، سالادها و صبحانه سفری', 'سرانه هر نفر — آشپز با وارد کردن تعداد زائر، مقدار کل را می‌بیند', foodRecipesBody)}
     ${foodCard('items', '🧂', 'اقلام دورچین', 'فهرست اقلام و سرانه پیش‌فرض هر قلم', foodItemsBody)}
@@ -543,6 +560,45 @@ function foodItemsBody() {
       </div>`).join('')}
     </div>
     <div style="padding:0 16px 14px"><button class="add-row-btn fs-add" onclick="foodState.items.push({name:'',q:''});renderFoodAdmin()">+ افزودن قلم</button></div>`;
+}
+
+/* ── ساعت سرو ── */
+const FOOD_MEAL_FA = { breakfast: '🌅 صبحانه', lunch: '☀️ ناهار', dinner: '🌙 شام' };
+function foodTimesBody() {
+  return `<div class="empty-msg" style="line-height:2">ساعت به وقت عراق. اگر خالی بماند، ساعتِ آن وعده به زائر نشان داده نمی‌شود.</div>
+    <div class="ftimes">${['breakfast', 'lunch', 'dinner'].map(m => `<div class="ftime"><b>${FOOD_MEAL_FA[m]}</b>
+      <label>از <input type="time" value="${fe(foodState.times[m].from)}" onchange="foodState.times.${m}.from=this.value"></label>
+      <label>تا <input type="time" value="${fe(foodState.times[m].to)}" onchange="foodState.times.${m}.to=this.value"></label></div>`).join('')}</div>
+    <div class="empty-msg">بعد از تغییر، «انتشار» را بزنید.</div>`;
+}
+/* ── عکس غذاها (مثل عکس ناظر نقل: اینجا انتخاب، با «انتشار» آپلود) ── */
+const foodPhotoData = {};
+function foodPhotoNames() {
+  const s = new Set();
+  foodState.plans.forEach(p => p.days.forEach(d => { [d.breakfast.hot, d.lunch.main, d.dinner.main].forEach(x => x && x.trim() && s.add(x.trim())); }));
+  return [...s];
+}
+function foodPhotosBody() {
+  const names = foodPhotoNames(), done = names.filter(n => foodPhotoData[n] || foodState.photos[n]).length;
+  return `<div class="empty-msg" style="line-height:2">برای هر غذا یک عکس زیبا و روشن انتخاب کنید (افقی بهتر است). همه‌ی غذاهای برنامه‌های فعلی اینجا هستند. ${fe(String(done))} از ${fe(String(names.length))} عکس دارند.</div>
+    <div class="fphotos">${names.map((n, k) => { const src = foodPhotoData[n] || foodState.photos[n] || ''; return `<div class="fphoto">
+      ${src ? `<img src="${fe(src)}" alt="">` : '<div class="fph-empty">بدون عکس</div>'}
+      <span>${fe(n)}${foodPhotoData[n] ? ' <small style="color:#B25B12">(منتشرنشده)</small>' : ''}</span>
+      <div class="fph-b"><label class="add-row-btn" style="margin:0;cursor:pointer">📷 ${src ? 'تغییر' : 'انتخاب'}<input type="file" accept="image/*" hidden onchange="foodPhotoPick(${k},this)"></label>
+        ${src ? `<button class="fs-x" title="حذف عکس" onclick="foodPhotoDel(${k})">✕</button>` : ''}</div></div>`; }).join('')}</div>`;
+}
+async function foodPhotoPick(k, input) {
+  const f = input.files && input.files[0], n = foodPhotoNames()[k]; if (!f || !n) return;
+  try { foodPhotoData[n] = await resizeMax(f, 900); renderFoodAdmin(); showToast('عکس انتخاب شد — برای ثبت، «انتشار» را بزنید'); }
+  catch (e) { showToast('❌ ' + e.message); }
+}
+function foodPhotoDel(k) { const n = foodPhotoNames()[k]; delete foodPhotoData[n]; delete foodState.photos[n]; renderFoodAdmin(); }
+async function uploadPendingFoodPhotos(token) {
+  for (const n of Object.keys(foodPhotoData)) {
+    const path = 'food/d-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.jpg';
+    await putFile(path, '', 'Add food photo', token, foodPhotoData[n].split(',')[1]);
+    foodState.photos[n] = path; delete foodPhotoData[n];
+  }
 }
 
 /* ── dishes ── */

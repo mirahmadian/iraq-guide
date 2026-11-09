@@ -6,6 +6,7 @@ const STATIC = [
   'version.js',
   'icons.js',
   'food.js',
+  'food-today.js',
   'map-viewer.js',
   'banner.js',
   'prayer.js',

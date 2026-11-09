@@ -111,7 +111,7 @@ function mergeAllowed(cur, sub, defs, perms) {
   return [...new Set(changed)];
 }
 
-const FILE_RE = /^(hotels|people|cities|maps|banners|besat|slides|icons)\/[\w.-]{1,100}\.(jpg|jpeg|png|webp|pdf)$/;
+const FILE_RE = /^(hotels|people|cities|maps|banners|besat|slides|icons|food)\/[\w.-]{1,100}\.(jpg|jpeg|png|webp|pdf)$/;
 
 export async function handleStaff(p, req, env, body, json, err, limited, ip) {
   const cities = ['najaf', 'karbala', 'kadhimiya', 'samarra'];

@@ -345,6 +345,7 @@ function foodDailyHTML() {
   }).join('') + '</div>';
 
   fCur = { plan, day: sel };
+  if (typeof foodNowHTML === 'function') h += foodNowHTML();
   return h + `<div id="fMeals">${foodMealsHTML()}</div>`;
 }
 
@@ -363,6 +364,7 @@ function mealCardHTML(kind, ico, label, m) {
   let h = `<div class="fcard meal m-${kind}">
     <div class="meal-head"><span aria-hidden="true">${ico}</span><span class="n">${label}</span></div>
     <div class="meal-main">${kind === 'breakfast' && main ? '🍳 ' : ''}${escHtml(main || '—')}</div>`;
+  if (typeof ftMealExtra === 'function') h += ftMealExtra(kind, main, fCur.day);
   const tags = [];
   if (m.fruit) tags.push(`<span class="mtag">🍎 میوه: ${escHtml(m.fruit)}</span>`);
   if (rec) tags.push(`<button class="mtag" onclick="foodOpenRecipe('${rec.id}')">🧮 مواد لازم برای آشپز</button>`);
