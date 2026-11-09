@@ -1652,6 +1652,8 @@ const CARAVAN_DATA = {
         "q": ""
       }
     ],
+    "times": {},
+    "photos": {},
     "dishes": [
       "باقلا پلو با گوشت",
       "لوبیا پلو",
