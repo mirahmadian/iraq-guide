@@ -14,6 +14,7 @@ import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from
 import { handleFlight, flightTick } from './flight.js';
 import { handleMgr, handleMgrAdmin } from './mgr.js';
 import { handleTripsAdmin } from './trips.js';
+import { coReqAdmin } from './coreq.js';
 import { teamStaffTick } from './teamstaff.js';
 import { bale as baleSend } from './bale.js';
 
@@ -260,6 +261,8 @@ export default {
         if (u) return u;
         if (p === '/admin/bale/setup' && req.method === 'POST') return json(await baleSetup(env, url.origin));
         if (p.startsWith('/admin/guard')) { const g = await handleGuardAdmin(p, req, env, url, json, err); if (g) return g; }
+        const cr = await coReqAdmin(p, req, env, body, json, err, staff ? staff.user : 'مدیر اصلی', env.BALE_TOKEN ? baleSend : null);
+        if (cr) return cr;
         const tr = await handleTripsAdmin(p, req, env, url, body, json, err, staff ? staff.user : 'owner');
         if (tr) return tr;
         const mg = await handleMgrAdmin(p, req, env, body, json, err, staff ? staff.user : 'owner');

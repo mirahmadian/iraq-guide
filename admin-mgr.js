@@ -226,7 +226,7 @@ function mcoRender() {
   if (!mcoData) { el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>'; return; }
   if (!mcoEdit) mcoEdit = mcoBlank();
   const e = mcoEdit, inp = (k, ph, x = '') => `<input data-f="${k}" class="input-full" placeholder="${ph}" value="${escH(e[k] || '')}" ${x}>`;
-  el.innerHTML = `
+  el.innerHTML = mcoBotHTML() + `
   <div class="mga-box" id="mcoForm"><div class="field-label">${e.id ? `✏️ ویرایش «${escH(e.name)}»` : '➕ افزودن شرکت مجری'}</div>
     <div class="mga-form">
       ${inp('name', 'نام شرکت مجری', 'list="mcoSug"')}
@@ -269,13 +269,70 @@ function mcoList() {
   const hay = c => [c.name, c.ceo, c.address, c.phone, c.note, ...c.reps.flatMap(r => [r.name, r.ir, r.iq])].join(' ');
   const L = q ? mcoData.list.filter(c => hay(c).includes(q)) : mcoData.list;
   const P = v => v ? `<span dir="ltr">${escH(mgaFaPhone(v.replace(/^00/, '+')))}</span>` : '';
-  el.innerHTML = L.length ? L.map(c => `<div class="mga-row"><div class="mga-main"><b>${escH(c.name)}</b>
+  const sb = id => (mcoData.bot && mcoData.bot.subs[id]) || {};
+  el.innerHTML = L.length ? L.map(c => `<div class="mga-row"><div class="mga-main"><b>${escH(c.name)}</b>${sb(c.id).bot ? ' <span class="mco-bb">🤖 از بله</span>' : ''}
       <div class="mga-sub">${c.ceo ? `مدیرعامل: ${escH(c.ceo)}` : '<span style="color:#B25B12">مدیرعامل ثبت نشده</span>'}${c.phone ? `، تلفن شرکت: ${P(c.phone)}` : ''}</div>
       ${c.address ? `<div class="mga-sub">📍 ${escH(c.address)}</div>` : ''}
       ${c.reps.length ? c.reps.map(r => `<div class="mga-sub">👤 ${escH(r.name || 'نماینده')}${r.ir ? `، ایران: ${P(r.ir)}` : ''}${r.iq ? `، عراق: ${P(r.iq)}` : ''}</div>`).join('') : '<div class="mga-sub" style="color:#B25B12">نماینده ثبت نشده</div>'}</div>
     <div class="mga-act"><button onclick="mcoEdit=JSON.parse(JSON.stringify(mcoData.list.find(x=>x.id===${c.id})));if(!mcoEdit.reps.length)mcoEdit.reps.push({name:'',ir:'',iq:''});mcoRender();document.getElementById('mcoForm').scrollIntoView({behavior:'smooth'})" title="ویرایش">✏️</button>
+      ${mcoData.bot ? `<button onclick="mcoInv(${c.id})" title="لینک اختصاصی این شرکت در بله">🔗</button>` : ''}
       <button onclick="mcoDel(${c.id})" title="حذف">🗑</button></div></div>`).join('')
     : `<div class="empty-msg">${mcoData.list.length ? 'شرکتی با این جستجو پیدا نشد.' : 'هنوز شرکتی ثبت نشده است. از فرم بالا یا «ورود یک‌جا از اکسل» شروع کنید.'}</div>`;
+}
+/* 🤖 درخواست‌های بازوی بله: شرکت‌ها خودشان نماینده معرفی می‌کنند؛ این‌جا فقط تأیید/رد */
+const MCO_MSG = l => `سلام و احترام 🌷\nبرای ثبت اطلاعات مدیرعامل و نمایندگان شرکت در عراق در «همیار کاروان»، لطفاً روی لینک زیر بزنید و به چند سؤال کوتاه در بله پاسخ دهید (حدود ۲ دقیقه):\n${l}\n\nاطلاعات پس از بررسی ستاد ثبت می‌شود و فقط برای مدیران کاروان قابل مشاهده است.`;
+function mcoCopy(t, ok) {
+  const done = () => showToast(ok || 'کپی شد ✅');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => prompt('کپی کنید:', t));
+  else prompt('کپی کنید:', t);
+}
+function mcoBotHTML() {
+  const b = mcoData.bot; if (!b) return '';
+  const byId = id => mcoData.list.find(c => c.id === id);
+  const P = v => v ? `<span dir="ltr">${escH(mgaFaPhone(String(v).replace(/^00/, '+')))}</span>` : '—';
+  const card = (d, name) => `<div class="mco-cd"><div><b>👔 مدیرعامل:</b> ${escH(d.ceo || '—')}</div>
+    ${(d.reps || []).map(r => `<div><b>👤 ${escH(r.name || 'نماینده')}</b> — ایران: ${P(r.ir)}، عراق: ${P(r.iq)}</div>`).join('') || '<div>👤 —</div>'}
+    <div><b>📍</b> ${escH(d.address || '—')}</div><div><b>☎️</b> ${P(d.phone)}</div></div>`;
+  const flagCls = k => k === 'change' || k === 'other' ? 'bad' : k === 'match' || k === 'inv' || k === 'self' ? 'good' : 'mid';
+  const missing = mcoData.list.filter(c => !(b.subs[c.id] || {}).bot && !c.reps.length);
+  const W = b.wait.map(r => {
+    const old = r.co_id && byId(r.co_id), hadOld = old && (old.ceo || old.reps.length || old.address);
+    return `<div class="mco-req"><div class="mco-rh"><b>🏢 ${escH(r.co_name || '')}</b><span>${escH(new Date(r.t).toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' }))}</span></div>
+      <div class="mga-sub">فرستنده: ${escH(r.bale_name || '—')} — ${P(r.phone)} <span title="شماره را خود بله تأیید کرده">✔︎ بله</span></div>
+      ${r.flags.map(f => `<div class="mco-flag ${flagCls(f.k)}">${escH(f.t)}</div>`).join('')}
+      ${hadOld ? `<div class="mco-cmp"><div><div class="mco-cl">اطلاعات فعلی</div>${card(old)}</div><div><div class="mco-cl">اطلاعات جدید</div>${card(r.data)}</div></div>` : card(r.data)}
+      <div class="mco-btns"><button class="pub-btn" onclick="mcoDecide(${r.id},'ok',this)">✅ تأیید و ثبت</button>
+        <button class="lock-link" onclick="mcoDecide(${r.id},'no',this)">❌ رد</button>
+        <button class="lock-link" style="color:#B3261E" onclick="mcoDecide(${r.id},'bl',this)">🚫 رد و مسدود کردن شماره</button></div></div>`;
+  }).join('');
+  return `<div class="mga-box mco-bot">
+    ${b.wait.length ? `<div class="field-label">📥 ${mgaN(b.wait.length)} درخواست از بازوی بله در انتظار تأیید شما</div>${W}`
+      : `<div class="field-label">🤖 معرفی نماینده توسط خود شرکت‌ها (بازوی بله)</div><div class="empty-msg" style="padding:2px 0 6px">درخواستی در انتظار تأیید نیست.${b.drafts ? ` ${mgaN(b.drafts)} نفر الان در حال پر کردن هستند.` : ''}</div>`}
+    ${b.owner ? '' : '<div class="mco-flag mid">ℹ️ پیام‌های بله‌ی مدیر اصلی هنوز وصل نیست؛ درخواست‌ها فقط همین‌جا دیده می‌شوند (اتصال: پنل ☁️ نگهبان سرور).</div>'}
+    <details class="gd-det"><summary><b>🔗 لینک بازو برای فرستادن به شرکت‌ها</b></summary><div style="padding:8px 0;line-height:2">
+      این لینک را در گروه شرکت‌ها بگذارید یا برایشان بفرستید. شرکت در بله شماره‌اش را با دکمه می‌فرستد، شرکتش را انتخاب می‌کند، مدیرعامل، نمایندگان، آدرس و تلفن را می‌نویسد. <b>تا شما تأیید نکنید چیزی ثبت نمی‌شود.</b>
+      <div class="mco-link" dir="ltr">${escH(b.link)}</div>
+      <button class="pub-btn" onclick="mcoCopy(mcoData.bot.link)">📋 کپی لینک</button> <button class="lock-link" onclick="mcoCopy(MCO_MSG(mcoData.bot.link),'متن پیام کپی شد ✅')">📋 کپی متن آماده‌ی پیام</button>
+      <div class="empty-msg" style="padding:6px 0 0">برای شرکتی که می‌خواهید خیالتان کاملاً راحت باشد، دکمه‌ی 🔗 کنار همان شرکت (پایین صفحه) یک <b>لینک اختصاصی</b> می‌دهد که فقط به همان شرکت وصل است.</div></div></details>
+    ${missing.length ? `<details class="gd-det"><summary><b>⏳ ${mgaN(missing.length)} شرکت هنوز نماینده‌ای ندارند</b></summary><div class="mco-miss">${missing.map(c => `<span>${escH(c.name)} <button onclick="mcoInv(${c.id})" title="کپی لینک اختصاصی">🔗</button></span>`).join('')}</div></details>` : ''}
+    ${b.done.length ? `<details class="gd-det"><summary><b>🗂 آخرین بررسی‌ها</b></summary><div style="padding:6px 0;font-size:12.5px;line-height:2">${b.done.map(r => `<div>${r.state === 'ok' ? '✅' : r.state === 'blocked' ? '🚫' : '❌'} ${escH(r.co_name || '')} — ${P(r.phone)} <span style="color:var(--dim,#888)">(${escH(r.by || '')})</span></div>`).join('')}</div></details>` : ''}
+    ${b.blocked.length ? `<details class="gd-det"><summary><b>🚫 شماره‌های مسدود (${mgaN(b.blocked.length)})</b></summary><div style="padding:6px 0">${b.blocked.map(x => `<div>${P(x.phone)} <button class="lock-link" onclick="mcoUnblock('${escH(x.phone)}')">رفع مسدودی</button></div>`).join('')}</div></details>` : ''}
+  </div>`;
+}
+async function mcoDecide(id, act, btn) {
+  const r = mcoData.bot.wait.find(x => x.id === id);
+  if (act === 'bl' && !confirm(`درخواست «${r.co_name}» رد شود و شماره‌ی فرستنده دیگر نتواند از بازو اطلاعات بفرستد؟`)) return;
+  btn.disabled = true;
+  try { await adminFetch('/admin/mgr/co/req', { id, act }, adminAuth()); showToast(act === 'ok' ? 'تأیید و ثبت شد ✅ — به فرستنده هم در بله خبر داده شد' : 'رد شد'); mcoLoad(); }
+  catch (e) { showToast(e.message); btn.disabled = false; mcoLoad(); }
+}
+async function mcoInv(id) {
+  const c = mcoData.list.find(x => x.id === id);
+  try { const r = await adminFetch('/admin/mgr/co/inv', { id }, adminAuth()); mcoCopy(MCO_MSG(r.url), `متن و لینک اختصاصی «${c.name}» کپی شد ✅`); }
+  catch (e) { showToast(e.message); }
+}
+async function mcoUnblock(phone) {
+  try { await adminFetch('/admin/mgr/co/unblock', { phone }, adminAuth()); showToast('رفع مسدودی شد'); mcoLoad(); } catch (e) { showToast(e.message); }
 }
 async function mcoSave(btn) {
   mcoRead();
@@ -328,6 +385,19 @@ async function mcoImport(btn) {
   catch (e) { showToast(e.message); btn.disabled = false; }
 }
 document.head.insertAdjacentHTML('beforeend', `<style>
+  .mco-bot{border:1.5px solid #1E7D4F55}
+  .mco-req{border:1px solid var(--border-s);border-radius:12px;padding:10px;margin:8px 0;background:var(--card)}
+  .mco-rh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.mco-rh span{font-size:12px;color:var(--dim,#888)}
+  .mco-flag{font-size:12.5px;border-radius:8px;padding:4px 8px;margin:4px 0}
+  .mco-flag.bad{background:#B3261E18;color:#B3261E;font-weight:700}.mco-flag.good{background:#1E7D4F18;color:#1E7D4F}.mco-flag.mid{background:#B25B1218;color:#8A4A10}
+  .mco-cd{font-size:13px;line-height:1.9;background:var(--card2,#f6f1e7);border-radius:8px;padding:6px 8px;margin-top:6px;overflow-wrap:anywhere}
+  .mco-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mco-cl{font-size:12px;font-weight:800;margin-top:6px}
+  @media(max-width:620px){.mco-cmp{grid-template-columns:1fr}}
+  .mco-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .mco-link{background:var(--card2,#f6f1e7);border-radius:8px;padding:6px 10px;margin:6px 0;font-family:monospace;overflow-wrap:anywhere}
+  .mco-miss{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}.mco-miss span{border:1px dashed var(--border-s);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px}
+  .mco-miss button{border:0;background:none;cursor:pointer}
+  .mco-bb{font-size:11px;background:#1E7D4F18;color:#1E7D4F;border-radius:999px;padding:1px 7px;font-weight:600}
   .mco-sug{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
   .mco-sug button{border:1px dashed var(--border-s);background:var(--card);border-radius:999px;padding:6px 10px;cursor:pointer;font-family:var(--font);font-size:12.5px}
   .mco-sug button span{color:var(--dim,#888)}

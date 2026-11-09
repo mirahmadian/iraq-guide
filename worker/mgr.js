@@ -6,6 +6,7 @@
    ۴. اگر شماره در فهرست بود: برنامه با /mgr/status خودش وارد می‌شود، یا مدیر کد ۶ رقمی بازو را وارد می‌کند (/mgr/otp)
    هر شماره حداکثر روی ۲ گوشی؛ با حذف از فهرست یا پایان تاریخ، دسترسی در اولین بررسی قطع می‌شود.
 ══════════════════════════════════════════ */
+import { coReqInfo } from './coreq.js';
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS mgr_people (phone TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT, company TEXT, city TEXT, until INTEGER,
     active INTEGER NOT NULL DEFAULT 1, chat_id INTEGER, created INTEGER NOT NULL, by TEXT, last_login INTEGER, logins INTEGER NOT NULL DEFAULT 0)`,
@@ -229,7 +230,8 @@ export async function handleMgrAdmin(p, req, env, body, json, err, who) {
       for (const r of rows) { const k = norm(r.company); if (k && !have.has(k)) seen.set(k, (seen.get(k) || 0) + r.n); }
       suggest = [...seen.entries()].map(([name, n]) => ({ name, n }));
     } catch (e) {}
-    return json({ list, suggest });
+    let bot = null; try { bot = await coReqInfo(env); } catch (e) { console.log('coreq', e && e.message); }
+    return json({ list, suggest, bot });
   }
   const ph = v => S(mgrPhone(v), 20), phOk = v => !v || /^\d{7,16}$/.test(v);
   const coRow = b => ({ name: S(b.name, 150), ceo: S(b.ceo, 80), address: S(b.address, 300), phone: ph(b.phone), note: S(b.note, 300),
