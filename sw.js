@@ -27,6 +27,8 @@ const STATIC = [
   'flight-def.js',
   'flight.js',
   'mgr.js',
+  'mgr-lost.js',
+  'face.js',
   'wa.js',
   'rate.json',
   'rate-market.json',

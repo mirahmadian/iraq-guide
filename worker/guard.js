@@ -44,7 +44,7 @@ async function recentErrors(env, since, limit = 20) {
 const utc = t => new Date(t).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 const errText = list => list.map(r => `- ${utc(r.ts)} [${r.src}] ${r.method} ${r.path}\n  ${String(r.msg).split('\n').slice(0, 3).join('\n  ')}`).join('\n');
 
-async function notify(env, text) {
+export async function notify(env, text) {
   const chat = await cfgGet(env, 'owner_chat');
   if (!chat || !env.BALE_TOKEN) return false;
   const r = await fetch(`https://tapi.bale.ai/bot${env.BALE_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: +chat, text }) }).catch(() => null);

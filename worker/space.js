@@ -29,6 +29,7 @@ function rules() {
     ['درخواست‌های بررسی‌شده‌ی ربات شرکت‌ها (۱ سال)', "DELETE FROM co_reqs WHERE state IN ('ok', 'no', 'blocked', 'replaced') AND COALESCE(decided, updated) < ?", [now - 365 * D]],
     ['سفرهای عتبات قدیمی‌تر از ۱ سال', 'DELETE FROM mgr_trips WHERE entry < ?', [oldTrip]],
     ['مدیران «عتبات» با ۶ ماه پایان دسترسی', "DELETE FROM mgr_people WHERE src = 'atabat' AND until IS NOT NULL AND until < ?", [now - 182 * D]],
+    ['پرونده‌های گمشده‌ی بیش از ۱۵ روز', 'DELETE FROM lost_cases WHERE created < ?', [now - 15 * D]],
     ['گوشی‌های مدیرانِ حذف‌شده', 'DELETE FROM mgr_devices WHERE phone NOT IN (SELECT phone FROM mgr_people)', []]
   ];
 }

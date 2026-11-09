@@ -88,6 +88,7 @@ function mgrRender() {
     const m = o.me || {};
     box.innerHTML = `<div class="mg-me"><div class="av">🧳</div><div><b>${escHtml(m.name || '')}</b>
         <small>${[m.role, m.company, mgrCity(m.city)].filter(Boolean).map(escHtml).join(' · ') || 'مدیر کاروان'}${m.until ? `<br>دسترسی تا ${escHtml(mgrDate(m.until))}` : ''}</small></div></div>
+      <button class="lost-btn" style="margin-bottom:12px" onclick="mgrLostOpen()">🧒 پیدا کردن گمشده با عکس</button>
       ${mgrCoHTML(o)}
       <button class="lost-btn alt" onclick="mgrLogout()">🚪 خروج از بخش مدیران روی این گوشی</button>`;
     mgrList();
