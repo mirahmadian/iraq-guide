@@ -20,6 +20,17 @@ function trLoad() {
     .then(d => { trData = d; trRender(); }).catch(e => { trErr = e.message; trRender(); });
 }
 
+/* خلاصه‌ی فایل افزونه پیش از ثبت (در کادر راهنمای تب «مدیران کاروان») */
+function trImpHTML() {
+  return `${trImp ? `<div class="mga-imp">${trImp.err ? `<span style="color:#B3261E">${escH(trImp.err)}</span>` : `
+      فایل <b>${trFa(trImp.from)}</b> تا <b>${trFa(trImp.to)}</b>: <b>${mgaN(trImp.rows.length)}</b> کاروان؛
+      ${['ok', 'empty', 'cancel'].map(s => `${TR_ST[s][0]} ${mgaN(trImp.rows.filter(r => r.status === s).length)}`).join('، ')}؛
+      ${(() => { const np = trImp.rows.filter(r => !r.phone && r.status !== 'cancel').length, live = trImp.rows.filter(r => r.status !== 'cancel').length, ph = new Set(trImp.rows.filter(r => /^0?9\d{9}$/.test(r.phone) && r.status !== 'cancel').map(r => r.phone)).size;
+        return np && np >= live * 0.5 ? `<div class="tr-warn">⚠️ <b>${mgaN(np)} کاروان از ${mgaN(live)} شماره‌ی مدیر ندارند.</b> این فایل احتمالاً درست ساخته نشده؛ قبل از ثبت، ستون «موبایل مدیر» را در خود فایل نگاه کنید (یا فایل را برای پشتیبانی بفرستید).</div>`
+          : `<div class="tr-ok">📱 موبایل <b>${mgaN(ph)}</b> مدیر در فایل هست؛ بعد از ثبت، مدیرهای سفرهای جاری و آینده <b>خودکار</b> در «👥 مدیران و دسترسی» مجاز می‌شوند.${np ? ` (${mgaN(np)} کاروان بدون شماره)` : ''}</div>`; })()}
+      <div style="margin-top:8px"><button class="pub-btn" onclick="trImport(this)">✅ ثبت ${mgaN(trImp.rows.length)} کاروان</button> <button class="lock-link" onclick="trImp=null;trRender();mgGuideRender()">انصراف</button></div>
+      <div class="mga-sub">کاروان‌های همین روزها که قبلاً ثبت شده بودند با این فایل جایگزین می‌شوند؛ لغو دستی و شماره‌ای که خودتان اصلاح کرده‌اید می‌ماند.</div>`}</div>` : ''}`;
+}
 function trRender() {
   const el = document.getElementById('trips-admin'); if (!el) return;
   const last = trData && trData.last && trData.last.n ? `<div class="mga-sub" style="margin-bottom:8px">آخرین بارگذاری: <b>${mgaAgo(trData.last.t)}</b>؛ در کل ${mgaN(trData.last.n)} کاروان با ورود از ${trFa(trData.last.a)} تا ${trFa(trData.last.b)}</div>` : '';
@@ -27,14 +38,7 @@ function trRender() {
 
   <details class="gd-det" ${trImp ? 'open' : ''}><summary><b>📄 بارگذاری اکسل افزونه</b></summary><div style="padding:8px 0">
     <input type="file" accept=".xlsx" onchange="trFile(this)">
-    ${trImp ? `<div class="mga-imp">${trImp.err ? `<span style="color:#B3261E">${escH(trImp.err)}</span>` : `
-      فایل <b>${trFa(trImp.from)}</b> تا <b>${trFa(trImp.to)}</b>: <b>${mgaN(trImp.rows.length)}</b> کاروان؛
-      ${['ok', 'empty', 'cancel'].map(s => `${TR_ST[s][0]} ${mgaN(trImp.rows.filter(r => r.status === s).length)}`).join('، ')}؛
-      ${(() => { const np = trImp.rows.filter(r => !r.phone && r.status !== 'cancel').length, live = trImp.rows.filter(r => r.status !== 'cancel').length, ph = new Set(trImp.rows.filter(r => /^0?9\d{9}$/.test(r.phone) && r.status !== 'cancel').map(r => r.phone)).size;
-        return np && np >= live * 0.5 ? `<div class="tr-warn">⚠️ <b>${mgaN(np)} کاروان از ${mgaN(live)} شماره‌ی مدیر ندارند.</b> این فایل احتمالاً درست ساخته نشده؛ قبل از ثبت، ستون «موبایل مدیر» را در خود فایل نگاه کنید (یا فایل را برای پشتیبانی بفرستید).</div>`
-          : `<div class="tr-ok">📱 موبایل <b>${mgaN(ph)}</b> مدیر در فایل هست؛ بعد از ثبت، مدیرهای سفرهای جاری و آینده <b>خودکار</b> در «👥 مدیران و دسترسی» مجاز می‌شوند.${np ? ` (${mgaN(np)} کاروان بدون شماره)` : ''}</div>`; })()}
-      <div style="margin-top:8px"><button class="pub-btn" onclick="trImport(this)">✅ ثبت ${mgaN(trImp.rows.length)} کاروان</button> <button class="lock-link" onclick="trImp=null;trRender()">انصراف</button></div>
-      <div class="mga-sub">کاروان‌های همین روزها که قبلاً ثبت شده بودند با این فایل جایگزین می‌شوند؛ لغو دستی و شماره‌ای که خودتان اصلاح کرده‌اید می‌ماند.</div>`}</div>` : ''}
+    ${trImpHTML()}
   </div></details>
 
   <div class="tr-flt">
@@ -108,7 +112,7 @@ async function trImport(btn) {
   try {
     const r = await adminFetch('/admin/mgr/trips/import', { from: trImp.from, to: trImp.to, rows: trImp.rows }, adminAuth());
     showToast(`✅ ${mgaN(r.n)} کاروان ثبت شد (${trFa(r.from)} تا ${trFa(r.to)})` + (r.sync && r.sync.n ? ` — ${mgaN(r.sync.n)} مدیر با سفر جاری یا آینده در «مدیران و دسترسی» مجاز شد${r.sync.added ? ` (${mgaN(r.sync.added)} نفر تازه)` : ''}` : ' — هیچ موبایل مدیری در فایل نبود'), 9000);
-    trImp = null; trFrom = r.from; trTo = r.to; trLoad(); if (typeof mgGuideLoad === 'function') mgGuideLoad();
+    trImp = null; trFrom = r.from; trTo = r.to; mgGuideLoad(); if (typeof mgaLoad === 'function') mgaLoad();
   } catch (e) { showToast(e.message); btn.disabled = false; }
 }
 async function trSet(key, body) {
@@ -183,10 +187,10 @@ function mgGuideRender() {
           <ol><li>با کروم وارد <b dir="ltr">atabatorg.haj.ir</b> شوید.</li><li>روی آیکون سبز <b>همیار کاروان</b> بالای مرورگر بزنید.</li>
             <li>بازه‌ی تاریخ خودش پر شده؛ <b>«جمع‌آوری»</b> را بزنید و صبر کنید.</li><li>در آخر <b>«⬇ دریافت فایل اکسل»</b> را بزنید؛ فایلی به اسم <b dir="ltr">hamyar-trips-….xlsx</b> دانلود می‌شود.</li></ol>
           <small>افزونه فقط گزارش‌ها را می‌خواند؛ چیزی در سامانه ثبت یا تأیید نمی‌کند و اطلاعات زائران را برنمی‌دارد.</small></div>
-        <div class="mgg-s"><div class="mgg-n">۳</div><b>بارگذاری فایل همین‌جا</b><small>فایل hamyar-trips-….xlsx</small>
+        <div class="mgg-s" id="mggStep3"><div class="mgg-n">۳</div><b>بارگذاری فایل همین‌جا</b><small>فایل hamyar-trips-….xlsx</small>
           <label class="pub-btn mgg-up">📄 انتخاب فایل اکسل افزونه<input type="file" accept=".xlsx" hidden onchange="mgGuideFile(this)"></label>
           <small>خلاصه‌ی فایل نشان داده می‌شود؛ اگر درست بود «✅ ثبت» را بزنید. بعد از ثبت، تعداد مدیرهایی که مجاز شدند را می‌بینید.</small></div>
-      </div></div>` : ''}</div>`;
+      </div>${trImp ? `<div class="mgg-prev">${trImpHTML()}</div>` : ''}</div>` : ''}</div>`;
 }
 async function mgExtGet(btn) {
   btn.disabled = true;
@@ -200,10 +204,9 @@ async function mgExtGet(btn) {
   btn.disabled = false;
 }
 async function mgGuideFile(inp) {
-  if (typeof mgSubShow === 'function') mgSubShow('trips');
   await trFile(inp);
-  mgGOpen = false; mgGuideRender();
-  setTimeout(() => { const x = document.querySelector('#trips-admin .mga-imp'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+  mgGOpen = true; mgGuideRender();
+  setTimeout(() => { const x = document.querySelector('.mgg-prev'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 200);
 }
 document.head.insertAdjacentHTML('beforeend', `<style>
   .mgg{border:1.5px solid #B25B12;border-radius:14px;background:var(--card);margin-bottom:12px;overflow:hidden}.mgg.ok{border-color:#1E7D4F55}
@@ -215,6 +218,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   .mgg-s{border:1px solid var(--border-s);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.9;background:var(--card2,#f6f1e7)}
   .mgg-s small{color:var(--dim,#777);font-size:12px}.mgg-s ol{margin:0;padding-inline-start:18px}.mgg-s details summary{cursor:pointer;font-weight:700;color:#1E5D8C}
   .mgg-n{width:28px;height:28px;border-radius:50%;background:#1E7D4F;color:#fff;display:grid;place-items:center;font-weight:800}
+  .mgg-prev{margin-top:10px;font-size:13.5px;line-height:2}
   .mgg-up{cursor:pointer;display:inline-flex;justify-content:center}
   .tr-warn{margin-top:6px;background:#B3261E14;color:#B3261E;border-radius:8px;padding:6px 10px;line-height:1.9}.tr-ok{margin-top:6px;background:#1E7D4F12;color:#1E6B45;border-radius:8px;padding:6px 10px;line-height:1.9}
 </style>`);

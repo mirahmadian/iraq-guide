@@ -38,8 +38,8 @@ function mgaRender() {
   if (!mgaData) { el.innerHTML = '<div class="empty-msg">در حال دریافت…</div>'; return; }
   const P = mgaData.people, cnt = k => k !== 'all' ? P.filter(x => mgaFState(x) === k).length : P.length;
   el.innerHTML = `
-  <div class="mga-sum">${MGA_FILTERS.map(([k, l, c]) => `<button type="button" class="${mgaF === k ? 'on' : ''}" style="--c:${c}" onclick="mgaSetF('${k}')"><b>${mgaN(cnt(k))}</b><span>${l}</span></button>`).join('')}</div>
-  <div class="mga-search"><input type="search" id="mgaQ" placeholder="🔎 نام، شماره‌ی موبایل یا شرکت را بنویسید…" value="${escH(mgaQ)}" oninput="mgaQ=this.value;mgaShow=30;mgaRenderList()" autocomplete="off"></div>
+  <div class="mga-sum">${MGA_FILTERS.map(([k, l, c]) => `<button type="button" class="${(mgaF || 'all') === k ? 'on' : ''}" style="--c:${c}" onclick="mgaSetF('${k}')"><b>${mgaN(cnt(k))}</b><span>${l}</span></button>`).join('')}</div>
+  <div class="mga-search"><input type="search" id="mgaQ" placeholder="🔎 نام، شماره‌ی موبایل یا شرکت را بنویسید…" value="${escH(mgaQ)}" oninput="mgaQ=this.value;mgaPage=0;mgaRenderList()" autocomplete="off"></div>
   <div id="mgaList"></div>
 
   <details class="mga-sec" id="mgaAdd" ${mgaEdit ? 'open' : ''}><summary>${mgaEdit ? '✏️ ویرایش مدیر' : '➕ افزودن یک نفر'}</summary><div class="mga-box">${mgaFormHTML()}</div></details>
@@ -61,36 +61,48 @@ function mgaRender() {
     با «غیرفعال کردن» یا حذف، دسترسی در اولین اتصال گوشی به اینترنت قطع می‌شود.</div></details>`;
   mgaRenderList();
 }
-function mgaSetF(k) { mgaF = mgaF === k ? '' : k; mgaShow = 30; mgaRender(); }
-function mgaRowHTML(x) {
-  const [st, col] = mgaStatus(x), open = mgaOpen === x.phone, ph = escH(x.phone);
-  return `<div class="mga-row ${open ? 'open' : ''}">
-    <button type="button" class="mga-line" onclick="mgaOpen=mgaOpen==='${ph}'?'':'${ph}';mgaRenderList()" aria-expanded="${open}">
-      <i style="background:${col}" title="${escH(st)}"></i><b>${escH(x.name)}</b><span dir="ltr" class="mga-ph">${escH(mgaFaPhone(x.phone))}</span>
-      <span class="mga-co">${x.src === 'atabat' || x.trip_to ? '<span class="mga-src" title="از سفرهای سامانه‌ی عتبات">🧭 عتبات</span> ' : ''}${escH(x.company || x.role || '')}</span><span class="mga-chev"></span></button>
-    ${open ? `<div class="mga-det">
-      <div class="mga-sub">${escH([x.role, x.company, MGA_CITIES[x.city] || x.city].filter(Boolean).join(' · ') || '—')}</div>
-      ${x.src === 'atabat' ? `<div class="mga-sub">🧭 خودکار از سفرهای عتبات: دسترسی از ${mgaDate(x.valid_from)} تا ${mgaDate(x.until)} (۱۵ روز قبل از ورود تا ۱۰ روز بعد از خروج)</div>` : x.trip_to ? `<div class="mga-sub">🧭 در سفرهای عتبات هم هست (سفر تا ${mgaDate(x.trip_to)})؛ چون دستی ثبت شده، نام و شرکتش دست نمی‌خورد.</div>` : ''}
-      <div class="mga-sub"><span style="color:${col};font-weight:800">${st}</span>${x.devices ? `، روی ${mgaN(x.devices)} گوشی` : ''}، آخرین ورود: ${mgaAgo(x.last_login)}${x.until ? `، تا ${mgaDate(x.until)}` : ''}</div>
-      <div class="mga-act"><button onclick="mgaEditOpen('${ph}')">✏️ ویرایش</button><button onclick="mgaOtp('${ph}')">🔑 کد یک‌بارمصرف</button>
-        ${x.devices ? `<button onclick="mgaRevoke('${ph}')">⏏️ خروج از گوشی‌ها</button>` : ''}<button class="del" onclick="mgaDel('${ph}')">🗑 حذف</button></div></div>` : ''}</div>`;
+function mgaSetF(k) { mgaF = mgaF === k || k === 'all' ? '' : k; mgaPage = 0; mgaRender(); }
+/* ── جدول مدیران: ۵۰ نفر در هر صفحه، مرتب‌سازی با زدن عنوان ستون، باز شدن جزئیات با زدن ردیف ── */
+const MGA_PER = 50;
+let mgaPage = 0, mgaSort = { k: 'last', d: -1 };
+const mgaDateS = t => t ? new Intl.DateTimeFormat('fa-IR-u-ca-persian', { day: 'numeric', month: 'short', timeZone: 'Asia/Tehran' }).format(t) : '';
+const mgaRank = x => mgaDead(x) ? 4 : x.valid_from && x.valid_from > Date.now() ? 3 : x.devices ? 0 : 1;
+function mgaShort(x) {
+  if (!x.active) return ['⛔ غیرفعال', '#B3261E'];
+  if (x.until && x.until < Date.now()) return ['⌛ تمام‌شده', '#B25B12'];
+  if (x.valid_from && x.valid_from > Date.now()) return ['⏳ از ' + mgaDateS(x.valid_from), '#6B5BA8'];
+  return x.devices ? ['🟢 وارد شده', '#1E7D4F'] : ['⚪ وارد نشده', '#777'];
+}
+const MGA_COLS = [
+  ['name', 'نام', x => mgaNorm(x.name)], ['phone', 'موبایل', x => x.phone], ['company', 'شرکت', x => mgaNorm(x.company || x.role)],
+  ['src', 'منبع', x => x.src === 'atabat' ? 0 : 1], ['st', 'وضعیت', mgaRank], ['until', 'اعتبار تا', x => x.until || 9e15], ['last', 'آخرین ورود', x => x.last_login || 0]];
+function mgaSortBy(k) { mgaSort = mgaSort.k === k ? { k, d: -mgaSort.d } : { k, d: k === 'last' ? -1 : 1 }; mgaPage = 0; mgaRenderList(); }
+function mgaDetHTML(x) {
+  const [st, col] = mgaStatus(x), ph = escH(x.phone);
+  return `<div class="mga-sub">${escH([x.role, x.company, MGA_CITIES[x.city] || x.city].filter(Boolean).join(' · ') || '—')}</div>
+    ${x.src === 'atabat' ? `<div class="mga-sub">🧭 خودکار از سفرهای عتبات: دسترسی از ${mgaDate(x.valid_from)} تا ${mgaDate(x.until)} (۱۵ روز قبل از ورود تا ۱۰ روز بعد از خروج)</div>` : x.trip_to ? `<div class="mga-sub">🧭 در سفرهای عتبات هم هست (سفر تا ${mgaDate(x.trip_to)})؛ چون دستی ثبت شده، نام و شرکتش دست نمی‌خورد.</div>` : ''}
+    <div class="mga-sub"><span style="color:${col};font-weight:800">${st}</span>${x.devices ? `، روی ${mgaN(x.devices)} گوشی` : ''}، آخرین ورود: ${mgaAgo(x.last_login)}${x.until ? `، تا ${mgaDate(x.until)}` : ''}</div>
+    <div class="mga-act"><button onclick="mgaEditOpen('${ph}')">✏️ ویرایش</button><button onclick="mgaOtp('${ph}')">🔑 کد یک‌بارمصرف</button>
+      ${x.devices ? `<button onclick="mgaRevoke('${ph}')">⏏️ خروج از گوشی‌ها</button>` : ''}<button class="del" onclick="mgaDel('${ph}')">🗑 حذف</button></div>`;
 }
 function mgaRenderList() {
   const el = document.getElementById('mgaList'); if (!el || !mgaData) return;
-  const P = mgaData.people;
-  if (!P.length) { el.innerHTML = '<div class="empty-msg">هنوز کسی ثبت نشده است. از «➕ افزودن یک نفر» یا «📄 ورود یک‌جا از اکسل» در پایین شروع کنید.</div>'; return; }
-  /* بدون جستجو و فیلتر، فهرست کامل نمایش داده نمی‌شود؛ فقط چند ورود اخیر */
-  if (!mgaQ.trim() && !mgaF) {
-    const R = P.filter(x => x.last_login).sort((a, b) => b.last_login - a.last_login).slice(0, 5);
-    el.innerHTML = `<div class="mga-hint">برای پیدا کردن یک نفر، نام یا شماره‌اش را در کادر بالا بنویسید؛ یا روی یکی از خانه‌های بالا بزنید.</div>
-      ${R.length ? `<div class="mga-cap">آخرین ورودها</div><div class="mga-list">${R.map(mgaRowHTML).join('')}</div>` : ''}`;
-    return;
-  }
-  const L = mgaFiltered();
-  el.innerHTML = L.length ? `<div class="mga-cap">${mgaN(L.length)} نفر${L.length > mgaShow ? ` · نمایش ${mgaN(mgaShow)} نفر اول` : ''}</div>
-    <div class="mga-list">${L.slice(0, mgaShow).map(mgaRowHTML).join('')}</div>
-    ${L.length > mgaShow ? `<button class="add-row-btn" onclick="mgaShow+=30;mgaRenderList()">نمایش ${mgaN(Math.min(30, L.length - mgaShow))} نفر بیشتر</button>` : ''}`
-    : '<div class="empty-msg">کسی با این جستجو پیدا نشد.</div>';
+  if (!mgaData.people.length) { el.innerHTML = '<div class="empty-msg">هنوز کسی ثبت نشده است. فایل افزونه‌ی عتبات را در کادر بالا بارگذاری کنید، یا از «➕ افزودن یک نفر» و «📄 ورود یک‌جا از اکسل» در پایین شروع کنید.</div>'; return; }
+  const c = MGA_COLS.find(x => x[0] === mgaSort.k) || MGA_COLS[6], f = c[2], d = mgaSort.d;
+  const L = mgaFiltered().sort((a, b) => { const x = f(a), y = f(b); return (typeof x === 'string' ? x.localeCompare(y, 'fa') : x - y) * d || mgaNorm(a.name).localeCompare(mgaNorm(b.name), 'fa'); });
+  if (!L.length) { el.innerHTML = '<div class="empty-msg">کسی با این جستجو پیدا نشد.</div>'; return; }
+  const pages = Math.ceil(L.length / MGA_PER); if (mgaPage >= pages) mgaPage = pages - 1;
+  const R = L.slice(mgaPage * MGA_PER, (mgaPage + 1) * MGA_PER);
+  const pager = pages > 1 ? `<div class="mgt-pg"><button ${mgaPage ? '' : 'disabled'} onclick="mgaPage--;mgaRenderList()">› قبلی</button>
+    <span>صفحه‌ی ${mgaN(mgaPage + 1)} از ${mgaN(pages)}</span><button ${mgaPage < pages - 1 ? '' : 'disabled'} onclick="mgaPage++;mgaRenderList()">بعدی ‹</button></div>` : '';
+  el.innerHTML = `<div class="mga-cap">${mgaN(L.length)} نفر · ردیف ${mgaN(mgaPage * MGA_PER + 1)} تا ${mgaN(mgaPage * MGA_PER + R.length)}</div>
+  <div class="mgt-wrap"><table class="mgt"><thead><tr>${MGA_COLS.map(([k, l]) => `<th class="c-${k}"><button onclick="mgaSortBy('${k}')" class="${mgaSort.k === k ? 'on' : ''}">${l} <span>${mgaSort.k === k ? (mgaSort.d > 0 ? '▲' : '▼') : '⇅'}</span></button></th>`).join('')}<th></th></tr></thead>
+  <tbody>${R.map(x => { const [st, col] = mgaShort(x), open = mgaOpen === x.phone, ph = escH(x.phone);
+    return `<tr class="mgt-r ${open ? 'open' : ''}" onclick="mgaOpen=mgaOpen==='${ph}'?'':'${ph}';mgaRenderList()">
+      <td class="c-name"><b>${escH(x.name)}</b></td><td class="c-phone" dir="ltr">${escH(mgaFaPhone(x.phone))}</td><td class="c-company">${escH(x.company || x.role || '')}</td>
+      <td class="c-src">${x.src === 'atabat' ? '<span class="mga-src">🧭 عتبات</span>' : '<span class="mgt-man">دستی</span>'}</td>
+      <td class="c-st" style="color:${col}">${st}</td><td class="c-until">${x.until ? mgaDateS(x.until) : '—'}</td><td class="c-last">${x.last_login ? mgaAgo(x.last_login) : '—'}</td><td class="mgt-chev">${open ? '▴' : '▾'}</td></tr>
+      ${open ? `<tr class="mgt-d"><td colspan="8">${mgaDetHTML(x)}</td></tr>` : ''}`; }).join('')}</tbody></table></div>${pager}`;
 }
 function mgaFormHTML() {
   const e = mgaEdit || {}, old = e.phone || '';
@@ -204,6 +216,17 @@ async function mgaImport(btn) {
   .mga-box{padding:4px 0 12px}
   .mga-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   @media(max-width:560px){.mga-form{grid-template-columns:1fr}}
+  .mgt-wrap{overflow-x:auto;border:1px solid var(--border-s);border-radius:12px;background:var(--card)}
+  .mgt{width:100%;border-collapse:collapse;font-size:13px}.mgt th{background:var(--card2,#f6f1e7);position:sticky;top:0;text-align:right;padding:0;white-space:nowrap}
+  .mgt th button{border:0;background:none;padding:9px 8px;font-family:var(--font);font-size:12.5px;font-weight:800;cursor:pointer;color:var(--text);width:100%;text-align:right}
+  .mgt th button span{color:var(--dim,#999);font-size:11px}.mgt th button.on span{color:#1E7D4F}
+  .mgt td{padding:7px 8px;border-top:1px solid var(--border-s);white-space:nowrap;vertical-align:middle}
+  .mgt td.c-name{white-space:normal;min-width:120px}.mgt td.c-company{white-space:normal;max-width:180px;color:var(--dim,#666)}
+  .mgt-r{cursor:pointer}.mgt-r:hover,.mgt-r.open{background:#1E7D4F0d}.mgt-chev{color:var(--dim,#999);width:20px}
+  .mgt-d td{background:#1E7D4F08;white-space:normal;padding:8px 12px}.mgt-man{font-size:11px;color:var(--dim,#888)}
+  .mgt-pg{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0;font-size:13px}
+  .mgt-pg button{border:1px solid var(--border-s);background:var(--card);border-radius:10px;padding:7px 14px;font-family:var(--font);cursor:pointer}.mgt-pg button:disabled{opacity:.4;cursor:default}
+  @media(max-width:640px){.mgt .c-src,.mgt .c-until,.mgt .c-company{display:none}}
   .mga-src{font-size:11px;background:#6B5BA81a;color:#5A4A96;border-radius:999px;padding:1px 6px;font-weight:700}
   .mg-sub{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}.mg-sub button{flex:1 1 160px;border:1px solid var(--border-s);background:var(--card);border-radius:12px;padding:10px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;color:var(--text)}
   .mg-sub button.on{background:#1E7D4F;color:#fff;border-color:#1E7D4F}.mg-hide{display:none!important}
@@ -412,14 +435,5 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   @media(max-width:620px){.mco-rep{grid-template-columns:28px 1fr 40px}.mco-rep [data-r="ir"],.mco-rep [data-r="iq"]{grid-column:2/3}}
 </style>`);
 
-/* ══ یک تب برای مدیران کاروان (= مدیران راهنما): «مدیران و دسترسی» و «سفرها از عتبات» ══ */
-function mgSubShow(k) {
-  const can = id => typeof STAFF === 'undefined' || !STAFF || STAFF.perms.has(id);
-  if (!can(k)) k = can('mgr') ? 'mgr' : 'trips';
-  try { localStorage.setItem('mg-sub', k); } catch (e) {}
-  document.querySelectorAll('#mgSub [data-k]').forEach(b => b.classList.toggle('on', b.dataset.k === k));
-  document.getElementById('card-mgr').classList.toggle('mg-hide', k !== 'mgr');
-  document.getElementById('card-trips').classList.toggle('mg-hide', k !== 'trips');
-  if (k === 'mgr') mgaLoad(); else if (typeof trLoad === 'function') trLoad();
-}
-function mgSubOpen(k) { let s = k; if (!s) try { s = localStorage.getItem('mg-sub'); } catch (e) {} mgSubShow(s || 'mgr'); }
+/* ══ تب «مدیران کاروان»: کادر راهنمای هفتگی (admin-trips.js) + جدول مدیران ══ */
+function mgSubOpen() { if (typeof STAFF === 'undefined' || !STAFF || STAFF.perms.has('mgr')) mgaLoad(); }
