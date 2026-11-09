@@ -82,3 +82,8 @@ CREATE TABLE IF NOT EXISTS hotel_geo (region_id INTEGER NOT NULL, hotel TEXT NOT
 -- اتصال مدیر منطقه به بازوی بله برای هشدار تاریخ خروج (پیام را worker hamyar-reviews می‌فرستد)
 CREATE TABLE IF NOT EXISTS team_bale (user_id INTEGER PRIMARY KEY, chat_id INTEGER NOT NULL, linked INTEGER NOT NULL, last_sent TEXT);
 CREATE TABLE IF NOT EXISTS team_bale_links (code TEXT PRIMARY KEY, user_id INTEGER NOT NULL, exp INTEGER NOT NULL);
+
+-- شهرها و «سرپرست مناطق» (role = 'super' با lead = 1)؛ عنوان نقش در team_cfg (lead_label)
+ALTER TABLE regions ADD COLUMN city TEXT;
+ALTER TABLE users ADD COLUMN lead INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS team_cfg (k TEXT PRIMARY KEY, v TEXT);

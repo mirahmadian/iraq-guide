@@ -270,3 +270,4 @@ tr[aria-current="true"] td{background:var(--pri-soft)}
 .spin{display:inline-block;width:18px;height:18px;border:2.5px solid var(--line,#ccc);border-top-color:var(--pri);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-4px;margin-inline-end:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.busy-bar i,.busy-hg,.spin{animation-duration:3s}}
+.city-h{font-size:17px;margin:8px 2px -2px;display:flex;align-items:center;gap:8px}
