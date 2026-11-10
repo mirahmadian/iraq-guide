@@ -62,6 +62,7 @@ const JDP = (() => {
         const jd = first + d - 1, off = (st.min != null && jd < st.min) || (st.max != null && jd > st.max);
         cells += `<button type="button" data-d="${jd}" class="${wcol(jd) === 6 ? 'fri ' : ''}${jd === t ? 'today ' : ''}${jd === st.val ? 'on' : ''}" ${off ? 'disabled' : ''}>${fa(d)}</button>`;
       }
+      for (let i = pad + n; i < 42; i++) cells += '<span></span>';   /* همیشه ۶ ردیف: ارتفاع تقویم بین ماه‌ها عوض نشود */
       body = `<div class="jdp-wd">${WD.map((w, i) => `<span class="${i === 6 ? 'fri' : ''}">${w}</span>`).join('')}</div><div class="jdp-grid">${cells}</div>`;
     }
     box.innerHTML = `<div class="jdp-h">${st.title ? `<div class="jdp-t">${st.title}</div>` : ''}
@@ -69,9 +70,12 @@ const JDP = (() => {
       <div class="jdp-nav"><button type="button" data-a="${mode === 'months' ? 'py' : 'pm'}" aria-label="${mode === 'months' ? 'سال قبل' : 'ماه قبل'}">${ARR_R}</button>
         <button type="button" class="jdp-mt" data-a="mode">${mode === 'months' ? 'سال ' + fa(y) : MONTHS[m - 1] + ' ' + fa(y)} <small>${mode === 'months' ? '▴' : '▾'}</small></button>
         <button type="button" data-a="${mode === 'months' ? 'ny' : 'nm'}" aria-label="${mode === 'months' ? 'سال بعد' : 'ماه بعد'}">${ARR_L}</button></div>
-      ${body}
+      <div class="jdp-bd" id="jdpBd">${body}</div>
       <div class="jdp-f"><button type="button" data-a="today" ${(st.min != null && t < st.min) || (st.max != null && t > st.max) ? 'disabled' : ''}>امروز</button>
         ${st.clear ? '<button type="button" data-a="clear">پاک کردن</button>' : ''}<button type="button" data-a="close">بستن</button></div>`;
+    /* فهرست ماه‌ها هم دقیقاً هم‌ارتفاع نمای روزها می‌شود */
+    const bd = document.getElementById('jdpBd');
+    if (mode === 'months') { if (st.bh) bd.style.height = st.bh + 'px'; } else st.bh = bd.offsetHeight;
   }
   function onClick(e) {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
@@ -127,6 +131,7 @@ const JDP = (() => {
     .jdp-nav>button:not(.jdp-mt) svg{display:block;margin:auto}
     .jdp-nav>button:not(.jdp-mt),.jdp-yr button{width:38px;height:38px;border-radius:12px;border:1px solid var(--border-s,var(--line,#e5e5e5));background:var(--card2,#f6f6f6);font-size:20px;line-height:1}
     .jdp-mt{flex:1;border:0;background:none;font-weight:900;font-size:16px;padding:8px;border-radius:12px}.jdp-mt:hover{background:var(--card2,#f3f3f3)}.jdp-mt small{font-size:11px;color:var(--muted,#888)}
+    .jdp-bd .jdp-ms{height:100%;grid-auto-rows:1fr}
     .jdp-wd,.jdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
     .jdp-wd span{font-size:12px;font-weight:800;color:var(--muted,#888);padding:6px 0}
     .jdp-grid button,.jdp-grid span{aspect-ratio:1;border-radius:50%;border:0;background:none;font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0}
