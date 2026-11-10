@@ -43,6 +43,10 @@ const JDP = (() => {
   const wcol = d => mod(d + 2, 7);
   const long = d => { const j = d2j(d); return `${['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'][wcol(d)]} ${fa(j.jd)} ${MONTHS[j.jm - 1]} ${fa(j.jy)}`; };
 
+  /* فلش‌ها SVG هستند تا در صفحه‌ی راست‌به‌چپ وارونه نشوند (نویسه‌های ‹ › خودکار آینه می‌شوند و رو به داخل می‌افتند).
+     قبلی (راست) فلش رو به راست، بعدی (چپ) فلش رو به چپ: هر دو رو به بیرون */
+  const arr = d => `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const ARR_R = arr('M9 5l7 7-7 7'), ARR_L = arr('M15 5l-7 7 7 7');
   let st = null;
   function render() {
     const box = document.getElementById('jdpBox'); if (!box || !st) return;
@@ -62,9 +66,9 @@ const JDP = (() => {
     }
     box.innerHTML = `<div class="jdp-h">${st.title ? `<div class="jdp-t">${st.title}</div>` : ''}
         <div class="jdp-sel">${st.val != null ? long(st.val) : 'تاریخی انتخاب نشده'}</div></div>
-      <div class="jdp-nav"><button type="button" data-a="${mode === 'months' ? 'py' : 'pm'}" aria-label="${mode === 'months' ? 'سال قبل' : 'ماه قبل'}">›</button>
+      <div class="jdp-nav"><button type="button" data-a="${mode === 'months' ? 'py' : 'pm'}" aria-label="${mode === 'months' ? 'سال قبل' : 'ماه قبل'}">${ARR_R}</button>
         <button type="button" class="jdp-mt" data-a="mode">${mode === 'months' ? 'سال ' + fa(y) : MONTHS[m - 1] + ' ' + fa(y)} <small>${mode === 'months' ? '▴' : '▾'}</small></button>
-        <button type="button" data-a="${mode === 'months' ? 'ny' : 'nm'}" aria-label="${mode === 'months' ? 'سال بعد' : 'ماه بعد'}">‹</button></div>
+        <button type="button" data-a="${mode === 'months' ? 'ny' : 'nm'}" aria-label="${mode === 'months' ? 'سال بعد' : 'ماه بعد'}">${ARR_L}</button></div>
       ${body}
       <div class="jdp-f"><button type="button" data-a="today" ${(st.min != null && t < st.min) || (st.max != null && t > st.max) ? 'disabled' : ''}>امروز</button>
         ${st.clear ? '<button type="button" data-a="clear">پاک کردن</button>' : ''}<button type="button" data-a="close">بستن</button></div>`;
@@ -120,6 +124,7 @@ const JDP = (() => {
     .jdp-h{text-align:center;padding:2px 4px 10px;border-bottom:1px solid var(--border-s,var(--line,#eee));margin-bottom:8px}
     .jdp-t{font-size:12px;color:var(--muted,#777);margin-bottom:2px}.jdp-sel{font-weight:900;font-size:15px;color:var(--pri-ink,var(--pri,#0E5A44))}
     .jdp-nav{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+    .jdp-nav>button:not(.jdp-mt) svg{display:block;margin:auto}
     .jdp-nav>button:not(.jdp-mt),.jdp-yr button{width:38px;height:38px;border-radius:12px;border:1px solid var(--border-s,var(--line,#e5e5e5));background:var(--card2,#f6f6f6);font-size:20px;line-height:1}
     .jdp-mt{flex:1;border:0;background:none;font-weight:900;font-size:16px;padding:8px;border-radius:12px}.jdp-mt:hover{background:var(--card2,#f3f3f3)}.jdp-mt small{font-size:11px;color:var(--muted,#888)}
     .jdp-wd,.jdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
