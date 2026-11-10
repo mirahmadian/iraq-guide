@@ -48,8 +48,19 @@ function ftPhoto(name) {
 }
 
 /* ── کارت صفحه‌ی اول ── */
-function foodTodayHTML() {
-  if (typeof foodVisible !== 'function' || !foodVisible() || !findPlan()) return '';
+/* آخرین کارتی که روی صفحه‌ی اول چیده شده؛ اگر با حالت فعلی فرق کند (روز سفر عوض شد، وعده عوض شد، …) صفحه‌ی اول دوباره چیده می‌شود */
+let ftShown = null;
+function foodTodayHTML() { ftShown = ftCardHTML(); return ftShown; }
+function ftSync() {
+  if (document.getElementById('foodView')?.classList.contains('open') || document.querySelector('.overlay.open')) return;
+  if (typeof renderHome !== 'function' || !document.querySelector('.home')) return;
+  if (ftCardHTML() !== ftShown) { try { renderHome(); } catch (e) {} }
+}
+setInterval(ftSync, 60000);
+function ftCardHTML() {
+  if (typeof foodVisible !== 'function' || !foodVisible()) return '';
+  if (!findPlan()) return typeof needsGrade === 'function' && needsGrade() ? `<button class="ft-card soft" onclick="ftSetup()"><span class="ft-ic" aria-hidden="true">🍽️</span><span class="ft-tx"><b>امروز چی داریم؟</b>
+    <small>درجه‌ی هتل محل اسکان را انتخاب کنید تا منوی شما را همین‌جا ببینید</small></span><span class="ft-go" aria-hidden="true">‹</span></button>` : '';
   const ti = tripInfo();
   if (!ti) return `<button class="ft-card soft" onclick="ftSetup()"><span class="ft-ic" aria-hidden="true">🍽️</span><span class="ft-tx"><b>امروز چی داریم؟</b>
     <small>روز ورود کاروان را انتخاب کنید تا منوی هر وعده را همین‌جا ببینید</small></span><span class="ft-go" aria-hidden="true">‹</span></button>`;
@@ -183,7 +194,7 @@ async function ftVSend(btn) {
   const run = () => { if (document.getElementById('splash') && Date.now() - t0 < 9000) return setTimeout(run, 400); if (!ftPopCheck() && document.querySelector('.overlay.open') && tries++ < 30) setTimeout(run, 2000); };
   const go = () => setTimeout(run, 3500);
   if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tries = 0; setTimeout(run, 1200); if (typeof renderHome === 'function' && document.querySelector('.ft-card')) try { renderHome(); } catch (e) {} } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tries = 0; setTimeout(run, 1200); ftSync(); } });
 })(Date.now());
 
 document.head.insertAdjacentHTML('beforeend', `<style>

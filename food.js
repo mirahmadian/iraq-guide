@@ -248,6 +248,7 @@ function hideFood() {
   if (v) v.classList.remove('open');
   document.documentElement.style.overflow = '';
   try { sessionStorage.removeItem('caravan-food-open'); } catch (e) {}
+  if (typeof ftSync === 'function') ftSync();   /* کارت «امروز چی داریم؟» صفحه‌ی اول با انتخاب تازه به‌روز شود */
 }
 function closeFood() {
   if (history.state && history.state.food) history.back(); else hideFood();
