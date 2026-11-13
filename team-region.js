@@ -12,9 +12,11 @@ window.startRegion = (me, opts) => {
   shell(); go((location.hash.slice(1) || 'dash'));
 };
 /* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
-const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['account', '🔐 حساب من']];
+const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
+/* دسترسی‌هایی که سرپرست مناطق داده (مدیر سامانه/سرپرست که پنل منطقه را باز کرده همه را دارد) */
+const canDo = k => !A.me.perms || !!A.me.perms[k];
 /* فرم‌ساز یک فرم واحد برای همه‌ی مناطق است و در پنل خود سرپرست مناطق (team-super.js) باز می‌شود، نه در پنل منطقه */
-const tabs = () => (A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine') : TABS).filter(t => t[0] !== 'form');
+const tabs = () => (A.opts.region ? TABS.filter(t => t[0] !== 'account' && t[0] !== 'mine' && t[0] !== 'guide') : TABS).filter(t => t[0] !== 'form' && (t[0] !== 'staff' || canDo('staff')));
 let FORM_API = '/api/admin/form';
 window.openFormBuilder = me => { A.me = me; A.opts = A.opts || {}; A.tab = 'form'; FORM_API = '/api/super/form'; loadForm(); };
 window.leaveFormBuilder = () => { if (A.tab === 'form' && A.formDirty && !confirmLeave()) return false; A.tab = ''; window.onbeforeunload = null; return true; };
@@ -33,7 +35,7 @@ function go(tab) {
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ dash: loadDash, quality: () => loadQuality(), cos: () => loadCompanies(), staff: () => loadStaff(main(), {}), import: renderImport, form: loadForm, users: loadUsers, account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
+  ({ dash: loadDash, quality: () => loadQuality(), cos: () => loadCompanies(), staff: () => loadStaff(main(), {}), import: renderImport, form: loadForm, users: loadUsers, guide: () => renderGuide(main(), 'region', A.me.leadLabel || 'سرپرست مناطق', A.me.perms), account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
 }
 let leaveSure = false;
 function confirmLeave() { if (leaveSure) { leaveSure = false; A.formDirty = false; return true; } leaveSure = true; toast('تغییرهای فرم ذخیره نشده‌اند. برای رها کردن، دوباره روی تب بزنید.', true); setTimeout(() => leaveSure = false, 5000); return false; }
@@ -205,7 +207,7 @@ function wireImport(p) {
     try {
       const r = await api('/api/admin/import/commit', { body: { token: p.token, title: m.querySelector('#im-title').value, map }, timeout: 90000 });
       A.imp = null; A.temp = r.created.length ? r.created : null;
-      toast(`«${r.title}» ثبت شد: ${fa(r.assigned)} ورودی به مدیران ثابت سپرده شد.`); renderImport();
+      toast(`«${r.title}» ثبت شد: ${fa(r.assigned)} ورودی به مدیران ثابت سپرده شد.` + (r.skipped && r.skipped.length ? ` حساب این افراد ساخته نشد چون دسترسی «تعریف مدیران ثابت» را ندارید: ${r.skipped.join('، ')}` : ''), !!(r.skipped && r.skipped.length)); renderImport();
     } catch (e) { err.textContent = e.message; b.disabled = false; b.textContent = 'ثبت این هفته'; }
   };
 }
@@ -340,6 +342,7 @@ async function loadUsers() { try { A.users = await api('/api/admin/users'); } ca
 function renderUsers() {
   const m = main();
   m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز ساخته شد') : ''}
+    ${canDo('fm') ? '' : `<div class="card" style="border-color:var(--warn)"><b>🔒 فقط مشاهده</b><span class="muted">${esc(A.me.leadLabel || 'سرپرست مناطق')} هنوز دسترسی «تعریف مدیران ثابت» را به شما نداده است. برای گرفتن این دسترسی با او تماس بگیرید.</span></div>`}
     <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2></div>
       <p class="hint">حساب‌ها معمولاً هنگام وارد کردن اکسل هفتگی خودکار ساخته می‌شوند. «شیت» همان نام شیت این نفر در اکسل است تا هفته‌های بعد خودکار شناخته شود.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی</th><th>شیت</th><th>ورودی‌های سپرده‌شده</th><th>وضعیت</th><th>اثر انگشت</th><th>گزارش</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
@@ -348,19 +351,20 @@ function renderUsers() {
         <td>${!u.active ? '<span class="pill bad">غیرفعال</span>' : !u.last_login ? '<span class="pill warn">هنوز وارد نشده</span>' : '<span class="pill ok">فعال</span>'}</td>
         <td>${u.passkeys ? `${fa(u.passkeys)} دستگاه <button class="btn small ghost" data-uclr="${u.id}">حذف</button>` : '<span class="dim">—</span>'}</td><td class="num">${fa(u.reports)}</td><td class="dim">${u.last_login ? fmtTs(u.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-upw="${u.id}" placeholder="رمز تازه (خالی=تصادفی)" style="min-width:150px" autocomplete="new-password"><button class="btn small ghost" data-ureset="${u.id}">تعیین رمز</button><button class="btn small ${u.active ? 'danger' : 'okb'}" data-uact="${u.id}" data-v="${u.active ? 0 : 1}">${u.active ? 'غیرفعال' : 'فعال'}</button></div></td></tr>`).join('') || '<tr><td colspan="9" class="empty">هنوز کسی نیست.</td></tr>'}</tbody></table></div></div>
-    <form class="card" id="nu" novalidate><div class="card-h"><h2>افزودن دستی</h2></div>
+    ${canDo('fm') ? '' : '<!--'}<form class="card" id="nu" novalidate><div class="card-h"><h2>افزودن دستی</h2></div>
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 200px"><label class="label" for="nu-name">نام و نام خانوادگی</label><input id="nu-name" maxlength="80"></div>
         <div class="field" style="flex:1 1 160px"><label class="label" for="nu-nid">کد ملی</label><input id="nu-nid" inputmode="numeric" maxlength="12"></div>
         <div class="field" style="flex:1 1 120px"><label class="label" for="nu-sheet">نام شیت (اختیاری)</label><input id="nu-sheet" maxlength="60" dir="ltr"></div>
         <div class="field" style="flex:1 1 150px"><label class="label" for="nu-pw">رمز (خالی = رمز تصادفی)</label><input id="nu-pw" maxlength="60" autocomplete="new-password"></div><button class="btn" type="submit">افزودن</button></div>
       <p class="hint">نام کاربری هر نفر کد ملی اوست. اگر رمز را خودتان بنویسید (دست‌کم ۶ کاراکتر)، همان می‌ماند؛ اگر خالی بگذارید، یک رمز تصادفی ساخته می‌شود. مدیر ثابت با همین رمز وارد می‌شود و لازم نیست عوضش کند.</p>
-      <span class="err" id="nu-err"></span></form>`;
+      <span class="err" id="nu-err"></span></form>${canDo('fm') ? '' : '-->'}`;
+  if (!canDo('fm')) { m.querySelectorAll('[data-uname],[data-upw],[data-ureset],[data-uact],[data-uclr]').forEach(x => { x.disabled = true; }); m.querySelectorAll('[data-usheet]').forEach(x => { if (!x.dataset.unameFixed) x.disabled = true; }); }
   const saveEdit = async id => { const ni = m.querySelector(`[data-uname="${id}"]`), name = ni ? ni.value : m.querySelector(`[data-usheet="${id}"]`).dataset.unameFixed, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { const r = await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast(!sheet.trim() ? 'ذخیره شد.' : r.entries ? `ذخیره شد؛ ${fa(r.entries)} ورودی به او سپرده شد.` : `ذخیره شد، ولی در اکسل‌های واردشده شیتی به نام «${sheet.trim()}» پیدا نشد.`, !r.entries && !!sheet.trim()); loadUsers(); } catch (e) { toast(e.message, true); } };
   m.querySelectorAll('[data-uname],[data-usheet]').forEach(i => i.onchange = () => saveEdit(i.dataset.uname || i.dataset.usheet));
   m.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } b.disabled = true; b.textContent = '…'; try { A.temp = [await api(`/api/admin/users/${b.dataset.ureset}/reset`, { body: { password: m.querySelector(`[data-upw="${b.dataset.ureset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; b.textContent = 'تعیین رمز'; toast(e.message, true); } });
   m.querySelectorAll('[data-uact]').forEach(b => b.onclick = async () => { try { await api(`/api/admin/users/${b.dataset.uact}/active`, { body: { active: b.dataset.v === '1' } }); loadUsers(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-uclr]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api(`/api/admin/users/${b.dataset.uclr}/passkeys`, { body: {} }); loadUsers(); } catch (e) { toast(e.message, true); } });
-  m.querySelector('#nu').onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'), sb = m.querySelector('#nu [type=submit]'); err.textContent = '';
+  if (m.querySelector('#nu')) m.querySelector('#nu').onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'), sb = m.querySelector('#nu [type=submit]'); err.textContent = '';
     if (sb.disabled) return; sb.disabled = true;
     try { A.temp = [await api('/api/admin/users', { body: { name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, sheet: m.querySelector('#nu-sheet').value, password: m.querySelector('#nu-pw').value } })]; loadUsers(); } catch (x) { sb.disabled = false; err.textContent = x.message; } };
 }

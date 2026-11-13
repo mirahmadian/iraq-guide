@@ -3,7 +3,7 @@
 /* مدیر سامانه: همه‌ی مناطق، مدیران منطقه و همه‌ی کاربرانی که ساخته‌اند */
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
-const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['account', '🔐 حساب من']];
+const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
 /* سرپرستی که خودش هم هتل دارد (منطقه و شیت روی حسابش)، تب «هتل‌های من» هم دارد */
 const tabs = () => { const T = U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS.slice(); if (U.me.lead && U.me.region_id) T.splice(T.length - 1, 0, ['mine', '🏨 هتل‌های من']); return T; };
 
@@ -20,7 +20,7 @@ function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, form: () => openFormBuilder(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, guide: () => renderGuide(main(), 'lead', leadL()), form: () => openFormBuilder(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const leadL = () => (U.O && U.O.leadLabel) || U.me.leadLabel || 'سرپرست مناطق';
 const full = () => !U.me.lead;
@@ -49,20 +49,44 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 function personRow(x, extra) {
   return `<li><span class="pn"><b>${esc(x.name)}</b> ${extra || ''}</span><span class="pm">${x.hotels ? `<span class="num">${fa(x.hotels)}</span> هتل` : ''} ${statusPill(x)}</span></li>`;
 }
+/* دسترسی‌های مدیر منطقه */
+const PERM_L = { fm: '🏨 تعریف مدیران ثابت', staff: '👷 تعریف آشپزها و عوامل' };
+const permChips = p => p ? Object.keys(PERM_L).map(k => `<span class="pc ${p[k] ? 'on' : 'off'}" title="${p[k] ? 'دارد' : 'ندارد'}">${p[k] ? '✓' : '✕'} ${PERM_L[k].slice(3)}</span>`).join('') : '';
+const permBoxes = (id, p) => Object.keys(PERM_L).map(k => `<label class="pchk"><input type="checkbox" data-perm="${k}" ${!p || p[k] ? 'checked' : ''}${id ? ` data-pu="${id}"` : ''}> ${PERM_L[k]}</label>`).join('');
+const readPerms = box => Object.fromEntries([...box.querySelectorAll('[data-perm]')].map(i => [i.dataset.perm, i.checked]));
+const fmtD = t => t ? new Date(t).toLocaleDateString('fa-IR-u-ca-persian', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+function mgrBlock(r) {
+  const act = (r.people || []).filter(x => x.role === 'region' && x.active), T = r.terms || [];
+  return `<details class="rg-mg"><summary>👔 مدیر منطقه: دسترسی‌ها، تعویض برای دوره‌ی تازه، سابقه</summary>
+    ${act.map(x => `<div class="mg-row" data-pbox="${x.id}"><b>${esc(x.name)}</b> <span class="dim num">${faS(x.nid)}</span>
+      <div class="row" style="margin-top:6px">${permBoxes(x.id, x.perms)}<button class="btn small ghost" data-psave="${x.id}">ذخیره‌ی دسترسی</button></div></div>`).join('') || '<p class="hint">این منطقه الان مدیر منطقه‌ی فعال ندارد.</p>'}
+    <form class="mg-new" data-ho="${r.id}" novalidate><h4>🔁 ${act.length ? 'تعویض مدیر منطقه (دوره‌ی تازه)' : 'تعیین مدیر منطقه'}</h4>
+      <div class="row" style="align-items:flex-end">
+        <div class="field" style="flex:1 1 180px"><label class="label">نام و نام خانوادگی</label><input data-hn maxlength="80"></div>
+        <div class="field" style="flex:1 1 140px"><label class="label">کد ملی (نام کاربری)</label><input data-hi inputmode="numeric" maxlength="12" dir="ltr"></div>
+        <div class="field" style="flex:1 1 140px"><label class="label">رمز (خالی = موقت)</label><input data-hp maxlength="60" autocomplete="new-password"></div></div>
+      <div class="row" style="margin-top:6px">${permBoxes(0, null)}</div>
+      ${act.length ? `<label class="pchk" style="margin-top:6px"><input type="checkbox" data-hk> مدیر فعلی (${esc(act.map(x => x.name).join('، '))}) هم فعال بماند</label>` : ''}
+      <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید.</p>
+      <button class="btn" type="submit">ثبت</button> <span class="err" data-he></span></form>
+    ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span></li>`).join('')}</ul>` : ''}
+  </details>`;
+}
 function regionCard(r) {
-  const P = r.people || [], mgr = P.filter(x => x.role === 'region'), hot = P.filter(x => x.role === 'fm' || x.sheet);
+  const P = r.people || [], mgr = P.filter(x => x.role === 'region' && x.active), hot = P.filter(x => x.role === 'fm' || x.sheet);
   const st = r.staff || [], stN = st.reduce((a, x) => a + x.n, 0), stSoon = st.reduce((a, x) => a + x.soon, 0);
   return `<div class="card rg ${cityCls(r.city)}"><div class="card-h"><h2>🗺️ ${esc(r.name)} ${r.city !== r.name ? cityTag(r.city) : ''}</h2>
       <div class="row"><button class="btn small" data-open="${r.id}">ورود به پنل این منطقه ←</button><button class="btn small ghost" data-users="${r.id}">👥 کاربران</button></div></div>
     <div class="rg-stats"><span>هفته‌ی واردشده <b class="num">${fa(r.weeks)}</b></span><span>گزارش <b class="num">${fa(r.reports)}</b></span><span>نقص <b class="num">${fa(r.defects)}</b></span>
       <span class="${r.open ? 'bad' : ''}">نقص باز <b class="num">${fa(r.open || 0)}</b></span><span class="dim">آخرین گزارش: ${r.last_report ? fmtTs(r.last_report) : '—'}</span></div>
     <div class="rg-grid">
-      <section class="rg-sec reg"><h3>👔 مدیر منطقه <span class="dim">(${fa(mgr.length)})</span></h3><ul>${mgr.map(x => personRow(x, x.sheet ? '<span class="rb fm sm">+ مدیر ثابت</span>' : '')).join('') || '<li class="dim">هنوز مدیر منطقه ندارد.</li>'}</ul></section>
+      <section class="rg-sec reg"><h3>👔 مدیر منطقه <span class="dim">(${fa(mgr.length)})</span></h3><ul>${mgr.map(x => personRow(x, (x.sheet ? '<span class="rb fm sm">+ مدیر ثابت</span>' : '') + (x.active ? `<span class="pcs">${permChips(x.perms)}</span>` : ''))).join('') || '<li class="dim">هنوز مدیر منطقه ندارد.</li>'}</ul></section>
       <section class="rg-sec fm"><h3>🏨 مدیران ثابت <span class="dim">(${fa(hot.length)})</span></h3><ul>${hot.map(x => personRow(x, x.lead ? `<span class="rb lead sm">⭐ ${esc(leadL())}</span>` : x.role === 'region' ? '<span class="rb reg sm">مدیر منطقه</span>' : '')).join('') || '<li class="dim">هنوز مدیر ثابتی ندارد.</li>'}</ul></section>
       <section class="rg-sec st"><h3>👷 عوامل <span class="dim">(${fa(stN)})</span></h3><ul>${st.map(x => `<li><span class="pn"><b>${esc(x.role)}</b></span><span class="pm"><span class="num">${fa(x.n)}</span> نفر ${x.soon ? `<span class="pill bad">${fa(x.soon)} نزدیک خروج</span>` : ''}</span></li>`).join('') || '<li class="dim">هنوز ثبت نشده (در پنل منطقه، تب «👷 عوامل»).</li>'}</ul>
         ${stSoon ? `<p class="hint" style="color:var(--bad)">⚠️ ${fa(stSoon)} نفر تا ۵ روز دیگر باید از عراق خارج شوند.</p>` : ''}</section>
     </div>
-    ${full() ? `<details class="rg-edit"><summary>✏️ تغییر نام یا شهر این منطقه</summary><div class="row"><select class="sel" data-rcity="${r.id}" aria-label="شهر">${U.O.cities.map(x => `<option ${x === r.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select><input class="inp" style="max-width:220px" data-rname="${r.id}" value="${esc(r.name)}" maxlength="80" aria-label="نام منطقه"><button class="btn small ghost" data-rsave="${r.id}">ذخیره</button></div></details>` : ''}</div>`;
+    ${mgrBlock(r)}
+    <details class="rg-edit"><summary>✏️ تغییر نام یا شهر این منطقه</summary><div class="row"><select class="sel" data-rcity="${r.id}" aria-label="شهر">${U.O.cities.map(x => `<option ${x === r.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select><input class="inp" style="max-width:220px" data-rname="${r.id}" value="${esc(r.name)}" maxlength="80" aria-label="نام منطقه"><button class="btn small ghost" data-rsave="${r.id}">ذخیره</button>${!(r.people || []).length && !r.weeks && !(r.staff || []).length ? `<button class="btn small danger" data-rdel="${r.id}">🗑️ حذف این منطقه‌ی خالی</button>` : ''}</div></details></div>`;
 }
 function renderRegions() {
   const m = main(), RA = U.O.regions, L = U.O.leads || [];
@@ -80,7 +104,7 @@ function renderRegions() {
       ${cities.map(c => { const o = openOf(c); return `<button class="${cityCls(c)}" data-city="${esc(c)}" aria-pressed="${U.city === c}"><i></i>${esc(c || 'بدون شهر')} <span class="n">${fa(RA.filter(r => inCity(r, c)).length)} منطقه</span>${o ? `<span class="ob" title="نقص باز">${fa(o)}</span>` : ''}</button>`; }).join('')}</nav>
     <div class="kpis k6">
       <div class="kpi"><span class="v num">${fa(R.length)}</span><span class="k">منطقه</span></div>
-      <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'region'))}</span><span class="k">👔 مدیر منطقه</span></div>
+      <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'region' && x.active))}</span><span class="k">👔 مدیر منطقه</span></div>
       <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'fm' || x.sheet))}</span><span class="k">🏨 مدیر ثابت</span></div>
       <div class="kpi"><span class="v num">${fa(R.reduce((a, r) => a + (r.staff || []).reduce((b, x) => b + x.n, 0), 0))}</span><span class="k">👷 عوامل</span></div>
       <div class="kpi"><span class="v num">${fa(tot('reports'))}</span><span class="k">گزارش ثبت‌شده</span></div>
@@ -88,14 +112,14 @@ function renderRegions() {
     </div>
     ${(U.city ? [U.city] : cities).map(c => `<h2 class="city-h ${cityCls(c)}"><i></i>🕌 ${esc(c || 'بدون شهر')} <span class="dim" style="font-size:13px;font-weight:500">(${fa(RA.filter(r => inCity(r, c)).length)} منطقه)</span></h2>
       ${RA.filter(r => inCity(r, c)).map(regionCard).join('')}`).join('') || '<div class="empty">هنوز منطقه‌ای ساخته نشده.</div>'}
-    <details class="card setx" ${U.setOpen ? 'open' : ''}><summary><h2>⚙️ تنظیمات و افزودن</h2><span class="dim">کاربر جدید${full() ? '، منطقه‌ی جدید، عنوان نقش' : ''}</span></summary>
-    ${newUserForm(RA, 'region')}
-    ${full() ? `<form class="card" id="nr" novalidate><div class="card-h"><h2>➕ منطقه‌ی جدید</h2></div>
+    <details class="card setx" ${U.setOpen ? 'open' : ''}><summary><h2>⚙️ تنظیمات و افزودن</h2><span class="dim">منطقه‌ی جدید، کاربر جدید${full() ? '، عنوان نقش' : ''}</span></summary>
+    <form class="card" id="nr" novalidate><div class="card-h"><h2>➕ منطقه‌ی جدید</h2></div>
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 160px"><label class="label" for="nr-city">شهر</label><select id="nr-city">${U.O.cities.map(x => `<option ${x === U.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
         <div class="field" style="flex:1 1 220px"><label class="label" for="nr-name">نام منطقه</label><input id="nr-name" maxlength="80" placeholder="مثلاً کربلا ۲ (بین‌الحرمین)"></div><button class="btn" type="submit">ساختن</button></div>
-      <p class="hint">هر شهر می‌تواند یک یا چند منطقه داشته باشد. نام منطقه باید یکتا باشد.</p><span class="err" id="nr-err"></span></form>
-    <form class="card" id="ll" novalidate><div class="card-h"><h2>🏷️ عنوان نقش «${esc(leadL())}»</h2></div>
-      <p class="hint">نقشی یک سطح بالاتر از مدیر منطقه: پنل همه‌ی شهرها و مناطق را می‌بیند (داشبورد، کیفیت، اکسل هفتگی، عوامل) و مدیر منطقه و مدیر ثابت می‌سازد؛ ولی منطقه نمی‌سازد و به حساب شما و هم‌سطح‌هایش دسترسی ندارد.</p>
+      <p class="hint">هر شهر می‌تواند یک یا چند منطقه داشته باشد. نام منطقه باید یکتا باشد. بعد از ساختن، در کارت همان منطقه با «👔 مدیر منطقه ← تعیین مدیر منطقه» مدیرش را بگذارید.</p><span class="err" id="nr-err"></span></form>
+    ${newUserForm(RA, 'region')}
+    ${full() ? `<form class="card" id="ll" novalidate><div class="card-h"><h2>🏷️ عنوان نقش «${esc(leadL())}»</h2></div>
+      <p class="hint">نقشی یک سطح بالاتر از مدیر منطقه: پنل همه‌ی شهرها و مناطق را می‌بیند (داشبورد، کیفیت، اکسل هفتگی، عوامل) و منطقه و مدیر منطقه می‌سازد، مدیران منطقه را هر دوره عوض می‌کند و به آن‌ها دسترسی می‌دهد؛ ولی به حساب شما و هم‌سطح‌هایش دسترسی ندارد.</p>
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 220px"><label class="label" for="ll-v">عنوان</label><input id="ll-v" maxlength="40" value="${esc(leadL())}"></div><button class="btn ghost" type="submit">ذخیره</button></div></form>` : ''}
     </details>`;
   wireTemp(m);
@@ -104,6 +128,20 @@ function renderRegions() {
   m.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const r = RA.find(x => x.id === +b.dataset.open); startRegion(U.me, { region: r.id, regionName: regLabel(r), onBack: () => startSuper(U.me) }); });
   m.querySelectorAll('[data-users]').forEach(b => b.onclick = () => { U.region = +b.dataset.users; go('users'); });
   m.querySelectorAll('[data-rsave]').forEach(b => b.onclick = async () => { try { await api('/api/super/regions/' + b.dataset.rsave, { body: { name: m.querySelector(`[data-rname="${b.dataset.rsave}"]`).value, city: m.querySelector(`[data-rcity="${b.dataset.rsave}"]`).value } }); toast('ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-rdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api(`/api/super/regions/${b.dataset.rdel}/delete`, { body: {} }); toast('منطقه حذف شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.psave}/perms`, { body: readPerms(m.querySelector(`[data-pbox="${b.dataset.psave}"]`)) }); toast('دسترسی‌ها ذخیره شد؛ از درخواست بعدی مدیر منطقه اعمال می‌شود.'); loadRegions(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-ho]').forEach(f => f.onsubmit = async e => {
+    e.preventDefault(); const sb = f.querySelector('[type=submit]'), er = f.querySelector('[data-he]'); er.textContent = ''; if (sb.disabled) return;
+    const k = f.querySelector('[data-hk]');
+    if (sb.dataset.sure !== '1' && !(k && k.checked) && f.closest('.rg-mg').querySelector('.mg-row')) { sb.dataset.sure = '1'; sb.textContent = 'مطمئنید؟ مدیر فعلی غیرفعال می‌شود'; return; }
+    sb.disabled = true;
+    try {
+      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f), keepOld: !!(k && k.checked) } });
+      if (r.password) U.temp = [r];
+      toast(`«${r.name}» مدیر منطقه شد${r.ended ? `؛ ${fa(r.ended)} مدیر قبلی غیرفعال شد` : ''}${r.kept ? ' (با همان رمز قبلی خودش وارد می‌شود)' : ''}.`);
+      loadRegions();
+    } catch (x) { sb.disabled = false; sb.dataset.sure = ''; sb.textContent = 'ثبت'; er.textContent = x.message; }
+  });
   const nr = m.querySelector('#nr'); if (nr) nr.onsubmit = async e => { e.preventDefault(); try { await api('/api/super/regions', { body: { city: m.querySelector('#nr-city').value, name: m.querySelector('#nr-name').value } }); toast('منطقه ساخته شد.'); loadRegions(); } catch (x) { m.querySelector('#nr-err').textContent = x.message; } };
   const ll = m.querySelector('#ll'); if (ll) ll.onsubmit = async e => { e.preventDefault(); try { await api('/api/super/cfg', { body: { leadLabel: m.querySelector('#ll-v').value } }); toast('ذخیره شد.'); U.O = null; loadRegions(); } catch (x) { toast(x.message, true); } };
   wireNewUser(m);
@@ -117,17 +155,18 @@ function newUserForm(R, role) {
       <div class="field" style="flex:1 1 200px"><label class="label" for="nu-name">نام و نام خانوادگی</label><input id="nu-name" maxlength="80"></div>
       <div class="field" style="flex:1 1 150px"><label class="label" for="nu-nid">کد ملی</label><input id="nu-nid" inputmode="numeric" maxlength="12"></div>
       <div class="field" style="flex:1 1 150px"><label class="label" for="nu-pw">رمز (خالی = موقت)</label><input id="nu-pw" maxlength="60" autocomplete="new-password"></div>
-      <button class="btn" type="submit">ساختن</button></div><span class="err" id="nu-err"></span></form>`;
+      <button class="btn" type="submit">ساختن</button></div>
+    <div class="row nu-perms" style="margin-top:6px"><span class="dim">دسترسی‌های مدیر منطقه:</span> ${permBoxes(0, null)}</div><span class="err" id="nu-err"></span></form>`;
 }
 function wireNewUser(m) {
   const f = m.querySelector('#nu'); if (!f) return;
   const R = U.O.regions, role = f.querySelector('#nu-role'), city = f.querySelector('#nu-city'), reg = f.querySelector('#nu-region');
   const fillReg = () => { const L = R.filter(r => r.city === city.value); reg.innerHTML = L.map(r => `<option value="${r.id}" ${U.region === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join(''); };
-  const syncRole = () => f.querySelectorAll('.nu-reg').forEach(x => x.hidden = role.value === 'lead');
+  const syncRole = () => { f.querySelectorAll('.nu-reg').forEach(x => x.hidden = role.value === 'lead'); f.querySelector('.nu-perms').hidden = role.value !== 'region'; };
   city.onchange = fillReg; role.onchange = syncRole; fillReg(); syncRole();
   f.onsubmit = async e => { e.preventDefault(); const err = m.querySelector('#nu-err'), sb = f.querySelector('[type=submit]'); err.textContent = '';
     if (sb.disabled) return; sb.disabled = true;
-    try { U.temp = [await api('/api/super/users', { body: { role: m.querySelector('#nu-role').value, region_id: m.querySelector('#nu-role').value === 'lead' ? 0 : +m.querySelector('#nu-region').value, name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, password: m.querySelector('#nu-pw').value } })]; go(U.tab); }
+    try { U.temp = [await api('/api/super/users', { body: { role: m.querySelector('#nu-role').value, region_id: m.querySelector('#nu-role').value === 'lead' ? 0 : +m.querySelector('#nu-region').value, name: m.querySelector('#nu-name').value, nid: m.querySelector('#nu-nid').value, password: m.querySelector('#nu-pw').value, perms: readPerms(f.querySelector('.nu-perms')) } })]; U.O = null; go(U.tab); }
     catch (x) { sb.disabled = false; err.textContent = x.message; } };
 }
 

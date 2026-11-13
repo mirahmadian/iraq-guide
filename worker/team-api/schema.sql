@@ -87,3 +87,8 @@ CREATE TABLE IF NOT EXISTS team_bale_links (code TEXT PRIMARY KEY, user_id INTEG
 ALTER TABLE regions ADD COLUMN city TEXT;
 ALTER TABLE users ADD COLUMN lead INTEGER NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS team_cfg (k TEXT PRIMARY KEY, v TEXT);
+
+-- دسترسی‌های مدیر منطقه که سرپرست مناطق می‌دهد (خالی = همه: fm,staff) و دوره‌های مدیریت هر منطقه
+ALTER TABLE users ADD COLUMN perms TEXT;
+CREATE TABLE IF NOT EXISTS region_terms (id INTEGER PRIMARY KEY, region_id INTEGER NOT NULL, user_id INTEGER NOT NULL, name TEXT, start INTEGER NOT NULL, end INTEGER, by INTEGER);
+CREATE INDEX IF NOT EXISTS region_terms_r ON region_terms (region_id, start);

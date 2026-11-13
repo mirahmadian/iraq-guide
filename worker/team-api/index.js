@@ -304,9 +304,18 @@ const CITIES = ['نجف اشرف', 'کربلای معلی', 'کاظمین', 'س�
 const LEAD_LABEL = 'سرپرست مناطق';
 async function leadLabel() { try { const r = await one("SELECT v FROM team_cfg WHERE k = 'lead_label'"); return r && r.v || LEAD_LABEL; } catch (e) { return LEAD_LABEL; } }
 const isFull = u => u.role === 'super' && !u.lead;
+/* دسترسی‌های مدیر منطقه که سرپرست مناطق می‌دهد (users.perms؛ خالی = همه):
+   fm = تعریف و مدیریت مدیران ثابت (و ساختن حساب از اکسل هفتگی)، staff = تعریف آشپزها و دیگر عوامل هتل‌ها */
+const PERMS = ['fm', 'staff'];
+const permsOf = u => { const s = u.perms == null ? PERMS.join(',') : String(u.perms); return Object.fromEntries(PERMS.map(k => [k, s.split(',').includes(k)])); };
+const can = (u, k) => u.role !== 'region' || permsOf(u)[k];
+const permStr = b => PERMS.filter(k => !b || b[k] !== false).join(',');
+/* دوره‌های مدیریت هر منطقه (مدیران منطقه هر دوره عوض می‌شوند؛ سابقه می‌ماند) */
+const termOpen = (rid, uid, name, by) => prep('INSERT INTO region_terms (region_id, user_id, name, start, end, by) VALUES (?, ?, ?, ?, NULL, ?)', rid, uid, name, Date.now(), by || null);
+const termClose = uid => prep('UPDATE region_terms SET end = ? WHERE user_id = ? AND end IS NULL', Date.now(), uid);
 async function meOf(u) {
   const region = await one('SELECT name FROM regions WHERE id = ?', u.region_id);
-  return { id: u.id, name: u.name, nid: u.nid, role: u.role, lead: !!u.lead, leadLabel: await leadLabel(), owner: u.nid === 'owner', region_id: u.region_id || null, mustChange: !!u.must_change, region: region?.name || (u.role === 'super' ? 'همه‌ی مناطق' : ''),
+  return { id: u.id, name: u.name, nid: u.nid, role: u.role, lead: !!u.lead, leadLabel: await leadLabel(), owner: u.nid === 'owner', region_id: u.region_id || null, perms: u.role === 'region' ? permsOf(u) : null, mustChange: !!u.must_change, region: region?.name || (u.role === 'super' ? 'همه‌ی مناطق' : ''),
     passkeys: await all('SELECT id, label, created, last_used FROM passkeys WHERE user_id = ? ORDER BY created', u.id) };
 }
 /* a fixed manager gets the hotels of the sheet named on their account (every week of the region) */
@@ -756,9 +765,13 @@ async function api(req, url, u) {
           (SELECT COUNT(*) FROM items i JOIN reports rp ON rp.id = i.report_id JOIN users x ON x.id = rp.user_id WHERE x.region_id = r.id AND i.is_defect = 1) AS defects,
           (SELECT MAX(rp.updated) FROM reports rp JOIN users x ON x.id = rp.user_id WHERE x.region_id = r.id) AS last_report
         FROM regions r ORDER BY r.city, r.name`);
-      const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login FROM users WHERE role = 'region' ORDER BY name");
+      await run(`INSERT INTO region_terms (region_id, user_id, name, start, end) SELECT region_id, id, name, created, CASE WHEN active = 1 THEN NULL ELSE COALESCE(last_login, created) END
+        FROM users WHERE role = 'region' AND region_id IS NOT NULL AND id NOT IN (SELECT user_id FROM region_terms)`);
+      const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login, perms FROM users WHERE role = 'region' ORDER BY name");
+      managers.forEach(x => { x.perms = permsOf(x); });
+      const terms = await all('SELECT t.region_id, t.user_id, t.name, t.start, t.end FROM region_terms t ORDER BY t.start DESC');
       /* نمای شهرها: افراد هر منطقه با نقششان، تعداد هتل هفته‌ی آخر، نقص باز و عوامل نزدیک خروج */
-      const people = await all(`SELECT x.id, x.region_id, x.name, x.nid, x.role, x.lead, x.sheet, x.active, x.last_login,
+      const people = await all(`SELECT x.id, x.region_id, x.name, x.nid, x.role, x.lead, x.sheet, x.active, x.last_login, x.perms,
           (SELECT COUNT(*) FROM assign a JOIN entries e ON e.id = a.entry_id WHERE a.user_id = x.id
             AND e.week_id = (SELECT w.id FROM weeks w WHERE w.region_id = x.region_id ORDER BY w.imported DESC LIMIT 1)) AS hotels
         FROM users x WHERE x.region_id IS NOT NULL AND (x.role IN ('fm', 'region') OR x.lead = 1) ORDER BY x.lead DESC, x.role DESC, x.name`);
@@ -766,8 +779,10 @@ async function api(req, url, u) {
         WHERE i.is_defect = 1 AND IFNULL(i.result, '') != 'fixed' GROUP BY x.region_id`);
       const today = JD.str(JD.today()), soon = JD.str(JD.today() + 5);
       const staff = await all("SELECT region_id, role, COUNT(*) AS n, SUM(d_end <= ?) AS soon FROM staff WHERE status = 'active' GROUP BY region_id, role", soon);
+      people.forEach(x => { x.perms = x.role === 'region' ? permsOf(x) : null; });
       regions.forEach(r => {
         r.managers = managers.filter(x => x.region_id === r.id);
+        r.terms = terms.filter(x => x.region_id === r.id).slice(0, 12);
         r.people = people.filter(x => x.region_id === r.id);
         r.open = open.find(x => x.region_id === r.id)?.n || 0;
         r.staff = staff.filter(x => x.region_id === r.id).map(x => ({ role: x.role, n: x.n, soon: x.soon || 0 }));
@@ -798,7 +813,45 @@ async function api(req, url, u) {
       const b = await body(), v = String(b.leadLabel || '').trim().slice(0, 40);
       await run("INSERT OR REPLACE INTO team_cfg (k, v) VALUES ('lead_label', ?)", v || LEAD_LABEL); return { ok: true, leadLabel: v || LEAD_LABEL };
     }
-    if (p.startsWith('/api/super/regions') && !isFull(u)) fail(403, 'ساختن و تغییر منطقه فقط با مدیر سامانه است.');
+    /* منطقه را مدیر سامانه و سرپرست مناطق می‌سازند، تغییر می‌دهند و (اگر خالی باشد) حذف می‌کنند */
+    if ((mm = p.match(/^\/api\/super\/regions\/(\d+)\/delete$/)) && m === 'POST') {
+      const r = await one('SELECT * FROM regions WHERE id = ?', +mm[1]); if (!r) fail(404, 'پیدا نشد');
+      const n = await one('SELECT (SELECT COUNT(*) FROM users WHERE region_id = ?1) AS u, (SELECT COUNT(*) FROM weeks WHERE region_id = ?1) AS w, (SELECT COUNT(*) FROM staff WHERE region_id = ?1) AS s', r.id);
+      if (n.u || n.w || n.s) fail(400, 'این منطقه کاربر، هفته یا عوامل دارد و حذف نمی‌شود. فقط منطقه‌ی خالی (مثلاً اشتباه ساخته‌شده) حذف می‌شود.');
+      await DB.batch([prep('DELETE FROM region_terms WHERE region_id = ?', r.id), prep('DELETE FROM regions WHERE id = ?', r.id)]); return { ok: true };
+    }
+    /* تعویض مدیر منطقه برای دوره‌ی تازه: مدیر(ان) فعلی غیرفعال می‌شوند (سابقه و گزارش‌هایشان می‌ماند) و نفر تازه مدیر منطقه می‌شود.
+       نفر تازه: کد ملی جدید = حساب تازه؛ مدیر ثابتِ همین منطقه = همان حساب ارتقا می‌یابد؛ مدیر منطقه‌ی قبلی همین منطقه = دوباره فعال می‌شود */
+    if ((mm = p.match(/^\/api\/super\/regions\/(\d+)\/handover$/)) && m === 'POST') {
+      const r = await one('SELECT * FROM regions WHERE id = ?', +mm[1]); if (!r) fail(404, 'منطقه پیدا نشد');
+      const b = await body(), nid = nidNormalize(b.nid), name = String(b.name || '').trim().slice(0, 80), perms = permStr(b.perms);
+      if (!nidValid(nid)) fail(400, 'کد ملی معتبر نیست.');
+      const ex = await one('SELECT * FROM users WHERE nid = ?', nid);
+      const olds = (await all("SELECT id FROM users WHERE region_id = ? AND role = 'region' AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
+      const st = b.keepOld ? [] : olds.flatMap(x => [prep('UPDATE users SET active = 0 WHERE id = ?', x.id), endAll(x.id), termClose(x.id)]);
+      let out = { name: name || ex?.name, nid };
+      if (ex) {
+        if (ex.region_id !== r.id || !['fm', 'region'].includes(ex.role)) fail(400, `این کد ملی مال «${ex.name}» در جای دیگری از سامانه است. فقط مدیر ثابت یا مدیر منطقه‌ی قبلیِ همین منطقه را می‌شود مدیر منطقه کرد.`);
+        if (ex.role === 'region' && ex.active) fail(400, 'این نفر همین الان مدیر منطقه‌ی همین منطقه است.');
+        st.push(prep("UPDATE users SET role = 'region', active = 1, perms = ?, name = ? WHERE id = ?", perms, name || ex.name, ex.id), termOpen(r.id, ex.id, name || ex.name, u.id));
+        if (b.password) { const h = await newPassword(b.password, 'region'); st.push(prep('UPDATE users SET salt = ?, hash = ?, must_change = ? WHERE id = ?', h.salt, h.hash, h.must, ex.id), endAll(ex.id)); out = { ...out, password: h.pw, temporary: !!h.must }; }
+        else out.kept = true;
+        await DB.batch(st);
+      } else {
+        if (!name) fail(400, 'نام مدیر منطقه‌ی تازه را بنویسید.');
+        const h = await newPassword(b.password, 'region');
+        const nu = await one("INSERT INTO users (region_id, role, nid, name, perms, salt, hash, must_change, created, created_by) VALUES (?, 'region', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id", r.id, nid, name, perms, h.salt, h.hash, h.must, Date.now(), u.id);
+        st.push(termOpen(r.id, nu.id, name, u.id));
+        await DB.batch(st);
+        out = { ...out, password: h.pw, temporary: !!h.must };
+      }
+      return { ...out, ended: b.keepOld ? 0 : olds.length };
+    }
+    /* دسترسی‌های یک مدیر منطقه */
+    if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/perms$/)) && m === 'POST') {
+      const t = await one("SELECT * FROM users WHERE id = ? AND role = 'region'", +mm[1]); if (!t) fail(404, 'مدیر منطقه پیدا نشد');
+      const b = await body(); await run('UPDATE users SET perms = ? WHERE id = ?', permStr(b), t.id); return { ok: true, perms: permsOf({ perms: permStr(b) }) };
+    }
     if (p === '/api/super/regions' && m === 'POST') {
       const b = await body(), name = String(b.name || '').trim().slice(0, 80), city = CITIES.includes(b.city) ? b.city : '';
       if (!city) fail(400, 'شهر را انتخاب کنید.');
@@ -821,7 +874,8 @@ async function api(req, url, u) {
       if (role !== 'super' && !await one('SELECT 1 FROM regions WHERE id = ?', +b.region_id)) fail(400, 'منطقه را انتخاب کنید.');
       if (await one('SELECT 1 FROM users WHERE nid = ?', nid)) fail(400, 'این کد ملی قبلاً ثبت شده است.');
       const h = await newPassword(b.password, role);
-      await run('INSERT INTO users (region_id, role, lead, nid, name, salt, hash, must_change, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', role === 'super' ? null : +b.region_id, role, lead, nid, name, h.salt, h.hash, h.must, Date.now(), u.id);
+      const nu = await one('INSERT INTO users (region_id, role, lead, nid, name, perms, salt, hash, must_change, created, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id', role === 'super' ? null : +b.region_id, role, lead, nid, name, role === 'region' ? permStr(b.perms) : null, h.salt, h.hash, h.must, Date.now(), u.id);
+      if (role === 'region') await termOpen(+b.region_id, nu.id, name, u.id).run();
       return { name, nid, password: h.pw, temporary: !!h.must };
     }
     /* ارتقای همان حساب (مدیر منطقه یا مدیر ثابت) به سرپرست مناطق، یا برگرداندن؛ رمز، گزارش‌ها و هتل‌هایش می‌ماند */
@@ -839,7 +893,10 @@ async function api(req, url, u) {
       if (t.role === 'super' && !isFull(u)) fail(403, 'حساب‌های هم‌سطح یا بالاتر را فقط مدیر سامانه تغییر می‌دهد.');
       const b = await body();
       if (mm[2] === 'reset') { const h = await newPassword(b.password, t.role); await DB.batch([prep('UPDATE users SET salt = ?, hash = ?, must_change = ? WHERE id = ?', h.salt, h.hash, h.must, t.id), endAll(t.id)]); return { name: t.name, nid: t.nid, password: h.pw, temporary: !!h.must }; }
-      if (mm[2] === 'active') { await DB.batch([prep('UPDATE users SET active = ? WHERE id = ?', b.active ? 1 : 0, t.id), ...(b.active ? [] : [endAll(t.id)])]); return { ok: true }; }
+      if (mm[2] === 'active') {
+        const tm = t.role === 'region' && t.region_id && !!b.active !== !!t.active ? [b.active ? termOpen(t.region_id, t.id, t.name, u.id) : termClose(t.id)] : [];
+        await DB.batch([prep('UPDATE users SET active = ? WHERE id = ?', b.active ? 1 : 0, t.id), ...(b.active ? [] : [endAll(t.id)]), ...tm]); return { ok: true };
+      }
       if (mm[2] === 'passkeys') { await run('DELETE FROM passkeys WHERE user_id = ?', t.id); return { ok: true }; }
       /* ویرایش: نام، کد ملی (= نام کاربری)، منطقه و نام شیت */
       if (mm[2] === 'edit') {
@@ -879,6 +936,9 @@ async function api(req, url, u) {
     if (u.role !== 'region' && u.role !== 'super') fail(403, 'این بخش مخصوص مدیر منطقه است.');
     const R = u.role === 'super' ? +url.searchParams.get('region') : u.region_id;
     if (!await one('SELECT 1 FROM regions WHERE id = ?', R)) fail(400, 'منطقه را انتخاب کنید.');
+    const need = k => { if (!can(u, k)) fail(403, k === 'fm' ? 'سرپرست مناطق هنوز دسترسی «تعریف مدیران ثابت» را به شما نداده است.' : 'سرپرست مناطق هنوز دسترسی «تعریف آشپزها و عوامل» را به شما نداده است.'); };
+    if (m === 'POST' && p.startsWith('/api/admin/staff')) need('staff');
+    if (p === '/api/admin/users' && m === 'POST') need('fm');
     if (p === '/api/admin/form') {
       if (m === 'GET') return formOf(R);
       fail(403, 'فرم برای همه‌ی مناطق یکی است و فقط سرپرست مناطق آن را در تب «🧩 فرم‌ساز» پنل خودش تغییر می‌دهد.');
@@ -912,7 +972,7 @@ async function api(req, url, u) {
     if (p === '/api/admin/import/commit' && m === 'POST') {
       const b = await body(), pv = await one('SELECT * FROM previews WHERE token = ?', String(b.token || ''));
       if (!pv || pv.user_id !== u.id || pv.exp < Date.now()) fail(400, 'پیش‌نمایش منقضی شد. فایل را دوباره بارگذاری کنید.');
-      const parsed = JSON.parse(pv.json), title = String(b.title || parsed.title || 'هفته').slice(0, 120), map = b.map || {}, now = Date.now(), created = [];
+      const parsed = JSON.parse(pv.json), title = String(b.title || parsed.title || 'هفته').slice(0, 120), map = b.map || {}, now = Date.now(), created = [], skipped = [];
       /* check every sheet owner before writing anything */
       const owners = [];
       for (const s of parsed.sheets) {
@@ -943,6 +1003,7 @@ async function api(req, url, u) {
         prep(`INSERT OR IGNORE INTO sheet_rows (week_id, sheet, row_no) SELECT ?, ${J}'$.s'), ${J}'$.r') FROM json_each(?)`, w.id, JSON.stringify(parsed.sheets.flatMap(s => s.ids.map(r => ({ s: s.sheet, r })))))];
       for (const o of owners) {
         const x = known.get(o.nid);
+        if (!x && !can(u, 'fm')) { skipped.push(o.name); continue; }
         if (x) st.push(x.role === 'fm' ? prep('UPDATE users SET name = ?, sheet = ? WHERE id = ?', o.name, o.s.sheet, x.id) : prep('UPDATE users SET sheet = ? WHERE id = ?', o.s.sheet, x.id));
         else {
           const pw = tempPassword(), h = await hashPassword(pw);
@@ -958,7 +1019,7 @@ async function api(req, url, u) {
       const fms = await all("SELECT id FROM users WHERE region_id = ? AND (role IN ('fm', 'region') OR lead = 1) AND sheet IS NOT NULL", R);
       if (fms.length) await DB.batch(fms.flatMap(x => syncSheetStmts(x.id)));
       const assigned = (await one('SELECT COUNT(*) AS n FROM assign a JOIN entries e ON e.id = a.entry_id WHERE e.week_id = ?', w.id)).n;
-      return { week: w.id, assigned, created, title };
+      return { week: w.id, assigned, created, skipped, title };
     }
     if (p === '/api/admin/users' && m === 'GET') {
       return all(`SELECT u.id, u.role, u.nid, u.name, u.sheet, u.active, u.must_change, u.last_login, u.created,
@@ -979,7 +1040,8 @@ async function api(req, url, u) {
     if ((mm = p.match(/^\/api\/admin\/users\/(\d+)\/(reset|active|passkeys|edit)$/)) && m === 'POST') {
       const t = await one("SELECT * FROM users WHERE id = ? AND region_id = ? AND role IN ('fm', 'region')", +mm[1], R); if (!t) fail(404, 'پیدا نشد');
       /* حساب مدیر منطقه را این‌جا فقط خودش (یا مدیر سامانه) ویرایش می‌کند و فقط نام و شیت؛ رمز و فعال/غیرفعال در پنل مدیر سامانه است */
-      if (t.role === 'region' && (mm[2] !== 'edit' || (u.role !== 'super' && t.id !== u.id))) fail(403, 'حساب مدیر منطقه را فقط مدیر سامانه تغییر می‌دهد.');
+      if (t.role === 'region' && (mm[2] !== 'edit' || (u.role !== 'super' && t.id !== u.id))) fail(403, 'حساب مدیر منطقه را فقط سرپرست مناطق یا مدیر سامانه تغییر می‌دهد.');
+      if (t.role === 'fm') need('fm');
       const b = await body();
       if (mm[2] === 'reset') { const h = await newPassword(b.password, 'fm'); await DB.batch([prep('UPDATE users SET salt = ?, hash = ?, must_change = ? WHERE id = ?', h.salt, h.hash, h.must, t.id), endAll(t.id)]); return { name: t.name, nid: t.nid, password: h.pw, temporary: !!h.must }; }
       if (mm[2] === 'active') { await DB.batch([prep('UPDATE users SET active = ? WHERE id = ?', b.active ? 1 : 0, t.id), ...(b.active ? [] : [endAll(t.id)])]); return { ok: true }; }

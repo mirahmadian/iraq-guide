@@ -313,3 +313,22 @@ details.setx .card{background:var(--card2)}
 .pk-ed{gap:6px}.pk-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}.pk-row select{width:auto;min-width:0}
 .q .pick{background:var(--card2);border-radius:10px;padding:8px}.q .pick .pk-q{max-width:260px}
 label.row>input[type=checkbox]{width:auto;flex:none;margin:0}.pk-ed label.row{flex-wrap:nowrap;align-items:center;gap:8px}
+/* مدیر منطقه: دسترسی‌ها، تعویض دوره، سابقه */
+.rg-mg{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.rg-mg summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--ink)}
+.rg-mg h4{font-size:13.5px;margin:12px 0 6px}
+.mg-row{padding:8px 10px;border-radius:10px;background:var(--card2);margin-top:8px}
+.mg-new{margin-top:10px;padding:10px;border-radius:12px;border:1px solid var(--line)}
+.pchk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-inline-end:10px}
+.pchk input{width:18px;height:18px}
+.pcs{display:inline-flex;gap:4px;flex-wrap:wrap;margin-inline-start:4px}
+.pc{font-size:11px;padding:1px 7px;border-radius:100px;white-space:nowrap}
+.pc.on{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.pc.off{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.terms{margin:0;padding-inline-start:18px;font-size:13px;line-height:1.9}
+/* راهنما */
+.guide h2{font-size:17px}.guide h3{font-size:15px;margin:16px 0 6px}
+.guide ol,.guide ul{padding-inline-start:20px;line-height:2;font-size:14px}
+.guide .tip{background:var(--card2);border-radius:10px;padding:8px 12px;font-size:13.5px;line-height:1.9}
+.guide details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0}
+.guide summary{cursor:pointer;font-weight:800;font-size:14.5px}
+@media print{header.top,.guide .noprint{display:none}.guide details{border:none}.guide details>*{display:block}}
