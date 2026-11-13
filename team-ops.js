@@ -155,14 +155,14 @@ window.renderOpsRegion = async (m, dayIn) => {
 window.renderDailyAll = async (m, regions, dayIn) => {
   let r; try { r = await api('/api/super/daily' + (dayIn ? '?day=' + JDP.str(dayIn, false) : '')); } catch (e) { return toast(e.message, true); }
   const day = JDP.num(r.day), D = r.domains, cell = (rg, d) => r.rows.find(x => x.region_id === rg.id && x.domain === d);
-  const mg = rg => r.mgrs.find(x => x.region_id === rg.id), inScope = (rg, d) => { const x = mg(rg); return !x || !x.scope || x.scope.includes(d); };
+  const mgs = rg => r.mgrs.filter(x => x.region_id === rg.id), inScope = (rg, d) => { const L = mgs(rg); return !L.length || L.some(x => !x.scope || x.scope.includes(d)); };
   const done = regions.filter(rg => r.rows.some(x => x.region_id === rg.id)).length;
   const probs = r.rows.filter(x => x.status === 'major' || x.status === 'minor').sort((a, b) => (a.status === 'major' ? 0 : 1) - (b.status === 'major' ? 0 : 1));
   const rn = id => { const x = regions.find(g => g.id === id); return x ? (x.city && !x.name.includes(x.city) ? x.city + ' · ' : '') + x.name : ''; };
   m.innerHTML = `<div class="card"><div class="card-h"><h2>📝 گزارش روزانه‌ی مناطق</h2><div class="row"><button class="btn small ghost" data-dd="${day - 1}">→ روز قبل</button><button class="btn small ghost" id="dd-pick">📅 ${esc(JDP.long(day))}</button><button class="btn small ghost" data-dd="${day + 1}">روز بعد ←</button></div></div>
     <p class="hint">${fa(done)} منطقه از ${fa(regions.length)} برای این روز گزارش داده‌اند. ✅ مطلوب · ⚠️ مشکل جزئی · ❌ مشکل جدی · ➖ موردی نبود · — = گزارش نشده · · = بیرون از محدوده‌ی فعالیت. روی هر خانه بزنید تا شرح بیاید.</p>
     <div class="tbl-wrap"><table class="dmx"><thead><tr><th>منطقه</th><th>مدیر منطقه</th>${D.map(d => `<th>${esc(d)}</th>`).join('')}</tr></thead><tbody>
-    ${regions.map(rg => `<tr><td><b>${esc(rn(rg.id))}</b></td><td class="dim">${esc((mg(rg) || {}).name || '—')}</td>${D.map(d => { const c = cell(rg, d); return !inScope(rg, d) ? '<td class="dim">·</td>' : c ? `<td><button class="dmc ${DST_L[c.status][2]}" data-c="${rg.id}|${esc(d)}" title="${esc(c.text || '')}">${DST_L[c.status][0]}</button></td>` : '<td class="dim">—</td>'; }).join('')}</tr>`).join('')}
+    ${regions.map(rg => `<tr><td><b>${esc(rn(rg.id))}</b></td><td class="dim">${esc(mgs(rg).map(x => x.name).join('، ') || '—')}</td>${D.map(d => { const c = cell(rg, d); return !inScope(rg, d) ? '<td class="dim">·</td>' : c ? `<td><button class="dmc ${DST_L[c.status][2]}" data-c="${rg.id}|${esc(d)}" title="${esc(c.text || '')}">${DST_L[c.status][0]}</button></td>` : '<td class="dim">—</td>'; }).join('')}</tr>`).join('')}
     </tbody></table></div><div id="dd-x"></div></div>
     <div class="card"><h3 style="margin:0 0 6px;font-size:14px">⚠️ مشکلات گزارش‌شده در این روز (${fa(probs.length)})</h3>
       ${probs.map(x => `<div class="dr"><div><span class="pill ${DST_L[x.status][2]}">${DST_L[x.status][0]} ${DST_L[x.status][1]}</span> <b>${esc(rn(x.region_id))}</b> · ${esc(x.domain)}</div><div style="margin-top:4px;white-space:pre-wrap">${esc(x.text || '')}</div><div class="dim" style="font-size:11.5px">${esc(x.by || '')} · ${fmtTs(x.updated)}</div></div>`).join('') || '<div class="dim">مشکلی گزارش نشده.</div>'}</div>`;

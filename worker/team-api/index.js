@@ -881,7 +881,10 @@ async function api(req, url, u) {
       const b = await body(), nid = nidNormalize(b.nid), name = String(b.name || '').trim().slice(0, 80), perms = permStr(b.perms);
       if (!nidValid(nid)) fail(400, 'کد ملی معتبر نیست.');
       const ex = await one('SELECT * FROM users WHERE nid = ?', nid);
-      const olds = (await all("SELECT id FROM users WHERE region_id = ? AND role = 'region' AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
+      /* منطقه‌ای که چند مدیر منطقه دارد: body.replace = همان یک نفری که عوض می‌شود (بقیه می‌مانند) */
+      let olds = (await all("SELECT id FROM users WHERE region_id = ? AND role = 'region' AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
+      if (+b.replace) { olds = olds.filter(x => x.id === +b.replace); if (!olds.length) fail(400, 'مدیری که باید عوض شود پیدا نشد.'); }
+      else if (olds.length > 1 && !b.keepOld) fail(400, 'این منطقه چند مدیر منطقه دارد؛ مشخص کنید نفر تازه جای کدام‌یک می‌آید.');
       const st = b.keepOld ? [] : olds.flatMap(x => [prep('UPDATE users SET active = 0 WHERE id = ?', x.id), endAll(x.id), termClose(x.id)]);
       /* فرم پایان مأموریت مدیر قبلی (اگر یک نفر است و فعال نمی‌ماند) */
       if (!b.keepOld && olds.length === 1 && !b.skipEval) { const o = await one('SELECT * FROM users WHERE id = ?', olds[0].id); st.push(evalIns('region', o.id, r.id, o.name, evalOf(b.eval || {}, (await opsCfg()).evalRegion), u.id)); }
@@ -1030,8 +1033,9 @@ async function api(req, url, u) {
     if (p === '/api/admin/users' && m === 'POST') need('fm');
     /* گزارش روزانه‌ی حوزه‌ها (اسکان، تغذیه، …) — هر حوزه وضعیت + شرح */
     if (p === '/api/admin/daily') {
-      const C = await opsCfg(), mg = u.role === 'region' ? u : await one("SELECT * FROM users WHERE region_id = ? AND role = 'region' AND active = 1 ORDER BY id DESC", R);
-      const D = mg ? scopeOf(mg, C.domains) : C.domains;
+      /* مدیر منطقه: محدوده‌ی خودش؛ سرپرست/مدیر سامانه: همه‌ی حوزه‌های مدیران منطقه‌ی این منطقه (اگر چند نفرند، اجتماع) */
+      const C = await opsCfg(), MG = u.role === 'region' ? [u] : await all("SELECT * FROM users WHERE region_id = ? AND role = 'region' AND active = 1", R);
+      const D = MG.length ? C.domains.filter(d => MG.some(x => scopeOf(x, C.domains).includes(d))) : C.domains;
       if (m === 'GET') {
         const d = JD.num(url.searchParams.get('day')) ?? JD.today();
         const rows = await all('SELECT d.domain, d.status, d.text, d.updated, x.name AS by FROM daily_reports d LEFT JOIN users x ON x.id = d.user_id WHERE d.region_id = ? AND d.day = ?', R, JD.str(d));

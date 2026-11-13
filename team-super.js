@@ -69,8 +69,9 @@ function mgrBlock(r) {
         <div class="field" style="flex:1 1 140px"><label class="label">کد ملی (نام کاربری)</label><input data-hi inputmode="numeric" maxlength="12" dir="ltr"></div>
         <div class="field" style="flex:1 1 140px"><label class="label">رمز (خالی = موقت)</label><input data-hp maxlength="60" autocomplete="new-password"></div></div>
       <div class="row mg-perms" style="margin-top:6px">${permBoxes(0, null)}</div>
-      ${act.length ? `<label class="pchk" style="margin-top:6px"><input type="checkbox" data-hk> مدیر فعلی (${esc(act.map(x => x.name).join('، '))}) هم فعال بماند</label>` : ''}
-      ${act.length === 1 ? `<div class="mg-out" data-hev><h4>📋 فرم پایان مأموریت ${esc(act[0].name)}</h4><p class="hint">پیش از ثبت مدیر تازه، عملکرد مدیر فعلی را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
+      ${act.length ? `<label class="pchk" style="margin-top:6px"><input type="checkbox" data-hk> ${act.length > 1 ? 'هیچ‌کدام نمی‌رود؛ نفر تازه مدیر منطقه‌ی اضافه است' : `مدیر فعلی (${esc(act[0].name)}) هم فعال بماند`}</label>` : ''}
+      ${act.length > 1 ? `<div class="field" style="margin-top:8px"><label class="label">نفر تازه جای کدام مدیر می‌آید؟</label><select class="inp" data-hr><option value="">— انتخاب کنید —</option>${act.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>` : ''}
+      ${act.length ? `<div class="mg-out" data-hev ${act.length > 1 ? 'hidden' : ''}><h4>📋 فرم پایان مأموریت <span data-hname>${esc(act.length === 1 ? act[0].name : '')}</span></h4><p class="hint">پیش از ثبت مدیر تازه، عملکرد مدیری که می‌رود را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
       <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید.</p>
       <button class="btn" type="submit">ثبت</button> <span class="err" data-he></span></form>
     ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span> ${t.score != null ? scoreTag(t.score) : ''}</li>`).join('')}</ul>` : ''}
@@ -138,6 +139,9 @@ function renderRegions() {
   m.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.psave}/perms`, { body: readPerms(m.querySelector(`[data-pbox="${b.dataset.psave}"]`)) }); toast('دسترسی‌ها ذخیره شد؛ از درخواست بعدی مدیر منطقه اعمال می‌شود.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-evbox]').forEach(b => wireEval(b, U.O.ops.evalRegion));
   m.querySelectorAll('[data-hev]').forEach(b => wireEval(b, U.O.ops.evalRegion));
+  m.querySelectorAll('[data-ho]').forEach(f => { const hr = f.querySelector('[data-hr]'), hev = f.querySelector('[data-hev]'), k = f.querySelector('[data-hk]');
+    const sync = () => { if (!hev) return; hev.hidden = !!(k && k.checked) || (hr && !hr.value); if (hr && hr.value) hev.querySelector('[data-hname]').textContent = hr.selectedOptions[0].textContent; };
+    if (hr) hr.onchange = sync; if (k) k.onchange = sync; });
   m.querySelectorAll('[data-ssave]').forEach(b => b.onclick = async () => { const box = m.querySelector(`[data-sbox="${b.dataset.ssave}"]`), sc = [...box.querySelectorAll('[data-sc]:checked')].map(i => i.dataset.sc);
     if (!sc.length) return toast('دست‌کم یک حوزه را انتخاب کنید.', true);
     try { await api(`/api/super/users/${b.dataset.ssave}/scope`, { body: { scope: sc } }); toast('محدوده‌ی فعالیت ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
@@ -146,12 +150,14 @@ function renderRegions() {
     try { const r = await api(`/api/super/users/${b.dataset.evsave}/eval`, { body: ev }); toast(`ارزشیابی ثبت شد: ${fa(r.score)} از ۱۰۰`); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-ho]').forEach(f => f.onsubmit = async e => {
     e.preventDefault(); const sb = f.querySelector('[type=submit]'), er = f.querySelector('[data-he]'); er.textContent = ''; if (sb.disabled) return;
-    const k = f.querySelector('[data-hk]'), hev = f.querySelector('[data-hev]'), ev = hev && !(k && k.checked) ? readEval(hev, U.O.ops.evalRegion) : null;
+    const k = f.querySelector('[data-hk]'), hr = f.querySelector('[data-hr]'), hev = f.querySelector('[data-hev]');
+    if (hr && !hr.value && !(k && k.checked)) { er.textContent = 'مشخص کنید نفر تازه جای کدام مدیر می‌آید (یا تیک «هیچ‌کدام نمی‌رود» را بزنید).'; return; }
+    const ev = hev && !(k && k.checked) ? readEval(hev, U.O.ops.evalRegion) : null;
     if (ev && !ev.done) { er.textContent = `فرم پایان مأموریت مدیر فعلی: ${fa(ev.left)} سؤال بی‌پاسخ مانده است.`; return; }
     if (sb.dataset.sure !== '1' && !(k && k.checked) && f.closest('.rg-mg').querySelector('.mg-row')) { sb.dataset.sure = '1'; sb.textContent = 'مطمئنید؟ مدیر فعلی غیرفعال می‌شود'; return; }
     sb.disabled = true;
     try {
-      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f.querySelector('.mg-perms')), keepOld: !!(k && k.checked), eval: ev || undefined } });
+      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f.querySelector('.mg-perms')), keepOld: !!(k && k.checked), replace: hr && !(k && k.checked) ? +hr.value : undefined, eval: ev || undefined } });
       if (r.password) U.temp = [r];
       toast(`«${r.name}» مدیر منطقه شد${r.ended ? `؛ ${fa(r.ended)} مدیر قبلی غیرفعال شد` : ''}${r.kept ? ' (با همان رمز قبلی خودش وارد می‌شود)' : ''}.`);
       loadRegions();
