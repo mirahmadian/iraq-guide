@@ -18,6 +18,12 @@ binding = "MDB"
 database_name = "hamyar-hotels-media"
 database_id = "a8fccebf-9f09-47bc-92f2-ea34a9959b3d"
 
+# شرکت‌های مجری و سیاحه (فقط خواندن؛ ویرایش در پنل مدیریت)
+[[d1_databases]]
+binding = "RDB"
+database_name = "hamyar-reviews"
+database_id = "83e811da-280d-4122-918a-62e42a0b1098"
+
 # پاک‌سازی ساعتی (رسانه‌های بیش از ۷ روز، نشست‌های تمام‌شده)
 [triggers]
 crons = ["17 * * * *"]

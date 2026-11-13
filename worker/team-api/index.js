@@ -955,6 +955,19 @@ async function api(req, url, u) {
       const ids = ws.map(w => w.id);
       return { week: isAll ? 'all' : 'latest', ...await withRatings(await qualityOf(ids), ids), dir: await dirOf(ids) };
     }
+    /* مشخصات و تماس شرکت‌های مجری و سیاحه (از پنل مدیریت؛ فقط خواندن) + حضور هر شرکت مجری در اکسل آخرین هفته‌ی هر منطقه */
+    if (p === '/api/super/cos-info' && m === 'GET') {
+      if (!ENV.RDB) fail(503, 'اتصال به اطلاعات شرکت‌ها برقرار نیست.');
+      const rd = async q => { try { return (await ENV.RDB.prepare(q).all()).results; } catch (e) { return []; } };
+      const reps = r => { try { const x = JSON.parse(r.reps || '[]'); if (Array.isArray(x) && x.length) return x; } catch (e) {}
+        return r.rep_name || r.rep_phone || r.phone2 ? [{ name: r.rep_name || '', ir: /^09|^0098/.test(r.phone2 || '') ? r.phone2 : '', iq: r.rep_phone || '' }] : []; };
+      const out = r => ({ name: r.name, ceo: r.ceo || '', address: r.address || '', phone: r.phone || '', note: r.note || '', cities: r.cities || '', reps: reps(r), updated: r.updated });
+      const mojri = (await rd('SELECT * FROM mgr_companies ORDER BY name')).map(out), siyahe = (await rd('SELECT * FROM siyahe_cos ORDER BY name')).map(out);
+      const t = JD.today(), ents = await all(`SELECT e.company, e.siyahe, e.hotel, e.pilgrims, e.d_in, e.d_out, r.name AS region, r.city FROM entries e JOIN weeks w ON w.id = e.week_id JOIN regions r ON r.id = w.region_id
+        WHERE w.id IN (SELECT w2.id FROM weeks w2 WHERE w2.imported = (SELECT MAX(x.imported) FROM weeks x WHERE x.region_id = w2.region_id)) `);
+      const here = ents.filter(e => { const z = JD.num(e.d_out); return z == null || z >= t; }).map(e => ({ company: e.company || '', siyahe: e.siyahe || '', hotel: e.hotel, pilgrims: e.pilgrims, d_in: e.d_in, d_out: e.d_out, region: e.region, city: e.city }));
+      return { mojri, siyahe, here };
+    }
     if (p === '/api/super/users' && m === 'GET') {
       const rid = +url.searchParams.get('region') || 0;
       return all(`SELECT x.id, x.role, x.lead, x.nid, x.name, x.sheet, x.active, x.must_change, x.last_login, x.created, x.region_id, x.perms, x.scope, r.name AS region, r.city, c.name AS creator, c.role AS creator_role, c.lead AS creator_lead,

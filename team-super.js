@@ -20,7 +20,7 @@ function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), hinfo: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderHinfoAll(main(), '/api/super/hinfo', U.O.regions); }, guide: () => renderGuide(main(), 'lead', leadL()), form: () => fbStart(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => { CO.d = null; cosStart(() => loadCompanies()); }, regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), hinfo: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderHinfoAll(main(), '/api/super/hinfo', U.O.regions); }, guide: () => renderGuide(main(), 'lead', leadL()), form: () => fbStart(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const leadL = () => (U.O && U.O.leadLabel) || U.me.leadLabel || 'سرپرست مناطق';
 setLeadLabelFn(() => leadL());
@@ -208,8 +208,8 @@ function wireNewUser(m) {
 /* ═════════ hotel quality, every region (team-quality.js) ═════════ */
 async function loadCompanies(week) {
   let d; try { d = await api('/api/super/quality' + (week === 'all' ? '?week=all' : '')); } catch (e) { return toast(e.message, true); }
-  if (U.tab !== 'cos') return;
-  renderCompanies(main(), d, { showRegion: true, weeks: [{ id: 'latest', title: 'آخرین هفته‌ی هر منطقه' }], week: d.week, onWeek: w => { main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadCompanies(w); } });
+  const box = document.getElementById('co-box'); if (U.tab !== 'cos' || !box || CO.sub !== 'quality') return;
+  renderCompanies(box, d, { showRegion: true, weeks: [{ id: 'latest', title: 'آخرین هفته‌ی هر منطقه' }], week: d.week, onWeek: w => { box.innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>'; loadCompanies(w); } });
 }
 async function loadQuality(week) {
   let d; try { d = await api('/api/super/quality' + (week === 'all' ? '?week=all' : '')); } catch (e) { return toast(e.message, true); }

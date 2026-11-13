@@ -916,6 +916,11 @@
       <div class="sec-head-info"><div class="sec-head-title">شرکت‌های مجری و نمایندگانشان در عراق</div><div class="sec-head-sub">نام شرکت، مدیرعامل، آدرس، تلفن، و نماینده یا نمایندگان در عراق با موبایل ایران و عراق — فقط مدیران کاروانِ واردشده در اپلیکیشن می‌بینند (زائران نه)</div></div></div>
     <div class="sec-body" style="display:block" id="mgrco-admin"></div>
   </div>
+  <div class="sec-card open" data-perm="mgrco">
+    <div class="sec-card-head no-toggle"><div class="sec-head-icon ico-gen">🤝</div>
+      <div class="sec-head-info"><div class="sec-head-title">شرکت‌های سیاحه</div><div class="sec-head-sub">شرکت‌های عراقیِ طرف قرارداد: نام، شهرها، مدیر، تلفن و نمایندگان — فقط سرپرست مناطق در «سامانه پایش خدمات» می‌بیند (در اپلیکیشن نیست)</div></div></div>
+    <div class="sec-body" style="display:block" id="siyahe-admin"></div>
+  </div>
 </div><!-- /tab-mgrco -->
 
 
@@ -988,6 +993,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="flight-def.js"></script>
 <script src="admin-flight.js"></script>
 <script src="admin-mgr.js"></script>
+<script src="admin-siyahe.js"></script>
 <script src="admin-trips.js"></script>
 <script src="jdp.js"></script>
 <script src="pw-eye.js"></script>
@@ -1023,6 +1029,7 @@ function switchTab(id, btn) {
   if (id === 'users') usersLoad();
   if (id === 'mgr' && typeof mgSubOpen === 'function') { mgSubOpen(); if (typeof mgGuideLoad === 'function') mgGuideLoad(); }
   if (id === 'mgrco' && typeof mcoLoad === 'function') mcoLoad();
+  if (id === 'mgrco' && typeof sycLoad === 'function') sycLoad();
   if (id === 'lost' && typeof lostLoad === 'function') lostLoad();
   if (id === 'food' && typeof fvLoad === 'function') fvLoad();
 }

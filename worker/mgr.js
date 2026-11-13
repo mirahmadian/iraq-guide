@@ -16,7 +16,9 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS mgr_links (code TEXT PRIMARY KEY, dev TEXT, exp INTEGER NOT NULL, phone TEXT, otp TEXT, state TEXT NOT NULL DEFAULT 'wait')`,
   `CREATE TABLE IF NOT EXISTS mgr_pending (chat_id INTEGER PRIMARY KEY, code TEXT NOT NULL, t INTEGER NOT NULL)`,
   /* محتوای بخش ویژه: شرکت‌های مجری (فقط برای مدیرانِ واردشده؛ هرگز در data.js عمومی نیست) */
-  `CREATE TABLE IF NOT EXISTS mgr_companies (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ceo TEXT, rep_name TEXT, rep_phone TEXT, phone2 TEXT, note TEXT, updated INTEGER NOT NULL, by TEXT)`
+  `CREATE TABLE IF NOT EXISTS mgr_companies (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ceo TEXT, rep_name TEXT, rep_phone TEXT, phone2 TEXT, note TEXT, updated INTEGER NOT NULL, by TEXT)`,
+  /* شرکت‌های سیاحه (طرف عراقی): فقط پنل مدیریت و سرپرست مناطق در سامانه پایش خدمات می‌بینند؛ در اپ نیست */
+  `CREATE TABLE IF NOT EXISTS siyahe_cos (id INTEGER PRIMARY KEY, name TEXT NOT NULL, cities TEXT, ceo TEXT, address TEXT, phone TEXT, note TEXT, reps TEXT, updated INTEGER NOT NULL, by TEXT)`
 ];
 let ready = false;
 async function ensure(env) {
@@ -253,6 +255,34 @@ export async function handleMgrAdmin(p, req, env, body, json, err, who) {
   }
   if (p === '/admin/mgr/co/del' && req.method === 'POST') {
     await env.DB.prepare('DELETE FROM mgr_companies WHERE id = ?').bind(+body.id).run();
+    return json({ ok: true });
+  }
+  /* ── شرکت‌های سیاحه ── (همان دسترسی mgrco) */
+  if (p === '/admin/mgr/co/sy' && req.method === 'GET') {
+    const list = (await env.DB.prepare('SELECT * FROM siyahe_cos ORDER BY name').all()).results.map(r => ({ ...coOut(r), cities: r.cities || '' }));
+    /* پیشنهاد نام از ستون «سیاحه»ی اکسل‌های هفتگی سامانه پایش خدمات */
+    let suggest = [];
+    try {
+      const norm = x => String(x || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/\s+/g, ' ').trim();
+      const have = new Set(list.map(c => norm(c.name))), seen = new Map();
+      const rows = env.HDB ? (await env.HDB.prepare("SELECT siyahe, COUNT(*) AS n FROM entries WHERE siyahe IS NOT NULL AND siyahe != '' GROUP BY siyahe ORDER BY n DESC LIMIT 300").all()).results : [];
+      for (const r of rows) { const k = norm(r.siyahe); if (k && !have.has(k)) seen.set(k, (seen.get(k) || 0) + r.n); }
+      suggest = [...seen.entries()].map(([name, n]) => ({ name, n }));
+    } catch (e) {}
+    return json({ list, suggest });
+  }
+  if (p === '/admin/mgr/co/sy/save' && req.method === 'POST') {
+    const c = coRow(body), id = +body.id || 0, bad = coBad(c), cities = S(body.cities, 120);
+    if (bad) return err(bad);
+    const dup = await env.DB.prepare('SELECT id FROM siyahe_cos WHERE name = ? AND id != ?').bind(c.name, id).first();
+    if (dup) return err('این شرکت قبلاً ثبت شده؛ از ✏️ کنار آن ویرایش کنید.');
+    const v = [c.name, cities, c.ceo, c.address, c.phone, c.note, JSON.stringify(c.reps), now, who];
+    if (id) await env.DB.prepare('UPDATE siyahe_cos SET name = ?, cities = ?, ceo = ?, address = ?, phone = ?, note = ?, reps = ?, updated = ?, by = ? WHERE id = ?').bind(...v, id).run();
+    else await env.DB.prepare('INSERT INTO siyahe_cos (name, cities, ceo, address, phone, note, reps, updated, by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(...v).run();
+    return json({ ok: true });
+  }
+  if (p === '/admin/mgr/co/sy/del' && req.method === 'POST') {
+    await env.DB.prepare('DELETE FROM siyahe_cos WHERE id = ?').bind(+body.id).run();
     return json({ ok: true });
   }
   /* اکسل: هر ردیف یک نماینده؛ ردیف‌های هم‌نام یک شرکت می‌شوند (در پنل جمع می‌شود). شرکتِ موجود: فیلدهای پر جایگزین می‌شوند و فهرست نمایندگان تازه جای قبلی را می‌گیرد */
