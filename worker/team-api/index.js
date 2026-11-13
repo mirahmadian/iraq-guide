@@ -313,9 +313,31 @@ const permStr = b => PERMS.filter(k => !b || b[k] !== false).join(',');
 /* دوره‌های مدیریت هر منطقه (مدیران منطقه هر دوره عوض می‌شوند؛ سابقه می‌ماند) */
 const termOpen = (rid, uid, name, by) => prep('INSERT INTO region_terms (region_id, user_id, name, start, end, by) VALUES (?, ?, ?, ?, NULL, ?)', rid, uid, name, Date.now(), by || null);
 const termClose = uid => prep('UPDATE region_terms SET end = ? WHERE user_id = ? AND end IS NULL', Date.now(), uid);
+/* ── گزارش روزانه‌ی حوزه‌ها، فرم‌های ارزشیابی (تنظیم سرپرست مناطق در team_cfg) ── */
+const OPS_DEF = {
+  domains: ['اسکان', 'تغذیه', 'نقل و انتقال', 'مدیران راهنما', 'بیمه و درمان', 'خدمات ستادی', 'سایر'],
+  evalStaff: ['نظم و حضور به‌موقع', 'انجام کامل وظایف', 'برخورد با زائران', 'همکاری با مدیر و همکاران', 'رعایت بهداشت و ضوابط', 'گزارش‌دهی و پاسخ‌گویی'],
+  evalRegion: ['مدیریت و هماهنگی نیروها', 'پیگیری و رفع نواقص هتل‌ها', 'گزارش‌دهی منظم و به‌موقع', 'برخورد با زائران و مدیران کاروان', 'همکاری با ستاد', 'انضباط و حضور']
+};
+const OPS_KEY = { domains: 'ops_domains', evalStaff: 'eval_staff', evalRegion: 'eval_region' };
+async function opsCfg() {
+  const rows = await all("SELECT k, v FROM team_cfg WHERE k IN ('ops_domains', 'eval_staff', 'eval_region')"), o = {};
+  for (const [k, key] of Object.entries(OPS_KEY)) { const r = rows.find(x => x.k === key); let v = null; try { v = r && JSON.parse(r.v); } catch (e) {} o[k] = Array.isArray(v) && v.length ? v : OPS_DEF[k]; }
+  return o;
+}
+const cleanList = (a, n = 20) => [...new Set((Array.isArray(a) ? a : []).map(x => stS(x, 60)).filter(Boolean))].slice(0, n);
+const scopeOf = (u, D) => u.role !== 'region' || u.scope == null ? D : D.filter(d => String(u.scope).split('|').includes(d));
+/* پاسخ‌های ارزشیابی (هر سؤال ۱ تا ۵) ← نمره از ۱۰۰ */
+function evalOf(b, qs) {
+  const ans = qs.map((q, i) => ({ q, v: Math.round(+((b.answers || [])[i] || {}).v || 0) }));
+  if (ans.some(a => a.v < 1 || a.v > 5)) fail(400, 'به همه‌ی سؤال‌های ارزشیابی (۱ تا ۵) پاسخ دهید.');
+  return { answers: JSON.stringify(ans), score: Math.round(ans.reduce((a, x) => a + x.v, 0) / ans.length / 5 * 100), note: stS(b.note, 1000) };
+}
+const evalIns = (kind, ref, rid, name, e, by) => prep('INSERT INTO evals (kind, ref_id, region_id, name, answers, score, note, by, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', kind, ref, rid, name, e.answers, e.score, e.note, by, Date.now());
+const MEALS_ = ['breakfast', 'lunch', 'dinner'], DST = ['ok', 'minor', 'major', 'na'];
 async function meOf(u) {
   const region = await one('SELECT name FROM regions WHERE id = ?', u.region_id);
-  return { id: u.id, name: u.name, nid: u.nid, role: u.role, lead: !!u.lead, leadLabel: await leadLabel(), owner: u.nid === 'owner', region_id: u.region_id || null, perms: u.role === 'region' ? permsOf(u) : null, mustChange: !!u.must_change, region: region?.name || (u.role === 'super' ? 'همه‌ی مناطق' : ''),
+  return { id: u.id, name: u.name, nid: u.nid, role: u.role, lead: !!u.lead, leadLabel: await leadLabel(), owner: u.nid === 'owner', region_id: u.region_id || null, perms: u.role === 'region' ? permsOf(u) : null, scope: u.role === 'region' && u.scope != null ? String(u.scope).split('|').filter(Boolean) : null, mustChange: !!u.must_change, region: region?.name || (u.role === 'super' ? 'همه‌ی مناطق' : ''),
     passkeys: await all('SELECT id, label, created, last_used FROM passkeys WHERE user_id = ? ORDER BY created', u.id) };
 }
 /* a fixed manager gets the hotels of the sheet named on their account (every week of the region) */
@@ -432,7 +454,7 @@ function cleanParsed(p) {
   for (const r of p.rows) {
     const no = int(r.row_no); if (!no || seen.has(no) || !String(r.hotel || '').trim()) continue; seen.add(no);
     rows.push({ row_no: no, hotel: S(r.hotel, 200), home_mgr: S(r.home_mgr, 200), cook: S(r.cook, 200), caravans: int(r.caravans), d_in: S(r.d_in, 10), d_out: S(r.d_out, 10),
-      pilgrims: int(r.pilgrims), company: S(r.company, 300), siyahe: S(r.siyahe, 300) });
+      pilgrims: int(r.pilgrims), company: S(r.company, 300), siyahe: S(r.siyahe, 300), rooms: r.rooms ? int(r.rooms) : null, beds: r.beds ? int(r.beds) : null });
   }
   if (!rows.length) fail(400, 'در فایل ردیفی با شماره و نام هتل پیدا نشد.');
   const sheets = (p.sheets || []).slice(0, 100).map(s => ({ sheet: S(s.sheet, 60), ids: [...new Set((s.ids || []).map(int))].filter(x => seen.has(x)) })).filter(s => s.sheet);
@@ -651,6 +673,7 @@ async function api(req, url, u) {
 
   if (!u) fail(401, 'ابتدا وارد شوید.');
   if (p === '/api/me' && m === 'GET') return meOf(u);
+  if (p === '/api/opscfg' && m === 'GET') return opsCfg();
   if (p === '/api/password' && m === 'POST') {
     const b = await body();
     if (!await checkPassword(u, String(b.old || ''))) fail(400, 'رمز فعلی درست نیست.');
@@ -688,6 +711,37 @@ async function api(req, url, u) {
         FROM entries e JOIN assign a ON a.entry_id = e.id LEFT JOIN reports r ON r.entry_id = e.id AND r.user_id = a.user_id
         WHERE a.user_id = ? AND e.week_id = ? ORDER BY e.hotel, e.d_in, e.row_no`, u.id, wid);
       return { weeks, week: wid, entries };
+    }
+    /* آمار لحظه‌ای (زائر/اتاق/تخت) و اجرای برنامه‌ی غذایی یک ورودی */
+    if ((mm = p.match(/^\/api\/fm\/ops\/(\d+)$/)) && m === 'GET') {
+      const e = await fmEntry(u, +mm[1]), day = JD.num(url.searchParams.get('day')) ?? JD.today();
+      return { entry: e, day: JD.str(day), today: JD.str(JD.today()), occ: await one('SELECT * FROM entry_occ WHERE entry_id = ?', e.id),
+        log: await all('SELECT l.pilgrims, l.rooms, l.beds, l.note, l.t, x.name AS by FROM occ_log l LEFT JOIN users x ON x.id = l.user_id WHERE l.entry_id = ? ORDER BY l.t DESC LIMIT 15', e.id),
+        plan: (await one('SELECT plan_id FROM entry_food WHERE entry_id = ?', e.id))?.plan_id
+          || (await one('SELECT f.plan_id FROM entry_food f JOIN entries x ON x.id = f.entry_id JOIN assign a ON a.entry_id = x.id AND a.user_id = ? WHERE x.hotel = ? ORDER BY f.updated DESC LIMIT 1', u.id, e.hotel))?.plan_id || null,
+        planSet: !!(await one('SELECT 1 FROM entry_food WHERE entry_id = ?', e.id)),
+        checks: (await all('SELECT meal, items, note, updated FROM meal_checks WHERE entry_id = ? AND day = ?', e.id, JD.str(day))).map(c => ({ ...c, items: json(c.items) || {} })) };
+    }
+    if (p === '/api/fm/occ' && m === 'POST') {
+      const b = await body(), e = await fmEntry(u, +b.entry_id), n = v => v === '' || v == null ? null : Math.max(0, Math.min(100000, parseInt(v, 10) || 0));
+      const x = { p: n(b.pilgrims), r: n(b.rooms), bd: n(b.beds), note: stS(b.note, 500) }, now = Date.now();
+      if (x.p == null && x.r == null && x.bd == null) fail(400, 'دست‌کم یکی از تعداد زائر، اتاق یا تخت را بنویسید.');
+      await DB.batch([prep('INSERT OR REPLACE INTO entry_occ (entry_id, pilgrims, rooms, beds, note, user_id, updated) VALUES (?, ?, ?, ?, ?, ?, ?)', e.id, x.p, x.r, x.bd, x.note, u.id, now),
+        prep('INSERT INTO occ_log (entry_id, pilgrims, rooms, beds, note, user_id, t) VALUES (?, ?, ?, ?, ?, ?, ?)', e.id, x.p, x.r, x.bd, x.note, u.id, now)]);
+      return { ok: true };
+    }
+    if (p === '/api/fm/food-plan' && m === 'POST') {
+      const b = await body(), e = await fmEntry(u, +b.entry_id);
+      await run('INSERT OR REPLACE INTO entry_food (entry_id, plan_id, user_id, updated) VALUES (?, ?, ?, ?)', e.id, stS(b.plan_id, 40) || null, u.id, Date.now()); return { ok: true };
+    }
+    if (p === '/api/fm/meal' && m === 'POST') {
+      const b = await body(), e = await fmEntry(u, +b.entry_id), d = JD.num(b.day), meal = MEALS_.includes(b.meal) ? b.meal : null;
+      if (d == null || !meal) fail(400, 'روز یا وعده نامعتبر است.');
+      if (d > JD.today() || d < JD.today() - 3) fail(400, 'فقط برای امروز و سه روز گذشته می‌شود ثبت کرد.');
+      const items = {}; for (const [k, v] of Object.entries(b.items || {}).slice(0, 40)) { const kk = stS(k, 60); if (kk && (v === 1 || v === 0)) items[kk] = v; }
+      if (!Object.keys(items).length) fail(400, 'دست‌کم برای یک قلم «بله» یا «خیر» بزنید.');
+      await run('INSERT OR REPLACE INTO meal_checks (entry_id, day, meal, items, note, user_id, updated) VALUES (?, ?, ?, ?, ?, ?, ?)', e.id, JD.str(d), meal, JSON.stringify(items), stS(b.note, 500), u.id, Date.now());
+      return { ok: true };
     }
     if ((mm = p.match(/^\/api\/fm\/entry\/(\d+)$/))) {
       const e = await fmEntry(u, +mm[1]), form = await formOf(u.region_id);
@@ -767,9 +821,9 @@ async function api(req, url, u) {
         FROM regions r ORDER BY r.city, r.name`);
       await run(`INSERT INTO region_terms (region_id, user_id, name, start, end) SELECT region_id, id, name, created, CASE WHEN active = 1 THEN NULL ELSE COALESCE(last_login, created) END
         FROM users WHERE role = 'region' AND region_id IS NOT NULL AND id NOT IN (SELECT user_id FROM region_terms)`);
-      const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login, perms FROM users WHERE role = 'region' ORDER BY name");
-      managers.forEach(x => { x.perms = permsOf(x); });
-      const terms = await all('SELECT t.region_id, t.user_id, t.name, t.start, t.end FROM region_terms t ORDER BY t.start DESC');
+      const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login, perms, scope FROM users WHERE role = 'region' ORDER BY name");
+      managers.forEach(x => { x.perms = permsOf(x); x.scope = x.scope == null ? null : String(x.scope).split('|'); });
+      const terms = await all("SELECT t.region_id, t.user_id, t.name, t.start, t.end, (SELECT e.score FROM evals e WHERE e.kind = 'region' AND e.ref_id = t.user_id ORDER BY e.t DESC LIMIT 1) AS score FROM region_terms t ORDER BY t.start DESC");
       /* نمای شهرها: افراد هر منطقه با نقششان، تعداد هتل هفته‌ی آخر، نقص باز و عوامل نزدیک خروج */
       const people = await all(`SELECT x.id, x.region_id, x.name, x.nid, x.role, x.lead, x.sheet, x.active, x.last_login, x.perms,
           (SELECT COUNT(*) FROM assign a JOIN entries e ON e.id = a.entry_id WHERE a.user_id = x.id
@@ -788,7 +842,7 @@ async function api(req, url, u) {
         r.staff = staff.filter(x => x.region_id === r.id).map(x => ({ role: x.role, n: x.n, soon: x.soon || 0 }));
       });
       const leads = await all("SELECT x.id, x.name, x.nid, x.region_id, x.sheet, x.active, x.last_login, r.name AS region, r.city FROM users x LEFT JOIN regions r ON r.id = x.region_id WHERE x.role = 'super' AND x.lead = 1 ORDER BY x.name");
-      return { regions, leads, today, cities: CITIES, leadLabel: await leadLabel(), full: isFull(u) };
+      return { regions, leads, today, cities: CITIES, leadLabel: await leadLabel(), full: isFull(u), ops: await opsCfg() };
     }
     /* کیفیت در همه‌ی مناطق: آخرین هفته‌ی هر منطقه (یا week=all برای همه‌ی هفته‌ها) */
     if (p === '/api/super/quality' && m === 'GET') {
@@ -829,6 +883,8 @@ async function api(req, url, u) {
       const ex = await one('SELECT * FROM users WHERE nid = ?', nid);
       const olds = (await all("SELECT id FROM users WHERE region_id = ? AND role = 'region' AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
       const st = b.keepOld ? [] : olds.flatMap(x => [prep('UPDATE users SET active = 0 WHERE id = ?', x.id), endAll(x.id), termClose(x.id)]);
+      /* فرم پایان مأموریت مدیر قبلی (اگر یک نفر است و فعال نمی‌ماند) */
+      if (!b.keepOld && olds.length === 1 && !b.skipEval) { const o = await one('SELECT * FROM users WHERE id = ?', olds[0].id); st.push(evalIns('region', o.id, r.id, o.name, evalOf(b.eval || {}, (await opsCfg()).evalRegion), u.id)); }
       let out = { name: name || ex?.name, nid };
       if (ex) {
         if (ex.region_id !== r.id || !['fm', 'region'].includes(ex.role)) fail(400, `این کد ملی مال «${ex.name}» در جای دیگری از سامانه است. فقط مدیر ثابت یا مدیر منطقه‌ی قبلیِ همین منطقه را می‌شود مدیر منطقه کرد.`);
@@ -846,6 +902,39 @@ async function api(req, url, u) {
         out = { ...out, password: h.pw, temporary: !!h.must };
       }
       return { ...out, ended: b.keepOld ? 0 : olds.length };
+    }
+    /* برای هر شهر تا ۴ منطقه‌ی پیش‌فرض (منطقه‌های موجود حساب می‌شوند؛ چیزی پاک یا عوض نمی‌شود) */
+    if (p === '/api/super/regions/defaults' && m === 'POST') {
+      const R0 = await all('SELECT name, city FROM regions'), names = new Set(R0.map(r => r.name)), add = [];
+      for (const c of CITIES) { let n = R0.filter(r => r.city === c).length, k = 1; while (n < 4) { const nm = `${c} - منطقه‌ی ${'۰۱۲۳۴۵۶۷۸۹'[k] || k}`; k++; if (names.has(nm)) continue; names.add(nm); add.push([nm, c]); n++; } }
+      if (add.length) await DB.batch(add.map(([nm, c]) => prep('INSERT INTO regions (name, city) VALUES (?, ?)', nm, c)));
+      return { ok: true, created: add.map(a => a[0]) };
+    }
+    /* محدوده‌ی فعالیت مدیر منطقه: حوزه‌هایی که هر روز گزارش می‌دهد */
+    if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/scope$/)) && m === 'POST') {
+      const t = await one("SELECT * FROM users WHERE id = ? AND role = 'region'", +mm[1]); if (!t) fail(404, 'مدیر منطقه پیدا نشد');
+      const b = await body(), D = (await opsCfg()).domains, sc = cleanList(b.scope).filter(d => D.includes(d));
+      await run('UPDATE users SET scope = ? WHERE id = ?', sc.length === D.length ? null : sc.join('|'), t.id); return { ok: true };
+    }
+    /* ارزشیابی مدیر منطقه (پایان مأموریت یا هر زمان) */
+    if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/eval$/)) && m === 'POST') {
+      const t = await one("SELECT * FROM users WHERE id = ? AND role = 'region'", +mm[1]); if (!t) fail(404, 'مدیر منطقه پیدا نشد');
+      const e = evalOf(await body(), (await opsCfg()).evalRegion); await evalIns('region', t.id, t.region_id, t.name, e, u.id).run(); return { ok: true, score: e.score };
+    }
+    if (p === '/api/super/evals' && m === 'GET') {
+      return all("SELECT e.id, e.kind, e.ref_id, e.region_id, e.name, e.answers, e.score, e.note, e.t, x.name AS by, r.name AS region, r.city FROM evals e LEFT JOIN users x ON x.id = e.by LEFT JOIN regions r ON r.id = e.region_id WHERE (?1 = '' OR e.kind = ?1) ORDER BY e.t DESC LIMIT 2000", url.searchParams.get('kind') || '');
+    }
+    if (p === '/api/super/opscfg' && m === 'POST') {
+      const b = await body(), st = [];
+      for (const [k, key] of Object.entries(OPS_KEY)) if (b[k] !== undefined) { const L = cleanList(b[k]); if (!L.length) fail(400, 'فهرست نباید خالی باشد.'); st.push(prep('INSERT OR REPLACE INTO team_cfg (k, v) VALUES (?, ?)', key, JSON.stringify(L))); }
+      if (st.length) await DB.batch(st); return { ok: true, ...(await opsCfg()) };
+    }
+    /* گزارش روزانه‌ی همه‌ی مناطق برای یک روز */
+    if (p === '/api/super/daily' && m === 'GET') {
+      const d = JD.num(url.searchParams.get('day')) ?? JD.today();
+      const rows = await all('SELECT d.region_id, d.domain, d.status, d.text, d.updated, x.name AS by FROM daily_reports d LEFT JOIN users x ON x.id = d.user_id WHERE d.day = ?', JD.str(d));
+      const mgrs = await all("SELECT id, region_id, name, scope FROM users WHERE role = 'region' AND active = 1");
+      return { day: JD.str(d), today: JD.str(JD.today()), rows, mgrs: mgrs.map(x => ({ ...x, scope: x.scope == null ? null : String(x.scope).split('|') })), ...(await opsCfg()) };
     }
     /* دسترسی‌های یک مدیر منطقه */
     if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/perms$/)) && m === 'POST') {
@@ -939,6 +1028,44 @@ async function api(req, url, u) {
     const need = k => { if (!can(u, k)) fail(403, k === 'fm' ? 'سرپرست مناطق هنوز دسترسی «تعریف مدیران ثابت» را به شما نداده است.' : 'سرپرست مناطق هنوز دسترسی «تعریف آشپزها و عوامل» را به شما نداده است.'); };
     if (m === 'POST' && p.startsWith('/api/admin/staff')) need('staff');
     if (p === '/api/admin/users' && m === 'POST') need('fm');
+    /* گزارش روزانه‌ی حوزه‌ها (اسکان، تغذیه، …) — هر حوزه وضعیت + شرح */
+    if (p === '/api/admin/daily') {
+      const C = await opsCfg(), mg = u.role === 'region' ? u : await one("SELECT * FROM users WHERE region_id = ? AND role = 'region' AND active = 1 ORDER BY id DESC", R);
+      const D = mg ? scopeOf(mg, C.domains) : C.domains;
+      if (m === 'GET') {
+        const d = JD.num(url.searchParams.get('day')) ?? JD.today();
+        const rows = await all('SELECT d.domain, d.status, d.text, d.updated, x.name AS by FROM daily_reports d LEFT JOIN users x ON x.id = d.user_id WHERE d.region_id = ? AND d.day = ?', R, JD.str(d));
+        const recent = await all('SELECT day, COUNT(*) AS n, SUM(status = \'major\') AS major, SUM(status = \'minor\') AS minor FROM daily_reports WHERE region_id = ? GROUP BY day ORDER BY day DESC LIMIT 14', R);
+        return { day: JD.str(d), today: JD.str(JD.today()), domains: D, rows, recent };
+      }
+      if (m === 'POST') {
+        const b = await body(), d = JD.num(b.day); if (d == null) fail(400, 'روز نامعتبر است.');
+        if (d > JD.today() || d < JD.today() - 3) fail(400, 'فقط برای امروز و سه روز گذشته می‌شود ثبت کرد.');
+        const items = (Array.isArray(b.items) ? b.items : []).filter(x => D.includes(x.domain) && DST.includes(x.status)), now = Date.now();
+        if (!items.length) fail(400, 'برای دست‌کم یک حوزه وضعیت را انتخاب کنید.');
+        if (items.some(x => (x.status === 'minor' || x.status === 'major') && !stS(x.text, 10))) fail(400, 'برای حوزه‌ای که مشکل دارد، شرح را بنویسید.');
+        await DB.batch(items.map(x => prep('INSERT OR REPLACE INTO daily_reports (region_id, day, domain, status, text, user_id, updated) VALUES (?, ?, ?, ?, ?, ?, ?)', R, JD.str(d), x.domain, x.status, stS(x.text, 3000), u.id, now)));
+        return { ok: true, n: items.length };
+      }
+    }
+    /* اسکان و غذا: ورودی‌های حاضر در یک روز با آمار لحظه‌ای و اجرای وعده‌ها */
+    if (p === '/api/admin/ops' && m === 'GET') {
+      const d = JD.num(url.searchParams.get('day')) ?? JD.today(), ds = JD.str(d);
+      const ents = await all(`SELECT e.id, e.hotel, e.company, e.caravans, e.pilgrims, e.rooms, e.beds, e.d_in, e.d_out, w.title AS week,
+          o.pilgrims AS a_pil, o.rooms AS a_rooms, o.beds AS a_beds, o.note AS a_note, o.updated AS a_t, f.plan_id,
+          (SELECT group_concat(x.name, '، ') FROM assign a JOIN users x ON x.id = a.user_id WHERE a.entry_id = e.id) AS fm
+        FROM entries e JOIN weeks w ON w.id = e.week_id LEFT JOIN entry_occ o ON o.entry_id = e.id LEFT JOIN entry_food f ON f.entry_id = e.id
+        WHERE w.region_id = ? AND w.id IN (SELECT id FROM weeks WHERE region_id = ? ORDER BY imported DESC LIMIT 3) ORDER BY e.hotel, e.d_in`, R, R);
+      const here = ents.filter(e => { const a = JD.num(e.d_in), z = JD.num(e.d_out); return a != null && z != null && a <= d && d <= z; });
+      const seen = new Set(), list = here.filter(e => { const k = e.hotel + '|' + e.company + '|' + e.d_in; if (seen.has(k)) return false; seen.add(k); return true; });
+      const checks = list.length ? await all(`SELECT entry_id, meal, items, note, updated FROM meal_checks WHERE day = ? AND entry_id IN (SELECT value FROM json_each(?))`, ds, JSON.stringify(list.map(e => e.id))) : [];
+      return { day: ds, today: JD.str(JD.today()), entries: list.map(e => ({ ...e, day_no: d - JD.num(e.d_in) + 1, meals: checks.filter(c => c.entry_id === e.id).map(c => ({ meal: c.meal, items: json(c.items) || {}, note: c.note, updated: c.updated })) })) };
+    }
+    if (p === '/api/admin/staff/eval' && m === 'POST') {
+      need('staff');
+      const b = await body(), s0 = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', +b.id, R); if (!s0) fail(404, 'پیدا نشد');
+      const e = evalOf(b, (await opsCfg()).evalStaff); await evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, e, u.id).run(); return { ok: true, score: e.score };
+    }
     if (p === '/api/admin/form') {
       if (m === 'GET') return formOf(R);
       fail(403, 'فرم برای همه‌ی مناطق یکی است و فقط سرپرست مناطق آن را در تب «🧩 فرم‌ساز» پنل خودش تغییر می‌دهد.');
@@ -993,11 +1120,11 @@ async function api(req, url, u) {
       else w = await one('INSERT INTO weeks (region_id, title, file, imported, imported_by) VALUES (?, ?, ?, ?, ?) RETURNING id', R, title, pv.file, now, u.id);
       const J = 'json_extract(value, ', keep = JSON.stringify(parsed.rows.map(r => r.row_no));
       const st = [
-        prep(`INSERT INTO entries (week_id, row_no, hotel, home_mgr, cook, caravans, d_in, d_out, pilgrims, company, siyahe)
-          SELECT ?, ${J}'$.row_no'), ${J}'$.hotel'), ${J}'$.home_mgr'), ${J}'$.cook'), ${J}'$.caravans'), ${J}'$.d_in'), ${J}'$.d_out'), ${J}'$.pilgrims'), ${J}'$.company'), ${J}'$.siyahe') FROM json_each(?) WHERE true
+        prep(`INSERT INTO entries (week_id, row_no, hotel, home_mgr, cook, caravans, d_in, d_out, pilgrims, company, siyahe, rooms, beds)
+          SELECT ?, ${J}'$.row_no'), ${J}'$.hotel'), ${J}'$.home_mgr'), ${J}'$.cook'), ${J}'$.caravans'), ${J}'$.d_in'), ${J}'$.d_out'), ${J}'$.pilgrims'), ${J}'$.company'), ${J}'$.siyahe'), ${J}'$.rooms'), ${J}'$.beds') FROM json_each(?) WHERE true
           ON CONFLICT (week_id, row_no) DO UPDATE SET hotel = excluded.hotel, home_mgr = excluded.home_mgr, cook = excluded.cook, caravans = excluded.caravans, d_in = excluded.d_in,
-          d_out = excluded.d_out, pilgrims = excluded.pilgrims, company = excluded.company, siyahe = excluded.siyahe`, w.id, JSON.stringify(parsed.rows)),
-        prep('DELETE FROM entries WHERE week_id = ? AND row_no NOT IN (SELECT value FROM json_each(?)) AND id NOT IN (SELECT entry_id FROM reports)', w.id, keep),
+          d_out = excluded.d_out, pilgrims = excluded.pilgrims, company = excluded.company, siyahe = excluded.siyahe, rooms = excluded.rooms, beds = excluded.beds`, w.id, JSON.stringify(parsed.rows)),
+        prep('DELETE FROM entries WHERE week_id = ? AND row_no NOT IN (SELECT value FROM json_each(?)) AND id NOT IN (SELECT entry_id FROM reports) AND id NOT IN (SELECT entry_id FROM meal_checks) AND id NOT IN (SELECT entry_id FROM entry_occ)', w.id, keep),
         prep('DELETE FROM assign WHERE entry_id IN (SELECT id FROM entries WHERE week_id = ?)', w.id),
         prep('DELETE FROM sheet_rows WHERE week_id = ?', w.id),
         prep(`INSERT OR IGNORE INTO sheet_rows (week_id, sheet, row_no) SELECT ?, ${J}'$.s'), ${J}'$.r') FROM json_each(?)`, w.id, JSON.stringify(parsed.sheets.flatMap(s => s.ids.map(r => ({ s: s.sheet, r })))))];
@@ -1104,7 +1231,8 @@ async function api(req, url, u) {
       const geo = await all('SELECT hotel, lat, lng FROM hotel_geo WHERE region_id = ?', R);
       const tb = await one('SELECT linked FROM team_bale WHERE user_id = ?', u.id);
       const region = await one('SELECT name FROM regions WHERE id = ?', R);
-      return { rows, moves, roles: await staffRoles(R), hotels, suggest: [...names.values()], fms: fms.map(x => ({ name: x.name, nid: x.nid, hotels: [...new Set(String(x.hotels || '').split('|').map(normName).filter(Boolean))] })), geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
+      const evals = await all("SELECT ref_id, score, answers, note, t FROM evals WHERE kind = 'staff' AND region_id = ? ORDER BY t", R);
+      return { rows, moves, evals: evals.map(e => ({ ...e, answers: json(e.answers) || [] })), evalQs: (await opsCfg()).evalStaff, roles: await staffRoles(R), hotels, suggest: [...names.values()], fms: fms.map(x => ({ name: x.name, nid: x.nid, hotels: [...new Set(String(x.hotels || '').split('|').map(normName).filter(Boolean))] })), geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
     }
     if (p === '/api/admin/staff' && m === 'POST') {
       const b = await body(), roles = await staffRoles(R), v = staffRow(b, roles); if (v.err) fail(400, v.err);
@@ -1166,8 +1294,9 @@ async function api(req, url, u) {
       }
       if (s0.status !== 'active') fail(400, 'این دوره فعال نیست.');
       const d = b.date ? JD.num(b.date) : JD.today(); if (d == null) fail(400, 'تاریخ خروج درست نیست.');
-      await run("UPDATE staff SET status = 'left', left_at = ?, updated = ?, by = ? WHERE id = ?", JD.str(d), Date.now(), u.id, s0.id);
-      return { ok: true };
+      const q = [prep("UPDATE staff SET status = 'left', left_at = ?, updated = ?, by = ? WHERE id = ?", JD.str(d), Date.now(), u.id, s0.id)];
+      if (b.eval) q.push(evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, evalOf(b.eval, (await opsCfg()).evalStaff), u.id));
+      await DB.batch(q); return { ok: true };
     }
     if (p === '/api/admin/staff/del' && m === 'POST') {
       const b = await body(), s0 = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', +b.id, R); if (!s0) fail(404, 'پیدا نشد');

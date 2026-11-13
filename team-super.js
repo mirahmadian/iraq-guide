@@ -3,7 +3,7 @@
 /* مدیر سامانه: همه‌ی مناطق، مدیران منطقه و همه‌ی کاربرانی که ساخته‌اند */
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
-const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
+const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['daily', '📝 گزارش روزانه'], ['evals', '⭐ ارزشیابی‌ها'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
 /* سرپرستی که خودش هم هتل دارد (منطقه و شیت روی حسابش)، تب «هتل‌های من» هم دارد */
 const tabs = () => { const T = U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS.slice(); if (U.me.lead && U.me.region_id) T.splice(T.length - 1, 0, ['mine', '🏨 هتل‌های من']); return T; };
 
@@ -20,13 +20,14 @@ function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, guide: () => renderGuide(main(), 'lead', leadL()), form: () => openFormBuilder(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), guide: () => renderGuide(main(), 'lead', leadL()), form: () => openFormBuilder(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const leadL = () => (U.O && U.O.leadLabel) || U.me.leadLabel || 'سرپرست مناطق';
+setLeadLabelFn(() => leadL());
 const full = () => !U.me.lead;
 const roleName = (r, lead) => r === 'region' ? 'مدیر منطقه' : r === 'fm' ? 'مدیر ثابت' : r === 'super' ? (lead ? leadL() : 'مدیر سامانه') : r;
 /* نام منطقه همراه شهرش (هر شهر یک یا چند منطقه) */
-const regLabel = r => r.city && r.city !== r.name ? `${r.city} · ${r.name}` : r.name;
+const regLabel = r => r.city && !r.name.includes(r.city) ? `${r.city} · ${r.name}` : r.name;
 const regOptions = (R, sel) => [...new Set(R.map(r => r.city || ''))].map(c => `<optgroup label="${esc(c || 'بدون شهر')}">${R.filter(r => (r.city || '') === c).map(r => `<option value="${r.id}" ${sel === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</optgroup>`).join('');
 /* «هنوز وارد نشده» از روی زمان آخرین ورود (مدیر ثابت رمز موقتش را لازم نیست عوض کند، پس رمز موقت نشانه ورود نکردن نیست) */
 const statusPill = u => !u.active ? '<span class="pill bad">غیرفعال</span>' : !u.last_login ? '<span class="pill warn">هنوز وارد نشده</span>' : '<span class="pill ok">فعال</span>';
@@ -56,26 +57,29 @@ const permBoxes = (id, p) => Object.keys(PERM_L).map(k => `<label class="pchk"><
 const readPerms = box => Object.fromEntries([...box.querySelectorAll('[data-perm]')].map(i => [i.dataset.perm, i.checked]));
 const fmtD = t => t ? new Date(t).toLocaleDateString('fa-IR-u-ca-persian', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 function mgrBlock(r) {
-  const act = (r.people || []).filter(x => x.role === 'region' && x.active), T = r.terms || [];
+  const act = (r.people || []).filter(x => x.role === 'region' && x.active), T = r.terms || [], D = U.O.ops.domains, EQ = U.O.ops.evalRegion;
   return `<details class="rg-mg"><summary>👔 مدیر منطقه: دسترسی‌ها، تعویض برای دوره‌ی تازه، سابقه</summary>
     ${act.map(x => `<div class="mg-row" data-pbox="${x.id}"><b>${esc(x.name)}</b> <span class="dim num">${faS(x.nid)}</span>
-      <div class="row" style="margin-top:6px">${permBoxes(x.id, x.perms)}<button class="btn small ghost" data-psave="${x.id}">ذخیره‌ی دسترسی</button></div></div>`).join('') || '<p class="hint">این منطقه الان مدیر منطقه‌ی فعال ندارد.</p>'}
+      <div class="row" style="margin-top:6px">${permBoxes(x.id, x.perms)}<button class="btn small ghost" data-psave="${x.id}">ذخیره‌ی دسترسی</button></div>
+      <div class="row" data-sbox="${x.id}" style="margin-top:6px"><span class="dim">📝 محدوده‌ی فعالیت (حوزه‌های گزارش روزانه):</span> ${D.map(d => `<label class="pchk"><input type="checkbox" data-sc="${esc(d)}" ${!x.scope || x.scope.includes(d) ? 'checked' : ''}> ${esc(d)}</label>`).join('')}<button class="btn small ghost" data-ssave="${x.id}">ذخیره‌ی محدوده</button></div>
+      <details class="mg-ev" style="margin-top:6px"><summary class="dim" style="cursor:pointer">✍️ ارزشیابی ${esc(x.name)} (بدون تعویض)</summary><div data-evbox="${x.id}">${evalFormHTML(EQ)}</div><button class="btn small" data-evsave="${x.id}">ثبت ارزشیابی</button></details></div>`).join('') || '<p class="hint">این منطقه الان مدیر منطقه‌ی فعال ندارد.</p>'}
     <form class="mg-new" data-ho="${r.id}" novalidate><h4>🔁 ${act.length ? 'تعویض مدیر منطقه (دوره‌ی تازه)' : 'تعیین مدیر منطقه'}</h4>
       <div class="row" style="align-items:flex-end">
         <div class="field" style="flex:1 1 180px"><label class="label">نام و نام خانوادگی</label><input data-hn maxlength="80"></div>
         <div class="field" style="flex:1 1 140px"><label class="label">کد ملی (نام کاربری)</label><input data-hi inputmode="numeric" maxlength="12" dir="ltr"></div>
         <div class="field" style="flex:1 1 140px"><label class="label">رمز (خالی = موقت)</label><input data-hp maxlength="60" autocomplete="new-password"></div></div>
-      <div class="row" style="margin-top:6px">${permBoxes(0, null)}</div>
+      <div class="row mg-perms" style="margin-top:6px">${permBoxes(0, null)}</div>
       ${act.length ? `<label class="pchk" style="margin-top:6px"><input type="checkbox" data-hk> مدیر فعلی (${esc(act.map(x => x.name).join('، '))}) هم فعال بماند</label>` : ''}
+      ${act.length === 1 ? `<div class="mg-out" data-hev><h4>📋 فرم پایان مأموریت ${esc(act[0].name)}</h4><p class="hint">پیش از ثبت مدیر تازه، عملکرد مدیر فعلی را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
       <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید.</p>
       <button class="btn" type="submit">ثبت</button> <span class="err" data-he></span></form>
-    ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span></li>`).join('')}</ul>` : ''}
+    ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span> ${t.score != null ? scoreTag(t.score) : ''}</li>`).join('')}</ul>` : ''}
   </details>`;
 }
 function regionCard(r) {
   const P = r.people || [], mgr = P.filter(x => x.role === 'region' && x.active), hot = P.filter(x => x.role === 'fm' || x.sheet);
   const st = r.staff || [], stN = st.reduce((a, x) => a + x.n, 0), stSoon = st.reduce((a, x) => a + x.soon, 0);
-  return `<div class="card rg ${cityCls(r.city)}"><div class="card-h"><h2>🗺️ ${esc(r.name)} ${r.city !== r.name ? cityTag(r.city) : ''}</h2>
+  return `<div class="card rg ${cityCls(r.city)}"><div class="card-h"><h2>🗺️ ${esc(r.name)} ${!r.name.includes(r.city || '-') ? cityTag(r.city) : ''}</h2>
       <div class="row"><button class="btn small" data-open="${r.id}">ورود به پنل این منطقه ←</button><button class="btn small ghost" data-users="${r.id}">👥 کاربران</button></div></div>
     <div class="rg-stats"><span>هفته‌ی واردشده <b class="num">${fa(r.weeks)}</b></span><span>گزارش <b class="num">${fa(r.reports)}</b></span><span>نقص <b class="num">${fa(r.defects)}</b></span>
       <span class="${r.open ? 'bad' : ''}">نقص باز <b class="num">${fa(r.open || 0)}</b></span><span class="dim">آخرین گزارش: ${r.last_report ? fmtTs(r.last_report) : '—'}</span></div>
@@ -112,11 +116,13 @@ function renderRegions() {
     </div>
     ${(U.city ? [U.city] : cities).map(c => `<h2 class="city-h ${cityCls(c)}"><i></i>🕌 ${esc(c || 'بدون شهر')} <span class="dim" style="font-size:13px;font-weight:500">(${fa(RA.filter(r => inCity(r, c)).length)} منطقه)</span></h2>
       ${RA.filter(r => inCity(r, c)).map(regionCard).join('')}`).join('') || '<div class="empty">هنوز منطقه‌ای ساخته نشده.</div>'}
-    <details class="card setx" ${U.setOpen ? 'open' : ''}><summary><h2>⚙️ تنظیمات و افزودن</h2><span class="dim">منطقه‌ی جدید، کاربر جدید${full() ? '، عنوان نقش' : ''}</span></summary>
+    <details class="card setx" ${U.setOpen ? 'open' : ''}><summary><h2>⚙️ تنظیمات و افزودن</h2><span class="dim">منطقه‌ی جدید، منطقه‌های پیش‌فرض، حوزه‌ها و ارزشیابی، کاربر جدید${full() ? '، عنوان نقش' : ''}</span></summary>
     <form class="card" id="nr" novalidate><div class="card-h"><h2>➕ منطقه‌ی جدید</h2></div>
       <div class="row" style="align-items:flex-end"><div class="field" style="flex:1 1 160px"><label class="label" for="nr-city">شهر</label><select id="nr-city">${U.O.cities.map(x => `<option ${x === U.city ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
         <div class="field" style="flex:1 1 220px"><label class="label" for="nr-name">نام منطقه</label><input id="nr-name" maxlength="80" placeholder="مثلاً کربلا ۲ (بین‌الحرمین)"></div><button class="btn" type="submit">ساختن</button></div>
       <p class="hint">هر شهر می‌تواند یک یا چند منطقه داشته باشد. نام منطقه باید یکتا باشد. بعد از ساختن، در کارت همان منطقه با «👔 مدیر منطقه ← تعیین مدیر منطقه» مدیرش را بگذارید.</p><span class="err" id="nr-err"></span></form>
+    <div class="card"><div class="card-h"><h2>🏙️ منطقه‌های پیش‌فرض</h2></div><p class="hint">برای هر شهر (نجف، کربلا، کاظمین، سامراء) آن‌قدر منطقه ساخته می‌شود که هر شهر دست‌کم ۴ منطقه داشته باشد (مثلاً «کاظمین - منطقه‌ی ۱»). منطقه‌های موجود حساب می‌شوند و چیزی پاک یا عوض نمی‌شود؛ نام‌ها را بعداً می‌توانید عوض کنید.</p><button class="btn ghost" id="rdef">🏙️ ساختن منطقه‌های پیش‌فرض</button></div>
+    ${opsCfgCardHTML(U.O.ops)}
     ${newUserForm(RA, 'region')}
     ${full() ? `<form class="card" id="ll" novalidate><div class="card-h"><h2>🏷️ عنوان نقش «${esc(leadL())}»</h2></div>
       <p class="hint">نقشی یک سطح بالاتر از مدیر منطقه: پنل همه‌ی شهرها و مناطق را می‌بیند (داشبورد، کیفیت، اکسل هفتگی، عوامل) و منطقه و مدیر منطقه می‌سازد، مدیران منطقه را هر دوره عوض می‌کند و به آن‌ها دسترسی می‌دهد؛ ولی به حساب شما و هم‌سطح‌هایش دسترسی ندارد.</p>
@@ -130,18 +136,30 @@ function renderRegions() {
   m.querySelectorAll('[data-rsave]').forEach(b => b.onclick = async () => { try { await api('/api/super/regions/' + b.dataset.rsave, { body: { name: m.querySelector(`[data-rname="${b.dataset.rsave}"]`).value, city: m.querySelector(`[data-rcity="${b.dataset.rsave}"]`).value } }); toast('ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-rdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api(`/api/super/regions/${b.dataset.rdel}/delete`, { body: {} }); toast('منطقه حذف شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.psave}/perms`, { body: readPerms(m.querySelector(`[data-pbox="${b.dataset.psave}"]`)) }); toast('دسترسی‌ها ذخیره شد؛ از درخواست بعدی مدیر منطقه اعمال می‌شود.'); loadRegions(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-evbox]').forEach(b => wireEval(b, U.O.ops.evalRegion));
+  m.querySelectorAll('[data-hev]').forEach(b => wireEval(b, U.O.ops.evalRegion));
+  m.querySelectorAll('[data-ssave]').forEach(b => b.onclick = async () => { const box = m.querySelector(`[data-sbox="${b.dataset.ssave}"]`), sc = [...box.querySelectorAll('[data-sc]:checked')].map(i => i.dataset.sc);
+    if (!sc.length) return toast('دست‌کم یک حوزه را انتخاب کنید.', true);
+    try { await api(`/api/super/users/${b.dataset.ssave}/scope`, { body: { scope: sc } }); toast('محدوده‌ی فعالیت ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
+  m.querySelectorAll('[data-evsave]').forEach(b => b.onclick = async () => { const ev = readEval(m.querySelector(`[data-evbox="${b.dataset.evsave}"]`), U.O.ops.evalRegion);
+    if (!ev.done) return toast(`${fa(ev.left)} سؤال بی‌پاسخ مانده است.`, true);
+    try { const r = await api(`/api/super/users/${b.dataset.evsave}/eval`, { body: ev }); toast(`ارزشیابی ثبت شد: ${fa(r.score)} از ۱۰۰`); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-ho]').forEach(f => f.onsubmit = async e => {
     e.preventDefault(); const sb = f.querySelector('[type=submit]'), er = f.querySelector('[data-he]'); er.textContent = ''; if (sb.disabled) return;
-    const k = f.querySelector('[data-hk]');
+    const k = f.querySelector('[data-hk]'), hev = f.querySelector('[data-hev]'), ev = hev && !(k && k.checked) ? readEval(hev, U.O.ops.evalRegion) : null;
+    if (ev && !ev.done) { er.textContent = `فرم پایان مأموریت مدیر فعلی: ${fa(ev.left)} سؤال بی‌پاسخ مانده است.`; return; }
     if (sb.dataset.sure !== '1' && !(k && k.checked) && f.closest('.rg-mg').querySelector('.mg-row')) { sb.dataset.sure = '1'; sb.textContent = 'مطمئنید؟ مدیر فعلی غیرفعال می‌شود'; return; }
     sb.disabled = true;
     try {
-      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f), keepOld: !!(k && k.checked) } });
+      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f.querySelector('.mg-perms')), keepOld: !!(k && k.checked), eval: ev || undefined } });
       if (r.password) U.temp = [r];
       toast(`«${r.name}» مدیر منطقه شد${r.ended ? `؛ ${fa(r.ended)} مدیر قبلی غیرفعال شد` : ''}${r.kept ? ' (با همان رمز قبلی خودش وارد می‌شود)' : ''}.`);
       loadRegions();
     } catch (x) { sb.disabled = false; sb.dataset.sure = ''; sb.textContent = 'ثبت'; er.textContent = x.message; }
   });
+  m.querySelector('#rdef').onclick = async ev => { const b = ev.target; if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟ دوباره بزنید'; return; }
+    try { const r = await api('/api/super/regions/defaults', { body: {} }); toast(r.created.length ? `${fa(r.created.length)} منطقه ساخته شد.` : 'همه‌ی شهرها همین حالا دست‌کم ۴ منطقه دارند.'); loadRegions(); } catch (e) { toast(e.message, true); } };
+  wireOpsCfg(m, () => loadRegions());
   const nr = m.querySelector('#nr'); if (nr) nr.onsubmit = async e => { e.preventDefault(); try { await api('/api/super/regions', { body: { city: m.querySelector('#nr-city').value, name: m.querySelector('#nr-name').value } }); toast('منطقه ساخته شد.'); loadRegions(); } catch (x) { m.querySelector('#nr-err').textContent = x.message; } };
   const ll = m.querySelector('#ll'); if (ll) ll.onsubmit = async e => { e.preventDefault(); try { await api('/api/super/cfg', { body: { leadLabel: m.querySelector('#ll-v').value } }); toast('ذخیره شد.'); U.O = null; loadRegions(); } catch (x) { toast(x.message, true); } };
   wireNewUser(m);

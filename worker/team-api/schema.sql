@@ -92,3 +92,18 @@ CREATE TABLE IF NOT EXISTS team_cfg (k TEXT PRIMARY KEY, v TEXT);
 ALTER TABLE users ADD COLUMN perms TEXT;
 CREATE TABLE IF NOT EXISTS region_terms (id INTEGER PRIMARY KEY, region_id INTEGER NOT NULL, user_id INTEGER NOT NULL, name TEXT, start INTEGER NOT NULL, end INTEGER, by INTEGER);
 CREATE INDEX IF NOT EXISTS region_terms_r ON region_terms (region_id, start);
+
+-- گزارش روزانه‌ی حوزه‌ها، ارزشیابی‌ها، آمار لحظه‌ای ورودی‌ها و اجرای برنامه‌ی غذایی
+ALTER TABLE users ADD COLUMN scope TEXT;
+ALTER TABLE entries ADD COLUMN rooms INTEGER;
+ALTER TABLE entries ADD COLUMN beds INTEGER;
+CREATE TABLE IF NOT EXISTS evals (id INTEGER PRIMARY KEY, kind TEXT NOT NULL, ref_id INTEGER NOT NULL, region_id INTEGER, name TEXT, answers TEXT, score INTEGER, note TEXT, by INTEGER, t INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS evals_ref ON evals (kind, ref_id);
+CREATE TABLE IF NOT EXISTS daily_reports (region_id INTEGER NOT NULL, day TEXT NOT NULL, domain TEXT NOT NULL, status TEXT, text TEXT, user_id INTEGER, updated INTEGER NOT NULL, PRIMARY KEY (region_id, day, domain));
+CREATE INDEX IF NOT EXISTS daily_day ON daily_reports (day);
+CREATE TABLE IF NOT EXISTS entry_occ (entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE, pilgrims INTEGER, rooms INTEGER, beds INTEGER, note TEXT, user_id INTEGER, updated INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS occ_log (id INTEGER PRIMARY KEY, entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE, pilgrims INTEGER, rooms INTEGER, beds INTEGER, note TEXT, user_id INTEGER, t INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS occ_log_e ON occ_log (entry_id, t);
+CREATE TABLE IF NOT EXISTS entry_food (entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE, plan_id TEXT, user_id INTEGER, updated INTEGER);
+CREATE TABLE IF NOT EXISTS meal_checks (entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE, day TEXT NOT NULL, meal TEXT NOT NULL, items TEXT NOT NULL, note TEXT, user_id INTEGER, updated INTEGER NOT NULL, PRIMARY KEY (entry_id, day, meal));
+CREATE INDEX IF NOT EXISTS meal_day ON meal_checks (day);

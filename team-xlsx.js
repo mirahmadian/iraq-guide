@@ -26,7 +26,7 @@ function xTable(X, ws) {
   if (h < 0) return null;
   const col = t => a[h].findIndex(c => xNorm(c).includes(t));
   return { a, h, c: { id: col('ردیف'), hotel: a[h].findIndex(c => xClean(c) === 'هتل'), mgr: col('مدیرثابت'), cook: col('آشپز'), car: col('تعدادکاروان'),
-    din: col('تاریخورود'), dout: col('تاریخخروج'), pil: col('تعدادزائر'), co: col('شرکتمجری'), si: col('شرکتسیاحه') } };
+    din: col('تاریخورود'), dout: col('تاریخخروج'), pil: col('تعدادزائر'), co: col('شرکتمجری'), si: col('شرکتسیاحه'), room: col('تعداداتاق') >= 0 ? col('تعداداتاق') : col('اتاق'), bed: col('تعدادتخت') >= 0 ? col('تعدادتخت') : col('تخت') } };
 }
 const xDate = v => xLatin(xClean(v)).replace(/-/g, '/');
 const xInt = v => parseInt(xLatin(String(v)).replace(/\D/g, ''), 10) || 0;
@@ -59,7 +59,7 @@ async function parseWeeklyFile(file) {
   for (const r of main.a.slice(main.h + 1)) {
     const id = xInt(r[C.id]); if (!id || !xClean(r[C.hotel])) continue;
     const e = { row_no: id, hotel: xClean(r[C.hotel]), home_mgr: xClean(r[C.mgr]), cook: xClean(r[C.cook]), caravans: xInt(r[C.car]),
-      d_in: xDate(r[C.din]), d_out: xDate(r[C.dout]), pilgrims: xInt(r[C.pil]), company: xClean(r[C.co]), siyahe: xClean(r[C.si]) };
+      d_in: xDate(r[C.din]), d_out: xDate(r[C.dout]), pilgrims: xInt(r[C.pil]), company: xClean(r[C.co]), siyahe: xClean(r[C.si]), rooms: C.room >= 0 ? xInt(r[C.room]) || null : null, beds: C.bed >= 0 ? xInt(r[C.bed]) || null : null };
     if (!/^\d{4}\/\d{2}\/\d{2}$/.test(e.d_in) || !/^\d{4}\/\d{2}\/\d{2}$/.test(e.d_out)) problems.push(`ردیف ${id}: تاریخ ورود یا خروج قابل خواندن نیست.`);
     rows.push(e);
   }

@@ -12,7 +12,7 @@ window.startRegion = (me, opts) => {
   shell(); go((location.hash.slice(1) || 'dash'));
 };
 /* «هتل‌های من»: مدیر منطقه‌ای که خودش هم کار مدیر ثابت را برای چند هتل انجام می‌دهد */
-const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
+const TABS = [['dash', '📊 داشبورد'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['staff', '👷 عوامل'], ['mine', '🏨 هتل‌های من'], ['import', '📄 اکسل هفتگی'], ['form', '🧩 فرم‌ساز'], ['users', '👥 مدیران ثابت'], ['daily', '📝 گزارش روزانه'], ['ops', '🛏️ اسکان و غذا'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
 /* دسترسی‌هایی که سرپرست مناطق داده (مدیر سامانه/سرپرست که پنل منطقه را باز کرده همه را دارد) */
 const canDo = k => !A.me.perms || !!A.me.perms[k];
 /* فرم‌ساز یک فرم واحد برای همه‌ی مناطق است و در پنل خود سرپرست مناطق (team-super.js) باز می‌شود، نه در پنل منطقه */
@@ -35,7 +35,7 @@ function go(tab) {
   A.tab = tab; history.replaceState(null, '', '#' + tab);
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ dash: loadDash, quality: () => loadQuality(), cos: () => loadCompanies(), staff: () => loadStaff(main(), {}), import: renderImport, form: loadForm, users: loadUsers, guide: () => renderGuide(main(), 'region', A.me.leadLabel || 'سرپرست مناطق', A.me.perms), account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
+  ({ dash: loadDash, quality: () => loadQuality(), cos: () => loadCompanies(), staff: () => loadStaff(main(), {}), import: renderImport, form: loadForm, users: loadUsers, daily: () => renderDailyForm(main()), ops: () => renderOpsRegion(main()), guide: () => renderGuide(main(), 'region', A.me.leadLabel || 'سرپرست مناطق', A.me.perms), account: () => renderAccount(main(), A.me, () => go('dash')) })[tab]();
 }
 let leaveSure = false;
 function confirmLeave() { if (leaveSure) { leaveSure = false; A.formDirty = false; return true; } leaveSure = true; toast('تغییرهای فرم ذخیره نشده‌اند. برای رها کردن، دوباره روی تب بزنید.', true); setTimeout(() => leaveSure = false, 5000); return false; }

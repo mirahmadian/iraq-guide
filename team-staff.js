@@ -143,22 +143,26 @@ function quickDlg() {
 }
 
 /* ═════ فهرست ═════ */
+/* آغاز مأموریت = شروع اولین دوره‌ی زنجیره‌ی تمدیدها؛ آخرین تمدید = شروع دوره‌ی فعلی اگر تمدیدی است؛ نمره = آخرین ارزشیابی این نفر */
+function firstStart(r) { const by = new Map(S.d.rows.map(x => [x.id, x])); let x = r, n = 0; while (x.prev_id && by.has(x.prev_id) && n++ < 50) x = by.get(x.prev_id); return x.d_start; }
+function scoreOf(r) { const ids = new Set(S.d.rows.filter(x => x.nid === r.nid).map(x => x.id)), L = (S.d.evals || []).filter(e => ids.has(e.ref_id)); return L.length ? L[L.length - 1] : null; }
 function renderList() {
   const box = document.getElementById('st-body');
   const rows = (S.hist ? S.d.rows : active()).filter(match).sort((a, b) => (a.status !== 'active') - (b.status !== 'active') || JD.num(a.d_end) - JD.num(b.d_end));
   box.innerHTML = quickCard() + `<div class="card">${roleChips()}
     <label class="row dim" style="font-size:12.5px;gap:6px"><input type="checkbox" id="st-hist" ${S.hist ? 'checked' : ''}> دوره‌های تمام‌شده و تمدیدشده را هم نشان بده</label>
-    <div class="tbl-wrap"><table class="st-tbl"><thead><tr><th>نام</th><th>نقش</th><th>هتل (برای جابجایی بزنید)</th><th>شروع</th><th>خروج</th><th>مانده</th><th></th></tr></thead><tbody>
+    <div class="tbl-wrap"><table class="st-tbl"><thead><tr><th>نام</th><th>سمت</th><th>هتل محل خدمت (برای جابجایی بزنید)</th><th>آغاز مأموریت</th><th>آخرین تمدید</th><th>پایان مأموریت</th><th>مانده</th><th>نمره‌ی ارزیابی</th><th></th></tr></thead><tbody>
     ${rows.map(r => { const L = lvl(r), n = left(r);
       return `<tr class="st-r ${L}" data-id="${r.id}">
         <td><b>${esc(nameOf(r))}</b><div class="dim num" style="font-size:11.5px">${faS(r.nid)}</div></td>
         <td>${esc(r.role)}</td>
         <td>${r.status === 'active' ? `<button class="st-hbtn" data-mv="${r.id}">${r.hotel ? esc(r.hotel) : '<span class="dim">بدون هتل</span>'} <span aria-hidden="true">⇄</span></button>` : esc(r.hotel || '—')}</td>
-        <td class="num">${faS(r.d_start)}</td><td class="num">${faS(r.d_end)}</td>
+        <td class="num">${faS(firstStart(r))}</td><td class="num">${r.prev_id ? faS(r.d_start) : '<span class="dim">—</span>'}</td><td class="num">${faS(r.d_end)}</td>
         <td>${r.status === 'active' ? `<span class="pill ${L === 'over' ? 'bad' : L === 'near' ? 'bad' : n <= 10 ? 'warn' : 'ok'}">${daysTxt(n)}</span>` : `<span class="pill mute">${r.status === 'left' ? 'خارج شد' + (r.left_at ? ' ' + faS(r.left_at.slice(5)) : '') : 'تمدید شد'}</span>`}</td>
-        <td class="st-act">${r.status === 'active' ? `<button class="btn small ghost" data-ext="${r.id}" title="دوره‌ی تازه برای همین نفر">🔁 تمدید</button><button class="btn small ghost" data-leave="${r.id}">🚪 خارج شد</button>` : r.status === 'left' ? `<button class="btn small ghost" data-unleave="${r.id}">↩️</button>` : ''}
-          <button class="btn small ghost" data-edit="${r.id}" title="ویرایش">✏️</button><button class="btn small ghost" data-hist="${r.id}" title="سابقه">🕘</button></td></tr>`; }).join('')
-      || `<tr><td colspan="7" class="empty">${S.d.rows.length ? 'کسی با این جستجو پیدا نشد.' : 'هنوز نیرویی ثبت نشده است. از «⚡ ثبت سریع» بالا، «➕ نیروی تازه» یا «📄 ورود از اکسل» شروع کنید.'}</td></tr>`}
+        <td>${(sc => sc ? `<button class="linkish" data-evv="${r.id}" title="دیدن پاسخ‌ها">${scoreTag(sc.score)}</button>` : '<span class="dim">—</span>')(scoreOf(r))}</td>
+        <td class="st-act">${r.status === 'active' ? `<button class="btn small ghost" data-ext="${r.id}" title="دوره‌ی تازه برای همین نفر">🔁 تمدید</button><button class="btn small ghost" data-leave="${r.id}">🚪 پایان مأموریت</button>` : r.status === 'left' ? `<button class="btn small ghost" data-unleave="${r.id}">↩️</button>` : ''}
+          <button class="btn small ghost" data-eval="${r.id}" title="ارزشیابی عملکرد">⭐</button><button class="btn small ghost" data-edit="${r.id}" title="ویرایش">✏️</button><button class="btn small ghost" data-hist="${r.id}" title="سابقه">🕘</button></td></tr>`; }).join('')
+      || `<tr><td colspan="9" class="empty">${S.d.rows.length ? 'کسی با این جستجو پیدا نشد.' : 'هنوز نیرویی ثبت نشده است. از «⚡ ثبت سریع» بالا، «➕ نیروی تازه» یا «📄 ورود از اکسل» شروع کنید.'}</td></tr>`}
     </tbody></table></div>
     <div class="legend"><span><i style="background:var(--bad)"></i>${fa(NEAR)} روز یا کمتر تا خروج، یا گذشته</span><span><i style="background:var(--warn)"></i>کمتر از ۱۰ روز</span></div></div>`;
   bindChips(box, renderList);
@@ -174,6 +178,9 @@ function bindRowActions(box) {
   box.querySelectorAll('[data-unleave]').forEach(b => b.onclick = async () => { try { await api('/api/admin/staff/leave', { body: { id: +b.dataset.unleave, undo: 1 } }); toast('دوباره فعال شد'); reload(); } catch (e) { toast(e.message, true); } });
   box.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editDlg(byId(b.dataset.edit)));
   box.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => histDlg(byId(b.dataset.hist)));
+  box.querySelectorAll('[data-eval]').forEach(b => b.onclick = () => evalDlg(byId(b.dataset.eval)));
+  box.querySelectorAll('[data-evv]').forEach(b => b.onclick = () => { const r = byId(b.dataset.evv), e = scoreOf(r);
+    dlg('⭐ ارزشیابی ' + nameOf(r), `<div>نمره: ${scoreTag(e.score)} <span class="dim">${fmtTs(e.t)}</span></div><ol style="padding-inline-start:20px;line-height:2">${e.answers.map(a => `<li>${esc(a.q)}: <b>${fa(a.v)}</b> از ۵</li>`).join('')}</ol>${e.note ? `<div>💬 ${esc(e.note)}</div>` : ''}`, true); });
 }
 
 /* ═════ جابجایی ═════ */
@@ -396,11 +403,29 @@ function extendDlg(r) {
   D.$('[data-a=ok]').onclick = async () => { try { await api('/api/admin/staff/extend', { body: { id: r.id, d_start: s.value, d_end: e.value } }); toast('تمدید شد ✅'); D.close(); reload(); } catch (er) { toast(er.message, true); } };
 }
 function leaveDlg(r) {
-  const D = dlg('🚪 خروج ' + nameOf(r), `<p class="hint">دوره بسته می‌شود ولی اطلاعات و سابقه‌اش می‌ماند و دیگر هشداری برایش نمی‌آید.</p>
-    <div class="st-form"><label>تاریخ خروج واقعی<input data-f="d" data-jdp data-jdp-title="تاریخ خروج واقعی" value="${faS(S.d.today)}" dir="ltr"></label></div>
-    <div class="rr-act"><button class="btn" data-a="ok">ثبت خروج</button><button class="btn ghost" data-a="x">انصراف</button></div>`);
+  const Q = S.d.evalQs || [];
+  const D = dlg('🚪 پایان مأموریت ' + nameOf(r), `<p class="hint">دوره بسته می‌شود ولی اطلاعات و سابقه‌اش می‌ماند و دیگر هشداری برایش نمی‌آید.</p>
+    <div class="st-form"><label>تاریخ پایان مأموریت (خروج واقعی)<input data-f="d" data-jdp data-jdp-title="تاریخ خروج واقعی" value="${faS(S.d.today)}" dir="ltr"></label></div>
+    <h3 style="font-size:15px;margin:12px 0 4px">📋 ارزشیابی عملکرد ${esc(nameOf(r))} <span class="dim" style="font-size:12px">(${esc(r.role)})</span></h3>
+    <div class="st-ev">${evalFormHTML(Q)}</div>
+    <label class="row dim" style="font-size:12.5px;gap:6px;margin-top:6px"><input type="checkbox" data-f="skip"> بدون ارزشیابی ثبت شود (مثلاً فقط چند روز کار کرده)</label>
+    <div class="rr-act"><button class="btn" data-a="ok">ثبت پایان مأموریت</button><button class="btn ghost" data-a="x">انصراف</button></div>`, true);
+  wireEval(D.$('.st-ev'), Q);
   D.$('[data-a=x]').onclick = D.close;
-  D.$('[data-a=ok]').onclick = async () => { try { await api('/api/admin/staff/leave', { body: { id: r.id, date: D.$('[data-f=d]').value } }); toast('خروج ثبت شد'); D.close(); reload(); } catch (er) { toast(er.message, true); } };
+  D.$('[data-a=ok]').onclick = async () => {
+    const skip = D.$('[data-f=skip]').checked, ev = readEval(D.$('.st-ev'), Q);
+    if (!skip && !ev.done) return toast(`${fa(ev.left)} سؤال ارزشیابی بی‌پاسخ مانده است (یا تیک «بدون ارزشیابی» را بزنید).`, true);
+    try { await api('/api/admin/staff/leave', { body: { id: r.id, date: D.$('[data-f=d]').value, eval: skip ? undefined : ev } }); toast(skip ? 'پایان مأموریت ثبت شد' : `پایان مأموریت ثبت شد · نمره ${fa(ev.score)} از ۱۰۰`); D.close(); reload(); } catch (er) { toast(er.message, true); }
+  };
+}
+function evalDlg(r) {
+  const Q = S.d.evalQs || [];
+  const D = dlg('⭐ ارزشیابی ' + nameOf(r), `<p class="hint">ارزشیابی عملکرد در هر زمان (بدون بستن دوره). آخرین ارزشیابی در ستون «نمره‌ی ارزیابی» نشان داده می‌شود.</p><div class="st-ev">${evalFormHTML(Q)}</div>
+    <div class="rr-act"><button class="btn" data-a="ok">ثبت ارزشیابی</button><button class="btn ghost" data-a="x">انصراف</button></div>`, true);
+  wireEval(D.$('.st-ev'), Q);
+  D.$('[data-a=x]').onclick = D.close;
+  D.$('[data-a=ok]').onclick = async () => { const ev = readEval(D.$('.st-ev'), Q); if (!ev.done) return toast(`${fa(ev.left)} سؤال بی‌پاسخ مانده است.`, true);
+    try { await api('/api/admin/staff/eval', { body: { id: r.id, ...ev } }); toast(`ثبت شد · ${fa(ev.score)} از ۱۰۰`); D.close(); reload(); } catch (er) { toast(er.message, true); } };
 }
 function histDlg(r) {
   const P = S.d.rows.filter(x => x.nid === r.nid).sort((a, b) => JD.num(b.d_start) - JD.num(a.d_start));

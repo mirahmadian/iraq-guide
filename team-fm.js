@@ -130,6 +130,7 @@ function renderEntry() {
   app.innerHTML = `<header class="app-head"><div class="in"><button class="hbtn" id="back">→</button><div class="t"><div class="hi">${esc(e.hotel)}</div><h1>${esc(shortCo(e.company))}</h1>
       <div class="meta"><span>ورود ${md(e.d_in)} ← خروج ${md(e.d_out)}</span><span>${fa(e.caravans)} کاروان · ${fa(e.pilgrims)} زائر</span>${e.siyahe ? `<span>سیاحه: ${esc(e.siyahe)}</span>` : ''}</div></div></div></header>
   <main class="page">
+    <button class="btn ghost" id="ops-go" style="align-self:stretch">🛏️ آمار لحظه‌ای (زائر، اتاق، تخت) و 🍽️ اجرای وعده‌های غذایی ←</button>
     ${E.restored ? '<div class="pill info" style="align-self:flex-start">پیش‌نویس ذخیره‌شده در گوشی بازیابی شد</div>' : ''}
     ${E.notes.length ? `<div class="card"><div class="card-h"><h2>💬 گفتگو با مدیر منطقه</h2></div><div class="thread">${E.notes.map(n => `<div class="msg ${n.role === 'fm' ? 'me' : 'them'}"><div class="who">${n.role === 'fm' ? 'شما' : 'مدیر منطقه'} · ${fmtTs(n.ts)}${n.qid ? ' · ' + esc(qs.find(q => q.id === n.qid)?.text || '') : ''}</div>${esc(n.text)}</div>`).join('')}</div>
       <div class="reply"><input id="nt" placeholder="پاسخ به مدیر منطقه…" maxlength="1000"><button class="btn small" id="nt-send">ارسال</button></div></div>` : ''}
@@ -139,6 +140,7 @@ function renderEntry() {
     <p class="hint">عکس‌ها در خود گوشی کوچک می‌شوند. فیلم حداکثر ۶۰ ثانیه است و در سرور فشرده می‌شود. عکس و فیلم‌ها ۷ روز بعد از سرور پاک می‌شوند، ولی متن گزارش می‌ماند.</p>
   </main>
   <div class="send-bar"><div class="in"><span class="tally">${fa(defs.length)} نقص${noRes ? ` · <span style="color:var(--bad)">${fa(noRes)} بدون نتیجه</span>` : ''}</span><button class="btn" id="save">${E.reportId ? 'ذخیره‌ی تغییرات' : 'ثبت گزارش'}</button></div></div>`;
+  { const og = app.querySelector('#ops-go'); if (og) og.onclick = () => { const id = S.E.id; openOps(id, () => openEntry(id)); }; }
   window.scrollTo(0, keep);
   wireEntry();
 }
