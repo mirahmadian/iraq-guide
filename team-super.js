@@ -15,12 +15,12 @@ function shell() {
 }
 const main = () => document.getElementById('main');
 function go(tab) {
-  if (U.tab === 'form' && tab !== 'form' && window.leaveFormBuilder && !window.leaveFormBuilder()) return;
+  if (U.tab === 'form' && tab !== 'form' && ((window.leaveFormBuilder && !window.leaveFormBuilder()) || !fbLeave())) return;
   if (tab === 'mine') { const me = U.me; return startFM(me, { onBack: () => { U.tab = 'regions'; startSuper(me); } }); }
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), guide: () => renderGuide(main(), 'lead', leadL()), form: () => openFormBuilder(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), guide: () => renderGuide(main(), 'lead', leadL()), form: () => fbStart(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const leadL = () => (U.O && U.O.leadLabel) || U.me.leadLabel || 'سرپرست مناطق';
 setLeadLabelFn(() => leadL());

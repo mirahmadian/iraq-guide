@@ -320,24 +320,49 @@ async function mgrTaken(rid, exceptId) {
 }
 const termClose = uid => prep('UPDATE region_terms SET end = ? WHERE user_id = ? AND end IS NULL', Date.now(), uid);
 /* ── گزارش روزانه‌ی حوزه‌ها، فرم‌های ارزشیابی (تنظیم سرپرست مناطق در team_cfg) ── */
+/* سؤال ارزشیابی: { q, type: 'rate' (۱ تا ۵) | 'yesno' (good = پاسخ مطلوب) | 'choice' (options: [{ l, s = امتیاز ۰ تا ۱۰۰ }]) }؛ فهرست قدیمی (فقط متن) = rate */
 const OPS_DEF = {
   domains: ['اسکان', 'تغذیه', 'نقل و انتقال', 'مدیران راهنما', 'بیمه و درمان', 'خدمات ستادی', 'سایر'],
   evalStaff: ['نظم و حضور به‌موقع', 'انجام کامل وظایف', 'برخورد با زائران', 'همکاری با مدیر و همکاران', 'رعایت بهداشت و ضوابط', 'گزارش‌دهی و پاسخ‌گویی'],
+  evalFm: ['نظم و حضور به‌موقع', 'ثبت به‌موقع گزارش روزانه‌ی هتل‌ها', 'پیگیری و رفع نواقص', 'برخورد با زائران و مدیران کاروان', 'همکاری با مدیر منطقه', 'رعایت ضوابط'],
   evalRegion: ['مدیریت و هماهنگی نیروها', 'پیگیری و رفع نواقص هتل‌ها', 'گزارش‌دهی منظم و به‌موقع', 'برخورد با زائران و مدیران کاروان', 'همکاری با ستاد', 'انضباط و حضور']
 };
-const OPS_KEY = { domains: 'ops_domains', evalStaff: 'eval_staff', evalRegion: 'eval_region' };
+const OPS_KEY = { domains: 'ops_domains', evalStaff: 'eval_staff', evalFm: 'eval_fm', evalRegion: 'eval_region' };
+const EVAL_KEYS = ['evalStaff', 'evalFm', 'evalRegion'];
+function cleanQs(a) {
+  return (Array.isArray(a) ? a : []).slice(0, 30).map(x => {
+    if (typeof x === 'string') x = { q: x };
+    const q = stS(x && x.q, 200); if (!q) return null;
+    const type = ['rate', 'yesno', 'choice'].includes(x.type) ? x.type : 'rate';
+    if (type === 'yesno') return { q, type, good: x.good === 'خیر' ? 'خیر' : 'بله' };
+    if (type === 'choice') {
+      const options = (Array.isArray(x.options) ? x.options : []).slice(0, 10).map(o => ({ l: stS(o && o.l, 80), s: Math.max(0, Math.min(100, Math.round(+(o && o.s) || 0))) })).filter(o => o.l);
+      if (options.length < 2) fail(400, `سؤال «${q}»: دست‌کم دو گزینه لازم است.`);
+      return { q, type, options };
+    }
+    return { q, type };
+  }).filter(Boolean);
+}
 async function opsCfg() {
-  const rows = await all("SELECT k, v FROM team_cfg WHERE k IN ('ops_domains', 'eval_staff', 'eval_region')"), o = {};
-  for (const [k, key] of Object.entries(OPS_KEY)) { const r = rows.find(x => x.k === key); let v = null; try { v = r && JSON.parse(r.v); } catch (e) {} o[k] = Array.isArray(v) && v.length ? v : OPS_DEF[k]; }
+  const rows = await all(`SELECT k, v FROM team_cfg WHERE k IN (${Object.values(OPS_KEY).map(k => `'${k}'`).join(', ')})`), o = {};
+  for (const [k, key] of Object.entries(OPS_KEY)) { const r = rows.find(x => x.k === key); let v = null; try { v = r && JSON.parse(r.v); } catch (e) {} v = Array.isArray(v) && v.length ? v : OPS_DEF[k]; o[k] = EVAL_KEYS.includes(k) ? cleanQs(v) : v; }
   return o;
 }
 const cleanList = (a, n = 20) => [...new Set((Array.isArray(a) ? a : []).map(x => stS(x, 60)).filter(Boolean))].slice(0, n);
 const scopeOf = (u, D) => u.role !== 'region' || u.scope == null ? D : D.filter(d => String(u.scope).split('|').includes(d));
-/* پاسخ‌های ارزشیابی (هر سؤال ۱ تا ۵) ← نمره از ۱۰۰ */
+/* فرم ارزشیابی هر نفر: مدیر ثابت فرم خودش را دارد، بقیه‌ی عوامل (آشپز و …) فرم عوامل */
+const staffQs = (C, role) => role === 'مدیر ثابت' ? C.evalFm : C.evalStaff;
+/* پاسخ‌ها ← امتیاز هر سؤال (۰ تا ۱۰۰) ← نمره = میانگین */
 function evalOf(b, qs) {
-  const ans = qs.map((q, i) => ({ q, v: Math.round(+((b.answers || [])[i] || {}).v || 0) }));
-  if (ans.some(a => a.v < 1 || a.v > 5)) fail(400, 'به همه‌ی سؤال‌های ارزشیابی (۱ تا ۵) پاسخ دهید.');
-  return { answers: JSON.stringify(ans), score: Math.round(ans.reduce((a, x) => a + x.v, 0) / ans.length / 5 * 100), note: stS(b.note, 1000) };
+  const A = b.answers || [];
+  const ans = qs.map((q, i) => {
+    const raw = (A[i] || {}).v;
+    if (q.type === 'yesno') { if (raw !== 'بله' && raw !== 'خیر') return null; return { q: q.q, type: q.type, v: raw, s: raw === q.good ? 100 : 0 }; }
+    if (q.type === 'choice') { const o = q.options.find(o => o.l === raw); return o ? { q: q.q, type: q.type, v: o.l, s: o.s } : null; }
+    const v = Math.round(+raw || 0); return v >= 1 && v <= 5 ? { q: q.q, type: 'rate', v, s: v * 20 } : null;
+  });
+  if (ans.some(a => !a)) fail(400, 'به همه‌ی سؤال‌های ارزشیابی پاسخ دهید.');
+  return { answers: JSON.stringify(ans), score: ans.length ? Math.round(ans.reduce((a, x) => a + x.s, 0) / ans.length) : 0, note: stS(b.note, 1000) };
 }
 const evalIns = (kind, ref, rid, name, e, by) => prep('INSERT INTO evals (kind, ref_id, region_id, name, answers, score, note, by, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', kind, ref, rid, name, e.answers, e.score, e.note, by, Date.now());
 const MEALS_ = ['breakfast', 'lunch', 'dinner'], DST = ['ok', 'minor', 'major', 'na'];
@@ -953,7 +978,7 @@ async function api(req, url, u) {
     }
     if (p === '/api/super/opscfg' && m === 'POST') {
       const b = await body(), st = [];
-      for (const [k, key] of Object.entries(OPS_KEY)) if (b[k] !== undefined) { const L = cleanList(b[k]); if (!L.length) fail(400, 'فهرست نباید خالی باشد.'); st.push(prep('INSERT OR REPLACE INTO team_cfg (k, v) VALUES (?, ?)', key, JSON.stringify(L))); }
+      for (const [k, key] of Object.entries(OPS_KEY)) if (b[k] !== undefined) { const L = EVAL_KEYS.includes(k) ? cleanQs(b[k]) : cleanList(b[k]); if (!L.length) fail(400, 'فهرست نباید خالی باشد.'); st.push(prep('INSERT OR REPLACE INTO team_cfg (k, v) VALUES (?, ?)', key, JSON.stringify(L))); }
       if (st.length) await DB.batch(st); return { ok: true, ...(await opsCfg()) };
     }
     /* گزارش روزانه‌ی همه‌ی مناطق برای یک روز */
@@ -1115,7 +1140,7 @@ async function api(req, url, u) {
     if (p === '/api/admin/staff/eval' && m === 'POST') {
       need('staff');
       const b = await body(), s0 = await one('SELECT * FROM staff WHERE id = ? AND region_id = ?', +b.id, R); if (!s0) fail(404, 'پیدا نشد');
-      const e = evalOf(b, (await opsCfg()).evalStaff); await evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, e, u.id).run(); return { ok: true, score: e.score };
+      const e = evalOf(b, staffQs(await opsCfg(), s0.role)); await evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, e, u.id).run(); return { ok: true, score: e.score };
     }
     if (p === '/api/admin/form') {
       if (m === 'GET') return formOf(R);
@@ -1283,7 +1308,7 @@ async function api(req, url, u) {
       const tb = await one('SELECT linked FROM team_bale WHERE user_id = ?', u.id);
       const region = await one('SELECT name, city FROM regions WHERE id = ?', R);
       const evals = await all("SELECT ref_id, score, answers, note, t FROM evals WHERE kind = 'staff' AND region_id = ? ORDER BY t", R);
-      return { regionCity: region.city || '', rows, moves, evals: evals.map(e => ({ ...e, answers: json(e.answers) || [] })), evalQs: (await opsCfg()).evalStaff, roles: await staffRoles(R), hotels, suggest: [...names.values()], fms: fms.map(x => ({ name: x.name, nid: x.nid, hotels: [...new Set(String(x.hotels || '').split('|').map(normName).filter(Boolean))] })), geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
+      return { regionCity: region.city || '', rows, moves, evals: evals.map(e => ({ ...e, answers: json(e.answers) || [] })), evalQs: (await opsCfg()).evalStaff, evalFmQs: (await opsCfg()).evalFm, roles: await staffRoles(R), hotels, suggest: [...names.values()], fms: fms.map(x => ({ name: x.name, nid: x.nid, hotels: [...new Set(String(x.hotels || '').split('|').map(normName).filter(Boolean))] })), geo, bale: !!tb, region: region.name, today: JD.str(JD.today()), maxDays: STAFF_MAX_DAYS };
     }
     if (p === '/api/admin/staff' && m === 'POST') {
       const b = await body(), roles = await staffRoles(R), v = staffRow(b, roles); if (v.err) fail(400, v.err);
@@ -1346,7 +1371,7 @@ async function api(req, url, u) {
       if (s0.status !== 'active') fail(400, 'این دوره فعال نیست.');
       const d = b.date ? JD.num(b.date) : JD.today(); if (d == null) fail(400, 'تاریخ خروج درست نیست.');
       const q = [prep("UPDATE staff SET status = 'left', left_at = ?, updated = ?, by = ? WHERE id = ?", JD.str(d), Date.now(), u.id, s0.id)];
-      if (b.eval) q.push(evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, evalOf(b.eval, (await opsCfg()).evalStaff), u.id));
+      if (b.eval) q.push(evalIns('staff', s0.id, R, s0.first + ' ' + s0.last, evalOf(b.eval, staffQs(await opsCfg(), s0.role)), u.id));
       await DB.batch(q); return { ok: true };
     }
     if (p === '/api/admin/staff/del' && m === 'POST') {

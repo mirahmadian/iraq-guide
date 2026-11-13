@@ -11,9 +11,15 @@ async function opsCfgGet(fresh) { if (!OPS_CFG || fresh) OPS_CFG = await api('/a
 
 /* ── ارزشیابی ── */
 const scoreTag = s => s == null ? '<span class="dim">—</span>' : `<span class="pill ${s >= 80 ? 'ok' : s >= 60 ? 'warn' : 'bad'}" title="نمره‌ی ارزشیابی از ۱۰۰">⭐ ${fa(s)}</span>`;
+/* سؤال: رشته (قدیمی) یا { q, type: rate | yesno | choice, good, options: [{ l, s }] } */
+const evQ = q => typeof q === 'string' ? { q, type: 'rate' } : q;
+const EV_TYPE = { rate: '۱ تا ۵', yesno: 'بله / خیر', choice: 'چندگزینه‌ای' };
+/* متن یک پاسخ ثبت‌شده (برای نمایش و اکسل) */
+const evAns = a => !a.type || a.type === 'rate' ? `${fa(a.v)} از ۵` : String(a.v);
 function evalFormHTML(qs) {
-  return `<div class="ev">${qs.map((q, i) => `<div class="ev-q"><span>${fa(i + 1)}. ${esc(q)}</span><div class="ev-s" role="group" aria-label="${esc(q)}">${[1, 2, 3, 4, 5].map(v => `<button type="button" data-ev="${i}" data-v="${v}" aria-pressed="false">${fa(v)}</button>`).join('')}</div></div>`).join('')}
-    <div class="dim" style="font-size:12px">۱ = خیلی ضعیف · ۲ = ضعیف · ۳ = متوسط · ۴ = خوب · ۵ = عالی</div>
+  return `<div class="ev">${qs.map(evQ).map((q, i) => `<div class="ev-q"><span>${fa(i + 1)}. ${esc(q.q)}</span><div class="ev-s" role="group" aria-label="${esc(q.q)}">${
+    (q.type === 'yesno' ? ['بله', 'خیر'] : q.type === 'choice' ? q.options.map(o => o.l) : [1, 2, 3, 4, 5]).map(v => `<button type="button" data-ev="${i}" data-v="${esc(String(v))}" aria-pressed="false">${typeof v === 'number' ? fa(v) : esc(v)}</button>`).join('')}</div></div>`).join('')}
+    ${qs.map(evQ).some(q => q.type === 'rate') ? '<div class="dim" style="font-size:12px">۱ = خیلی ضعیف · ۲ = ضعیف · ۳ = متوسط · ۴ = خوب · ۵ = عالی</div>' : ''}
     <textarea class="inp ev-note" rows="2" maxlength="1000" placeholder="توضیح و نظر شما (اختیاری)"></textarea><div class="ev-sc"></div></div>`;
 }
 function wireEval(root, qs) {
@@ -22,9 +28,72 @@ function wireEval(root, qs) {
   upd();
 }
 function readEval(root, qs) {
-  const answers = qs.map((q, i) => ({ v: +((root.querySelector(`[data-ev="${i}"][aria-pressed="true"]`) || {}).dataset || {}).v || 0 }));
-  const left = answers.filter(a => !a.v).length;
-  return { answers, note: (root.querySelector('.ev-note') || {}).value || '', done: !left, left, score: left ? null : Math.round(answers.reduce((a, x) => a + x.v, 0) / answers.length * 20) };
+  const Q = qs.map(evQ);
+  const answers = Q.map((q, i) => { const b = root.querySelector(`[data-ev="${i}"][aria-pressed="true"]`); return { v: b ? (q.type === 'rate' ? +b.dataset.v : b.dataset.v) : '' }; });
+  const sc = Q.map((q, i) => { const v = answers[i].v; if (v === '') return null; return q.type === 'yesno' ? (v === q.good ? 100 : 0) : q.type === 'choice' ? ((q.options.find(o => o.l === v) || {}).s || 0) : v * 20; });
+  const left = sc.filter(x => x == null).length;
+  return { answers, note: (root.querySelector('.ev-note') || {}).value || '', done: !left, left, score: left ? null : Math.round(sc.reduce((a, x) => a + x, 0) / (sc.length || 1)) };
+}
+
+/* ═════ فرم‌ساز: منوی بالای تب (فرم هتل، ارزشیابی‌ها، حوزه‌ها) ═════ */
+const FB_TABS = [['hotel', '🏨 گزارش روزانه‌ی هتل'], ['evalRegion', '⭐ ارزشیابی مدیر منطقه'], ['evalFm', '⭐ ارزشیابی مدیر ثابت'], ['evalStaff', '⭐ ارزشیابی آشپز و سایر عوامل'], ['domains', '📝 حوزه‌های گزارش روزانه']];
+let FB_ME = null, FB_DIRTY = false;
+window.fbStart = me => { FB_ME = me; fbGo('hotel'); };
+window.fbNav = cur => `<nav class="fb-nav" aria-label="فرم‌ها">${FB_TABS.map(([k, l]) => `<button type="button" data-fb="${k}" aria-pressed="${k === cur}">${l}</button>`).join('')}</nav>`;
+window.fbNavWire = m => m.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => fbGo(b.dataset.fb));
+window.fbLeave = () => { if (FB_DIRTY && !confirm('تغییرهای این فرم ذخیره نشده‌اند. رها شوند؟')) return false; FB_DIRTY = false; return true; };
+function fbGo(k) {
+  if (!fbLeave()) return;
+  if (k === 'hotel') return openFormBuilder(FB_ME);
+  if (window.leaveFormBuilder && !window.leaveFormBuilder()) return;
+  renderEvalBuilder(document.getElementById('main'), k);
+}
+window.fbIsOpen = () => !!document.querySelector('.fb-eval');
+async function renderEvalBuilder(m, key, keep) {
+  let C; try { C = keep ? keep.C : await opsCfgGet(true); } catch (e) { return toast(e.message, true); }
+  if (key === 'domains') {
+    m.innerHTML = `${fbNav(key)}<div class="card fb-eval"><div class="card-h"><h2>📝 حوزه‌های گزارش روزانه‌ی مدیران منطقه</h2><button class="btn" id="fe-save">ذخیره</button></div>
+      <p class="hint">هر خط یک حوزه (مثلاً اسکان، تغذیه، نقل و انتقال…). مدیر منطقه هر روز برای هر حوزه‌ی «محدوده‌ی فعالیت» خودش وضعیت و شرح می‌نویسد.</p>
+      <textarea id="fe-d" class="inp" rows="10">${esc(C.domains.join('\n'))}</textarea></div>`;
+    fbNavWire(m); m.querySelector('#fe-d').oninput = () => FB_DIRTY = true;
+    m.querySelector('#fe-save').onclick = async () => { try { await api('/api/super/opscfg', { body: { domains: m.querySelector('#fe-d').value.split('\n').map(x => x.trim()).filter(Boolean) } }); OPS_CFG = null; FB_DIRTY = false; toast('ذخیره شد.'); } catch (e) { toast(e.message, true); } };
+    return;
+  }
+  const Q = keep ? keep.Q : C[key].map(q => JSON.parse(JSON.stringify(evQ(q))));
+  const title = { evalRegion: 'مدیر منطقه', evalFm: 'مدیر ثابت', evalStaff: 'آشپز و سایر عوامل' }[key];
+  const who = { evalRegion: `${esc((U_LEAD && U_LEAD()) || 'سرپرست مناطق')} هنگام «🔁 تعویض مدیر منطقه» (فرم پایان مأموریت) یا «✍️ ارزشیابی»`, evalFm: 'مدیر منطقه هنگام «🚪 پایان مأموریت» یا ⭐ برای نیروهایی با سمت «مدیر ثابت» در تب «👷 عوامل»', evalStaff: 'مدیر منطقه هنگام «🚪 پایان مأموریت» یا ⭐ برای آشپزها و نیروهای دیگر (هر سمتی جز «مدیر ثابت») در تب «👷 عوامل»' }[key];
+  const optRow = (qi, o, oi) => `<div class="fe-opt"><input class="inp" data-ol="${qi}|${oi}" value="${esc(o.l)}" maxlength="80" placeholder="متن گزینه"><label class="dim">امتیاز <input class="inp" data-os="${qi}|${oi}" type="number" min="0" max="100" step="5" value="${o.s}" style="width:80px"></label><button type="button" class="btn small ghost" data-odel="${qi}|${oi}" aria-label="حذف گزینه">✕</button></div>`;
+  m.innerHTML = `${fbNav(key)}<div class="card fb-eval"><div class="card-h"><h2>⭐ فرم ارزشیابی ${title}</h2><div class="row">${FB_DIRTY ? '<span class="dirty">● ذخیره نشده</span>' : ''}<button class="btn" id="fe-save">ذخیره‌ی فرم</button></div></div>
+    <p class="hint">این فرم را ${who} پر می‌کند. هر سؤال یکی از سه نوع است: <b>۱ تا ۵</b> (امتیاز = عدد × ۲۰)، <b>بله / خیر</b> (پاسخ مطلوب ۱۰۰، دیگری ۰) یا <b>چندگزینه‌ای</b> (امتیاز هر گزینه را خودتان از ۰ تا ۱۰۰ تعیین کنید). نمره‌ی نهایی = میانگین امتیاز سؤال‌ها از ۱۰۰. تغییرها فقط روی ارزشیابی‌های بعدی اثر دارد.</p>
+    ${Q.map((q, i) => `<div class="fe-q"><div class="row" style="align-items:flex-end">
+        <div class="field" style="flex:3 1 260px"><label class="label">سؤال ${fa(i + 1)}</label><input class="inp" data-qq="${i}" value="${esc(q.q)}" maxlength="200"></div>
+        <div class="field" style="flex:1 1 140px"><label class="label">نوع پاسخ</label><select class="inp" data-qt="${i}">${Object.entries(EV_TYPE).map(([k, l]) => `<option value="${k}" ${q.type === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="row" style="flex-wrap:nowrap"><button type="button" class="btn small ghost" data-qup="${i}" ${i ? '' : 'disabled'} aria-label="بالا">▲</button><button type="button" class="btn small ghost" data-qdn="${i}" ${i < Q.length - 1 ? '' : 'disabled'} aria-label="پایین">▼</button><button type="button" class="btn small danger" data-qdel="${i}">حذف</button></div></div>
+      ${q.type === 'yesno' ? `<div class="row" style="margin-top:6px"><span class="dim">پاسخ مطلوب (امتیاز ۱۰۰):</span><select class="inp" data-qg="${i}" style="width:auto"><option ${q.good !== 'خیر' ? 'selected' : ''}>بله</option><option ${q.good === 'خیر' ? 'selected' : ''}>خیر</option></select></div>` : ''}
+      ${q.type === 'choice' ? `<div class="fe-opts">${(q.options || []).map((o, oi) => optRow(i, o, oi)).join('')}<button type="button" class="btn small ghost" data-oadd="${i}">➕ گزینه‌ی تازه</button></div>` : ''}
+    </div>`).join('')}
+    <button type="button" class="btn ghost" id="fe-add">➕ سؤال تازه</button>
+    <details class="fe-prev"><summary>👁️ پیش‌نمایش همان چیزی که ارزیاب می‌بیند</summary><div id="fe-pv"></div></details></div>`;
+  fbNavWire(m);
+  const re = () => renderEvalBuilder(m, key, { C, Q }), dirty = () => { FB_DIRTY = true; const h = m.querySelector('.card-h .row'); if (!h.querySelector('.dirty')) h.insertAdjacentHTML('afterbegin', '<span class="dirty">● ذخیره نشده</span>'); };
+  const pv = () => { const box = m.querySelector('#fe-pv'); try { box.innerHTML = evalFormHTML(Q.filter(q => q.q)); wireEval(box, Q.filter(q => q.q)); } catch (e) {} };
+  m.querySelectorAll('[data-qq]').forEach(x => x.oninput = () => { Q[+x.dataset.qq].q = x.value; dirty(); pv(); });
+  m.querySelectorAll('[data-qt]').forEach(x => x.onchange = () => { const q = Q[+x.dataset.qt]; q.type = x.value; if (q.type === 'yesno' && !q.good) q.good = 'بله'; if (q.type === 'choice' && !(q.options || []).length) q.options = [{ l: 'خوب', s: 100 }, { l: 'متوسط', s: 50 }, { l: 'ضعیف', s: 0 }]; FB_DIRTY = true; re(); });
+  m.querySelectorAll('[data-qg]').forEach(x => x.onchange = () => { Q[+x.dataset.qg].good = x.value; dirty(); pv(); });
+  m.querySelectorAll('[data-ol]').forEach(x => x.oninput = () => { const [a, b] = x.dataset.ol.split('|').map(Number); Q[a].options[b].l = x.value; dirty(); pv(); });
+  m.querySelectorAll('[data-os]').forEach(x => x.oninput = () => { const [a, b] = x.dataset.os.split('|').map(Number); Q[a].options[b].s = Math.max(0, Math.min(100, +x.value || 0)); dirty(); });
+  m.querySelectorAll('[data-odel]').forEach(x => x.onclick = () => { const [a, b] = x.dataset.odel.split('|').map(Number); Q[a].options.splice(b, 1); FB_DIRTY = true; re(); });
+  m.querySelectorAll('[data-oadd]').forEach(x => x.onclick = () => { Q[+x.dataset.oadd].options.push({ l: '', s: 0 }); FB_DIRTY = true; re(); });
+  m.querySelectorAll('[data-qup]').forEach(x => x.onclick = () => { const i = +x.dataset.qup; [Q[i - 1], Q[i]] = [Q[i], Q[i - 1]]; FB_DIRTY = true; re(); });
+  m.querySelectorAll('[data-qdn]').forEach(x => x.onclick = () => { const i = +x.dataset.qdn; [Q[i + 1], Q[i]] = [Q[i], Q[i + 1]]; FB_DIRTY = true; re(); });
+  m.querySelectorAll('[data-qdel]').forEach(x => x.onclick = () => { if (!confirm(`سؤال «${Q[+x.dataset.qdel].q}» حذف شود؟`)) return; Q.splice(+x.dataset.qdel, 1); FB_DIRTY = true; re(); });
+  m.querySelector('#fe-add').onclick = () => { Q.push({ q: '', type: 'rate' }); FB_DIRTY = true; re(); setTimeout(() => { const i = m.querySelectorAll('[data-qq]'); i[i.length - 1].focus(); }, 0); };
+  m.querySelector('#fe-save').onclick = async () => {
+    const L = Q.filter(q => q.q.trim()); if (!L.length) return toast('دست‌کم یک سؤال لازم است.', true);
+    const bad = L.find(q => q.type === 'choice' && (q.options || []).filter(o => o.l.trim()).length < 2); if (bad) return toast(`سؤال «${bad.q}»: دست‌کم دو گزینه بنویسید.`, true);
+    try { await api('/api/super/opscfg', { body: { [key]: L.map(q => ({ ...q, options: q.type === 'choice' ? q.options.filter(o => o.l.trim()) : undefined })) } }); OPS_CFG = null; FB_DIRTY = false; toast('فرم ارزشیابی ذخیره شد؛ از ارزشیابی بعدی اعمال می‌شود.'); renderEvalBuilder(m, key); } catch (e) { toast(e.message, true); }
+  };
+  pv();
 }
 
 /* ── برنامه‌ی غذایی همین اپ ── */
@@ -181,7 +250,7 @@ window.renderEvals = async m => {
     <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نوع</th><th>منطقه</th><th>نمره</th><th>تاریخ</th><th>ارزیاب</th></tr></thead><tbody id="ev-b"></tbody></table></div></div>`;
   const paint = () => { const k = m.querySelector('#ek').value;
     m.querySelector('#ev-b').innerHTML = L.filter(x => !k || x.kind === k).map(x => `<tr data-e="${x.id}" style="cursor:pointer"><td><b>${esc(x.name || '')}</b></td><td>${K[x.kind] || x.kind}</td><td>${esc((x.city && !(x.region || '').includes(x.city) ? x.city + ' · ' : '') + (x.region || ''))}</td><td>${scoreTag(x.score)}</td><td class="dim">${fmtTs(x.t)}</td><td class="dim">${esc(x.by || '')}</td></tr>
-      <tr data-ed="${x.id}" hidden><td colspan="6"><ol style="margin:0;padding-inline-start:20px">${(JSON.parse(x.answers || '[]')).map(a => `<li>${esc(a.q)}: <b>${fa(a.v)}</b> از ۵</li>`).join('')}</ol>${x.note ? `<div style="margin-top:4px">💬 ${esc(x.note)}</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">هنوز ارزشیابی‌ای ثبت نشده.</td></tr>';
+      <tr data-ed="${x.id}" hidden><td colspan="6"><ol style="margin:0;padding-inline-start:20px">${(JSON.parse(x.answers || '[]')).map(a => `<li>${esc(a.q)}: <b>${esc(evAns(a))}</b></li>`).join('')}</ol>${x.note ? `<div style="margin-top:4px">💬 ${esc(x.note)}</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">هنوز ارزشیابی‌ای ثبت نشده.</td></tr>';
     m.querySelectorAll('[data-e]').forEach(tr => tr.onclick = () => { const d = m.querySelector(`[data-ed="${tr.dataset.e}"]`); d.hidden = !d.hidden; }); };
   m.querySelector('#ek').onchange = paint; paint();
 };
@@ -189,7 +258,8 @@ let U_LEAD = null;
 window.setLeadLabelFn = f => { U_LEAD = f; };
 
 /* ═════ تنظیم حوزه‌ها و سؤال‌های ارزشیابی ═════ */
-window.opsCfgCardHTML = C => `<form class="card" id="oc" novalidate><div class="card-h"><h2>📝 حوزه‌های گزارش روزانه و سؤال‌های ارزشیابی</h2></div>
+window.opsCfgCardHTML = () => `<div class="card"><div class="card-h"><h2>📝 حوزه‌های گزارش روزانه و فرم‌های ارزشیابی</h2></div><p class="hint">این‌ها حالا در تب <b>«🧩 فرم‌ساز»</b> هستند (منوی بالای همان تب): ارزشیابی مدیر منطقه، مدیر ثابت، آشپز و سایر عوامل، با سؤال‌های ۱ تا ۵، بله/خیر و چندگزینه‌ای؛ و حوزه‌های گزارش روزانه.</p></div>`;
+window.opsCfgCardHTML_old = C => `<form class="card" id="oc" novalidate><div class="card-h"><h2>📝 حوزه‌های گزارش روزانه و سؤال‌های ارزشیابی</h2></div>
   <p class="hint">هر خط یک مورد. تغییرها برای همه‌ی مناطق است. نمره‌ی ارزشیابی = میانگین پاسخ‌ها (۱ تا ۵) از ۱۰۰.</p>
   <div class="row" style="align-items:flex-start">
     <div class="field" style="flex:1 1 200px"><label class="label" for="oc-d">حوزه‌های گزارش روزانه</label><textarea id="oc-d" class="inp" rows="8">${esc(C.domains.join('\n'))}</textarea></div>
@@ -220,5 +290,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .dr{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;display:flex;flex-direction:column;gap:6px}
 .dmx td,.dmx th{text-align:center} .dmx td:first-child,.dmx th:first-child{text-align:start}
 .dmc{border:0;background:none;font-size:17px;cursor:pointer}
+.fb-nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.fb-nav button{border:1px solid var(--line-s);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.fb-nav button[aria-pressed="true"]{background:var(--pri,#1f6b4f);color:#fff;border-color:transparent}
+.fe-q{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0;background:var(--card2)}
+.fe-opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.fe-opt{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.fe-opt>input{flex:1 1 180px}
+.fe-opt label{display:inline-flex;gap:6px;align-items:center}
+.fe-prev{margin-top:12px}.fe-prev summary{cursor:pointer;font-weight:800}
 .linkish{border:0;background:none;color:var(--ink);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
 </style>`);

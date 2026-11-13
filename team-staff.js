@@ -152,7 +152,7 @@ function scoreOf(r) { const ids = new Set(S.d.rows.filter(x => x.nid === r.nid).
 async function staffXlsx() {
   const rows = (S.hist ? S.d.rows : active()).filter(match).sort((a, b) => (a.role > b.role) - (a.role < b.role) || (a.hotel || '').localeCompare(b.hotel || '', 'fa') || nameOf(a).localeCompare(nameOf(b), 'fa'));
   const ST = { active: 'فعال', extended: 'تمدید شد', left: 'پایان مأموریت' };
-  const ans = e => e ? e.answers.map(a => `${a.q}: ${a.v}`).join(' | ') : '';
+  const ans = e => e ? e.answers.map(a => `${a.q}: ${evAns(a)}`).join(' | ') : '';
   const RL = S.d.regionCity && !S.d.region.includes(S.d.regionCity) ? `${S.d.regionCity} - ${S.d.region}` : S.d.region;
   await saveBook(`عوامل-${RL}-${S.d.today.replace(/\//g, '-')}.xlsx`, [{ name: 'عوامل', title: `عوامل ${RL} · ${faS(S.d.today)}${S.role ? ' · ' + S.role : ''}${S.q ? ' · جستجو: ' + S.q : ''}`,
     head: ['نام', 'نام خانوادگی', 'کد ملی', 'سمت', 'هتل محل خدمت', 'آغاز مأموریت', 'آخرین تمدید', 'پایان مأموریت', 'روز مانده', 'وضعیت', 'تاریخ خروج واقعی', 'نمره‌ی ارزیابی (از ۱۰۰)', 'تاریخ ارزیابی', 'پاسخ‌های ارزیابی', 'توضیح ارزیابی', 'یادداشت'],
@@ -194,7 +194,7 @@ function bindRowActions(box) {
   box.querySelectorAll('[data-hist]').forEach(b => b.onclick = () => histDlg(byId(b.dataset.hist)));
   box.querySelectorAll('[data-eval]').forEach(b => b.onclick = () => evalDlg(byId(b.dataset.eval)));
   box.querySelectorAll('[data-evv]').forEach(b => b.onclick = () => { const r = byId(b.dataset.evv), e = scoreOf(r);
-    dlg('⭐ ارزشیابی ' + nameOf(r), `<div>نمره: ${scoreTag(e.score)} <span class="dim">${fmtTs(e.t)}</span></div><ol style="padding-inline-start:20px;line-height:2">${e.answers.map(a => `<li>${esc(a.q)}: <b>${fa(a.v)}</b> از ۵</li>`).join('')}</ol>${e.note ? `<div>💬 ${esc(e.note)}</div>` : ''}`, true); });
+    dlg('⭐ ارزشیابی ' + nameOf(r), `<div>نمره: ${scoreTag(e.score)} <span class="dim">${fmtTs(e.t)}</span></div><ol style="padding-inline-start:20px;line-height:2">${e.answers.map(a => `<li>${esc(a.q)}: <b>${esc(evAns(a))}</b></li>`).join('')}</ol>${e.note ? `<div>💬 ${esc(e.note)}</div>` : ''}`, true); });
 }
 
 /* ═════ جابجایی ═════ */
@@ -416,8 +416,9 @@ function extendDlg(r) {
   D.$('[data-a=x]').onclick = D.close;
   D.$('[data-a=ok]').onclick = async () => { try { await api('/api/admin/staff/extend', { body: { id: r.id, d_start: s.value, d_end: e.value } }); toast('تمدید شد ✅'); D.close(); reload(); } catch (er) { toast(er.message, true); } };
 }
+const evalQsOf = r => (r.role === 'مدیر ثابت' ? S.d.evalFmQs : S.d.evalQs) || [];
 function leaveDlg(r) {
-  const Q = S.d.evalQs || [];
+  const Q = evalQsOf(r);
   const D = dlg('🚪 پایان مأموریت ' + nameOf(r), `<p class="hint">دوره بسته می‌شود ولی اطلاعات و سابقه‌اش می‌ماند و دیگر هشداری برایش نمی‌آید.</p>
     <div class="st-form"><label>تاریخ پایان مأموریت (خروج واقعی)<input data-f="d" data-jdp data-jdp-title="تاریخ خروج واقعی" value="${faS(S.d.today)}" dir="ltr"></label></div>
     <h3 style="font-size:15px;margin:12px 0 4px">📋 ارزشیابی عملکرد ${esc(nameOf(r))} <span class="dim" style="font-size:12px">(${esc(r.role)})</span></h3>
@@ -433,7 +434,7 @@ function leaveDlg(r) {
   };
 }
 function evalDlg(r) {
-  const Q = S.d.evalQs || [];
+  const Q = evalQsOf(r);
   const D = dlg('⭐ ارزشیابی ' + nameOf(r), `<p class="hint">ارزشیابی عملکرد در هر زمان (بدون بستن دوره). آخرین ارزشیابی در ستون «نمره‌ی ارزیابی» نشان داده می‌شود.</p><div class="st-ev">${evalFormHTML(Q)}</div>
     <div class="rr-act"><button class="btn" data-a="ok">ثبت ارزشیابی</button><button class="btn ghost" data-a="x">انصراف</button></div>`, true);
   wireEval(D.$('.st-ev'), Q);
