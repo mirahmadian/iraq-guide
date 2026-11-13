@@ -125,7 +125,7 @@ window.renderHinfoAll = async (m, path, regions) => {
   const rows = r.hotels.map(x => { const H = x.hotel_id && byId.get(x.hotel_id), d = hiDone(H); return { ...x, H, pct: H ? hiPct(H) : 0, miss: H ? HI_ITEMS.filter(([k]) => !d[k]).map(([, l]) => l) : [] }; });
   const groups = [...new Set(rows.map(x => x.region_id))];
   const avg = L => L.length ? Math.round(L.reduce((a, x) => a + x.pct, 0) / L.length) : 0;
-  m.innerHTML = `<div class="card"><div class="card-h"><h2>🏨 تکمیل اطلاعات هتل‌ها در اپ</h2></div>
+  m.innerHTML = `<div class="card"><div class="card-h"><h2>🏨 تکمیل اطلاعات هتل‌ها در اپ</h2>${rows.length ? xlBtn('hi-x') : ''}</div>
     <p class="hint">هتل‌های اکسل سه هفته‌ی آخر. مدیر ثابت هر هتل از صفحه‌ی خودش ← «🏨 اطلاعات هتل در اپ» عکس، آدرس، تلفن و موقعیت را می‌فرستد و ستاد در پنل مدیریت تأیید می‌کند. «وصل نشده» یعنی مدیر ثابت هنوز مشخص نکرده این هتل در اپ کدام است.</p>
     <div class="kpis k6"><div class="kpi"><span class="v num">${fa(rows.length)}</span><span class="k">هتل</span></div><div class="kpi"><span class="v num">${fa(avg(rows))}٪</span><span class="k">میانگین تکمیل</span></div>
       <div class="kpi"><span class="v num">${fa(rows.filter(x => x.pct === 100).length)}</span><span class="k">کامل</span></div><div class="kpi"><span class="v num">${fa(rows.filter(x => !x.H).length)}</span><span class="k">وصل نشده</span></div>
@@ -134,6 +134,9 @@ window.renderHinfoAll = async (m, path, regions) => {
       <div class="tbl-wrap"><table><thead><tr><th>هتل (اکسل)</th><th>هتل در اپ</th><th>تکمیل</th><th>کمبودها</th><th>در انتظار</th><th>مدیر ثابت</th><th>آخرین بررسی</th></tr></thead><tbody>
       ${L.sort((a, b) => a.pct - b.pct).map(x => `<tr><td><b>${esc(x.hotel)}</b></td><td>${x.H ? esc(x.H.name) : '<span class="pill warn">وصل نشده</span>'}</td><td><div class="hi-bar sm"><i style="width:${x.pct}%"></i></div><span class="num">${fa(x.pct)}٪</span></td>
         <td class="dim" style="font-size:12px">${esc(x.miss.join('، ') || (x.H ? '—' : ''))}</td><td class="num">${x.pending ? fa(x.pending) : '—'}</td><td class="dim">${esc(String(x.fms || '').split(',').join('، ') || '—')}</td><td class="dim">${x.confirmed ? fmtTs(x.confirmed) : '—'}</td></tr>`).join('')}</tbody></table></div></div>`; }).join('') || '<div class="empty">هنوز اکسل هفتگی وارد نشده است.</div>'}`;
+  const xb = m.querySelector('#hi-x'); if (xb) xb.onclick = () => xlRun(xb, () => saveBook(`اطلاعات هتل ها ${xlDay(JDP.today())}.xlsx`, [{ name: 'اطلاعات هتل‌ها', title: `تکمیل اطلاعات هتل‌ها در اپ — ${fa(rows.length)} هتل`,
+    head: ['منطقه', 'هتل (اکسل)', 'هتل در اپ', 'درصد تکمیل', 'کمبودها', 'در انتظار تأیید', 'مدیر ثابت', 'آخرین بررسی'], widths: [24, 26, 26, 11, 40, 12, 26, 18],
+    rows: [...rows].sort((a, b) => rn(a.region_id).localeCompare(rn(b.region_id), 'fa') || a.pct - b.pct).map(x => [rn(x.region_id), x.hotel, x.H ? x.H.name : 'وصل نشده', x.pct, x.miss.join('، '), x.pending || '', String(x.fms || '').split(',').join('، '), xDT(x.confirmed)]) }]));
 };
 
 document.head.insertAdjacentHTML('beforeend', `<style>

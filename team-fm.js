@@ -28,6 +28,7 @@ async function renderHome() {
     ${bioHint ? `<div class="bulk" style="background:var(--pri-soft)"><span>☝️ دفعه‌ی بعد با اثر انگشت وارد شوید؟</span><span class="row"><button class="btn small" id="bio-on">روشن کن</button><button class="btn small ghost" id="bio-no">نه</button></span></div>` : ''}
     ${S.weeks.length > 1 ? `<div class="field"><label class="label" for="wk">هفته</label><select id="wk" class="inp">${S.weeks.map(w => `<option value="${w.id}" ${w.id === S.week ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}</select></div>` : week ? `<div class="label">📅 ${esc(week.title)}</div>` : ''}
     ${!list.length ? `<div class="card"><b>هنوز ورودی‌ای به شما سپرده نشده است.</b><span class="muted">${S.opts.onBack ? 'برای این‌که هتلی به خودتان سپرده شود: در اکسل هفتگی، کد ملی خودتان را جلوی یک شیت بنویسید؛ یا در تب «مدیران ثابت»، نام شیت خودتان را در ردیف خودتان وارد کنید.' : 'وقتی مدیر منطقه اکسل هفتگی را وارد کند، هتل‌ها و کاروان‌های شما این‌جا نشان داده می‌شوند.'}</span></div>` : `
+    ${list.length ? `<div class="row" style="justify-content:flex-end">${xlBtn('fm-x')}</div>` : ''}
     <div class="stats3"><div><b class="num">${fa(hotels.length)}</b><span>هتل</span></div><div><b class="num">${fa(list.length)}</b><span>ورودی</span></div><div><b class="num">${fa(list.length - pending.length)}</b><span>گزارش‌شده</span></div></div>
     ${hotels.length > 1 ? `<div class="cos"><button class="chip" aria-pressed="${!S.hotel}" data-hf="">همه‌ی هتل‌ها</button>${hotels.map(h => `<button class="chip" aria-pressed="${S.hotel === h}" data-hf="${esc(h)}">${esc(h)}</button>`).join('')}</div>` : ''}
     ${pending.length ? `<div class="bulk"><span>${fa(pending.length)} ورودی هنوز گزارش نشده. اگر هیچ مشکلی نداشتند:</span><button class="btn small okb" id="bulk">${S.bulkSure ? 'مطمئنید؟ دوباره بزنید' : '✔ همه بدون نقص'}</button></div>` : ''}
@@ -40,6 +41,9 @@ async function renderHome() {
   const ac = app.querySelector('#acc'); if (ac) ac.onclick = () => { app.innerHTML = `<header class="app-head"><div class="in"><div class="t"><div class="hi">${esc(S.me.nid)}</div><h1>حساب کاربری</h1></div></div></header><main class="page" id="accp"></main>`; renderAccount(app.querySelector('#accp'), S.me, () => loadHome(S.week)); };
   const wk = app.querySelector('#wk'); if (wk) wk.onchange = () => { S.hotel = ''; loadHome(+wk.value); };
   app.querySelectorAll('[data-hf]').forEach(b => b.onclick = () => { S.hotel = b.dataset.hf; renderHome(); });
+  const fx = app.querySelector('#fm-x'); if (fx) fx.onclick = () => xlRun(fx, () => saveBook(`ورودی های من ${week ? week.title : ''}.xlsx`, [{ name: 'ورودی‌ها', title: `ورودی‌های ${S.me.name || ''}${week ? ' — ' + week.title : ''}`,
+    head: ['هتل', 'شرکت مجری', 'شرکت سیاحه', 'ورود', 'خروج', 'کاروان', 'زائر', 'وضعیت گزارش'], widths: [24, 28, 24, 11, 11, 8, 8, 18],
+    rows: list.map(e => [e.hotel, e.company || '', e.siyahe || '', e.d_in || '', e.d_out || '', e.caravans ?? '', e.pilgrims ?? '', statusOf(e).l]) }]));
   app.querySelectorAll('[data-entry]').forEach(b => b.onclick = () => openEntry(+b.dataset.entry));
   app.querySelectorAll('[data-hi]').forEach(b => b.onclick = () => openHotelInfo(b.dataset.hi, () => loadHome(S.week)));
   const bo = app.querySelector('#bio-on'); if (bo) bo.onclick = async () => { try { await bioRegister(S.me); S.me = await api('/api/me', { fresh: true }); toast('ورود با اثر انگشت روشن شد.'); renderHome(); } catch (e) { toast(bioErr(e), true); } };

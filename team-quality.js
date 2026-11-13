@@ -200,7 +200,7 @@ function renderCompanies(el, d, o = {}) {
   const hotelN = new Set(dir.flatMap(S => S.hotels.map(h => h.key))).size;
   const cnt = x => `${fa(x.caravans)} کاروان${x.pilgrims ? ` · ${fa(x.pilgrims)} زائر` : ''}`;
   const mark = n => term && normQ(n).includes(term) ? ' q-hit' : '';
-  el.innerHTML = `<div class="card"><div class="card-h"><h2>🏢 شرکت‌های سیاحه، هتل‌ها و شرکت‌های مجری</h2>
+  el.innerHTML = `<div class="card"><div class="card-h"><h2>🏢 شرکت‌های سیاحه، هتل‌ها و شرکت‌های مجری</h2>${dir.length ? xlBtn('cq-x') : ''}
     ${o.weeks ? `<select class="sel" id="q-week" aria-label="دوره">${o.weeks.map(w => `<option value="${w.id}" ${String(w.id) === String(o.week) ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}<option value="all" ${o.week === 'all' ? 'selected' : ''}>همه‌ی هفته‌ها روی هم</option></select>` : ''}</div>
     ${!dir.length ? '<div class="empty">برای این دوره هنوز اکسل هفتگی وارد نشده است.</div>' : `
     <div class="q-sum q-sum3"><div><b class="num">${fa(dir.filter(S => S.name !== '—').length)}</b><span>شرکت سیاحه</span></div><div><b class="num">${fa(M.length)}</b><span>شرکت مجری</span></div><div><b class="num">${fa(hotelN)}</b><span>هتل</span></div></div>
@@ -215,6 +215,14 @@ function renderCompanies(el, d, o = {}) {
       <div class="co-grid"><div><h4>🏢 شرکت‌های سیاحه</h4>${x.siyahe.map(y => { const c = cs.get(y.name); return `<div class="q-co-h">${c ? qBadge(c.score, c.n < LOW_C) : ''} <span class="${mark(y.name)}">${y.name === '—' ? 'بدون نام' : esc(shortCo(y.name))}</span> <span class="dim">· ${cnt(y)}</span></div>`; }).join('')}</div></div></details>`).join('') : '<div class="empty">چیزی پیدا نشد.</div>')}</div>`}</div>`;
   const ws = el.querySelector('#q-week'); if (ws && o.onWeek) ws.onchange = () => o.onWeek(ws.value);
   el.querySelectorAll('[data-cv]').forEach(b => b.onclick = () => renderCompanies(el, d, { ...o, view: b.dataset.cv }));
+  /* اکسل: دو برگه، بر اساس سیاحه (هر هتل یک ردیف) و بر اساس مجری (هر سیاحه یک ردیف)، با نمره‌ها */
+  const cx = el.querySelector('#cq-x'); if (cx) cx.onclick = () => xlRun(cx, () => { const sc = (c) => c ? c.score : '';
+    const sRows = dir.flatMap(S => { const c = cs.get(S.name), mj = S.mojri.map(m => m.name).join('، '); return (S.hotels.length ? S.hotels : [{ name: '', key: '' }]).map(h => { const q = hs.get(h.key);
+      return [S.name === '—' ? 'بدون نام در اکسل' : S.name, sc(c), S.caravans, S.pilgrims || '', h.name, ...(o.showRegion ? [h.region || ''] : []), q ? q.score : '', mj]; }); });
+    const mRows = M.flatMap(x => x.siyahe.map(y => [x.name, x.caravans, x.pilgrims || '', y.name === '—' ? 'بدون نام' : y.name, y.caravans, y.pilgrims || '', sc(cs.get(y.name))]));
+    return saveBook(`شرکت ها ${xlDay(JDP.today())}.xlsx`, [
+      { name: 'بر اساس سیاحه', title: 'شرکت‌های سیاحه، هتل‌ها و شرکت‌های مجری (از اکسل هفتگی)', head: ['شرکت سیاحه', 'نمره‌ی سیاحه', 'کاروان', 'زائر', 'هتل', ...(o.showRegion ? ['منطقه'] : []), 'نمره‌ی هتل', 'شرکت‌های مجری'], widths: [26, 11, 9, 9, 26, ...(o.showRegion ? [22] : []), 11, 50], rows: sRows },
+      { name: 'بر اساس مجری', title: 'شرکت‌های مجری و سیاحه‌های طرف قرارداد', head: ['شرکت مجری', 'کاروان (کل)', 'زائر (کل)', 'شرکت سیاحه', 'کاروان', 'زائر', 'نمره‌ی سیاحه'], widths: [28, 11, 11, 26, 9, 9, 11], rows: mRows }]); });
   const qi = el.querySelector('#co-q'); if (qi) qi.oninput = () => { const v = qi.value, pos = qi.selectionStart; renderCompanies(el, d, { ...o, q: v }); const n = el.querySelector('#co-q'); n.focus(); n.setSelectionRange(pos, pos); };
 }
 const normQ = s => String(s || '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[‌‏‎]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();

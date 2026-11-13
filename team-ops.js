@@ -173,7 +173,7 @@ const DST_L = { ok: ['✅', 'مطلوب', 'ok'], minor: ['⚠️', 'مشکل ج�
 window.renderDailyForm = async (m, dayIn) => {
   let r; try { r = await api('/api/admin/daily' + (dayIn ? '?day=' + JDP.str(dayIn, false) : '')); } catch (e) { return toast(e.message, true); }
   const day = JDP.num(r.day), today = JDP.num(r.today), got = d => r.rows.find(x => x.domain === d) || {};
-  m.innerHTML = `<div class="card"><div class="card-h"><h2>📝 گزارش روزانه‌ی حوزه‌ها</h2></div>
+  m.innerHTML = `<div class="card"><div class="card-h"><h2>📝 گزارش روزانه‌ی حوزه‌ها</h2>${xlBtn('dr-x')}</div>
     <p class="hint">هر روز برای هر حوزه‌ی محدوده‌ی فعالیت خودتان وضعیت را بزنید و شرح بنویسید (برای «مشکل» نوشتن شرح لازم است). تا سه روز بعد می‌شود ویرایش کرد.</p>
     <div class="cos">${dayChips(day, today, null, null, 'data-dd')}</div>
     <div class="dim" style="margin:6px 0">${esc(JDP.long(day))}</div>
@@ -183,6 +183,9 @@ window.renderDailyForm = async (m, dayIn) => {
     <div class="row"><button class="btn" id="dr-s">💾 ثبت گزارش روز</button><span class="err" id="dr-e"></span></div></div>
     ${r.recent.length ? `<div class="card"><h3 style="margin:0 0 6px;font-size:14px">روزهای اخیر</h3><ul class="occ-log">${r.recent.map(x => `<li><button class="linkish" data-dd="${JDP.num(x.day)}">${esc(JDP.long(JDP.num(x.day)))}</button> · ${fa(x.n)} حوزه${x.major ? ` · <span class="pill bad">${fa(x.major)} جدی</span>` : ''}${x.minor ? ` · <span class="pill warn">${fa(x.minor)} جزئی</span>` : ''}</li>`).join('')}</ul></div>` : ''}`;
   m.querySelectorAll('[data-dd]').forEach(b => b.onclick = () => renderDailyForm(m, +b.dataset.dd));
+  m.querySelector('#dr-x').onclick = e => xlRun(e.currentTarget, () => saveBook(`گزارش روزانه ${xlDay(day)}.xlsx`, [{ name: 'گزارش روزانه', title: `گزارش روزانه‌ی حوزه‌ها — ${JDP.long(day)}`,
+    head: ['حوزه', 'وضعیت', 'شرح', 'ثبت‌کننده', 'زمان ثبت'], widths: [18, 14, 60, 20, 18],
+    rows: r.domains.map(d => { const g = got(d); return [d, g.status ? DST_L[g.status][1] : 'گزارش نشده', g.text || '', g.by || '', xDT(g.updated)]; }) }]));
   m.querySelectorAll('.dr').forEach(D => D.querySelectorAll('[data-st]').forEach(b => b.onclick = () => D.querySelectorAll('[data-st]').forEach(x => x.setAttribute('aria-pressed', x === b))));
   m.querySelector('#dr-s').onclick = async () => {
     const items = [...m.querySelectorAll('.dr')].map(D => ({ domain: D.dataset.dom, status: (D.querySelector('[data-st][aria-pressed="true"]') || {}).dataset?.st, text: D.querySelector('textarea').value })).filter(x => x.status);
@@ -201,7 +204,7 @@ window.renderOpsRegion = async (m, dayIn) => {
     const v = Object.values(c.items), no = Object.entries(c.items).filter(([, x]) => x === 0).map(([k]) => k);
     return no.length ? `<span class="pill bad" title="سرو نشد: ${esc(no.join('، '))}">❌ ${fa(no.length)} قلم</span>` : `<span class="pill ok">✅ ${fa(v.length)}</span>`; };
   const allC = E.flatMap(e => e.meals), yes = allC.reduce((a, c) => a + Object.values(c.items).filter(x => x === 1).length, 0), tot = allC.reduce((a, c) => a + Object.values(c.items).length, 0);
-  m.innerHTML = `<div class="card"><div class="card-h"><h2>🛏️ اسکان و 🍽️ غذا</h2><div class="row"><button class="btn small ghost" data-od="${day - 1}">→ روز قبل</button><button class="btn small ghost" id="od-pick">📅 ${esc(JDP.long(day))}</button><button class="btn small ghost" data-od="${day + 1}">روز بعد ←</button></div></div>
+  m.innerHTML = `<div class="card"><div class="card-h"><h2>🛏️ اسکان و 🍽️ غذا</h2><div class="row">${xlBtn('od-x')}<button class="btn small ghost" data-od="${day - 1}">→ روز قبل</button><button class="btn small ghost" id="od-pick">📅 ${esc(JDP.long(day))}</button><button class="btn small ghost" data-od="${day + 1}">روز بعد ←</button></div></div>
     <p class="hint">کاروان‌هایی که در این روز در هتل‌های منطقه هستند (از سه اکسل هفتگی آخر). «واقعی» و وعده‌ها را مدیران ثابت از صفحه‌ی هر ورودی ← «🛏️ آمار و 🍽️ غذا» ثبت می‌کنند. برای به‌روز کردن اعداد برنامه (زائر، اتاق، تخت) کافی است اکسل همان هفته را دوباره وارد کنید؛ ستون‌های «تعداد اتاق» و «تعداد تخت» هم خوانده می‌شوند.</p>
     <div class="kpis k6"><div class="kpi"><span class="v num">${fa(E.length)}</span><span class="k">ورودی حاضر</span></div>
       <div class="kpi"><span class="v num">${fa(sum('pilgrims'))}</span><span class="k">زائر طبق برنامه</span></div>
@@ -216,6 +219,12 @@ window.renderOpsRegion = async (m, dayIn) => {
       <tr class="oe-d" data-oed="${e.id}" hidden><td colspan="10">${e.a_note ? `<div>🛏️ ${esc(e.a_note)}</div>` : ''}${e.meals.map(c => { const no = Object.entries(c.items).filter(([, x]) => x === 0).map(([k]) => k); return `<div>${MEAL_L[c.meal]}: ${no.length ? `<b style="color:var(--bad)">سرو نشد: ${esc(no.join('، '))}</b>` : 'همه‌ی اقلام سرو شد'}${c.note ? ' · ' + esc(c.note) : ''}</div>`; }).join('') || '<span class="dim">برای این روز وعده‌ای ثبت نشده.</span>'}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">در این روز کاروانی در هتل‌های این منطقه نیست (یا اکسل هفتگی وارد نشده).</td></tr>'}
     </tbody></table></div></div>`;
   m.querySelectorAll('[data-od]').forEach(b => b.onclick = () => renderOpsRegion(m, +b.dataset.od));
+  const mealX = (e, ml) => { const c = e.meals.find(x => x.meal === ml); if (!c) return 'ثبت نشده'; const no = Object.entries(c.items).filter(([, x]) => x === 0).map(([k]) => k);
+    return (no.length ? 'سرو نشد: ' + no.join('، ') : 'همه سرو شد') + (c.note ? ' — ' + c.note : ''); };
+  m.querySelector('#od-x').onclick = ev => xlRun(ev.currentTarget, () => saveBook(`اسکان و غذا ${xlDay(day)}.xlsx`, [{ name: 'اسکان و غذا', title: `اسکان و غذا — ${JDP.long(day)}`,
+    head: ['هتل', 'شرکت مجری', 'مدیر ثابت', 'روز اقامت', 'ورود', 'خروج', 'زائر (برنامه)', 'زائر (واقعی)', 'اتاق (برنامه)', 'اتاق (واقعی)', 'تخت (برنامه)', 'تخت (واقعی)', 'توضیح اسکان', 'صبحانه', 'ناهار', 'شام', 'آخرین آمار'],
+    widths: [24, 24, 18, 9, 11, 11, 10, 10, 10, 10, 10, 10, 30, 30, 30, 30, 16],
+    rows: E.map(e => [e.hotel, e.company || '', e.fm || '', e.day_no, e.d_in || '', e.d_out || '', e.pilgrims ?? '', e.a_pil ?? '', e.rooms ?? '', e.a_rooms ?? '', e.beds ?? '', e.a_beds ?? '', e.a_note || '', mealX(e, 'breakfast'), mealX(e, 'lunch'), mealX(e, 'dinner'), xDT(e.a_t)]) }]));
   m.querySelector('#od-pick').onclick = () => JDP.open({ value: day, title: 'روز', onPick: d => d != null && renderOpsRegion(m, d) });
   m.querySelectorAll('[data-oe]').forEach(tr => tr.onclick = () => { const d = m.querySelector(`[data-oed="${tr.dataset.oe}"]`); d.hidden = !d.hidden; });
 };
@@ -228,7 +237,7 @@ window.renderDailyAll = async (m, regions, dayIn) => {
   const done = regions.filter(rg => r.rows.some(x => x.region_id === rg.id)).length;
   const probs = r.rows.filter(x => x.status === 'major' || x.status === 'minor').sort((a, b) => (a.status === 'major' ? 0 : 1) - (b.status === 'major' ? 0 : 1));
   const rn = id => { const x = regions.find(g => g.id === id); return x ? (x.city && !x.name.includes(x.city) ? x.city + ' · ' : '') + x.name : ''; };
-  m.innerHTML = `<div class="card"><div class="card-h"><h2>📝 گزارش روزانه‌ی مناطق</h2><div class="row"><button class="btn small ghost" data-dd="${day - 1}">→ روز قبل</button><button class="btn small ghost" id="dd-pick">📅 ${esc(JDP.long(day))}</button><button class="btn small ghost" data-dd="${day + 1}">روز بعد ←</button></div></div>
+  m.innerHTML = `<div class="card"><div class="card-h"><h2>📝 گزارش روزانه‌ی مناطق</h2><div class="row">${xlBtn('dd-xl')}<button class="btn small ghost" data-dd="${day - 1}">→ روز قبل</button><button class="btn small ghost" id="dd-pick">📅 ${esc(JDP.long(day))}</button><button class="btn small ghost" data-dd="${day + 1}">روز بعد ←</button></div></div>
     <p class="hint">${fa(done)} منطقه از ${fa(regions.length)} برای این روز گزارش داده‌اند. ✅ مطلوب · ⚠️ مشکل جزئی · ❌ مشکل جدی · ➖ موردی نبود · — = گزارش نشده · · = بیرون از محدوده‌ی فعالیت. روی هر خانه بزنید تا شرح بیاید.</p>
     <div class="tbl-wrap"><table class="dmx"><thead><tr><th>منطقه</th><th>مدیر منطقه</th>${D.map(d => `<th>${esc(d)}</th>`).join('')}</tr></thead><tbody>
     ${regions.map(rg => `<tr><td><b>${esc(rn(rg.id))}</b></td><td class="dim">${esc(mgs(rg).map(x => x.name).join('، ') || '—')}</td>${D.map(d => { const c = cell(rg, d); return !inScope(rg, d) ? '<td class="dim">·</td>' : c ? `<td><button class="dmc ${DST_L[c.status][2]}" data-c="${rg.id}|${esc(d)}" title="${esc(c.text || '')}">${DST_L[c.status][0]}</button></td>` : '<td class="dim">—</td>'; }).join('')}</tr>`).join('')}
@@ -236,6 +245,11 @@ window.renderDailyAll = async (m, regions, dayIn) => {
     <div class="card"><h3 style="margin:0 0 6px;font-size:14px">⚠️ مشکلات گزارش‌شده در این روز (${fa(probs.length)})</h3>
       ${probs.map(x => `<div class="dr"><div><span class="pill ${DST_L[x.status][2]}">${DST_L[x.status][0]} ${DST_L[x.status][1]}</span> <b>${esc(rn(x.region_id))}</b> · ${esc(x.domain)}</div><div style="margin-top:4px;white-space:pre-wrap">${esc(x.text || '')}</div><div class="dim" style="font-size:11.5px">${esc(x.by || '')} · ${fmtTs(x.updated)}</div></div>`).join('') || '<div class="dim">مشکلی گزارش نشده.</div>'}</div>`;
   m.querySelectorAll('[data-dd]').forEach(b => b.onclick = () => renderDailyAll(m, regions, +b.dataset.dd));
+  m.querySelector('#dd-xl').onclick = ev => xlRun(ev.currentTarget, () => saveBook(`گزارش روزانه مناطق ${xlDay(day)}.xlsx`, [
+    { name: 'جدول', title: `گزارش روزانه‌ی مناطق — ${JDP.long(day)}`, head: ['منطقه', 'مدیر منطقه', ...D], widths: [26, 22, ...D.map(() => 14)],
+      rows: regions.map(rg => [rn(rg.id), mgs(rg).map(x => x.name).join('، '), ...D.map(d => { const c = cell(rg, d); return !inScope(rg, d) ? 'بیرون از محدوده' : c ? DST_L[c.status][1] : 'گزارش نشده'; })]) },
+    { name: 'شرح‌ها', title: `شرح گزارش‌ها — ${JDP.long(day)}`, head: ['منطقه', 'حوزه', 'وضعیت', 'شرح', 'ثبت‌کننده', 'زمان ثبت'], widths: [26, 18, 14, 60, 20, 18],
+      rows: [...r.rows].sort((a, b) => rn(a.region_id).localeCompare(rn(b.region_id), 'fa') || D.indexOf(a.domain) - D.indexOf(b.domain)).map(x => [rn(x.region_id), x.domain, DST_L[x.status][1], x.text || '', x.by || '', xDT(x.updated)]) }]));
   m.querySelector('#dd-pick').onclick = () => JDP.open({ value: day, title: 'روز', onPick: d => d != null && renderDailyAll(m, regions, d) });
   m.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const [id, d] = b.dataset.c.split('|'), c = cell({ id: +id }, d);
     m.querySelector('#dd-x').innerHTML = `<div class="dr"><div><b>${esc(rn(+id))} · ${esc(d)}</b> <span class="pill ${DST_L[c.status][2]}">${DST_L[c.status][1]}</span></div><div style="white-space:pre-wrap;margin-top:4px">${esc(c.text || 'بدون شرح')}</div><div class="dim" style="font-size:11.5px">${esc(c.by || '')} · ${fmtTs(c.updated)}</div></div>`; });
@@ -245,7 +259,7 @@ window.renderDailyAll = async (m, regions, dayIn) => {
 window.renderEvals = async m => {
   let L; try { L = await api('/api/super/evals'); } catch (e) { return toast(e.message, true); }
   const K = { region: '👔 مدیر منطقه', staff: '👷 عوامل' };
-  m.innerHTML = `<div class="card"><div class="card-h"><h2>⭐ ارزشیابی‌های پایان مأموریت (${fa(L.length)})</h2><div class="filters"><select id="ek" aria-label="نوع"><option value="">همه</option><option value="region">مدیران منطقه</option><option value="staff">عوامل (مدیر ثابت، آشپز، …)</option></select></div></div>
+  m.innerHTML = `<div class="card"><div class="card-h"><h2>⭐ ارزشیابی‌های پایان مأموریت (${fa(L.length)})</h2><div class="filters">${xlBtn('ev-x')}<select id="ek" aria-label="نوع"><option value="">همه</option><option value="region">مدیران منطقه</option><option value="staff">عوامل (مدیر ثابت، آشپز، …)</option></select></div></div>
     <p class="hint">ارزشیابی عوامل را مدیر منطقه هنگام «🚪 خارج شد» ثبت می‌کند؛ ارزشیابی مدیر منطقه را ${esc((U_LEAD && U_LEAD()) || 'سرپرست مناطق')} هنگام تعویض او. روی هر ردیف بزنید تا پاسخ‌ها بیاید.</p>
     <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نوع</th><th>منطقه</th><th>نمره</th><th>تاریخ</th><th>ارزیاب</th></tr></thead><tbody id="ev-b"></tbody></table></div></div>`;
   const paint = () => { const k = m.querySelector('#ek').value;
@@ -253,6 +267,12 @@ window.renderEvals = async m => {
       <tr data-ed="${x.id}" hidden><td colspan="6"><ol style="margin:0;padding-inline-start:20px">${(JSON.parse(x.answers || '[]')).map(a => `<li>${esc(a.q)}: <b>${esc(evAns(a))}</b></li>`).join('')}</ol>${x.note ? `<div style="margin-top:4px">💬 ${esc(x.note)}</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">هنوز ارزشیابی‌ای ثبت نشده.</td></tr>';
     m.querySelectorAll('[data-e]').forEach(tr => tr.onclick = () => { const d = m.querySelector(`[data-ed="${tr.dataset.e}"]`); d.hidden = !d.hidden; }); };
   m.querySelector('#ek').onchange = paint; paint();
+  m.querySelector('#ev-x').onclick = ev => xlRun(ev.currentTarget, () => { const k = m.querySelector('#ek').value, F = L.filter(x => !k || x.kind === k);
+    const ans = x => { try { return JSON.parse(x.answers || '[]'); } catch (e) { return []; } };
+    const Q = [...new Set(F.flatMap(x => ans(x).map(a => a.q)))];
+    return saveBook(`ارزشیابی ها ${xlDay(JDP.today())}.xlsx`, [{ name: 'ارزشیابی‌ها', title: `ارزشیابی‌های پایان مأموریت — ${fa(F.length)} مورد`,
+      head: ['نام', 'نوع', 'شهر', 'منطقه', 'نمره (از ۱۰۰)', 'تاریخ', 'ارزیاب', 'توضیح', ...Q], widths: [22, 14, 14, 18, 12, 18, 18, 30, ...Q.map(() => 22)],
+      rows: F.map(x => { const A = ans(x); return [x.name || '', (K[x.kind] || x.kind).replace(/^\S+\s/, ''), x.city || '', x.region || '', x.score ?? '', xDT(x.t), x.by || '', x.note || '', ...Q.map(q => { const a = A.find(y => y.q === q); return a ? evAns(a) : ''; })]; }) }]); });
 };
 let U_LEAD = null;
 window.setLeadLabelFn = f => { U_LEAD = f; };
