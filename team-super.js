@@ -56,13 +56,25 @@ const permChips = p => p ? Object.keys(PERM_L).map(k => `<span class="pc ${p[k] 
 const permBoxes = (id, p) => Object.keys(PERM_L).map(k => `<label class="pchk"><input type="checkbox" data-perm="${k}" ${!p || p[k] ? 'checked' : ''}${id ? ` data-pu="${id}"` : ''}> ${PERM_L[k]}</label>`).join('');
 const readPerms = box => Object.fromEntries([...box.querySelectorAll('[data-perm]')].map(i => [i.dataset.perm, i.checked]));
 const fmtD = t => t ? new Date(t).toLocaleDateString('fa-IR-u-ca-persian', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+/* مدیر یک منطقه: حساب «مدیر منطقه» یا سرپرست مناطقی که خودش مدیر همین منطقه است */
+const isMgrOf = x => x.active && (x.role === 'region' || x.lead);
+/* جابجایی مدیر به منطقه‌ی دیگر (فقط منطقه‌هایی که مدیر ندارند) */
+function moveHTML(x, r) {
+  const taken = new Set(U.O.regions.filter(g => (g.people || []).some(isMgrOf)).map(g => g.id));
+  const free = U.O.regions.filter(g => g.id !== r.id && !taken.has(g.id));
+  return `<details class="mg-mv"><summary class="dim" style="cursor:pointer">🔀 جابجایی ${esc(x.name)} به منطقه‌ی دیگر</summary>
+    ${free.length ? `<div class="row" style="margin-top:6px"><select class="inp" data-mvsel="${x.id}" style="max-width:260px"><option value="">— منطقه‌ی مقصد —</option>${free.map(g => `<option value="${g.id}">${esc(regLabel(g))}</option>`).join('')}</select><button class="btn small" data-mvgo="${x.id}">انتقال</button></div>
+    <p class="hint">فقط منطقه‌هایی که مدیر ندارند آمده‌اند. دوره‌ی او در «${esc(regLabel(r))}» امروز بسته و دوره‌ی تازه در منطقه‌ی مقصد باز می‌شود (سابقه می‌ماند). ورودی‌ها و گزارش‌های هفته‌های قبل سر جایشان می‌مانند و از این به بعد اکسل هفتگی او در منطقه‌ی تازه وارد می‌شود.</p>`
+    : '<p class="hint">منطقه‌ی خالی (بدون مدیر) نیست؛ اول منطقه‌ی تازه بسازید.</p>'}</details>`;
+}
 function mgrBlock(r) {
-  const act = (r.people || []).filter(x => x.role === 'region' && x.active), T = r.terms || [], D = U.O.ops.domains, EQ = U.O.ops.evalRegion;
+  const act = (r.people || []).filter(isMgrOf), T = r.terms || [], D = U.O.ops.domains, EQ = U.O.ops.evalRegion;
   return `<details class="rg-mg"><summary>👔 مدیر منطقه: دسترسی‌ها، تعویض برای دوره‌ی تازه، سابقه</summary>
-    ${act.map(x => `<div class="mg-row" data-pbox="${x.id}"><b>${esc(x.name)}</b> <span class="dim num">${faS(x.nid)}</span>
-      <div class="row" style="margin-top:6px">${permBoxes(x.id, x.perms)}<button class="btn small ghost" data-psave="${x.id}">ذخیره‌ی دسترسی</button></div>
+    ${act.map(x => `<div class="mg-row" data-pbox="${x.id}"><b>${esc(x.name)}</b> <span class="dim num">${faS(x.nid)}</span>${x.lead ? ` <span class="rb lead sm">⭐ ${esc(leadL())}</span>` : ''}
+      ${moveHTML(x, r)}
+      ${x.lead ? `<p class="hint">${esc(leadL())} است و همه‌ی دسترسی‌ها را دارد.</p>` : `<div class="row" style="margin-top:6px">${permBoxes(x.id, x.perms)}<button class="btn small ghost" data-psave="${x.id}">ذخیره‌ی دسترسی</button></div>
       <div class="row" data-sbox="${x.id}" style="margin-top:6px"><span class="dim">📝 محدوده‌ی فعالیت (حوزه‌های گزارش روزانه):</span> ${D.map(d => `<label class="pchk"><input type="checkbox" data-sc="${esc(d)}" ${!x.scope || x.scope.includes(d) ? 'checked' : ''}> ${esc(d)}</label>`).join('')}<button class="btn small ghost" data-ssave="${x.id}">ذخیره‌ی محدوده</button></div>
-      <details class="mg-ev" style="margin-top:6px"><summary class="dim" style="cursor:pointer">✍️ ارزشیابی ${esc(x.name)} (بدون تعویض)</summary><div data-evbox="${x.id}">${evalFormHTML(EQ)}</div><button class="btn small" data-evsave="${x.id}">ثبت ارزشیابی</button></details></div>`).join('') || '<p class="hint">این منطقه الان مدیر منطقه‌ی فعال ندارد.</p>'}
+      <details class="mg-ev" style="margin-top:6px"><summary class="dim" style="cursor:pointer">✍️ ارزشیابی ${esc(x.name)} (بدون تعویض)</summary><div data-evbox="${x.id}">${evalFormHTML(EQ)}</div><button class="btn small" data-evsave="${x.id}">ثبت ارزشیابی</button></details>`}</div>`).join('') || '<p class="hint">این منطقه الان مدیر منطقه‌ی فعال ندارد.</p>'}
     <form class="mg-new" data-ho="${r.id}" novalidate><h4>🔁 ${act.length ? 'تعویض مدیر منطقه (دوره‌ی تازه)' : 'تعیین مدیر منطقه'}</h4>
       <div class="row" style="align-items:flex-end">
         <div class="field" style="flex:1 1 180px"><label class="label">نام و نام خانوادگی</label><input data-hn maxlength="80"></div>
@@ -71,20 +83,20 @@ function mgrBlock(r) {
       <div class="row mg-perms" style="margin-top:6px">${permBoxes(0, null)}</div>
       ${act.length > 1 ? `<p class="err">⚠️ این منطقه ${fa(act.length)} مدیر منطقه‌ی فعال دارد، ولی هر منطقه فقط یک مدیر منطقه دارد. اول مدیر اضافه را به منطقه‌ی خودش منتقل یا غیرفعال کنید.</p>` : ''}
       ${act.length === 1 ? `<div class="mg-out" data-hev><h4>📋 فرم پایان مأموریت ${esc(act[0].name)}</h4><p class="hint">هر منطقه فقط یک مدیر منطقه دارد؛ با ثبت، ${esc(act[0].name)} کنار می‌رود. پیش از آن عملکردش را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
-      <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید.</p>
+      <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید. ${esc(leadL())} هم اگر کد ملی خودش را بنویسد، خودش مدیر این منطقه می‌شود.</p>
       <button class="btn" type="submit">ثبت</button> <span class="err" data-he></span></form>
     ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span> ${t.score != null ? scoreTag(t.score) : ''}</li>`).join('')}</ul>` : ''}
   </details>`;
 }
 function regionCard(r) {
-  const P = r.people || [], mgr = P.filter(x => x.role === 'region' && x.active), hot = P.filter(x => x.role === 'fm' || x.sheet);
+  const P = r.people || [], mgr = P.filter(isMgrOf), hot = P.filter(x => x.role === 'fm' || x.sheet);
   const st = r.staff || [], stN = st.reduce((a, x) => a + x.n, 0), stSoon = st.reduce((a, x) => a + x.soon, 0);
   return `<div class="card rg ${cityCls(r.city)}"><div class="card-h"><h2>🗺️ ${esc(r.name)} ${!r.name.includes(r.city || '-') ? cityTag(r.city) : ''}</h2>
       <div class="row"><button class="btn small" data-open="${r.id}">ورود به پنل این منطقه ←</button><button class="btn small ghost" data-users="${r.id}">👥 کاربران</button></div></div>
     <div class="rg-stats"><span>هفته‌ی واردشده <b class="num">${fa(r.weeks)}</b></span><span>گزارش <b class="num">${fa(r.reports)}</b></span><span>نقص <b class="num">${fa(r.defects)}</b></span>
       <span class="${r.open ? 'bad' : ''}">نقص باز <b class="num">${fa(r.open || 0)}</b></span><span class="dim">آخرین گزارش: ${r.last_report ? fmtTs(r.last_report) : '—'}</span></div>
     <div class="rg-grid">
-      <section class="rg-sec reg"><h3>👔 مدیر منطقه <span class="dim">(${fa(mgr.length)})</span></h3><ul>${mgr.map(x => personRow(x, (x.sheet ? '<span class="rb fm sm">+ مدیر ثابت</span>' : '') + (x.active ? `<span class="pcs">${permChips(x.perms)}</span>` : ''))).join('') || '<li class="dim">هنوز مدیر منطقه ندارد.</li>'}</ul></section>
+      <section class="rg-sec reg"><h3>👔 مدیر منطقه <span class="dim">(${fa(mgr.length)})</span></h3><ul>${mgr.map(x => personRow(x, (x.lead ? `<span class="rb lead sm">⭐ ${esc(leadL())}</span>` : '') + (x.sheet ? '<span class="rb fm sm">+ مدیر ثابت</span>' : '') + (x.active ? `<span class="pcs">${permChips(x.perms)}</span>` : ''))).join('') || '<li class="dim">هنوز مدیر منطقه ندارد.</li>'}</ul></section>
       <section class="rg-sec fm"><h3>🏨 مدیران ثابت <span class="dim">(${fa(hot.length)})</span></h3><ul>${hot.map(x => personRow(x, x.lead ? `<span class="rb lead sm">⭐ ${esc(leadL())}</span>` : x.role === 'region' ? '<span class="rb reg sm">مدیر منطقه</span>' : '')).join('') || '<li class="dim">هنوز مدیر ثابتی ندارد.</li>'}</ul></section>
       <section class="rg-sec st"><h3>👷 عوامل <span class="dim">(${fa(stN)})</span></h3><ul>${st.map(x => `<li><span class="pn"><b>${esc(x.role)}</b></span><span class="pm"><span class="num">${fa(x.n)}</span> نفر ${x.soon ? `<span class="pill bad">${fa(x.soon)} نزدیک خروج</span>` : ''}</span></li>`).join('') || '<li class="dim">هنوز ثبت نشده (در پنل منطقه، تب «👷 عوامل»).</li>'}</ul>
         ${stSoon ? `<p class="hint" style="color:var(--bad)">⚠️ ${fa(stSoon)} نفر تا ۵ روز دیگر باید از عراق خارج شوند.</p>` : ''}</section>
@@ -103,13 +115,13 @@ function renderRegions() {
   const openOf = c => RA.filter(r => inCity(r, c)).reduce((a, r) => a + (r.open || 0), 0);
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     ${L.length ? `<div class="card leads"><div class="card-h"><h2>⭐ ${esc(leadL())} <span class="dim" style="font-size:12.5px;font-weight:500">(همه‌ی شهرها)</span></h2></div>
-      <ul class="lead-list">${L.map(x => `<li><b>${esc(x.name)}</b> ${statusPill(x)}${x.region_id ? ` <span class="dim">· خودش مدیر ثابت در</span> ${cityTag(x.city)} ${x.city !== x.region ? `<span class="dim">${esc(x.region)}</span>` : ''}` : ''}</li>`).join('')}</ul></div>` : ''}
+      <ul class="lead-list">${L.map(x => `<li><b>${esc(x.name)}</b> ${statusPill(x)}${x.region_id ? ` <span class="dim">· مدیر</span> ${cityTag(x.city)} ${x.city !== x.region ? `<span class="dim">${esc(x.region)}</span>` : ''}` : ''}</li>`).join('')}</ul></div>` : ''}
     <div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn small ghost" data-allx title="یک فایل اکسل: مدیران منطقه، مدیران ثابت، آشپزها و سایر عوامل همه‌ی شهرها">📦 خروجی یکجای همه‌ی شهرها</button></div>
     <nav class="city-tabs" aria-label="شهرها"><button data-city="__all" aria-pressed="${!U.city}">همه‌ی شهرها <span class="n">${fa(RA.length)} منطقه</span></button>
       ${cities.map(c => { const o = openOf(c); return `<button class="${cityCls(c)}" data-city="${esc(c)}" aria-pressed="${U.city === c}"><i></i>${esc(c || 'بدون شهر')} <span class="n">${fa(RA.filter(r => inCity(r, c)).length)} منطقه</span>${o ? `<span class="ob" title="نقص باز">${fa(o)}</span>` : ''}</button>`; }).join('')}</nav>
     <div class="kpis k6">
       <div class="kpi"><span class="v num">${fa(R.length)}</span><span class="k">منطقه</span></div>
-      <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'region' && x.active))}</span><span class="k">👔 مدیر منطقه</span></div>
+      <div class="kpi"><span class="v num">${fa(cnt(isMgrOf))}</span><span class="k">👔 مدیر منطقه</span></div>
       <div class="kpi"><span class="v num">${fa(cnt(x => x.role === 'fm' || x.sheet))}</span><span class="k">🏨 مدیر ثابت</span></div>
       <div class="kpi"><span class="v num">${fa(R.reduce((a, r) => a + (r.staff || []).reduce((b, x) => b + x.n, 0), 0))}</span><span class="k">👷 عوامل</span></div>
       <div class="kpi"><span class="v num">${fa(tot('reports'))}</span><span class="k">گزارش ثبت‌شده</span></div>
@@ -138,6 +150,9 @@ function renderRegions() {
   m.querySelectorAll('[data-rdel]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } try { await api(`/api/super/regions/${b.dataset.rdel}/delete`, { body: {} }); toast('منطقه حذف شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.psave}/perms`, { body: readPerms(m.querySelector(`[data-pbox="${b.dataset.psave}"]`)) }); toast('دسترسی‌ها ذخیره شد؛ از درخواست بعدی مدیر منطقه اعمال می‌شود.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-evbox]').forEach(b => wireEval(b, U.O.ops.evalRegion));
+  m.querySelectorAll('[data-mvgo]').forEach(b => b.onclick = async () => { const sel = m.querySelector(`[data-mvsel="${b.dataset.mvgo}"]`); if (!sel.value) return toast('منطقه‌ی مقصد را انتخاب کنید.', true);
+    if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; }
+    try { await api(`/api/super/users/${b.dataset.mvgo}/move`, { body: { region_id: +sel.value } }); toast(`منتقل شد به «${sel.selectedOptions[0].textContent}».`); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-hev]').forEach(b => wireEval(b, U.O.ops.evalRegion));
   m.querySelectorAll('[data-ssave]').forEach(b => b.onclick = async () => { const box = m.querySelector(`[data-sbox="${b.dataset.ssave}"]`), sc = [...box.querySelectorAll('[data-sc]:checked')].map(i => i.dataset.sc);
     if (!sc.length) return toast('دست‌کم یک حوزه را انتخاب کنید.', true);
@@ -293,12 +308,13 @@ function renderUsers() {
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     <div class="card"><div class="card-h"><h2>همه‌ی کاربران (${fa(list.length)})</h2>
       <div class="filters"><button class="btn small ghost" id="ux">📥 خروجی اکسل</button><button class="btn small ghost" data-allx>📦 خروجی یکجای همه‌ی شهرها</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
+      <div id="th-box"></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>شهر</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>
       ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleTag(x.role, x.lead)}${x.role !== 'fm' && x.sheet ? ' <span class="rb fm sm">+ مدیر ثابت</span>' : ''}</td><td>${x.city ? cityTag(x.city) : x.role === 'super' ? 'همه' : '—'}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
         <td class="dim">${x.creator ? esc(x.creator) + (x.creator_role === 'region' ? ' (مدیر منطقه)' : x.creator_lead ? ` (${esc(leadL())})` : '') : 'اکسل یا سامانه'}</td><td>${statusPill(x)}</td><td class="num">${fa(x.reports)}</td><td class="dim">${x.last_login ? fmtTs(x.last_login) : '—'}</td>
         <td><div class="row" style="flex-wrap:nowrap"><input data-pw="${x.id}" placeholder="خالی=تصادفی" style="min-width:110px" autocomplete="new-password"><button class="btn small ghost" data-reset="${x.id}">تعیین</button></div></td>
-        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button>${full() && x.role !== 'super' ? `<button class="btn small ghost" data-lead="${x.id}" data-v="1" title="همین حساب ${esc(leadL())} شود؛ رمز، گزارش‌ها و هتل‌هایش می‌ماند">⬆️ ${esc(leadL())}</button>` : ''}${full() && x.lead ? `<button class="btn small ghost" data-lead="${x.id}" data-v="0" title="برگرداندن به مدیر منطقه">⬇️ مدیر منطقه</button>` : ''}<button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
+        <td><div class="row" style="flex-wrap:nowrap"><button class="btn small ghost" data-edit="${x.id}">✏️ ویرایش</button>${x.role === 'region' || x.lead ? `<button class="btn small ghost" data-th="${x.id}" title="سابقه‌ی منطقه‌ها: از چه تاریخی تا چه تاریخی کجا بوده">🕘 سابقه</button>` : ''}${full() && x.role !== 'super' ? `<button class="btn small ghost" data-lead="${x.id}" data-v="1" title="همین حساب ${esc(leadL())} شود؛ رمز، گزارش‌ها و هتل‌هایش می‌ماند">⬆️ ${esc(leadL())}</button>` : ''}${full() && x.lead ? `<button class="btn small ghost" data-lead="${x.id}" data-v="0" title="برگرداندن به مدیر منطقه">⬇️ مدیر منطقه</button>` : ''}<button class="btn small ${x.active ? 'danger' : 'okb'}" data-act="${x.id}" data-v="${x.active ? 0 : 1}">${x.active ? 'غیرفعال' : 'فعال'}</button>
           ${x.passkeys ? `<button class="btn small ghost" data-pk="${x.id}" title="حذف اثر انگشت‌های ثبت‌شده">☝️ ${fa(x.passkeys)}</button>` : ''}
           ${x.reports ? '' : `<button class="btn small danger" data-del="${x.id}">حذف</button>`}</div></td></tr>`).join('') || '<tr><td colspan="11" class="empty">کاربری نیست.</td></tr>'}</tbody></table></div></div>
     ${newUserForm(R, 'fm')}`;
@@ -307,6 +323,12 @@ function renderUsers() {
   m.querySelector('#ux').onclick = () => usersXlsx(list, R).catch(e => toast(e.message, true));
   m.querySelector('[data-allx]').onclick = e => allXlsx(e.target);
   const sure = b => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return false; };
+  m.querySelectorAll('[data-th]').forEach(b => b.onclick = async () => { const x = list.find(u => u.id === +b.dataset.th);
+    try { const T = await api(`/api/super/users/${x.id}/terms`);
+      m.querySelector('#th-box').innerHTML = `<div class="mg-row" style="margin:8px 0"><div class="row" style="justify-content:space-between"><b>🕘 سابقه‌ی منطقه‌های ${esc(x.name)}</b><button class="btn small ghost" id="th-x">بستن</button></div>
+        <ul class="terms">${T.map(t => `<li><b>${esc(regLabel({ name: t.region || 'منطقه‌ی حذف‌شده', city: t.city }))}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}${t.by ? ' · ثبت: ' + esc(t.by) : ''}</span></li>`).join('') || '<li class="dim">سابقه‌ای ثبت نشده.</li>'}</ul></div>`;
+      m.querySelector('#th-x').onclick = () => { m.querySelector('#th-box').innerHTML = ''; }; m.querySelector('#th-box').scrollIntoView({ block: 'nearest' });
+    } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { U.edit = +b.dataset.edit; renderUsers(); const i = m.querySelector('#ed-name'); if (i) i.focus(); });
   const ec = m.querySelector('#ed-cancel'); if (ec) ec.onclick = () => { U.edit = 0; renderUsers(); };
   const es = m.querySelector('#ed-save'); if (es) es.onclick = async () => {

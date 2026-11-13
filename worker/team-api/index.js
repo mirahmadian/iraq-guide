@@ -314,7 +314,8 @@ const permStr = b => PERMS.filter(k => !b || b[k] !== false).join(',');
 const termOpen = (rid, uid, name, by) => prep('INSERT INTO region_terms (region_id, user_id, name, start, end, by) VALUES (?, ?, ?, ?, NULL, ?)', rid, uid, name, Date.now(), by || null);
 /* هر منطقه فقط یک مدیر منطقه‌ی فعال */
 async function mgrTaken(rid, exceptId) {
-  const x = rid && await one("SELECT name FROM users WHERE region_id = ? AND role = 'region' AND active = 1 AND id != ?", rid, exceptId || 0);
+  /* مدیر منطقه = حساب «مدیر منطقه»، یا سرپرست مناطقی که خودش مدیر همین منطقه است */
+  const x = rid && await one("SELECT name FROM users WHERE region_id = ? AND (role = 'region' OR lead = 1) AND active = 1 AND id != ?", rid, exceptId || 0);
   if (x) fail(400, `این منطقه مدیر منطقه دارد (${x.name}). هر منطقه فقط یک مدیر منطقه دارد؛ برای عوض کردن، در کارت همان منطقه «🔁 تعویض مدیر منطقه» را بزنید.`);
 }
 const termClose = uid => prep('UPDATE region_terms SET end = ? WHERE user_id = ? AND end IS NULL', Date.now(), uid);
@@ -825,7 +826,7 @@ async function api(req, url, u) {
           (SELECT MAX(rp.updated) FROM reports rp JOIN users x ON x.id = rp.user_id WHERE x.region_id = r.id) AS last_report
         FROM regions r ORDER BY r.city, r.name`);
       await run(`INSERT INTO region_terms (region_id, user_id, name, start, end) SELECT region_id, id, name, created, CASE WHEN active = 1 THEN NULL ELSE COALESCE(last_login, created) END
-        FROM users WHERE role = 'region' AND region_id IS NOT NULL AND id NOT IN (SELECT user_id FROM region_terms)`);
+        FROM users WHERE (role = 'region' OR lead = 1) AND region_id IS NOT NULL AND id NOT IN (SELECT user_id FROM region_terms)`);
       const managers = await all("SELECT id, region_id, name, nid, active, must_change, last_login, perms, scope FROM users WHERE role = 'region' ORDER BY name");
       managers.forEach(x => { x.perms = permsOf(x); x.scope = x.scope == null ? null : String(x.scope).split('|'); });
       const terms = await all("SELECT t.region_id, t.user_id, t.name, t.start, t.end, (SELECT e.score FROM evals e WHERE e.kind = 'region' AND e.ref_id = t.user_id ORDER BY e.t DESC LIMIT 1) AS score FROM region_terms t ORDER BY t.start DESC");
@@ -888,12 +889,21 @@ async function api(req, url, u) {
       const ex = await one('SELECT * FROM users WHERE nid = ?', nid);
       /* منطقه‌ای که چند مدیر منطقه دارد: body.replace = همان یک نفری که عوض می‌شود (بقیه می‌مانند) */
       b.keepOld = false;   /* هر منطقه فقط یک مدیر منطقه: مدیر فعلی همیشه کنار می‌رود */
-      const olds = (await all("SELECT id FROM users WHERE region_id = ? AND role = 'region' AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
+      const olds = (await all("SELECT id, lead FROM users WHERE region_id = ? AND (role = 'region' OR lead = 1) AND active = 1", r.id)).filter(x => !ex || x.id !== ex.id);
       if (olds.length > 1) fail(400, 'این منطقه بیش از یک مدیر منطقه‌ی فعال دارد؛ اول مدیر اضافه را به منطقه‌ی خودش منتقل یا غیرفعال کنید.');
-      const st = b.keepOld ? [] : olds.flatMap(x => [prep('UPDATE users SET active = 0 WHERE id = ?', x.id), endAll(x.id), termClose(x.id)]);
+      /* سرپرست مناطقی که مدیر این منطقه بود غیرفعال نمی‌شود؛ فقط از این منطقه کنار می‌رود */
+      const st = olds.flatMap(x => x.lead ? [prep('UPDATE users SET region_id = NULL, sheet = NULL WHERE id = ?', x.id), termClose(x.id)] : [prep('UPDATE users SET active = 0 WHERE id = ?', x.id), endAll(x.id), termClose(x.id)]);
       /* فرم پایان مأموریت مدیر قبلی (اگر یک نفر است و فعال نمی‌ماند) */
       if (!b.keepOld && olds.length === 1 && !b.skipEval) { const o = await one('SELECT * FROM users WHERE id = ?', olds[0].id); st.push(evalIns('region', o.id, r.id, o.name, evalOf(b.eval || {}, (await opsCfg()).evalRegion), u.id)); }
       let out = { name: name || ex?.name, nid };
+      if (ex && ex.lead) {
+        /* سرپرست مناطق خودش مدیر این منطقه می‌شود (نقش سرپرستی‌اش می‌ماند) */
+        if (ex.id !== u.id && !isFull(u)) fail(403, 'فقط خود همان سرپرست یا مدیر سامانه.');
+        if (ex.region_id && ex.region_id !== r.id && await one('SELECT 1 FROM assign WHERE user_id = ?', ex.id)) { /* ورودی‌های قبلی سر جایشان می‌مانند */ }
+        st.push(prep('UPDATE users SET region_id = ? WHERE id = ?', r.id, ex.id), termClose(ex.id), termOpen(r.id, ex.id, ex.name, u.id));
+        await DB.batch(st);
+        return { name: ex.name, nid, kept: true, ended: olds.length };
+      }
       if (ex) {
         if (ex.region_id !== r.id || !['fm', 'region'].includes(ex.role)) fail(400, `این کد ملی مال «${ex.name}» در جای دیگری از سامانه است. فقط مدیر ثابت یا مدیر منطقه‌ی قبلیِ همین منطقه را می‌شود مدیر منطقه کرد.`);
         if (ex.role === 'region' && ex.active) fail(400, 'این نفر همین الان مدیر منطقه‌ی همین منطقه است.');
@@ -952,6 +962,23 @@ async function api(req, url, u) {
       const rows = await all('SELECT d.region_id, d.domain, d.status, d.text, d.updated, x.name AS by FROM daily_reports d LEFT JOIN users x ON x.id = d.user_id WHERE d.day = ?', JD.str(d));
       const mgrs = await all("SELECT id, region_id, name, scope FROM users WHERE role = 'region' AND active = 1");
       return { day: JD.str(d), today: JD.str(JD.today()), rows, mgrs: mgrs.map(x => ({ ...x, scope: x.scope == null ? null : String(x.scope).split('|') })), ...(await opsCfg()) };
+    }
+    /* جابجایی مدیر منطقه (یا سرپرستی که خودش مدیر یک منطقه است) به منطقه‌ی دیگر؛ دوره‌ی قبلی بسته و دوره‌ی تازه باز می‌شود (سابقه می‌ماند).
+       ورودی‌ها و گزارش‌های هفته‌های قبل سر جایشان می‌مانند؛ از این به بعد اکسل هفتگی او در منطقه‌ی تازه وارد می‌شود. */
+    if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/move$/)) && m === 'POST') {
+      const t = await one("SELECT * FROM users WHERE id = ? AND nid != 'owner' AND (role = 'region' OR lead = 1)", +mm[1]); if (!t) fail(404, 'مدیر منطقه پیدا نشد');
+      if (t.lead && t.id !== u.id && !isFull(u)) fail(403, `جابجایی ${await leadLabel()} دیگر فقط با مدیر سامانه است.`);
+      const b = await body(), to = +b.region_id || null;
+      if (to && !await one('SELECT 1 FROM regions WHERE id = ?', to)) fail(400, 'منطقه پیدا نشد.');
+      if (!to && !t.lead) fail(400, 'منطقه‌ی مقصد را انتخاب کنید.');
+      if (to === t.region_id) fail(400, 'همین الان در همین منطقه است.');
+      if (to) await mgrTaken(to, t.id);
+      await DB.batch([prep('UPDATE users SET region_id = ? WHERE id = ?', to, t.id), termClose(t.id), ...(to && t.active ? [termOpen(to, t.id, t.name, u.id)] : [])]);
+      return { ok: true };
+    }
+    /* سابقه‌ی یک نفر: از چه تاریخی تا چه تاریخی مدیر کدام منطقه بوده */
+    if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/terms$/)) && m === 'GET') {
+      return all('SELECT t.region_id, r.name AS region, r.city, t.start, t.end, x.name AS by FROM region_terms t LEFT JOIN regions r ON r.id = t.region_id LEFT JOIN users x ON x.id = t.by WHERE t.user_id = ? ORDER BY t.start DESC', +mm[1]);
     }
     /* دسترسی‌های یک مدیر منطقه */
     if ((mm = p.match(/^\/api\/super\/users\/(\d+)\/perms$/)) && m === 'POST') {
@@ -1020,8 +1047,10 @@ async function api(req, url, u) {
         if (t.lead) {
           const region = +b.region_id || null; if (region && !await one('SELECT 1 FROM regions WHERE id = ?', region)) fail(400, 'منطقه نامعتبر');
           const sheet = region ? (b.sheet !== undefined ? String(b.sheet || '').trim().slice(0, 60) || null : t.sheet) : null;
-          if (region !== t.region_id && await one('SELECT 1 FROM assign WHERE user_id = ?', t.id) && t.region_id) fail(400, 'این نفر در هفته‌های منطقه‌ی فعلی ورودی دارد و جابه‌جا نمی‌شود.');
-          await run('UPDATE users SET name = ?, nid = ?, region_id = ?, sheet = ? WHERE id = ?', name, nid, region, sheet, t.id);
+          if (region !== t.region_id && await one('SELECT 1 FROM assign WHERE user_id = ?', t.id) && t.region_id) fail(400, 'این نفر در هفته‌های منطقه‌ی فعلی ورودی دارد؛ برای جابجایی، «🔀 جابجایی» را بزنید.');
+          if (region && region !== t.region_id) await mgrTaken(region, t.id);
+          await DB.batch([prep('UPDATE users SET name = ?, nid = ?, region_id = ?, sheet = ? WHERE id = ?', name, nid, region, sheet, t.id),
+            ...(region !== t.region_id ? [termClose(t.id), ...(region ? [termOpen(region, t.id, name, u.id)] : [])] : [])]);
           return { ok: true, entries: sheet !== t.sheet || region !== t.region_id ? await syncSheet(t.id) : undefined };
         }
         const region = b.region_id ? +b.region_id : t.region_id; if (!await one('SELECT 1 FROM regions WHERE id = ?', region)) fail(400, 'منطقه نامعتبر');
