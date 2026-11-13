@@ -1421,6 +1421,12 @@ export default {
     const origin = req.headers.get('origin'), allowed = (env.ALLOWED_ORIGINS || 'https://mirahmadian.github.io').split(',');
     const cors = origin && allowed.includes(origin) ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Content-Disposition' } : {};
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Orig-Size', 'Access-Control-Max-Age': '86400' } });
+    /* باز کردن سامانه از پنل مدیریت در «تب» مرورگر: team.html در محدوده‌ی برنامه‌ی نصب‌شده‌ی همیار کاروان است و Chrome آن را در پنجره‌ی جدای برنامه باز می‌کند؛
+       لینک اول به این نشانیِ بیرون از محدوده می‌آید (پس تب معمولی باز می‌شود) و همین‌جا به سامانه برمی‌گردد. مقصد ثابت است (تغییرمسیر باز نیست). */
+    if (url.pathname === '/go/team' || url.pathname === '/go/team-owner') {
+      const to = 'https://mirahmadian.github.io/iraq-guide/team.html' + (url.pathname === '/go/team-owner' ? '#owner' : '');
+      return new Response(null, { status: 302, headers: { Location: to, 'Cache-Control': 'no-store' } });
+    }
     try {
       if (url.pathname.startsWith('/api/')) {
         const out = await api(req, url, await sessionUser(bearer(req, url)));
