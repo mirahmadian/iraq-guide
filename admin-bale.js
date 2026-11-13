@@ -29,7 +29,7 @@ function renderBale() {
       </div>
       <div id="baleProg" class="empty-msg" style="padding:6px 0"></div></div>
     ${d.list ? `<div class="field"><button class="add-row-btn" style="margin:0" onclick="baleShowList=!baleShowList;renderBale()">${baleShowList ? '▴ بستن فهرست شماره‌ها' : '▾ فهرست شماره‌ها (فقط برای شما)'}</button>
-      ${baleShowList ? `<button class="add-row-btn" style="margin:6px 0 0" onclick="baleCsv()">⬇️ دانلود فهرست (اکسل/CSV)</button>
+      ${baleShowList ? `<button class="xl-btn" style="margin:6px 0 0" onclick="baleCsv()">${XL_ICON} دانلود فهرست (اکسل/CSV)</button>
       <div style="max-height:320px;overflow:auto;margin-top:6px;font-size:13px">${d.list.map(u => `<div style="display:flex;gap:8px;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;${u.active ? '' : 'opacity:.5'}">
         <span>${escH(u.name || '—')}</span><span dir="ltr">${escH(u.phone || '')}</span><span>${escH(u.city ? cityName(u.city) : '')}</span></div>`).join('')}</div>` : ''}</div>` : ''}
     <div class="empty-msg" style="padding:0">زائران از «بیشتر ← اطلاعیه‌ها در بله» در برنامه عضو می‌شوند. هر کس با نوشتن «لغو» در بازو، اشتراکش را لغو می‌کند.</div>`;

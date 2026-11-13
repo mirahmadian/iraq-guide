@@ -135,7 +135,7 @@ function renderQuality(el, d, o = {}) {
   el.innerHTML = `
   <div class="card"><div class="card-h"><h2>⭐ کیفیت هتل‌ها</h2>
     ${o.weeks ? `<select class="sel" id="q-week" aria-label="دوره">${o.weeks.map(w => `<option value="${w.id}" ${String(w.id) === String(o.week) ? 'selected' : ''}>${esc(w.title)}</option>`).join('')}<option value="all" ${o.week === 'all' ? 'selected' : ''}>همه‌ی هفته‌ها روی هم</option></select>` : ''}
-    ${H.length ? '<button type="button" class="btn small ghost" id="q-xlsx" title="جدول همین صفحه به ترتیب فعلی، با شرکت‌ها و نقل">📥 خروجی اکسل</button>' : ''}
+    ${H.length ? '<button type="button" class="btn small xl" id="q-xlsx" title="جدول همین صفحه به ترتیب فعلی، با شرکت‌ها و نقل">' + XL + ' خروجی اکسل</button>' : ''}
     <div class="q-scale" role="group" aria-label="مقیاس نمره"><span>نمره از</span>${[100, 5].map(v => `<button type="button" data-qs="${v}" aria-pressed="${Q_SCALE === v}" class="${Q_SCALE === v ? 'on' : ''}">${v === 5 ? '۵ سطحی' : '۱۰۰'}</button>`).join('')}</div></div>
     ${!H.length ? '<div class="empty">برای این دوره هنوز گزارشی ثبت نشده است.</div>' : `
     <div class="q-sum"><div><b class="num">${d.avg == null ? '—' : qN(d.avg)}</b><span>میانگین نمره‌ی هتل‌ها</span></div>

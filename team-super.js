@@ -116,7 +116,7 @@ function renderRegions() {
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     ${L.length ? `<div class="card leads"><div class="card-h"><h2>⭐ ${esc(leadL())} <span class="dim" style="font-size:12.5px;font-weight:500">(همه‌ی شهرها)</span></h2></div>
       <ul class="lead-list">${L.map(x => `<li><b>${esc(x.name)}</b> ${statusPill(x)}${x.region_id ? ` <span class="dim">· مدیر</span> ${cityTag(x.city)} ${x.city !== x.region ? `<span class="dim">${esc(x.region)}</span>` : ''}` : ''}</li>`).join('')}</ul></div>` : ''}
-    <div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn small ghost" data-allx title="یک فایل اکسل: مدیران منطقه، مدیران ثابت، آشپزها و سایر عوامل همه‌ی شهرها">📦 خروجی یکجای همه‌ی شهرها</button></div>
+    <div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn small xl" data-allx title="یک فایل اکسل: مدیران منطقه، مدیران ثابت، آشپزها و سایر عوامل همه‌ی شهرها">${XL} خروجی یکجای همه‌ی شهرها</button></div>
     <nav class="city-tabs" aria-label="شهرها"><button data-city="__all" aria-pressed="${!U.city}">همه‌ی شهرها <span class="n">${fa(RA.length)} منطقه</span></button>
       ${cities.map(c => { const o = openOf(c); return `<button class="${cityCls(c)}" data-city="${esc(c)}" aria-pressed="${U.city === c}"><i></i>${esc(c || 'بدون شهر')} <span class="n">${fa(RA.filter(r => inCity(r, c)).length)} منطقه</span>${o ? `<span class="ob" title="نقص باز">${fa(o)}</span>` : ''}</button>`; }).join('')}</nav>
     <div class="kpis k6">
@@ -276,7 +276,7 @@ async function allXlsx(btn) {
     ]);
     toast(`فایل ساخته شد: ${fa(mgrs.length)} مدیر منطقه، ${fa(fms.length)} مدیر ثابت، ${fa(cooks.length)} آشپز، ${fa(others.length)} عامل دیگر.`);
   } catch (e) { toast(e.message, true); }
-  if (btn) { btn.disabled = false; btn.textContent = '📦 خروجی یکجای همه‌ی شهرها'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = XL + ' خروجی یکجای همه‌ی شهرها'; }
 }
 /* خروجی اکسل «همه‌ی کاربران»: همه‌ی ستون‌های جدول + دسترسی‌ها و محدوده‌ی فعالیت (همان فیلتر منطقه‌ی صفحه) */
 async function usersXlsx(list, R) {
@@ -307,7 +307,7 @@ function renderUsers() {
   const m = main(), R = U.O.regions, list = U.users;
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     <div class="card"><div class="card-h"><h2>همه‌ی کاربران (${fa(list.length)})</h2>
-      <div class="filters"><button class="btn small ghost" id="ux">📥 خروجی اکسل</button><button class="btn small ghost" data-allx>📦 خروجی یکجای همه‌ی شهرها</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
+      <div class="filters"><button class="btn small xl" id="ux">${XL} خروجی اکسل</button><button class="btn small xl" data-allx>${XL} خروجی یکجای همه‌ی شهرها</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
       <div id="th-box"></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>شهر</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>

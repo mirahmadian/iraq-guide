@@ -69,7 +69,7 @@ function render() {
           <button class="btn small" data-a="add">➕ نیروی تازه</button>
           <button class="btn small ghost" data-a="xls">📄 ورود از اکسل</button>
           <button class="btn small ghost" data-a="roles">⚙️ نقش‌ها</button>
-          <button class="btn small ghost" data-a="xout">📥 خروجی اکسل</button>
+          <button class="btn small xl" data-a="xout">${XL} خروجی اکسل</button>
           <button class="btn small ${S.d.bale ? 'ghost' : 'okb'}" data-a="bale">${S.d.bale ? '🔔 هشدار بله: وصل است' : '🔔 اتصال به بله برای هشدار'}</button>
         </div>
       </div>

@@ -33,10 +33,11 @@ async function cosInfo() {
   const sy = CO.sub === 'siyahe', L = sy ? CO.d.siyahe : CO.d.mojri;
   const here = new Map(); CO.d.here.forEach(e => { const k = coNorm(sy ? e.siyahe : e.company); if (!k) return; if (!here.has(k)) here.set(k, []); here.get(k).push(e); });
   box.innerHTML = `<div class="card"><div class="card-h"><h2 style="margin:0;font-size:17px">${sy ? '🤝 شرکت‌های سیاحه' : '📇 شرکت‌های مجری و نمایندگانشان'} (${fa(L.length)})</h2>
-      <input type="search" id="co-q" placeholder="🔎 نام شرکت، مدیر، نماینده یا شماره…" value="${esc(CO.q)}" style="max-width:320px;flex:1 1 220px"></div>
+      <div class="row" style="gap:8px;flex:1 1 300px;justify-content:flex-end"><input type="search" id="co-q" placeholder="🔎 نام شرکت، مدیر، نماینده یا شماره…" value="${esc(CO.q)}" style="max-width:320px;flex:1 1 200px"><button class="btn small xl" id="co-x"${L.length ? '' : ' disabled'}>${XL} خروجی اکسل</button></div></div>
     <p class="hint">${sy ? 'مشخصات شرکت‌های سیاحه در پنل مدیریت (تب «🏢 شرکت‌های مجری و سیاحه»، بخش «شرکت‌های سیاحه») ثبت و ویرایش می‌شود.' : 'این اطلاعات را شرکت‌ها از راه بازوی بله فرستاده‌اند یا در پنل مدیریت ثبت شده است؛ ویرایش فقط در پنل مدیریت.'} تماس با پیش‌شماره‌ی بین‌المللی است تا با سیم‌کارت ایرانی در عراق هم وصل شود.</p>
     <div id="co-list"></div></div>`;
   const q = box.querySelector('#co-q'); q.oninput = () => { CO.q = q.value; draw(); };
+  box.querySelector('#co-x').onclick = e => coXlsx(sy, L, here, e.currentTarget);
   function draw() {
     const qq = coNorm(CO.q.replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)));
     const hay = c => coNorm([c.name, c.ceo, c.address, c.phone, c.note, c.cities, ...c.reps.flatMap(r => [r.name, r.ir, r.iq])].join(' '));
@@ -57,6 +58,24 @@ async function cosInfo() {
       : `<div class="empty">${L.length ? 'با این جستجو پیدا نشد.' : sy ? 'هنوز شرکت سیاحه‌ای در پنل مدیریت ثبت نشده است.' : 'هنوز شرکتی ثبت نشده است.'}</div>`;
   }
   draw();
+}
+/* اکسل: هر نماینده یک ردیف (شرکت بی‌نماینده هم یک ردیف)؛ شماره‌ها متن می‌مانند تا صفر اولشان نیفتد */
+async function coXlsx(sy, L, here, btn) {
+  const t = btn.innerHTML; btn.disabled = true; btn.textContent = '⏳ در حال ساختن…';
+  try {
+    const rows = [];
+    for (const c of L) {
+      const h = here.get(coNorm(c.name)) || [], hs = h.map(e => `${e.hotel || ''} (${e.city || ''} · ${e.region || ''})`).join('، ');
+      const base = sy ? [c.name, c.cities, c.ceo, c.phone, c.address] : [c.name, c.ceo, c.phone, c.address];
+      (c.reps.length ? c.reps : [{ name: '', iq: '', ir: '' }]).forEach(r => rows.push([...base, r.name, r.iq, r.ir, c.note, h.length || '', hs]));
+    }
+    const head = sy ? ['نام شرکت سیاحه', 'شهرها', 'مدیر', 'تلفن شرکت', 'آدرس'] : ['نام شرکت مجری', 'مدیرعامل', 'تلفن شرکت', 'آدرس'];
+    const n = head.length, today = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).replace(/\//g, '-');
+    await saveBook(`${sy ? 'شرکت های سیاحه' : 'شرکت های مجری'} ${today}.xlsx`, [{ name: sy ? 'سیاحه' : 'مجری', title: `${sy ? 'شرکت‌های سیاحه' : 'شرکت‌های مجری'} و نمایندگان — ${fa(L.length)} شرکت`,
+      head: [...head, 'نام نماینده', 'موبایل عراق', 'موبایل ایران', 'توضیح', 'هتل‌های این هفته (تعداد)', 'هتل‌های این هفته'],
+      rows, widths: [...head.map((x, i) => i === 0 ? 28 : x === 'آدرس' ? 36 : 18), 22, 16, 16, 24, 12, 50], text: sy ? [3, 6, 7] : [2, 5, 6] }]);
+  } catch (e) { toast('ساختن فایل اکسل ممکن نشد: ' + e.message, true); }
+  btn.disabled = false; btn.innerHTML = t;
 }
 document.head.insertAdjacentHTML('beforeend', `<style>
   .co-d{border:1px solid var(--line-s);border-radius:12px;background:var(--card);margin:0 0 8px;overflow:hidden}

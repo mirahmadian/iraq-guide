@@ -1,5 +1,32 @@
 /* ══ 🤝 شرکت‌های سیاحه (طرف عراقی) — در تب «شرکت‌های مجری و سیاحه» ══
    فقط روی سرور (جدول siyahe_cos)؛ در اپلیکیشن نیست. سرپرست مناطق در سامانه پایش خدمات (تب 🏢 شرکت‌ها) می‌بیند و تماس می‌گیرد. */
+/* آیکون اکسل و دکمه‌ی سبز برای همه‌ی «خروجی اکسل»های پنل (کلاس xl-btn) */
+const XL_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="flex:none"><rect x="2.5" y="2.5" width="19" height="19" rx="4" fill="#fff"/><path d="M8 7.5l8 9M16 7.5l-8 9" stroke="#1D6F42" stroke-width="2.6" stroke-linecap="round"/></svg>';
+/* اکسل شرکت‌های مجری یا سیاحه: هر نماینده یک ردیف؛ شماره‌ها متن می‌مانند */
+async function coXlsxAdmin(sy, btn) {
+  const L = sy ? sycData.list : mcoData.list, t = btn.innerHTML; btn.disabled = true; btn.textContent = '⏳ در حال ساختن…';
+  try {
+    await mgaSheetJS();
+    const head = sy ? ['نام شرکت سیاحه', 'شهرها', 'مدیر', 'تلفن شرکت', 'آدرس'] : ['نام شرکت مجری', 'مدیرعامل', 'تلفن شرکت', 'آدرس'];
+    const H = ['ردیف', ...head, 'نام نماینده', 'موبایل عراق', 'موبایل ایران', 'توضیح'], rows = [];
+    for (const c of L) { const base = sy ? [c.name, c.cities, c.ceo, c.phone, c.address] : [c.name, c.ceo, c.phone, c.address];
+      (c.reps.length ? c.reps : [{ name: '', iq: '', ir: '' }]).forEach(r => rows.push([rows.length + 1, ...base, r.name, r.iq, r.ir, c.note])); }
+    const ws = XLSX.utils.aoa_to_sheet([H, ...rows.map(r => r.map(v => v == null ? '' : v))]);
+    const tc = H.map((h, i) => /تلفن|موبایل/.test(h) ? i : -1).filter(i => i >= 0);
+    rows.forEach((r, ri) => tc.forEach(c => { const cell = ws[XLSX.utils.encode_cell({ r: ri + 1, c })]; if (cell) { cell.t = 's'; cell.v = String(cell.v); cell.z = '@'; } }));
+    ws['!cols'] = H.map(h => ({ wch: h === 'ردیف' ? 6 : /نام شرکت/.test(h) ? 28 : h === 'آدرس' ? 36 : 18 }));
+    if (rows.length) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: H.length - 1 } }) };
+    const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] }; XLSX.utils.book_append_sheet(wb, ws, sy ? 'سیاحه' : 'مجری');
+    const d = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).replace(/\//g, '-');
+    XLSX.writeFile(wb, `${sy ? 'شرکت های سیاحه' : 'شرکت های مجری'} ${d}.xlsx`);
+  } catch (e) { showToast('ساختن فایل اکسل ممکن نشد: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = t;
+}
+document.head.insertAdjacentHTML('beforeend', `<style>
+  .xl-btn{display:inline-flex;align-items:center;gap:6px;background:#1D6F42;color:#fff;border:0;border-radius:10px;padding:7px 14px;min-height:38px;font-family:var(--font);font-weight:800;font-size:13px;cursor:pointer}
+  .xl-btn:hover{background:#185C37}.xl-btn:disabled{opacity:.6;cursor:wait}
+  .xl-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+</style>`);
 let sycData = null, sycErr = '', sycEdit = null, sycQ = '';
 const SYC_CITIES = ['نجف اشرف', 'کربلای معلی', 'کاظمین', 'سامراء', 'بغداد'];
 const sycBlank = () => ({ name: '', cities: '', ceo: '', address: '', phone: '', note: '', reps: [{ name: '', ir: '', iq: '' }] });
@@ -42,7 +69,7 @@ function sycRender() {
     <div class="empty-msg" style="padding:6px 0 0">این اطلاعات در اپلیکیشن زائران و مدیران کاروان نمایش داده نمی‌شود؛ فقط سرپرست مناطق در «سامانه پایش خدمات» می‌بیند و با دکمه‌ی تماس یا واتس‌اپ تماس می‌گیرد.</div></div></details>
   ${(sycData.suggest || []).length ? `<details class="gd-det"><summary><b>💡 ${mgaN(sycData.suggest.length)} شرکت سیاحه در اکسل‌های هفتگی هست که هنوز این‌جا ثبت نشده</b></summary>
     <div class="mco-sug">${sycData.suggest.slice(0, 150).map((x, i) => `<button onclick="sycEdit={...sycBlank(),name:sycData.suggest[${i}].name};sycRender();document.querySelector('#sycForm [data-f=ceo]').focus()">＋ ${escH(x.name)} <span>(${mgaN(x.n)} ردیف)</span></button>`).join('')}</div></details>` : ''}
-  <div class="field-label" style="margin-top:14px">🤝 شرکت‌های سیاحه‌ی ثبت‌شده (${mgaN(sycData.list.length)})</div>
+  <div class="xl-head"><div class="field-label">🤝 شرکت‌های سیاحه‌ی ثبت‌شده (${mgaN(sycData.list.length)})</div>${sycData.list.length ? `<button class="xl-btn" onclick="coXlsxAdmin(true,this)">${XL_ICON} خروجی اکسل</button>` : ''}</div>
   ${sycData.list.length > 5 ? `<input type="search" class="input-full" placeholder="🔎 جستجو…" value="${escH(sycQ)}" oninput="sycQ=this.value;sycList()" style="margin:6px 0 8px">` : ''}
   <div id="sycList"></div>`;
   sycList();

@@ -337,3 +337,8 @@ label.row>input[type=checkbox]{width:auto;flex:none;margin:0}.pk-ed label.row{fl
 .u-act .btn,.u-pw .btn{white-space:nowrap}
 .u-pw{flex-wrap:nowrap;gap:5px}
 .u-pw input{width:110px;min-width:0}
+/* همه‌ی دکمه‌های «خروجی اکسل»: سبز با آیکون اکسل */
+.btn.xl{background:#1D6F42;color:#fff;border:0;display:inline-flex;align-items:center;gap:6px}
+.btn.xl:hover{background:#185C37}
+.btn.xl:disabled{opacity:.6}
+.btn.xl .xl-i{flex:none}

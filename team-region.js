@@ -85,7 +85,7 @@ function renderDash() {
         <div class="filters"><select id="f-p" aria-label="مدیر ثابت"><option value="">همه‌ی افراد</option>${D.people.map(p => `<option value="${p.id}" ${+f.person === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
           <select id="f-s" aria-label="حوزه"><option value="">همه‌ی حوزه‌ها</option>${[...new Set([...D.sections.map(s => s.title), ...rows.map(d => d.section)])].map(s => `<option ${f.section === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
           <select id="f-r" aria-label="نتیجه"><option value="">هر نتیجه</option>${Object.entries(RESULT).map(([k, [l]]) => `<option value="${k}" ${f.result === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-          <button class="btn small" id="xl-out" data-q="${esc(qs.toString())}">📥 خروجی اکسل (همه گزارش‌ها + نواقص)</button></div></div>
+          <button class="btn small xl" id="xl-out" data-q="${esc(qs.toString())}">${XL} خروجی اکسل (همه گزارش‌ها + نواقص)</button></div></div>
         <div class="tbl-wrap"><table><thead><tr><th>مدیر ثابت</th><th>هتل · شرکت مجری</th><th>اشکال</th><th>اقدام</th><th>نتیجه</th></tr></thead><tbody>
         ${shown.map(d => `<tr class="click" data-def="${esc(d.key)}" aria-current="${A.sel === d.key}"><td>${esc(d.person)}</td><td>${esc(d.hotel)}<br><span class="dim">${esc(shortCo(d.company))} · ${md(d.d_in)}–${md(d.d_out)}</span></td>
           <td>${esc(d.question)}<br><span class="dim">${esc(d.section)} · ${esc(d.reasons.join('، ') || d.answer)}</span></td>
@@ -102,7 +102,7 @@ function renderDash() {
   m.querySelector('#f-p').onchange = e => { A.f.person = e.target.value; renderDash(); };
   m.querySelector('#f-s').onchange = e => { A.f.section = e.target.value; renderDash(); };
   m.querySelector('#f-r').onchange = e => { A.f.result = e.target.value; renderDash(); };
-  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.textContent; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q); toast('فایل اکسل دانلود شد: برگه‌ی «همه گزارش‌ها» و برگه‌ی «نواقص».'); } catch (x) { toast(x.message, true); } b.disabled = false; b.textContent = t; };
+  m.querySelector('#xl-out').onclick = async e => { const b = e.currentTarget, t = b.innerHTML; b.disabled = true; b.textContent = '⏳ در حال آماده‌سازی…'; try { await download('/api/admin/export?' + b.dataset.q); toast('فایل اکسل دانلود شد: برگه‌ی «همه گزارش‌ها» و برگه‌ی «نواقص».'); } catch (x) { toast(x.message, true); } b.disabled = false; b.innerHTML = t; };
   m.querySelectorAll('[data-def]').forEach(r => r.onclick = () => { A.sel = r.dataset.def; A.detail = null; renderDash(); if (innerWidth < 1100) document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
   if (sel) wireDetail(sel);
 }
@@ -344,7 +344,7 @@ function renderUsers() {
   const m = main();
   m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز ساخته شد') : ''}
     ${canDo('fm') ? '' : `<div class="card" style="border-color:var(--warn)"><b>🔒 فقط مشاهده</b><span class="muted">${esc(A.me.leadLabel || 'سرپرست مناطق')} هنوز دسترسی «تعریف مدیران ثابت» را به شما نداده است. برای گرفتن این دسترسی با او تماس بگیرید.</span></div>`}
-    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2><button class="btn small ghost" id="u-x">📥 خروجی اکسل</button></div>
+    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2><button class="btn small xl" id="u-x">${XL} خروجی اکسل</button></div>
       <p class="hint">حساب‌ها معمولاً هنگام وارد کردن اکسل هفتگی خودکار ساخته می‌شوند. «شیت» همان نام شیت این نفر در اکسل است تا هفته‌های بعد خودکار شناخته شود.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی</th><th>شیت</th><th>ورودی‌های سپرده‌شده</th><th>وضعیت</th><th>اثر انگشت</th><th>گزارش</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
       ${A.users.map(u => u.role === 'region' ? `<tr class="me-row"><td><b>${esc(u.name)}</b> <span class="pill info">مدیر منطقه</span></td><td class="num">${faS(u.nid)}</td><td><input data-usheet="${u.id}" data-uname-fixed="${esc(u.name)}" value="${esc(u.sheet || '')}" maxlength="60" style="min-width:90px" dir="ltr" placeholder="نام شیت خودتان"></td><td class="num">${u.entries ? fa(u.entries) : '<span class="dim">—</span>'}</td>

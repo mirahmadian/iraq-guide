@@ -286,7 +286,7 @@ function mcoRender() {
       <button class="pub-btn" onclick="mcoImport(this)">✅ ثبت ${mgaN(mcoImp.rows.length)} شرکت</button> <button class="lock-link" onclick="mcoImp=null;mcoRender()">انصراف</button>`}</div>` : ''}
   </div></details>
 
-  <div class="field-label" style="margin-top:14px">🏢 شرکت‌های ثبت‌شده (${mgaN(mcoData.list.length)})</div>
+  <div class="xl-head"><div class="field-label">🏢 شرکت‌های ثبت‌شده (${mgaN(mcoData.list.length)})</div>${mcoData.list.length ? `<button class="xl-btn" onclick="coXlsxAdmin(false,this)">${XL_ICON} خروجی اکسل</button>` : ''}</div>
   <input type="search" class="input-full" placeholder="🔎 جستجوی شرکت، مدیرعامل، نماینده یا شماره…" value="${escH(mcoQ)}" oninput="mcoQ=this.value;mcoLim=25;mcoList()" style="margin:6px 0 8px">
   <div id="mcoList"></div>`;
   mcoList();

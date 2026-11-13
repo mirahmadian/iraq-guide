@@ -13,6 +13,8 @@ function setToken(t, me) {
   HR.token = t || ''; try { t ? localStorage.setItem('hr-token', t) : localStorage.removeItem('hr-token'); } catch (e) {}
   GETC.clear(); if (t && me) GETC.set('/api/me', { t: Date.now(), text: JSON.stringify(me) });  /* ورود، «من کیستم» را هم آورده: یک رفت‌وبرگشت کمتر */
 }
+/* آیکون اکسل (کاشی سفید با X سبز) برای همه‌ی دکمه‌های «خروجی اکسل»؛ کلاس دکمه: btn xl (سبز) */
+const XL = '<svg class="xl-i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4" fill="#fff"/><path d="M8 7.5l8 9M16 7.5l-8 9" stroke="#1D6F42" stroke-width="2.6" stroke-linecap="round"/></svg>';
 const fa = n => Number(n || 0).toLocaleString('fa-IR');
 const faS = s => String(s ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
