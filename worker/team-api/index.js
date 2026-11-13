@@ -853,7 +853,7 @@ async function api(req, url, u) {
     }
     if (p === '/api/super/users' && m === 'GET') {
       const rid = +url.searchParams.get('region') || 0;
-      return all(`SELECT x.id, x.role, x.lead, x.nid, x.name, x.sheet, x.active, x.must_change, x.last_login, x.created, x.region_id, r.name AS region, r.city, c.name AS creator, c.role AS creator_role, c.lead AS creator_lead,
+      return all(`SELECT x.id, x.role, x.lead, x.nid, x.name, x.sheet, x.active, x.must_change, x.last_login, x.created, x.region_id, x.perms, x.scope, r.name AS region, r.city, c.name AS creator, c.role AS creator_role, c.lead AS creator_lead,
           (SELECT COUNT(*) FROM reports rp WHERE rp.user_id = x.id) AS reports, (SELECT COUNT(*) FROM passkeys k WHERE k.user_id = x.id) AS passkeys
         FROM users x LEFT JOIN regions r ON r.id = x.region_id LEFT JOIN users c ON c.id = x.created_by
         WHERE x.id != ?1 AND x.nid != 'owner' AND (?2 = 0 OR x.region_id = ?2) AND (?3 = 1 OR x.role != 'super') ORDER BY x.role = 'super' DESC, r.city, r.name, x.role DESC, x.name`, u.id, rid, isFull(u) ? 1 : 0);

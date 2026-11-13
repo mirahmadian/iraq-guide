@@ -217,11 +217,36 @@ function editRowHTML(x, R) {
     <button class="btn" id="ed-save">ذخیره</button><button class="btn ghost" id="ed-cancel">انصراف</button></div>
     <p class="hint">${roleName(x.role, x.lead)} · اگر کد ملی را عوض کنید، این نفر از این به بعد با کد ملی تازه وارد می‌شود (رمزش همان قبلی است).</p><span class="err" id="ed-err"></span></td></tr>`;
 }
+/* خروجی اکسل «همه‌ی کاربران»: همه‌ی ستون‌های جدول + دسترسی‌ها و محدوده‌ی فعالیت (همان فیلتر منطقه‌ی صفحه) */
+async function usersXlsx(list, R) {
+  const X = await loadXlsx();
+  const dt = t => t ? new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Baghdad' }).format(t).replace('،', '').replace(',', '') : '';
+  const st = u => !u.active ? 'غیرفعال' : !u.last_login ? 'هنوز وارد نشده' : 'فعال';
+  const perms = u => { if (u.role !== 'region') return ''; const p = u.perms == null ? ['fm', 'staff'] : String(u.perms).split(','); return [p.includes('fm') ? 'تعریف مدیران ثابت' : '', p.includes('staff') ? 'تعریف آشپزها و عوامل' : ''].filter(Boolean).join('، ') || 'هیچ'; };
+  const scope = u => u.role !== 'region' ? '' : u.scope == null ? 'همه‌ی حوزه‌ها' : String(u.scope).split('|').join('، ');
+  const creator = x => x.creator ? x.creator + (x.creator_role === 'region' ? ' (مدیر منطقه)' : x.creator_lead ? ` (${leadL()})` : '') : 'اکسل یا سامانه';
+  const head = ['ردیف', 'نام و نام خانوادگی', 'نقش', 'نقش دوم', 'شهر', 'منطقه', 'کد ملی (نام کاربری)', 'نام شیت در اکسل', 'وضعیت', 'رمز موقت (باید عوض شود)', 'تعداد گزارش', 'اثر انگشت (دستگاه)', 'آخرین ورود', 'تاریخ ساخت حساب', 'سازنده', 'دسترسی‌ها (مدیر منطقه)', 'محدوده‌ی فعالیت (مدیر منطقه)', 'شناسه'];
+  const rows = list.map((x, i) => [i + 1, x.name, roleName(x.role, x.lead), x.role !== 'fm' && x.sheet ? 'مدیر ثابت' : '', x.city || (x.role === 'super' ? 'همه' : ''), x.region || '', x.nid, x.sheet || '', st(x), x.must_change ? 'بله' : 'خیر',
+    +x.reports || 0, +x.passkeys || 0, dt(x.last_login), dt(x.created), creator(x), perms(x), scope(x), x.id]);
+  const rn = U.region ? (R.find(r => r.id === U.region) || {}) : null;
+  const title = `همه‌ی کاربران سامانه‌ی پایش خدمات هتل‌ها · ${rn ? regLabel(rn) : 'همه‌ی شهرها و مناطق'} · ${dt(Date.now())}`;
+  const aoa = [[title], head, ...rows], ws = X.utils.aoa_to_sheet(aoa);
+  rows.forEach((r, i) => { const c = ws[X.utils.encode_cell({ r: i + 2, c: 6 })]; if (c) { c.t = 's'; c.z = '@'; } });   /* کد ملی با صفرهای اول */
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+  ws['!cols'] = [6, 26, 16, 11, 13, 24, 15, 14, 14, 12, 10, 10, 18, 18, 24, 32, 40, 8].map(w => ({ wch: w }));
+  ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: Math.max(1, aoa.length - 1), c: head.length - 1 } }) };
+  const wb = X.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] }; X.utils.book_append_sheet(wb, ws, 'کاربران');
+  const by = {}; list.forEach(x => { const k = roleName(x.role, x.lead); by[k] = by[k] || { n: 0, a: 0 }; by[k].n++; if (x.active) by[k].a++; });
+  const ss = X.utils.aoa_to_sheet([['خلاصه'], ['نقش', 'تعداد', 'فعال', 'غیرفعال'], ...Object.entries(by).map(([k, v]) => [k, v.n, v.a, v.n - v.a]), ['جمع', list.length, list.filter(x => x.active).length, list.filter(x => !x.active).length]]);
+  ss['!cols'] = [{ wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]; X.utils.book_append_sheet(wb, ss, 'خلاصه');
+  X.writeFile(wb, `کاربران-${rn ? regLabel(rn).replace(/[\\/:*?"<>|]/g, '-') : 'همه'}-${dt(Date.now()).slice(0, 10).replace(/\//g, '-')}.xlsx`);
+  toast(`فایل اکسل ${fa(list.length)} کاربر ساخته شد.`);
+}
 function renderUsers() {
   const m = main(), R = U.O.regions, list = U.users;
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     <div class="card"><div class="card-h"><h2>همه‌ی کاربران (${fa(list.length)})</h2>
-      <div class="filters"><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
+      <div class="filters"><button class="btn small ghost" id="ux">📥 خروجی اکسل</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>شهر</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>
       ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleTag(x.role, x.lead)}${x.role !== 'fm' && x.sheet ? ' <span class="rb fm sm">+ مدیر ثابت</span>' : ''}</td><td>${x.city ? cityTag(x.city) : x.role === 'super' ? 'همه' : '—'}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
@@ -233,6 +258,7 @@ function renderUsers() {
     ${newUserForm(R, 'fm')}`;
   wireTemp(m); wireNewUser(m);
   m.querySelector('#fr').onchange = e => { U.region = +e.target.value; loadUsers(); };
+  m.querySelector('#ux').onclick = () => usersXlsx(list, R).catch(e => toast(e.message, true));
   const sure = b => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return false; };
   m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { U.edit = +b.dataset.edit; renderUsers(); const i = m.querySelector('#ed-name'); if (i) i.focus(); });
   const ec = m.querySelector('#ed-cancel'); if (ec) ec.onclick = () => { U.edit = 0; renderUsers(); };
