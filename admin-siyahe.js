@@ -1,7 +1,7 @@
 /* ══ 🤝 شرکت‌های سیاحه (طرف عراقی) — در تب «شرکت‌های مجری و سیاحه» ══
    فقط روی سرور (جدول siyahe_cos)؛ در اپلیکیشن نیست. سرپرست مناطق در سامانه پایش خدمات (تب 🏢 شرکت‌ها) می‌بیند و تماس می‌گیرد. */
 /* آیکون اکسل و دکمه‌ی سبز برای همه‌ی «خروجی اکسل»های پنل (کلاس xl-btn) */
-const XL_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="flex:none"><rect x="2.5" y="2.5" width="19" height="19" rx="4" fill="#fff"/><path d="M8 7.5l8 9M16 7.5l-8 9" stroke="#1D6F42" stroke-width="2.6" stroke-linecap="round"/></svg>';
+const XL_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="flex:none"><rect x="9.5" y="4" width="12.5" height="16" rx="1.5" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M14.5 4v16M14.5 8H22M14.5 12H22M14.5 16H22" stroke="#fff" stroke-width="1.3"/><path d="M2 5.6 13 3.6v16.8L2 18.4z" fill="#fff"/><path d="M5 8.6l4.6 6.8M9.6 8.6 5 15.4" stroke="#1D6F42" stroke-width="2.1" stroke-linecap="round"/></svg>';
 /* اکسل شرکت‌های مجری یا سیاحه: هر نماینده یک ردیف؛ شماره‌ها متن می‌مانند */
 async function coXlsxAdmin(sy, btn) {
   const L = sy ? sycData.list : mcoData.list, t = btn.innerHTML; btn.disabled = true; btn.textContent = '⏳ در حال ساختن…';
