@@ -367,6 +367,7 @@ async function teamBoot() {
   if (location.hash === '#owner') {
     /* from admin.html: the main owner's unlocked GitHub key makes them a system manager */
     history.replaceState(null, '', location.pathname);
+    try { sessionStorage.setItem('hr-from-admin', '1'); } catch (e) {}
     let gh = ''; try { gh = localStorage.getItem('caravan-admin-token') || ''; } catch (e) {}
     if (gh) try { { const j = await api('/api/owner-login', { body: { gh } }); setToken(j.token, j.me); } } catch (e) { toast(e.message, true); }
   }
@@ -382,4 +383,13 @@ async function teamBoot() {
   if (me.role === 'fm') return startFM(me);
   if (me.role === 'region') return startRegion(me, {});
   if (me.role === 'super') return startSuper(me);
+}
+
+/* از پنل مدیریت در صفحه‌ی جدید باز شده؟ دکمه‌ی بالا همین صفحه را می‌بندد (پنل مدیریت در صفحه‌ی خودش باز مانده) */
+function hrFromAdmin() { try { return sessionStorage.getItem('hr-from-admin') === '1'; } catch (e) { return false; } }
+function hrBackAdmin() {
+  if (!hrFromAdmin()) return true;
+  window.close();
+  setTimeout(() => { location.href = 'admin.html'; }, 300);   /* اگر مرورگر اجازه‌ی بستن نداد */
+  return false;
 }
