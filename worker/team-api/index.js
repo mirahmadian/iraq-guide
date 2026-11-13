@@ -1059,7 +1059,7 @@ async function api(req, url, u) {
     if (p === '/api/super/daily' && m === 'GET') {
       const d = JD.num(url.searchParams.get('day')) ?? JD.today();
       const rows = await all('SELECT d.region_id, d.domain, d.status, d.text, d.updated, x.name AS by FROM daily_reports d LEFT JOIN users x ON x.id = d.user_id WHERE d.day = ?', JD.str(d));
-      const mgrs = await all("SELECT id, region_id, name, scope FROM users WHERE role = 'region' AND active = 1");
+      const mgrs = await all("SELECT id, region_id, name, scope FROM users WHERE (role = 'region' OR lead = 1) AND region_id IS NOT NULL AND active = 1");
       return { day: JD.str(d), today: JD.str(JD.today()), rows, mgrs: mgrs.map(x => ({ ...x, scope: x.scope == null ? null : String(x.scope).split('|') })), ...(await opsCfg()) };
     }
     /* جابجایی مدیر منطقه (یا سرپرستی که خودش مدیر یک منطقه است) به منطقه‌ی دیگر؛ دوره‌ی قبلی بسته و دوره‌ی تازه باز می‌شود (سابقه می‌ماند).
@@ -1180,7 +1180,7 @@ async function api(req, url, u) {
     /* گزارش روزانه‌ی حوزه‌ها (اسکان، تغذیه، …) — هر حوزه وضعیت + شرح */
     if (p === '/api/admin/daily') {
       /* مدیر منطقه: محدوده‌ی خودش؛ سرپرست/مدیر سامانه: همه‌ی حوزه‌های مدیران منطقه‌ی این منطقه (اگر چند نفرند، اجتماع) */
-      const C = await opsCfg(), MG = u.role === 'region' ? [u] : await all("SELECT * FROM users WHERE region_id = ? AND role = 'region' AND active = 1", R);
+      const C = await opsCfg(), MG = u.role === 'region' ? [u] : await all("SELECT * FROM users WHERE region_id = ? AND (role = 'region' OR lead = 1) AND active = 1", R);
       const D = MG.length ? C.domains.filter(d => MG.some(x => scopeOf(x, C.domains).includes(d))) : C.domains;
       if (m === 'GET') {
         const d = JD.num(url.searchParams.get('day')) ?? JD.today();
