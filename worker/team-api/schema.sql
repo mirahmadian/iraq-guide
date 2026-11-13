@@ -107,3 +107,12 @@ CREATE INDEX IF NOT EXISTS occ_log_e ON occ_log (entry_id, t);
 CREATE TABLE IF NOT EXISTS entry_food (entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE, plan_id TEXT, user_id INTEGER, updated INTEGER);
 CREATE TABLE IF NOT EXISTS meal_checks (entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE, day TEXT NOT NULL, meal TEXT NOT NULL, items TEXT NOT NULL, note TEXT, user_id INTEGER, updated INTEGER NOT NULL, PRIMARY KEY (entry_id, day, meal));
 CREATE INDEX IF NOT EXISTS meal_day ON meal_checks (day);
+
+-- تکمیل اطلاعات هتل‌های اپ توسط مدیران ثابت (پیشنهاد ← تأیید در پنل مدیریت)
+CREATE TABLE IF NOT EXISTS hotel_sug (id INTEGER PRIMARY KEY, hotel_id TEXT NOT NULL, city TEXT, hotel_name TEXT, field TEXT NOT NULL, value TEXT, note TEXT, user_id INTEGER, user_name TEXT, region_id INTEGER, status TEXT NOT NULL DEFAULT 'pending', reason TEXT, reviewer TEXT, t INTEGER NOT NULL, rt INTEGER);
+CREATE INDEX IF NOT EXISTS hotel_sug_h ON hotel_sug (hotel_id, status);
+CREATE INDEX IF NOT EXISTS hotel_sug_s ON hotel_sug (status, t);
+CREATE TABLE IF NOT EXISTS hsug_photo (sug_id INTEGER PRIMARY KEY, data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS hotel_link (region_id INTEGER NOT NULL, hotel TEXT NOT NULL, hotel_id TEXT NOT NULL, user_id INTEGER, t INTEGER, PRIMARY KEY (region_id, hotel));
+CREATE TABLE IF NOT EXISTS hotel_confirm (id INTEGER PRIMARY KEY, hotel_id TEXT NOT NULL, ok INTEGER NOT NULL, note TEXT, user_id INTEGER, user_name TEXT, t INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS hotel_confirm_h ON hotel_confirm (hotel_id, t);

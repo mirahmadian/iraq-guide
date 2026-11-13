@@ -184,6 +184,7 @@ async function staffPublish() {
     if (!r.changed.length) { adminDirty = false; showToast('در بخش‌های شما تغییری برای انتشار نبود'); return; }
     adminDirty = false;
     showToast('ذخیره شد ✅ — ' + r.changed.join('، '));
+    if (typeof hsugAfterPublish === 'function') hsugAfterPublish();
     watchDeploy(r.text);
   } catch (e) {
     showToast('❌ ' + e.message);

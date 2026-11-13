@@ -992,6 +992,7 @@ const LOADED_DATA_JSON=JSON.stringify(CARAVAN_DATA);
 <script src="jdp.js"></script>
 <script src="pw-eye.js"></script>
 <script src="admin-foodvote.js"></script>
+<script src="admin-hotelsug.js"></script>
 <script src="admin-collapse.js"></script>
 <script src="face.js"></script>
 <script src="admin-lost.js"></script>
@@ -1268,7 +1269,7 @@ function getInitialHotels(cityId){
     id:h.id,name:h.name||'',nameEn:h.nameEn||'',code:h.code?String(h.code):'',
     address:h.address||'',addressAr:h.addressAr||'',
     imgs:(h.images&&h.images.length?h.images:(h.cardImage?[h.cardImage]:[])).map(path=>({path})),
-    mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',hidden:!!h.hidden,
+    mapNeshanUrl:h.mapNeshanUrl||'',mapGoogleUrl:h.mapGoogleUrl||'',hidden:!!h.hidden,geoOk:!!h.geoOk,
     contacts:(h.contacts||[]).map(c=>({...c}))
   }));
 }
@@ -1504,7 +1505,7 @@ function hotelsData(cityId){
     id:h.id,name:h.name,nameEn:h.nameEn,...((h.code||'').trim()?{code:toEnA(h.code).trim()}:{}),address:h.address,...((h.addressAr||'').trim()?{addressAr:h.addressAr.trim()}:{}),
     cardImage:h.imgs.map(imgSrc).find(Boolean)||'',
     images:h.imgs.map(imgSrc).filter(Boolean),
-    mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,...(h.hidden?{hidden:true}:{}),
+    mapNeshanUrl:h.mapNeshanUrl,mapGoogleUrl:h.mapGoogleUrl,...(h.hidden?{hidden:true}:{}),...(h.geoOk?{geoOk:true}:{}),
     contacts:h.contacts.filter(c=>c.phone.trim()).map(c=>{
       const o={role:c.role||'',phone:c.phone.trim(),name:c.name&&c.name.trim()?c.name.trim():null,countryCode:c.countryCode||'964'};
       {const ph=c.photo||(BUILD_PENDING&&c.photoData)||'';if(ph) o.photo=ph;}
@@ -1902,6 +1903,7 @@ async function publishData() {
     await updateManifest(ghToken);
     adminDirty=false;
     showToast('ذخیره شد ✅ — سایت در حال به‌روزرسانی است');
+    if (typeof hsugAfterPublish === 'function') hsugAfterPublish();
     watchDeploy(out);
   } catch(e) {
     showToast('❌ ' + e.message);

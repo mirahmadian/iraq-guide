@@ -3,7 +3,7 @@
 /* مدیر سامانه: همه‌ی مناطق، مدیران منطقه و همه‌ی کاربرانی که ساخته‌اند */
 let app;
 const U = { me: null, tab: 'regions', O: null, users: null, region: 0, temp: null };
-const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['daily', '📝 گزارش روزانه'], ['evals', '⭐ ارزشیابی‌ها'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
+const TABS = [['regions', '🗺️ مناطق'], ['quality', '⭐ کیفیت هتل‌ها'], ['cos', '🏢 شرکت‌ها'], ['form', '🧩 فرم‌ساز'], ['users', '👥 همه‌ی کاربران'], ['daily', '📝 گزارش روزانه'], ['evals', '⭐ ارزشیابی‌ها'], ['hinfo', '🏨 اطلاعات هتل‌ها'], ['guide', '📘 راهنما'], ['account', '🔐 حساب من']];
 /* سرپرستی که خودش هم هتل دارد (منطقه و شیت روی حسابش)، تب «هتل‌های من» هم دارد */
 const tabs = () => { const T = U.me.owner ? TABS.filter(t => t[0] !== 'account') : TABS.slice(); if (U.me.lead && U.me.region_id) T.splice(T.length - 1, 0, ['mine', '🏨 هتل‌های من']); return T; };
 
@@ -20,7 +20,7 @@ function go(tab) {
   U.tab = tab;
   app.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   main().innerHTML = '<div class="empty"><span class="spin"></span>در حال بارگذاری…</div>';
-  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), guide: () => renderGuide(main(), 'lead', leadL()), form: () => fbStart(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
+  ({ quality: () => loadQuality(), cos: () => loadCompanies(), regions: loadRegions, users: loadUsers, daily: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderDailyAll(main(), U.O.regions); }, evals: () => renderEvals(main()), hinfo: async () => { try { if (!U.O) U.O = await api('/api/super/overview'); } catch (e) { return toast(e.message, true); } renderHinfoAll(main(), '/api/super/hinfo', U.O.regions); }, guide: () => renderGuide(main(), 'lead', leadL()), form: () => fbStart(U.me), account: () => renderAccount(main(), U.me, () => go('regions')) })[tab]();
 }
 const leadL = () => (U.O && U.O.leadLabel) || U.me.leadLabel || 'سرپرست مناطق';
 setLeadLabelFn(() => leadL());

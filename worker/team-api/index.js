@@ -83,6 +83,14 @@ const endSession = async tok => { if (tok) await run('DELETE FROM sessions WHERE
 const endAll = userId => prep('DELETE FROM sessions WHERE user_id = ?', userId);
 
 /* ── login throttling (key = hash of ip|nid; raw IPs are not stored) ── */
+/* سقف تعداد در یک بازه (برای پیشنهادهای اطلاعات هتل) */
+async function limited(key, max, win) {
+  const now = Date.now(), t = await one('SELECT * FROM tries WHERE k = ?', 'L:' + key);
+  if (!t || t.first + win * 1000 < now) { await run('INSERT OR REPLACE INTO tries (k, n, until, first) VALUES (?, 1, 0, ?)', 'L:' + key, now); return false; }
+  if (t.n >= max) return true;
+  await run('UPDATE tries SET n = n + 1 WHERE k = ?', 'L:' + key); return false;
+}
+const HCITY = { 'نجف اشرف': 'najaf', 'کربلای معلی': 'karbala', 'کاظمین': 'kadhimiya', 'سامراء': 'samarra' };
 async function throttled(key) { const t = await one('SELECT * FROM tries WHERE k = ?', key); return !!(t && t.until > Date.now()); }
 async function failed(key) {
   const now = Date.now(); let t = await one('SELECT * FROM tries WHERE k = ?', key);
@@ -366,6 +374,19 @@ function evalOf(b, qs) {
 }
 const evalIns = (kind, ref, rid, name, e, by) => prep('INSERT INTO evals (kind, ref_id, region_id, name, answers, score, note, by, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', kind, ref, rid, name, e.answers, e.score, e.note, by, Date.now());
 const MEALS_ = ['breakfast', 'lunch', 'dinner'], DST = ['ok', 'minor', 'major', 'na'];
+/* وضعیت اطلاعات هتل‌های اپ برای هتل‌های سه هفته‌ی آخر هر منطقه: پیوند به هتل اپ، مدیران ثابت، پیشنهادهای در انتظار، آخرین تأیید */
+async function hinfoOf(rids) {
+  if (!rids.length) return { hotels: [] };
+  const q = rids.map(() => '?').join(',');
+  const hotels = await all(`SELECT w.region_id, e.hotel, group_concat(DISTINCT x.name) AS fms, l.hotel_id, r.city
+      FROM entries e JOIN weeks w ON w.id = e.week_id JOIN regions r ON r.id = w.region_id
+      LEFT JOIN assign a ON a.entry_id = e.id LEFT JOIN users x ON x.id = a.user_id LEFT JOIN hotel_link l ON l.region_id = w.region_id AND l.hotel = e.hotel
+      WHERE w.region_id IN (${q}) AND w.id IN (SELECT w2.id FROM weeks w2 WHERE w2.region_id = w.region_id ORDER BY w2.imported DESC LIMIT 3)
+      GROUP BY w.region_id, e.hotel ORDER BY w.region_id, e.hotel`, ...rids);
+  const pend = await all("SELECT hotel_id, COUNT(*) AS n FROM hotel_sug WHERE status = 'pending' GROUP BY hotel_id");
+  const conf = await all('SELECT hotel_id, MAX(t) AS t FROM hotel_confirm WHERE ok = 1 GROUP BY hotel_id');
+  return { hotels: hotels.map(h => ({ ...h, cityId: HCITY[h.city] || '', pending: (pend.find(p => p.hotel_id === h.hotel_id) || {}).n || 0, confirmed: (conf.find(c => c.hotel_id === h.hotel_id) || {}).t || null })) };
+}
 async function meOf(u) {
   const region = await one('SELECT name, city FROM regions WHERE id = ?', u.region_id);
   return { id: u.id, name: u.name, nid: u.nid, role: u.role, lead: !!u.lead, leadLabel: await leadLabel(), owner: u.nid === 'owner', region_id: u.region_id || null, perms: u.role === 'region' ? permsOf(u) : null, scope: u.role === 'region' && u.scope != null ? String(u.scope).split('|').filter(Boolean) : null, mustChange: !!u.must_change, region: region?.name || (u.role === 'super' ? 'همه‌ی مناطق' : ''), city: region?.city || '',
@@ -743,6 +764,58 @@ async function api(req, url, u) {
         WHERE a.user_id = ? AND e.week_id = ? ORDER BY e.hotel, e.d_in, e.row_no`, u.id, wid);
       return { weeks, week: wid, entries };
     }
+    /* ── تکمیل اطلاعات هتل در اپ (پیشنهاد مدیر ثابت ← تأیید در بخش هتل‌های پنل مدیریت) ── */
+    if (p.startsWith('/api/fm/hinfo')) {
+      const b = m === 'POST' ? await body(1 << 20) : {}, hotel = stS(m === 'POST' ? b.hotel : url.searchParams.get('hotel'), 200);
+      if (!hotel || !await one('SELECT 1 FROM assign a JOIN entries e ON e.id = a.entry_id WHERE a.user_id = ? AND e.hotel = ?', u.id, hotel)) fail(403, 'این هتل به شما سپرده نشده است.');
+      const reg = await one('SELECT id, city FROM regions WHERE id = ?', u.region_id) || {}, city = HCITY[reg.city] || '';
+      const link = await one('SELECT hotel_id FROM hotel_link WHERE region_id = ? AND hotel = ?', reg.id || 0, hotel);
+      if (p === '/api/fm/hinfo' && m === 'GET') {
+        const hid = link && link.hotel_id;
+        return { city, cityName: reg.city || '', link: hid || null,
+          sugs: hid ? await all(`SELECT id, field, value, note, status, reason, user_name, t, rt, user_id = ? AS mine FROM hotel_sug WHERE hotel_id = ? AND (status = 'pending' OR (status = 'rejected' AND t > ?)) ORDER BY t DESC`, u.id, hid, Date.now() - 60 * 864e5) : [],
+          confirm: hid ? await one('SELECT ok, user_name, t FROM hotel_confirm WHERE hotel_id = ? ORDER BY t DESC LIMIT 1', hid) : null };
+      }
+      if (p === '/api/fm/hinfo/link' && m === 'POST') {
+        const hid = String(b.hotel_id || '');
+        if (hid && !/^hotel-[\w-]{1,60}$/.test(hid)) fail(400, 'هتل نامعتبر است.');
+        if (!hid) await run('DELETE FROM hotel_link WHERE region_id = ? AND hotel = ?', reg.id, hotel);
+        else await run('INSERT OR REPLACE INTO hotel_link (region_id, hotel, hotel_id, user_id, t) VALUES (?, ?, ?, ?, ?)', reg.id, hotel, hid, u.id, Date.now());
+        return { ok: true };
+      }
+      if (await limited('hsug:' + u.id, 80, 86400)) fail(429, 'امروز موارد زیادی فرستاده‌اید؛ فردا ادامه دهید.');
+      if (p === '/api/fm/hinfo/new' && m === 'POST') {
+        /* هتلی که در فهرست اپ نیست: پیشنهاد افزودن */
+        if (await one("SELECT 1 FROM hotel_sug WHERE field = 'new' AND hotel_name = ? AND city = ? AND status = 'pending'", hotel, city)) fail(400, 'افزودن این هتل قبلاً پیشنهاد شده و در انتظار تأیید است.');
+        await run("INSERT INTO hotel_sug (hotel_id, city, hotel_name, field, value, note, user_id, user_name, region_id, t) VALUES ('new', ?, ?, 'new', ?, ?, ?, ?, ?, ?)", city, hotel, JSON.stringify({ name: hotel }), stS(b.note, 300), u.id, u.name, reg.id, Date.now());
+        return { ok: true };
+      }
+      if (!link) fail(400, 'اول مشخص کنید این هتل در اپ کدام است.');
+      const hid = link.hotel_id;
+      if (p === '/api/fm/hinfo/confirm' && m === 'POST') {
+        await run('INSERT INTO hotel_confirm (hotel_id, ok, note, user_id, user_name, t) VALUES (?, ?, ?, ?, ?, ?)', hid, b.ok ? 1 : 0, stS(b.note, 500), u.id, u.name, Date.now()); return { ok: true };
+      }
+      if (p === '/api/fm/hinfo/sug' && m === 'POST') {
+        const f = String(b.field || ''), now = Date.now();
+        let value;
+        if (f === 'address' || f === 'addressAr' || f === 'nameEn') { value = stS(b.value, f === 'nameEn' ? 100 : 400); if (value.length < 3) fail(400, 'متن را کامل بنویسید.'); }
+        else if (f === 'phone') { const ph = String(b.value && b.value.phone || '').replace(/[۰-۹]/g, c => '۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[^\d+]/g, ''); if (ph.replace(/\D/g, '').length < 8) fail(400, 'شماره‌ی تلفن را کامل بنویسید.'); value = { phone: ph, role: stS(b.value.role, 40) }; }
+        else if (f === 'geo') { const la = +b.value?.lat, lo = +b.value?.lng, acc = +b.value?.acc || 0; if (!(la > 29 && la < 38 && lo > 38 && lo < 49)) fail(400, 'موقعیت در عراق نیست.'); if (acc > 150) fail(400, 'دقت موقعیت کم است؛ کنار پنجره یا جلوی در هتل دوباره امتحان کنید.'); value = { lat: Math.round(la * 1e6) / 1e6, lng: Math.round(lo * 1e6) / 1e6, acc: Math.round(acc) }; }
+        else if (f === 'fix') { const ff = String(b.value?.field || ''); if (!['address', 'addressAr', 'nameEn', 'phone', 'geo', 'photo'].includes(ff)) fail(400, 'مورد نامعتبر'); if (stS(b.note, 500).length < 3) fail(400, 'بنویسید چه چیزی اشتباه است.'); value = { field: ff, value: stS(b.value?.value, 400) }; }
+        else if (f === 'photo') { if (!/^data:image\/(jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(b.photo || '')) || b.photo.length > 900000) fail(400, 'عکس نامعتبر یا خیلی بزرگ است.'); value = { cat: stS(b.value?.cat, 30) || 'سایر' };
+          if ((await one("SELECT COUNT(*) AS n FROM hotel_sug WHERE hotel_id = ? AND field = 'photo' AND status = 'pending'", hid)).n >= 12) fail(400, 'برای این هتل ۱۲ عکس در انتظار تأیید است؛ بعد از بررسی، عکس‌های بیشتری بفرستید.'); }
+        else fail(400, 'مورد نامعتبر');
+        if (f !== 'photo' && f !== 'fix' && f !== 'phone' && await one("SELECT 1 FROM hotel_sug WHERE hotel_id = ? AND field = ? AND status = 'pending'", hid, f)) fail(400, 'برای این مورد قبلاً پیشنهادی فرستاده شده و در انتظار تأیید است.');
+        const r = await one('INSERT INTO hotel_sug (hotel_id, city, hotel_name, field, value, note, user_id, user_name, region_id, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id', hid, city, hotel, f, JSON.stringify(value), stS(b.note, 500), u.id, u.name, reg.id, now);
+        if (f === 'photo') await run('INSERT INTO hsug_photo (sug_id, data) VALUES (?, ?)', r.id, b.photo);
+        return { ok: true, id: r.id };
+      }
+      if (p === '/api/fm/hinfo/cancel' && m === 'POST') {
+        const x = await one("SELECT id FROM hotel_sug WHERE id = ? AND user_id = ? AND status = 'pending'", +b.id, u.id); if (!x) fail(404, 'پیدا نشد');
+        await DB.batch([prep('DELETE FROM hsug_photo WHERE sug_id = ?', x.id), prep('DELETE FROM hotel_sug WHERE id = ?', x.id)]); return { ok: true };
+      }
+      fail(404, 'پیدا نشد');
+    }
     /* آمار لحظه‌ای (زائر/اتاق/تخت) و اجرای برنامه‌ی غذایی یک ورودی */
     if ((mm = p.match(/^\/api\/fm\/ops\/(\d+)$/)) && m === 'GET') {
       const e = await fmEntry(u, +mm[1]), day = JD.num(url.searchParams.get('day')) ?? JD.today();
@@ -981,6 +1054,7 @@ async function api(req, url, u) {
       for (const [k, key] of Object.entries(OPS_KEY)) if (b[k] !== undefined) { const L = EVAL_KEYS.includes(k) ? cleanQs(b[k]) : cleanList(b[k]); if (!L.length) fail(400, 'فهرست نباید خالی باشد.'); st.push(prep('INSERT OR REPLACE INTO team_cfg (k, v) VALUES (?, ?)', key, JSON.stringify(L))); }
       if (st.length) await DB.batch(st); return { ok: true, ...(await opsCfg()) };
     }
+    if (p === '/api/super/hinfo' && m === 'GET') return hinfoOf((await all('SELECT id FROM regions')).map(r => r.id));
     /* گزارش روزانه‌ی همه‌ی مناطق برای یک روز */
     if (p === '/api/super/daily' && m === 'GET') {
       const d = JD.num(url.searchParams.get('day')) ?? JD.today();
@@ -1124,6 +1198,7 @@ async function api(req, url, u) {
         return { ok: true, n: items.length };
       }
     }
+    if (p === '/api/admin/hinfo' && m === 'GET') return hinfoOf([R]);
     /* اسکان و غذا: ورودی‌های حاضر در یک روز با آمار لحظه‌ای و اجرای وعده‌ها */
     if (p === '/api/admin/ops' && m === 'GET') {
       const d = JD.num(url.searchParams.get('day')) ?? JD.today(), ds = JD.str(d);

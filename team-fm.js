@@ -31,7 +31,7 @@ async function renderHome() {
     <div class="stats3"><div><b class="num">${fa(hotels.length)}</b><span>هتل</span></div><div><b class="num">${fa(list.length)}</b><span>ورودی</span></div><div><b class="num">${fa(list.length - pending.length)}</b><span>گزارش‌شده</span></div></div>
     ${hotels.length > 1 ? `<div class="cos"><button class="chip" aria-pressed="${!S.hotel}" data-hf="">همه‌ی هتل‌ها</button>${hotels.map(h => `<button class="chip" aria-pressed="${S.hotel === h}" data-hf="${esc(h)}">${esc(h)}</button>`).join('')}</div>` : ''}
     ${pending.length ? `<div class="bulk"><span>${fa(pending.length)} ورودی هنوز گزارش نشده. اگر هیچ مشکلی نداشتند:</span><button class="btn small okb" id="bulk">${S.bulkSure ? 'مطمئنید؟ دوباره بزنید' : '✔ همه بدون نقص'}</button></div>` : ''}
-    ${[...new Set(shown.map(e => e.hotel))].map(h => { const es = shown.filter(e => e.hotel === h); return `<section class="block"><div class="hotel-h"><h3>🏨 ${esc(h)}</h3><span class="dim" style="font-size:12px">${fa(es.reduce((a, e) => a + e.pilgrims, 0))} زائر</span></div>
+    ${[...new Set(shown.map(e => e.hotel))].map(h => { const es = shown.filter(e => e.hotel === h); return `<section class="block"><div class="hotel-h"><h3>🏨 ${esc(h)}</h3><span class="row" style="gap:6px"><span class="dim" style="font-size:12px">${fa(es.reduce((a, e) => a + e.pilgrims, 0))} زائر</span><button class="btn small ghost hb-hi" data-hi="${esc(h)}" title="عکس، آدرس، تلفن و موقعیت این هتل در اپ">📸 اطلاعات هتل در اپ</button></span></div>
       ${es.map(e => { const st = statusOf(e); return `<button class="entry" data-entry="${e.id}"><span class="co">${esc(shortCo(e.company))}</span>
         <span class="d">ورود ${md(e.d_in)} ← خروج ${md(e.d_out)} · ${fa(e.caravans)} کاروان · ${fa(e.pilgrims)} زائر</span>
         <span class="st"><span class="pill ${st.c}">${st.l}</span>${e.feedback ? '<span class="pill info">💬 بازخورد</span>' : `<span class="dim" style="font-size:11px">${e.rid ? 'ویرایش ←' : 'ثبت گزارش ←'}</span>`}</span></button>`; }).join('')}</section>`; }).join('')}`}
@@ -41,6 +41,7 @@ async function renderHome() {
   const wk = app.querySelector('#wk'); if (wk) wk.onchange = () => { S.hotel = ''; loadHome(+wk.value); };
   app.querySelectorAll('[data-hf]').forEach(b => b.onclick = () => { S.hotel = b.dataset.hf; renderHome(); });
   app.querySelectorAll('[data-entry]').forEach(b => b.onclick = () => openEntry(+b.dataset.entry));
+  app.querySelectorAll('[data-hi]').forEach(b => b.onclick = () => openHotelInfo(b.dataset.hi, () => loadHome(S.week)));
   const bo = app.querySelector('#bio-on'); if (bo) bo.onclick = async () => { try { await bioRegister(S.me); S.me = await api('/api/me', { fresh: true }); toast('ورود با اثر انگشت روشن شد.'); renderHome(); } catch (e) { toast(bioErr(e), true); } };
   const bn = app.querySelector('#bio-no'); if (bn) bn.onclick = () => { try { localStorage.setItem('hr-bio-hint', 'no'); } catch (e) {} renderHome(); };
   const bk = app.querySelector('#bulk');

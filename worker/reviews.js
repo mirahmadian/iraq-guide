@@ -11,6 +11,7 @@ import { handleBalePublic, handleBaleAdmin, baleSetup } from './bale.js';
 import { guardRun, handleGuardAdmin, notify as ownerNotify } from './guard.js';
 import { handleLostAdmin, handleLostMgr, lostTick } from './lostcase.js';
 import { handleFoodPublic, handleFoodAdmin } from './foodvote.js';
+import { handleHsugAdmin, hsugCities } from './hotelsug.js';
 import { logError } from './errlog.js';
 import { handleStaff, handleUsers, staffSession, saveGhToken, ghTokenHash } from './staff.js';
 import { handleFlight, flightTick } from './flight.js';
@@ -255,6 +256,8 @@ export default {
         if (!owner && !staff) return err('دسترسی مدیر تأیید نشد. دوباره وارد پنل شوید.', 401);
         if (staff && staff.mustChange) return err('اول رمز موقت را به رمز دلخواه خودتان تغییر دهید.', 403);
         const need = p === '/admin/stats' ? 'stats' : (p === '/admin/list' || p === '/admin/set') ? 'reviews' : (p === '/admin/bale' || p === '/admin/bale/send') ? 'bale' : p.startsWith('/admin/mgr/co') ? 'mgrco' : p.startsWith('/admin/mgr/trips') ? 'trips' : p.startsWith('/admin/mgr') ? 'mgr' : p.startsWith('/admin/lost/') ? 'lost' : p.startsWith('/admin/food/') ? 'food' : 'owner';
+        /* پیشنهادهای اطلاعات هتل: همکاری که دست‌کم هتل‌های یک شهر را دارد (در خود بخش، فقط شهرهای خودش) */
+        if (p.startsWith('/admin/hsug/')) { if (!owner && !hsugCities(staff).length) return err('شما به این بخش دسترسی ندارید.', 403); const hs = await handleHsugAdmin(p, req, env, url, body, json, err, owner ? null : staff); if (hs) return hs; }
         if (!owner && (need === 'owner' || !staff.perms.has(need))) return err('شما به این بخش دسترسی ندارید.', 403);
         if (p === '/admin/gh-register' && req.method === 'POST') {
           /* کلید GitHub مدیر اصلی برای انتشارهای همکاران (رمزگذاری‌شده) */
