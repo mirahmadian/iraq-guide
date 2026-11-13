@@ -332,3 +332,8 @@ label.row>input[type=checkbox]{width:auto;flex:none;margin:0}.pk-ed label.row{fl
 .guide details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:8px 0}
 .guide summary{cursor:pointer;font-weight:800;font-size:14.5px}
 @media print{header.top,.guide .noprint{display:none}.guide details{border:none}.guide details>*{display:block}}
+/* همه‌ی کاربران: دکمه‌ها در ستون خودشان می‌شکنند تا جدول از صفحه بیرون نزند */
+.u-act{flex-wrap:wrap;gap:5px;min-width:170px;max-width:240px}
+.u-act .btn,.u-pw .btn{white-space:nowrap}
+.u-pw{flex-wrap:nowrap;gap:5px}
+.u-pw input{width:110px;min-width:0}
