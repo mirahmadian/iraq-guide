@@ -62,6 +62,54 @@ document.addEventListener('click', e => {
   lostZoom(im.src, im.alt && im.alt.startsWith('عکس فرد پیداشده') ? 'عکس فرد پیداشده' : cap);
 });
 
+/* ── 📷 گرفتن عکس: در گوشی دوربین خود گوشی (input capture)؛ در کامپیوتر وب‌کم با getUserMedia (مرورگر کامپیوتر capture را نادیده می‌گیرد و فقط پنجره‌ی انتخاب فایل باز می‌کرد) ── */
+const lostTouch = () => matchMedia('(pointer:coarse)').matches && !matchMedia('(pointer:fine)').matches;
+function lostShoot() {
+  if (lostTouch() || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return document.getElementById('lostCamIn').click();
+  lostCam(blob => lostFindRun(blob));
+}
+let lostCamS = null;
+async function lostCam(onShot, devId) {
+  let v = document.getElementById('lcam');
+  if (!v) {
+    document.body.insertAdjacentHTML('beforeend', `<div id="lcam" class="lcam" role="dialog" aria-modal="true" aria-label="گرفتن عکس با وب‌کم"><div class="lcam-box">
+      <div class="lcam-t">📷 گرفتن عکس با وب‌کم</div><div class="lcam-v"><video autoplay playsinline muted></video><div class="lcam-msg">⏳ در حال روشن کردن وب‌کم…</div></div>
+      <div class="lcam-hint">چهره را روبه‌روی دوربین و در نور کافی نگه دارید، بعد «گرفتن عکس» را بزنید.</div>
+      <div class="lcam-act"><button class="pub-btn" id="lcam-shot" disabled>📸 گرفتن عکس</button><button class="lock-link" id="lcam-sw" hidden>🔄 دوربین دیگر</button><button class="lock-link" id="lcam-file">🖼 انتخاب فایل</button><button class="lock-link" id="lcam-x">انصراف</button></div></div></div>`);
+    v = document.getElementById('lcam');
+  }
+  v.classList.add('open');
+  const video = v.querySelector('video'), msg = v.querySelector('.lcam-msg'), shot = v.querySelector('#lcam-shot');
+  const stop = () => { if (lostCamS) lostCamS.getTracks().forEach(t => t.stop()); lostCamS = null; };
+  const close = () => { stop(); v.classList.remove('open'); document.removeEventListener('keydown', esc); };
+  const esc = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc);
+  v.querySelector('#lcam-x').onclick = close;
+  v.querySelector('#lcam-file').onclick = () => { close(); document.getElementById('lostCamIn').click(); };
+  stop(); shot.disabled = true; msg.hidden = false; msg.textContent = '⏳ در حال روشن کردن وب‌کم… اگر مرورگر اجازه خواست، «Allow / اجازه» را بزنید.';
+  try {
+    lostCamS = await navigator.mediaDevices.getUserMedia({ video: devId ? { deviceId: { exact: devId } } : { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' }, audio: false });
+    video.srcObject = lostCamS; await video.play().catch(() => {});
+    msg.hidden = true; shot.disabled = false; shot.focus();
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'), cur = lostCamS.getVideoTracks()[0].getSettings().deviceId;
+    const sw = v.querySelector('#lcam-sw'); sw.hidden = cams.length < 2;
+    sw.onclick = () => { const i = cams.findIndex(d => d.deviceId === cur), nx = cams[(i + 1) % cams.length]; lostCam(onShot, nx.deviceId); };
+  } catch (e) {
+    const n = e && e.name;
+    msg.textContent = n === 'NotAllowedError' || n === 'SecurityError' ? '🚫 اجازه‌ی استفاده از وب‌کم داده نشد. روی آیکون دوربین/قفل کنار نوار آدرس مرورگر بزنید، دسترسی دوربین را «Allow» کنید و دوباره امتحان کنید؛ یا «🖼 انتخاب فایل» را بزنید.'
+      : n === 'NotFoundError' || n === 'OverconstrainedError' ? '📷 وب‌کمی روی این کامپیوتر پیدا نشد. «🖼 انتخاب فایل» را بزنید.'
+      : n === 'NotReadableError' ? '⚠️ وب‌کم در دسترس نیست (شاید برنامه‌ی دیگری مثل اسکایپ یا زوم از آن استفاده می‌کند). آن برنامه را ببندید و دوباره امتحان کنید.'
+      : '⚠️ روشن کردن وب‌کم ممکن نشد: ' + ((e && e.message) || n || '');
+    return;
+  }
+  shot.onclick = () => {
+    const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+    if (!c.width) return;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(b => { close(); if (b) onShot(b); }, 'image/jpeg', 0.92);
+  };
+}
+
 function lostModels() {
   if (lostState === 'ok') return Promise.resolve();
   lostState = 'load'; lostRender();
@@ -179,7 +227,7 @@ function lostRender() {
     <div class="empty-msg" style="padding:6px 0 0">عکس روشن و از روبه‌رو بهتر است. بعد از ثبت، با «➕ عکس دیگر» تا ۳ عکس برای هر نفر بگذارید تا دقت بیشتر شود.</div></div>
   <div class="mga-box"><div class="field-label">پرونده‌های باز (${lostFa(n)}) <small style="font-weight:400;color:var(--dim,#888)">· برای دیدن بزرگ‌تر، روی عکس بزنید</small></div>${lostCasesHTML()}</div>
   <div class="mga-box"><div class="field-label">۲. 📷 پیدا کردم — عکس فردی که پیدا شده</div>
-    <div class="lost-btns"><label class="pub-btn">📷 گرفتن عکس<input type="file" accept="image/*" capture="environment" onchange="lostFind(this)" hidden></label>
+    <div class="lost-btns"><button class="pub-btn" onclick="lostShoot()">📷 گرفتن عکس</button><input type="file" id="lostCamIn" accept="image/*" capture="environment" onchange="lostFind(this)" hidden>
       <label class="lock-link lost-gal">🖼 انتخاب از گالری<input type="file" accept="image/*" onchange="lostFind(this)" hidden></label></div>
     ${lostResultHTML()}</div>
   <details class="gd-det"><summary>❓ این ابزار چطور کار می‌کند؟</summary><div style="padding:8px 0;line-height:2">
@@ -222,4 +270,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   .lost-cb{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}.lost-cb .pub-btn{padding:4px 12px;font-size:12.5px}.lost-cb label{cursor:pointer}
   .lost-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0}.lost-btns label{cursor:pointer;display:inline-flex;align-items:center}
   .lost-res{margin-top:10px}
+  .lcam{position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.7);display:none;place-items:center;padding:16px}.lcam.open{display:grid}
+  .lcam-box{background:var(--card,#fff);color:var(--text,#222);border-radius:20px;padding:16px;width:min(640px,100%);display:flex;flex-direction:column;gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .lcam-t{font-weight:900;font-size:17px}
+  .lcam-v{position:relative;background:#111;border-radius:14px;overflow:hidden;aspect-ratio:4/3}
+  .lcam-v video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .lcam-msg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#fff;padding:20px;line-height:2;font-size:14.5px;background:#111}
+  .lcam-msg[hidden]{display:none}
+  .lcam-hint{font-size:13px;color:var(--dim,#666)}
+  .lcam-act{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.lcam-act .pub-btn{font-size:15px}
 </style>`);
