@@ -1425,7 +1425,13 @@ export default {
        لینک اول به این نشانیِ بیرون از محدوده می‌آید (پس تب معمولی باز می‌شود) و همین‌جا به سامانه برمی‌گردد. مقصد ثابت است (تغییرمسیر باز نیست). */
     if (url.pathname === '/go/team' || url.pathname === '/go/team-owner') {
       const to = 'https://mirahmadian.github.io/iraq-guide/team.html' + (url.pathname === '/go/team-owner' ? '#owner' : '');
-      return new Response(null, { status: 302, headers: { Location: to, 'Cache-Control': 'no-store' } });
+      /* تغییرمسیر 302 هم جزو همان باز شدن حساب می‌شود و Chrome باز آن را به پنجره‌ی برنامه می‌برد؛ پس صفحه اول در همین تب کامل باز می‌شود
+         و بعد خودش در همین تب به سامانه می‌رود (رفتن در همان تب را Chrome به برنامه نمی‌برد) */
+      const html = `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>سامانه پایش خدمات</title>
+<style>body{font-family:Tahoma,sans-serif;background:#FAF6EE;color:#2A2116;display:grid;place-items:center;min-height:100vh;margin:0}a{color:#1f6b4f;font-weight:700}</style></head>
+<body><p>در حال باز کردن سامانه پایش خدمات… <a href="${to}">اگر باز نشد این‌جا را بزنید</a></p>
+<script>setTimeout(function(){location.replace(${JSON.stringify(to)});},150);</script></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
     }
     try {
       if (url.pathname.startsWith('/api/')) {
