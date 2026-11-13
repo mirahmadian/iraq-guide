@@ -34,7 +34,7 @@ async function cosInfo() {
   const here = new Map(); CO.d.here.forEach(e => { const k = coNorm(sy ? e.siyahe : e.company); if (!k) return; if (!here.has(k)) here.set(k, []); here.get(k).push(e); });
   box.innerHTML = `<div class="card"><div class="card-h"><h2 style="margin:0;font-size:17px">${sy ? '🤝 شرکت‌های سیاحه' : '📇 شرکت‌های مجری و نمایندگانشان'} (${fa(L.length)})</h2>
       <input type="search" id="co-q" placeholder="🔎 نام شرکت، مدیر، نماینده یا شماره…" value="${esc(CO.q)}" style="max-width:320px;flex:1 1 220px"></div>
-    <p class="hint">${sy ? 'مشخصات شرکت‌های سیاحه در پنل مدیریت (تب «🏢 شرکت‌های مجری»، بخش «شرکت‌های سیاحه») ثبت و ویرایش می‌شود.' : 'این اطلاعات را شرکت‌ها از راه بازوی بله فرستاده‌اند یا در پنل مدیریت ثبت شده است؛ ویرایش فقط در پنل مدیریت.'} تماس با پیش‌شماره‌ی بین‌المللی است تا با سیم‌کارت ایرانی در عراق هم وصل شود.</p>
+    <p class="hint">${sy ? 'مشخصات شرکت‌های سیاحه در پنل مدیریت (تب «🏢 شرکت‌های مجری و سیاحه»، بخش «شرکت‌های سیاحه») ثبت و ویرایش می‌شود.' : 'این اطلاعات را شرکت‌ها از راه بازوی بله فرستاده‌اند یا در پنل مدیریت ثبت شده است؛ ویرایش فقط در پنل مدیریت.'} تماس با پیش‌شماره‌ی بین‌المللی است تا با سیم‌کارت ایرانی در عراق هم وصل شود.</p>
     <div id="co-list"></div></div>`;
   const q = box.querySelector('#co-q'); q.oninput = () => { CO.q = q.value; draw(); };
   function draw() {
