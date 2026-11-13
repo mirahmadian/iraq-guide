@@ -69,9 +69,8 @@ function mgrBlock(r) {
         <div class="field" style="flex:1 1 140px"><label class="label">کد ملی (نام کاربری)</label><input data-hi inputmode="numeric" maxlength="12" dir="ltr"></div>
         <div class="field" style="flex:1 1 140px"><label class="label">رمز (خالی = موقت)</label><input data-hp maxlength="60" autocomplete="new-password"></div></div>
       <div class="row mg-perms" style="margin-top:6px">${permBoxes(0, null)}</div>
-      ${act.length ? `<label class="pchk" style="margin-top:6px"><input type="checkbox" data-hk> ${act.length > 1 ? 'هیچ‌کدام نمی‌رود؛ نفر تازه مدیر منطقه‌ی اضافه است' : `مدیر فعلی (${esc(act[0].name)}) هم فعال بماند`}</label>` : ''}
-      ${act.length > 1 ? `<div class="field" style="margin-top:8px"><label class="label">نفر تازه جای کدام مدیر می‌آید؟</label><select class="inp" data-hr><option value="">— انتخاب کنید —</option>${act.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>` : ''}
-      ${act.length ? `<div class="mg-out" data-hev ${act.length > 1 ? 'hidden' : ''}><h4>📋 فرم پایان مأموریت <span data-hname>${esc(act.length === 1 ? act[0].name : '')}</span></h4><p class="hint">پیش از ثبت مدیر تازه، عملکرد مدیری که می‌رود را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
+      ${act.length > 1 ? `<p class="err">⚠️ این منطقه ${fa(act.length)} مدیر منطقه‌ی فعال دارد، ولی هر منطقه فقط یک مدیر منطقه دارد. اول مدیر اضافه را به منطقه‌ی خودش منتقل یا غیرفعال کنید.</p>` : ''}
+      ${act.length === 1 ? `<div class="mg-out" data-hev><h4>📋 فرم پایان مأموریت ${esc(act[0].name)}</h4><p class="hint">هر منطقه فقط یک مدیر منطقه دارد؛ با ثبت، ${esc(act[0].name)} کنار می‌رود. پیش از آن عملکردش را ارزشیابی کنید.</p>${evalFormHTML(EQ)}</div>` : ''}
       <p class="hint">با «ثبت»، ${act.length ? 'مدیر فعلی غیرفعال می‌شود (گزارش‌ها، مدیران ثابت و عواملی که ساخته سر جایشان می‌مانند) و ' : ''}نفر تازه مدیر این منطقه می‌شود. اگر کد ملی مال یکی از مدیران ثابت همین منطقه یا مدیر منطقه‌ی قبلی همین منطقه باشد، همان حساب (با همان رمز) مدیر منطقه می‌شود و لازم نیست نام را بنویسید.</p>
       <button class="btn" type="submit">ثبت</button> <span class="err" data-he></span></form>
     ${T.length ? `<h4>🕘 سابقه‌ی مدیران این منطقه</h4><ul class="terms">${T.map(t => `<li><b>${esc(t.name || '')}</b> <span class="dim">از ${fmtD(t.start)} ${t.end ? 'تا ' + fmtD(t.end) : '<span class="pill ok">تا امروز</span>'}</span> ${t.score != null ? scoreTag(t.score) : ''}</li>`).join('')}</ul>` : ''}
@@ -105,6 +104,7 @@ function renderRegions() {
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     ${L.length ? `<div class="card leads"><div class="card-h"><h2>⭐ ${esc(leadL())} <span class="dim" style="font-size:12.5px;font-weight:500">(همه‌ی شهرها)</span></h2></div>
       <ul class="lead-list">${L.map(x => `<li><b>${esc(x.name)}</b> ${statusPill(x)}${x.region_id ? ` <span class="dim">· خودش مدیر ثابت در</span> ${cityTag(x.city)} ${x.city !== x.region ? `<span class="dim">${esc(x.region)}</span>` : ''}` : ''}</li>`).join('')}</ul></div>` : ''}
+    <div class="row" style="justify-content:flex-end;margin-bottom:8px"><button class="btn small ghost" data-allx title="یک فایل اکسل: مدیران منطقه، مدیران ثابت، آشپزها و سایر عوامل همه‌ی شهرها">📦 خروجی یکجای همه‌ی شهرها</button></div>
     <nav class="city-tabs" aria-label="شهرها"><button data-city="__all" aria-pressed="${!U.city}">همه‌ی شهرها <span class="n">${fa(RA.length)} منطقه</span></button>
       ${cities.map(c => { const o = openOf(c); return `<button class="${cityCls(c)}" data-city="${esc(c)}" aria-pressed="${U.city === c}"><i></i>${esc(c || 'بدون شهر')} <span class="n">${fa(RA.filter(r => inCity(r, c)).length)} منطقه</span>${o ? `<span class="ob" title="نقص باز">${fa(o)}</span>` : ''}</button>`; }).join('')}</nav>
     <div class="kpis k6">
@@ -139,9 +139,6 @@ function renderRegions() {
   m.querySelectorAll('[data-psave]').forEach(b => b.onclick = async () => { try { await api(`/api/super/users/${b.dataset.psave}/perms`, { body: readPerms(m.querySelector(`[data-pbox="${b.dataset.psave}"]`)) }); toast('دسترسی‌ها ذخیره شد؛ از درخواست بعدی مدیر منطقه اعمال می‌شود.'); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-evbox]').forEach(b => wireEval(b, U.O.ops.evalRegion));
   m.querySelectorAll('[data-hev]').forEach(b => wireEval(b, U.O.ops.evalRegion));
-  m.querySelectorAll('[data-ho]').forEach(f => { const hr = f.querySelector('[data-hr]'), hev = f.querySelector('[data-hev]'), k = f.querySelector('[data-hk]');
-    const sync = () => { if (!hev) return; hev.hidden = !!(k && k.checked) || (hr && !hr.value); if (hr && hr.value) hev.querySelector('[data-hname]').textContent = hr.selectedOptions[0].textContent; };
-    if (hr) hr.onchange = sync; if (k) k.onchange = sync; });
   m.querySelectorAll('[data-ssave]').forEach(b => b.onclick = async () => { const box = m.querySelector(`[data-sbox="${b.dataset.ssave}"]`), sc = [...box.querySelectorAll('[data-sc]:checked')].map(i => i.dataset.sc);
     if (!sc.length) return toast('دست‌کم یک حوزه را انتخاب کنید.', true);
     try { await api(`/api/super/users/${b.dataset.ssave}/scope`, { body: { scope: sc } }); toast('محدوده‌ی فعالیت ذخیره شد.'); loadRegions(); } catch (e) { toast(e.message, true); } });
@@ -150,19 +147,18 @@ function renderRegions() {
     try { const r = await api(`/api/super/users/${b.dataset.evsave}/eval`, { body: ev }); toast(`ارزشیابی ثبت شد: ${fa(r.score)} از ۱۰۰`); loadRegions(); } catch (e) { toast(e.message, true); } });
   m.querySelectorAll('[data-ho]').forEach(f => f.onsubmit = async e => {
     e.preventDefault(); const sb = f.querySelector('[type=submit]'), er = f.querySelector('[data-he]'); er.textContent = ''; if (sb.disabled) return;
-    const k = f.querySelector('[data-hk]'), hr = f.querySelector('[data-hr]'), hev = f.querySelector('[data-hev]');
-    if (hr && !hr.value && !(k && k.checked)) { er.textContent = 'مشخص کنید نفر تازه جای کدام مدیر می‌آید (یا تیک «هیچ‌کدام نمی‌رود» را بزنید).'; return; }
-    const ev = hev && !(k && k.checked) ? readEval(hev, U.O.ops.evalRegion) : null;
+    const k = null, hev = f.querySelector('[data-hev]'), ev = hev ? readEval(hev, U.O.ops.evalRegion) : null;
     if (ev && !ev.done) { er.textContent = `فرم پایان مأموریت مدیر فعلی: ${fa(ev.left)} سؤال بی‌پاسخ مانده است.`; return; }
     if (sb.dataset.sure !== '1' && !(k && k.checked) && f.closest('.rg-mg').querySelector('.mg-row')) { sb.dataset.sure = '1'; sb.textContent = 'مطمئنید؟ مدیر فعلی غیرفعال می‌شود'; return; }
     sb.disabled = true;
     try {
-      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f.querySelector('.mg-perms')), keepOld: !!(k && k.checked), replace: hr && !(k && k.checked) ? +hr.value : undefined, eval: ev || undefined } });
+      const r = await api(`/api/super/regions/${f.dataset.ho}/handover`, { body: { name: f.querySelector('[data-hn]').value, nid: f.querySelector('[data-hi]').value, password: f.querySelector('[data-hp]').value, perms: readPerms(f.querySelector('.mg-perms')), eval: ev || undefined } });
       if (r.password) U.temp = [r];
       toast(`«${r.name}» مدیر منطقه شد${r.ended ? `؛ ${fa(r.ended)} مدیر قبلی غیرفعال شد` : ''}${r.kept ? ' (با همان رمز قبلی خودش وارد می‌شود)' : ''}.`);
       loadRegions();
     } catch (x) { sb.disabled = false; sb.dataset.sure = ''; sb.textContent = 'ثبت'; er.textContent = x.message; }
   });
+  m.querySelector('[data-allx]').onclick = e => allXlsx(e.target);
   m.querySelector('#rdef').onclick = async ev => { const b = ev.target; if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟ دوباره بزنید'; return; }
     try { const r = await api('/api/super/regions/defaults', { body: {} }); toast(r.created.length ? `${fa(r.created.length)} منطقه ساخته شد.` : 'همه‌ی شهرها همین حالا دست‌کم ۴ منطقه دارند.'); loadRegions(); } catch (e) { toast(e.message, true); } };
   wireOpsCfg(m, () => loadRegions());
@@ -223,6 +219,50 @@ function editRowHTML(x, R) {
     <button class="btn" id="ed-save">ذخیره</button><button class="btn ghost" id="ed-cancel">انصراف</button></div>
     <p class="hint">${roleName(x.role, x.lead)} · اگر کد ملی را عوض کنید، این نفر از این به بعد با کد ملی تازه وارد می‌شود (رمزش همان قبلی است).</p><span class="err" id="ed-err"></span></td></tr>`;
 }
+/* خروجی یکجای همه‌ی شهرها: مدیران منطقه، مدیران ثابت، آشپزها، سایر عوامل و خلاصه‌ی هر منطقه (یک فایل) */
+async function allXlsx(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ در حال ساختن…'; }
+  try {
+    const [users, d, O] = await Promise.all([api('/api/super/users'), api('/api/super/allstaff'), U.O ? U.O : api('/api/super/overview')]);
+    U.O = O;
+    const R = O.regions, rg = id => R.find(r => r.id === id) || {}, rName = id => rg(id).name || '', rCity = id => rg(id).city || '';
+    const st = u => !u.active ? 'غیرفعال' : !u.last_login ? 'هنوز وارد نشده' : 'فعال';
+    const lastEval = (kind, ids) => { const L = d.evals.filter(e => e.kind === kind && ids.includes(e.ref_id)); return L.length ? L[L.length - 1] : null; };
+    const term = id => { const L = d.terms.filter(t => t.user_id === id); return L.length ? L[L.length - 1] : null; };
+    const asg = id => d.asg.find(a => a.user_id === id) || { n: 0, hotels: '' };
+    const dJ = t => t ? xDT(t).slice(0, 10) : '';
+    const perms = u => { const p = u.perms == null ? ['fm', 'staff'] : String(u.perms).split(','); return [p.includes('fm') ? 'تعریف مدیران ثابت' : '', p.includes('staff') ? 'تعریف آشپزها و عوامل' : ''].filter(Boolean).join('، ') || 'هیچ'; };
+    /* عوامل: آخرین دوره‌ی هر نفر + آغاز اولین دوره + آخرین تمدید */
+    const byId = new Map(d.staff.map(x => [x.id, x])), first = x => { let y = x, n = 0; while (y.prev_id && byId.has(y.prev_id) && n++ < 50) y = byId.get(y.prev_id); return y.d_start; };
+    const cur = d.staff.filter(x => x.status !== 'extended'), today = JDP.num(d.today);
+    const sRow = x => { const ids = d.staff.filter(y => y.region_id === x.region_id && y.nid === x.nid).map(y => y.id), e = lastEval('staff', ids);
+      return [x.city, x.region, x.first, x.last, x.nid, x.role, x.hotel || '', first(x), x.prev_id ? x.d_start : '', x.d_end, x.status === 'active' ? JDP.num(x.d_end) - today : '', x.status === 'active' ? 'فعال' : 'پایان مأموریت', x.left_at || '', e ? e.score : '']; };
+    const sHead = ['شهر', 'منطقه', 'نام', 'نام خانوادگی', 'کد ملی', 'سمت', 'هتل محل خدمت', 'آغاز مأموریت', 'آخرین تمدید', 'پایان مأموریت', 'روز مانده', 'وضعیت', 'تاریخ خروج واقعی', 'نمره‌ی ارزیابی'];
+    const sW = [12, 22, 12, 16, 13, 12, 22, 12, 12, 12, 9, 13, 13, 11];
+    const order = (a, b) => (a[0] || '').localeCompare(b[0] || '', 'fa') || (a[1] || '').localeCompare(b[1] || '', 'fa');
+    const mgrs = users.filter(u => u.role === 'region' || u.lead);
+    const fms = users.filter(u => u.role === 'fm' || ((u.role === 'region' || u.lead) && u.sheet));
+    const cooks = cur.filter(x => x.role === 'آشپز'), others = cur.filter(x => x.role !== 'آشپز');
+    const now = xDT(Date.now()), sum = R.map(r => [r.city, r.name, users.filter(u => u.region_id === r.id && u.role === 'region' && u.active).map(u => u.name).join('، '),
+      fms.filter(u => u.region_id === r.id && u.active).length, cur.filter(x => x.region_id === r.id && x.status === 'active' && x.role === 'آشپز').length,
+      cur.filter(x => x.region_id === r.id && x.status === 'active' && x.role !== 'آشپز').length, r.open || 0]);
+    await saveBook(`عوامل-همه-شهرها-${now.slice(0, 10).replace(/\//g, '-')}.xlsx`, [
+      { name: 'خلاصه', title: `خلاصه‌ی همه‌ی شهرها و مناطق · ${now}`, head: ['شهر', 'منطقه', 'مدیر منطقه', 'مدیر ثابت فعال', 'آشپز فعال', 'سایر عوامل فعال', 'نقص باز'], widths: [12, 24, 26, 12, 10, 12, 9], rows: sum.sort(order) },
+      { name: 'مدیران منطقه', title: `مدیران منطقه‌ی همه‌ی شهرها · ${now}`, head: ['شهر', 'منطقه', 'نام و نام خانوادگی', 'نقش', 'کد ملی', 'وضعیت', 'آغاز دوره', 'پایان دوره', 'نمره‌ی پایان مأموریت', 'دسترسی‌ها', 'محدوده‌ی فعالیت', 'هم مدیر ثابت (نام شیت)', 'آخرین ورود'],
+        widths: [12, 22, 26, 16, 13, 13, 12, 12, 12, 34, 40, 14, 17], text: [4],
+        rows: mgrs.map(u => { const t = term(u.id), e = lastEval('region', [u.id]); return [u.city || (u.lead ? 'همه' : ''), u.region || '', u.name, u.lead ? leadL() : 'مدیر منطقه', u.nid, st(u), t ? dJ(t.start) : dJ(u.created), t && t.end ? dJ(t.end) : '', e ? e.score : '',
+          u.role === 'region' ? perms(u) : 'همه', u.role === 'region' ? (u.scope == null ? 'همه‌ی حوزه‌ها' : String(u.scope).split('|').join('، ')) : '', u.sheet || '', xDT(u.last_login)]; }).sort(order) },
+      { name: 'مدیران ثابت', title: `مدیران ثابت همه‌ی شهرها (حساب‌های سامانه) · ${now}`, head: ['شهر', 'منطقه', 'نام و نام خانوادگی', 'نقش اصلی', 'کد ملی', 'نام شیت', 'هتل‌های هفته‌ی آخر', 'تعداد ورودی هفته‌ی آخر', 'تعداد گزارش', 'وضعیت', 'آغاز مأموریت', 'پایان مأموریت', 'نمره‌ی ارزیابی', 'آخرین ورود'],
+        widths: [12, 22, 26, 14, 13, 12, 40, 10, 10, 13, 12, 12, 11, 17], text: [4],
+        rows: fms.map(u => { const a = asg(u.id), sr = cur.filter(x => x.nid === u.nid).pop(), ids = d.staff.filter(y => y.nid === u.nid).map(y => y.id), e = lastEval('staff', ids);
+          return [u.city || '', u.region || '', u.name, u.role === 'fm' ? 'مدیر ثابت' : u.lead ? leadL() : 'مدیر منطقه', u.nid, u.sheet || '', String(a.hotels || '').split(',').join('، '), a.n, +u.reports || 0, st(u), sr ? first(sr) : '', sr ? sr.d_end : '', e ? e.score : '', xDT(u.last_login)]; }).sort(order) },
+      { name: 'آشپزها', title: `آشپزهای همه‌ی شهرها (از «👷 عوامل» هر منطقه، آخرین دوره‌ی هر نفر) · ${now}`, head: sHead, widths: sW, text: [4], rows: cooks.map(sRow).sort(order) },
+      { name: 'سایر عوامل', title: `سایر عوامل همه‌ی شهرها (مدیر ثابت، مدیر منطقه و نقش‌های دیگر در «👷 عوامل») · ${now}`, head: sHead, widths: sW, text: [4], rows: others.map(sRow).sort(order) },
+    ]);
+    toast(`فایل ساخته شد: ${fa(mgrs.length)} مدیر منطقه، ${fa(fms.length)} مدیر ثابت، ${fa(cooks.length)} آشپز، ${fa(others.length)} عامل دیگر.`);
+  } catch (e) { toast(e.message, true); }
+  if (btn) { btn.disabled = false; btn.textContent = '📦 خروجی یکجای همه‌ی شهرها'; }
+}
 /* خروجی اکسل «همه‌ی کاربران»: همه‌ی ستون‌های جدول + دسترسی‌ها و محدوده‌ی فعالیت (همان فیلتر منطقه‌ی صفحه) */
 async function usersXlsx(list, R) {
   const X = await loadXlsx();
@@ -252,7 +292,7 @@ function renderUsers() {
   const m = main(), R = U.O.regions, list = U.users;
   m.innerHTML = `${U.temp ? tempHTML(U.temp) : ''}
     <div class="card"><div class="card-h"><h2>همه‌ی کاربران (${fa(list.length)})</h2>
-      <div class="filters"><button class="btn small ghost" id="ux">📥 خروجی اکسل</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
+      <div class="filters"><button class="btn small ghost" id="ux">📥 خروجی اکسل</button><button class="btn small ghost" data-allx>📦 خروجی یکجای همه‌ی شهرها</button><select id="fr" aria-label="منطقه"><option value="0">همه‌ی شهرها و مناطق</option>${regOptions(R, U.region)}</select></div></div>
       <p class="hint">«سازنده» نشان می‌دهد هر حساب را چه کسی ساخته است. کسی که گزارش یا پیام ثبت کرده حذف نمی‌شود تا سابقه بماند؛ او را غیرفعال کنید.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>نقش</th><th>شهر</th><th>منطقه</th><th>کد ملی</th><th>سازنده</th><th>وضعیت</th><th>گزارش</th><th>آخرین ورود</th><th>رمز</th><th></th></tr></thead><tbody>
       ${list.map(x => U.edit === x.id ? editRowHTML(x, R) : `<tr><td><b>${esc(x.name)}</b>${x.sheet ? `<br><span class="dim" dir="ltr">${esc(x.sheet)}</span>` : ''}</td><td>${roleTag(x.role, x.lead)}${x.role !== 'fm' && x.sheet ? ' <span class="rb fm sm">+ مدیر ثابت</span>' : ''}</td><td>${x.city ? cityTag(x.city) : x.role === 'super' ? 'همه' : '—'}</td><td>${esc(x.region || '—')}</td><td class="num">${faS(x.nid)}</td>
@@ -265,6 +305,7 @@ function renderUsers() {
   wireTemp(m); wireNewUser(m);
   m.querySelector('#fr').onchange = e => { U.region = +e.target.value; loadUsers(); };
   m.querySelector('#ux').onclick = () => usersXlsx(list, R).catch(e => toast(e.message, true));
+  m.querySelector('[data-allx]').onclick = e => allXlsx(e.target);
   const sure = b => { if (b.dataset.sure === '1') return true; b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return false; };
   m.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { U.edit = +b.dataset.edit; renderUsers(); const i = m.querySelector('#ed-name'); if (i) i.focus(); });
   const ec = m.querySelector('#ed-cancel'); if (ec) ec.onclick = () => { U.edit = 0; renderUsers(); };

@@ -22,7 +22,7 @@ window.openFormBuilder = me => { A.me = me; A.opts = A.opts || {}; A.tab = 'form
 window.leaveFormBuilder = () => { if (A.tab === 'form' && A.formDirty && !confirmLeave()) return false; A.tab = ''; window.onbeforeunload = null; return true; };
 function shell() {
   const sup = !!A.opts.region;
-  app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? (A.me.lead ? A.me.leadLabel : 'مدیر سامانه') + ' (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
+  app.innerHTML = `<header class="top"><div class="in"><div class="brand">${sup ? '<button class="btn small ghost" id="back-super">→ مدیر سامانه</button>' : '<a class="btn small ghost" href="./" style="text-decoration:none">→ برنامه</a>'}<div><h1>پایش خدمات هتل‌ها · ${esc(sup ? A.opts.regionName : (A.me.city && !A.me.region.includes(A.me.city) ? A.me.city + ' · ' : '') + A.me.region)}</h1><p>${esc(A.me.name)} · ${sup ? (A.me.lead ? A.me.leadLabel : 'مدیر سامانه') + ' (نمایش پنل منطقه)' : 'مدیر منطقه'}</p></div><button class="btn small ghost" data-logout title="خروج از این حساب، برای ورود با حساب دیگر">🚪 خروج</button></div>
     <nav class="tabs" role="tablist">${tabs().map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="false">${l}</button>`).join('')}</nav></div></header><main class="wrap" id="main"></main>`;
   app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => go(b.dataset.tab));
   const bs = app.querySelector('#back-super'); if (bs) bs.onclick = () => { if (A.formDirty && !confirmLeave()) return; A.formDirty = false; window.onbeforeunload = null; HR.viewRegion = 0; location.hash = ''; A.opts.onBack(); };
@@ -343,7 +343,7 @@ function renderUsers() {
   const m = main();
   m.innerHTML = `${A.temp ? tempHTML(A.temp, 'رمز ساخته شد') : ''}
     ${canDo('fm') ? '' : `<div class="card" style="border-color:var(--warn)"><b>🔒 فقط مشاهده</b><span class="muted">${esc(A.me.leadLabel || 'سرپرست مناطق')} هنوز دسترسی «تعریف مدیران ثابت» را به شما نداده است. برای گرفتن این دسترسی با او تماس بگیرید.</span></div>`}
-    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2></div>
+    <div class="card"><div class="card-h"><h2>مدیران ثابت (${fa(A.users.filter(u => u.role !== 'region').length)})</h2><button class="btn small ghost" id="u-x">📥 خروجی اکسل</button></div>
       <p class="hint">حساب‌ها معمولاً هنگام وارد کردن اکسل هفتگی خودکار ساخته می‌شوند. «شیت» همان نام شیت این نفر در اکسل است تا هفته‌های بعد خودکار شناخته شود.</p>
       <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>کد ملی</th><th>شیت</th><th>ورودی‌های سپرده‌شده</th><th>وضعیت</th><th>اثر انگشت</th><th>گزارش</th><th>آخرین ورود</th><th></th></tr></thead><tbody>
       ${A.users.map(u => u.role === 'region' ? `<tr class="me-row"><td><b>${esc(u.name)}</b> <span class="pill info">مدیر منطقه</span></td><td class="num">${faS(u.nid)}</td><td><input data-usheet="${u.id}" data-uname-fixed="${esc(u.name)}" value="${esc(u.sheet || '')}" maxlength="60" style="min-width:90px" dir="ltr" placeholder="نام شیت خودتان"></td><td class="num">${u.entries ? fa(u.entries) : '<span class="dim">—</span>'}</td>
@@ -359,6 +359,14 @@ function renderUsers() {
       <p class="hint">نام کاربری هر نفر کد ملی اوست. اگر رمز را خودتان بنویسید (دست‌کم ۶ کاراکتر)، همان می‌ماند؛ اگر خالی بگذارید، یک رمز تصادفی ساخته می‌شود. مدیر ثابت با همین رمز وارد می‌شود و لازم نیست عوضش کند.</p>
       <span class="err" id="nu-err"></span></form>${canDo('fm') ? '' : '-->'}`;
   if (!canDo('fm')) { m.querySelectorAll('[data-uname],[data-upw],[data-ureset],[data-uact],[data-uclr]').forEach(x => { x.disabled = true; }); m.querySelectorAll('[data-usheet]').forEach(x => { if (!x.dataset.unameFixed) x.disabled = true; }); }
+  m.querySelector('#u-x').onclick = () => {
+    const st = u => !u.active ? 'غیرفعال' : !u.last_login ? 'هنوز وارد نشده' : 'فعال', reg = A.opts.region ? A.opts.regionName : (A.me.city && !A.me.region.includes(A.me.city) ? `${A.me.city} - ${A.me.region}` : A.me.region);
+    saveBook(`مدیران-ثابت-${reg}.xlsx`, [{ name: 'مدیران ثابت', title: `مدیران ثابت ${reg} · ${xDT(Date.now())}`,
+      head: ['نام و نام خانوادگی', 'نقش', 'کد ملی (نام کاربری)', 'نام شیت در اکسل', 'ورودی‌های سپرده‌شده', 'تعداد گزارش', 'وضعیت', 'اثر انگشت (دستگاه)', 'رمز موقت', 'آخرین ورود', 'تاریخ ساخت حساب'],
+      widths: [26, 18, 15, 14, 12, 10, 14, 10, 9, 18, 18], text: [2],
+      rows: A.users.map(u => [u.name, u.role === 'region' ? (u.sheet ? 'مدیر منطقه (+ مدیر ثابت)' : 'مدیر منطقه') : 'مدیر ثابت', u.nid, u.sheet || '', +u.entries || 0, +u.reports || 0, st(u), +u.passkeys || 0, u.must_change ? 'بله' : 'خیر', xDT(u.last_login), xDT(u.created)]) }])
+      .then(() => toast(`فایل اکسل ${fa(A.users.length)} نفر ساخته شد.`)).catch(e => toast(e.message, true));
+  };
   const saveEdit = async id => { const ni = m.querySelector(`[data-uname="${id}"]`), name = ni ? ni.value : m.querySelector(`[data-usheet="${id}"]`).dataset.unameFixed, sheet = m.querySelector(`[data-usheet="${id}"]`).value; try { const r = await api(`/api/admin/users/${id}/edit`, { body: { name, sheet } }); toast(!sheet.trim() ? 'ذخیره شد.' : r.entries ? `ذخیره شد؛ ${fa(r.entries)} ورودی به او سپرده شد.` : `ذخیره شد، ولی در اکسل‌های واردشده شیتی به نام «${sheet.trim()}» پیدا نشد.`, !r.entries && !!sheet.trim()); loadUsers(); } catch (e) { toast(e.message, true); } };
   m.querySelectorAll('[data-uname],[data-usheet]').forEach(i => i.onchange = () => saveEdit(i.dataset.uname || i.dataset.usheet));
   m.querySelectorAll('[data-ureset]').forEach(b => b.onclick = async () => { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'مطمئنید؟'; return; } b.disabled = true; b.textContent = '…'; try { A.temp = [await api(`/api/admin/users/${b.dataset.ureset}/reset`, { body: { password: m.querySelector(`[data-upw="${b.dataset.ureset}"]`).value } })]; loadUsers(); } catch (e) { b.disabled = false; b.textContent = 'تعیین رمز'; toast(e.message, true); } });

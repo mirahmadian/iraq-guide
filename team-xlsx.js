@@ -108,3 +108,19 @@ async function saveDefectsBook(d) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = String(d.file || 'naghayes.xlsx').replace(/[\\/:*?"<>|]/g, '-').replace(/\u200c/g, ' ');   /* مرورگر نیم‌فاصله را «_» می‌کرد */
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
+
+/* یک فایل اکسل راست‌به‌چپ با چند برگه: [{ name, title, head, rows, widths, text: [شماره‌ی ستون‌هایی که متن بمانند، مثل کد ملی] }] */
+const xDT = t => t ? new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Baghdad' }).format(t).replace(/[،,]/g, '') : '';
+async function saveBook(file, sheets) {
+  const X = await loadXlsx(), wb = X.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+  for (const sh of sheets) {
+    const rows = sh.rows.map((r, i) => [i + 1, ...r]), head = ['ردیف', ...sh.head];
+    const aoa = [[sh.title], head, ...rows], ws = X.utils.aoa_to_sheet(aoa);
+    (sh.text || []).forEach(c => rows.forEach((r, i) => { const cell = ws[X.utils.encode_cell({ r: i + 2, c: c + 1 })]; if (cell) { cell.t = 's'; cell.v = String(cell.v); cell.z = '@'; } }));
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(head.length - 1, 8) } }];
+    ws['!cols'] = [{ wch: 6 }, ...sh.head.map((h, i) => ({ wch: (sh.widths || [])[i] || Math.max(10, Math.min(30, h.length + 4)) }))];
+    if (rows.length) ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: aoa.length - 1, c: head.length - 1 } }) };
+    X.utils.book_append_sheet(wb, ws, sh.name.slice(0, 31));
+  }
+  X.writeFile(wb, file.replace(/[\\/:*?"<>|]/g, '-'));
+}

@@ -69,6 +69,7 @@ function render() {
           <button class="btn small" data-a="add">➕ نیروی تازه</button>
           <button class="btn small ghost" data-a="xls">📄 ورود از اکسل</button>
           <button class="btn small ghost" data-a="roles">⚙️ نقش‌ها</button>
+          <button class="btn small ghost" data-a="xout">📥 خروجی اکسل</button>
           <button class="btn small ${S.d.bale ? 'ghost' : 'okb'}" data-a="bale">${S.d.bale ? '🔔 هشدار بله: وصل است' : '🔔 اتصال به بله برای هشدار'}</button>
         </div>
       </div>
@@ -79,6 +80,7 @@ function render() {
   el.querySelector('[data-a=add]').onclick = () => editDlg(null);
   el.querySelector('[data-a=xls]').onclick = importDlg;
   el.querySelector('[data-a=roles]').onclick = rolesDlg;
+  el.querySelector('[data-a=xout]').onclick = () => staffXlsx().catch(e => toast(e.message, true));
   el.querySelector('[data-a=bale]').onclick = baleDlg;
   ({ list: renderList, board: renderBoard, map: renderMap })[S.view]();
 }
@@ -146,6 +148,18 @@ function quickDlg() {
 /* آغاز مأموریت = شروع اولین دوره‌ی زنجیره‌ی تمدیدها؛ آخرین تمدید = شروع دوره‌ی فعلی اگر تمدیدی است؛ نمره = آخرین ارزشیابی این نفر */
 function firstStart(r) { const by = new Map(S.d.rows.map(x => [x.id, x])); let x = r, n = 0; while (x.prev_id && by.has(x.prev_id) && n++ < 50) x = by.get(x.prev_id); return x.d_start; }
 function scoreOf(r) { const ids = new Set(S.d.rows.filter(x => x.nid === r.nid).map(x => x.id)), L = (S.d.evals || []).filter(e => ids.has(e.ref_id)); return L.length ? L[L.length - 1] : null; }
+/* خروجی اکسل عوامل: همان ردیف‌هایی که فهرست نشان می‌دهد (فیلتر نقش، جستجو و «دوره‌های تمام‌شده») */
+async function staffXlsx() {
+  const rows = (S.hist ? S.d.rows : active()).filter(match).sort((a, b) => (a.role > b.role) - (a.role < b.role) || (a.hotel || '').localeCompare(b.hotel || '', 'fa') || nameOf(a).localeCompare(nameOf(b), 'fa'));
+  const ST = { active: 'فعال', extended: 'تمدید شد', left: 'پایان مأموریت' };
+  const ans = e => e ? e.answers.map(a => `${a.q}: ${a.v}`).join(' | ') : '';
+  const RL = S.d.regionCity && !S.d.region.includes(S.d.regionCity) ? `${S.d.regionCity} - ${S.d.region}` : S.d.region;
+  await saveBook(`عوامل-${RL}-${S.d.today.replace(/\//g, '-')}.xlsx`, [{ name: 'عوامل', title: `عوامل ${RL} · ${faS(S.d.today)}${S.role ? ' · ' + S.role : ''}${S.q ? ' · جستجو: ' + S.q : ''}`,
+    head: ['نام', 'نام خانوادگی', 'کد ملی', 'سمت', 'هتل محل خدمت', 'آغاز مأموریت', 'آخرین تمدید', 'پایان مأموریت', 'روز مانده', 'وضعیت', 'تاریخ خروج واقعی', 'نمره‌ی ارزیابی (از ۱۰۰)', 'تاریخ ارزیابی', 'پاسخ‌های ارزیابی', 'توضیح ارزیابی', 'یادداشت'],
+    widths: [14, 18, 13, 13, 22, 13, 13, 13, 9, 13, 13, 12, 17, 60, 30, 30], text: [2],
+    rows: rows.map(r => { const e = scoreOf(r); return [r.first, r.last, r.nid, r.role, r.hotel || '', firstStart(r), r.prev_id ? r.d_start : '', r.d_end, r.status === 'active' ? left(r) : '', ST[r.status] || r.status, r.left_at || '', e ? e.score : '', e ? xDT(e.t) : '', ans(e), e ? e.note || '' : '', r.note || '']; }) }]);
+  toast(`فایل اکسل ${fa(rows.length)} نفر ساخته شد.`);
+}
 function renderList() {
   const box = document.getElementById('st-body');
   const rows = (S.hist ? S.d.rows : active()).filter(match).sort((a, b) => (a.status !== 'active') - (b.status !== 'active') || JD.num(a.d_end) - JD.num(b.d_end));
