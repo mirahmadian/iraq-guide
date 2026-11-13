@@ -46,6 +46,8 @@ async function staffKey(user, pass) {
 function adminFetch(path, body, auth) {
   return fetch(RV_API + path, { method: body ? 'POST' : 'GET', cache: 'no-store',
     headers: { ...(auth ? { Authorization: auth } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined })
+    /* «Failed to fetch» خام مرورگر یعنی اصلاً به سرور نرسید (اینترنت، فیلتر یا قطعی لحظه‌ای) */
+    .catch(() => { throw new Error(navigator.onLine ? 'اتصال به سرور برقرار نشد (اینترنت یا فیلترشکن را بررسی کنید). چند لحظه بعد «🔄 دوباره» را بزنید.' : 'اینترنت وصل نیست.'); })
     .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok) { const e = new Error(j.error || 'خطا در ارتباط با سرور'); e.status = r.status; throw e; } return j; }));
 }
 function staffApi(path, body) {
