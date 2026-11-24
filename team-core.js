@@ -8,9 +8,20 @@ let HR_API = HR_APIS[0];
 try { const s = localStorage.getItem('hr-api-dev'); if (s && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) HR_API = s; } catch (e) {}
 const RV_API = 'https://hamyar-reviews.hamyar-karevan.workers.dev';
 const HR = { token: '', viewRegion: 0 };
-try { HR.token = localStorage.getItem('hr-token') || ''; } catch (e) {}
+try {
+  HR.token = sessionStorage.getItem('hr-token') || '';
+  if (!HR.token) {
+    HR.token = localStorage.getItem('hr-token') || '';
+    if (HR.token) sessionStorage.setItem('hr-token', HR.token);
+  }
+  localStorage.removeItem('hr-token');
+} catch (e) {}
 function setToken(t, me) {
-  HR.token = t || ''; try { t ? localStorage.setItem('hr-token', t) : localStorage.removeItem('hr-token'); } catch (e) {}
+  HR.token = t || '';
+  try {
+    t ? sessionStorage.setItem('hr-token', t) : sessionStorage.removeItem('hr-token');
+    localStorage.removeItem('hr-token');
+  } catch (e) {}
   GETC.clear(); if (t && me) GETC.set('/api/me', { t: Date.now(), text: JSON.stringify(me) });  /* ورود، «من کیستم» را هم آورده: یک رفت‌وبرگشت کمتر */
 }
 /* آیکون اکسل (کاشی سفید با X سبز) برای همه‌ی دکمه‌های «خروجی اکسل»؛ کلاس دکمه: btn xl (سبز) */
@@ -22,6 +33,26 @@ const xlDay = d => JDP.str(d, false).replace(/\//g, '-');
 const fa = n => Number(n || 0).toLocaleString('fa-IR');
 const faS = s => String(s ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function parseCaravanDataJs(text) {
+  const start = text.indexOf('{');
+  const declaration = text.slice(0, start);
+  if (!/const\s+CARAVAN_DATA\s*=/.test(declaration)) throw new Error('فایل اطلاعات برنامه معتبر نیست.');
+  let depth = 0, end = -1, quoted = null, escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (c === '\\') escaped = true;
+      else if (c === quoted) quoted = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quoted = c; continue; }
+    if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) { end = i + 1; break; }
+  }
+  if (end < 0) throw new Error('فایل اطلاعات برنامه ناقص است.');
+  try { return JSON.parse(text.slice(start, end)); } catch (e) { throw new Error('فایل اطلاعات برنامه قابل خواندن نیست.'); }
+}
 const md = d => faS(String(d || '').slice(5));
 const MONTHS = ['', 'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 const dayName = d => { const [, m, dd] = String(d).split('/').map(Number); return m ? fa(dd) + ' ' + MONTHS[m] : ''; };
@@ -126,11 +157,16 @@ async function bioRegister(me) {
   if (!r.getPublicKey || !r.getAuthenticatorData) throw new Error('مرورگر این گوشی قدیمی است. Chrome یا Safari را به‌روز کنید.');
   const ua = navigator.userAgent, label = /iPhone|iPad/.test(ua) ? 'آیفون' : /Android/.test(ua) ? 'اندروید' : /Mac/.test(ua) ? 'مک' : /Windows/.test(ua) ? 'ویندوز' : 'دستگاه';
   await api('/api/passkey/register', { body: { id: cred.id, clientDataJSON: b2u(r.clientDataJSON), authenticatorData: b2u(r.getAuthenticatorData()), publicKey: b2u(r.getPublicKey()), alg: r.getPublicKeyAlgorithm(), label } });
-  try { localStorage.setItem('hr-bio', '1'); localStorage.setItem('hr-bio-id', cred.id); if (me) { localStorage.setItem('hr-bio-nid', me.nid); localStorage.setItem('hr-bio-name', me.name); } } catch (e) {}
+  try {
+    sessionStorage.setItem('hr-bio', '1');
+    sessionStorage.setItem('hr-bio-id', cred.id);
+    if (me) { sessionStorage.setItem('hr-bio-nid', me.nid); sessionStorage.setItem('hr-bio-name', me.name); }
+    ['hr-bio', 'hr-bio-id', 'hr-bio-nid', 'hr-bio-name'].forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
 }
 async function bioLogin(nid) {
   const o = await api('/api/passkey/login-options', { body: { nid: nid || '' } });
-  let mine = ''; try { mine = localStorage.getItem('hr-bio-id') || ''; } catch (e) {}
+  let mine = ''; try { mine = sessionStorage.getItem('hr-bio-id') || ''; } catch (e) {}
   let allow = o.allowCredentials || []; if (mine && allow.some(c => c.id === mine)) allow = allow.filter(c => c.id === mine);
   const cred = await navigator.credentials.get({ publicKey: { ...o, challenge: u2b(o.challenge), allowCredentials: allow.map(c => ({ ...c, id: u2b(c.id) })) } });
   const r = cred.response;
@@ -182,7 +218,15 @@ async function upload(url, blob, opt, onProgress) {
 }
 
 /* ── login / password screens ── */
-function lastNid() { try { return localStorage.getItem('hr-nid') || ''; } catch (e) { return ''; } }
+function lastNid() {
+  try {
+    let nid = sessionStorage.getItem('hr-nid') || '';
+    if (!nid) nid = localStorage.getItem('hr-nid') || '';
+    if (nid) sessionStorage.setItem('hr-nid', nid);
+    localStorage.removeItem('hr-nid');
+    return nid;
+  } catch (e) { return ''; }
+}
 /* رمز همکار پنل ادمین روی همین دستگاه به کلید تبدیل می‌شود (همان روش admin-users.js) */
 async function staffKey(user, pass) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveBits']);
@@ -196,7 +240,11 @@ async function staffLoginTry(nid, pass) {
   return j;
 }
 function openStaffPanel(j) {
-  try { localStorage.setItem('caravan-staff', JSON.stringify({ token: j.token, name: j.name, user: j.user, perms: j.perms || [], mustChange: j.mustChange })); } catch (e) {}
+  try {
+    const staff = JSON.stringify({ token: j.token, name: j.name, user: j.user, perms: j.perms || [], mustChange: j.mustChange });
+    sessionStorage.setItem('caravan-staff', staff);
+    localStorage.removeItem('caravan-staff');
+  } catch (e) {}
   location.href = 'admin.html';
 }
 const nidLatin = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
@@ -206,7 +254,7 @@ const FP_SVG = `<svg viewBox="0 0 64 64" width="64" height="64" fill="none" stro
   <path d="M26 26a6 6 0 0 1 12 0c0 10-3 19-8 26"/><path d="M24 50c4-7 6-15 6-24"/><path d="M32 26c0 8-2 16-5 22"/></svg>`;
 /* گوشی‌ای که اثر انگشت رویش روشن است: صفحه‌ی ساده با نشان بزرگ اثر انگشت پایین صفحه (همان جای حسگر)، و برگه‌ی تأیید خود گوشی خودکار باز می‌شود */
 async function renderBioLogin(root, onDone) {
-  let name = '', nid = ''; try { name = localStorage.getItem('hr-bio-name') || ''; nid = localStorage.getItem('hr-bio-nid') || lastNid(); } catch (e) {}
+  let name = '', nid = ''; try { name = sessionStorage.getItem('hr-bio-name') || ''; nid = sessionStorage.getItem('hr-bio-nid') || lastNid(); } catch (e) {}
   root.innerHTML = `<div class="fp-wrap">
     <div class="fp-top"><a class="hbtn" href="./" style="text-decoration:none">→ برنامه</a><div class="hi">همیار کاروان · ورود همکاران</div>
       <h1>${name ? 'سلام، ' + esc(name) : 'ورود با اثر انگشت'}</h1><p>برای ورود، انگشتتان را روی حسگر اثر انگشت گوشی بگذارید.</p></div>
@@ -227,7 +275,7 @@ async function renderBioLogin(root, onDone) {
 }
 async function renderLogin(root, onDone, withPassword) {
   const nid = lastNid(), bio = await bioAvailable();
-  let hasBio = false; try { hasBio = localStorage.getItem('hr-bio') === '1'; } catch (e) {}
+  let hasBio = false; try { hasBio = sessionStorage.getItem('hr-bio') === '1'; } catch (e) {}
   if (bio && hasBio && !withPassword) return renderBioLogin(root, onDone);
   root.innerHTML = `<div class="login-wrap"><form class="login-card" id="lg" novalidate>
     <div class="login-head"><a class="hbtn" href="./" style="float:left;text-decoration:none">→ برنامه</a><div class="hi">همیار کاروان</div><h1>👥 ورود همکاران</h1></div>
@@ -243,7 +291,7 @@ async function renderLogin(root, onDone, withPassword) {
       <a class="hint" href="admin.html" style="text-align:center">ورود مدیر اصلی برنامه (با رمز مدیریت)</a>
     </div></form></div>`;
   const err = root.querySelector('#lg-err'), nidEl = root.querySelector('#lg-nid');
-  const remember = () => { try { localStorage.setItem('hr-nid', nidEl.value.trim()); } catch (e) {} };
+  const remember = () => { try { sessionStorage.setItem('hr-nid', nidEl.value.trim()); localStorage.removeItem('hr-nid'); } catch (e) {} };
   root.querySelector('#lg').onsubmit = async e => {
     e.preventDefault(); err.textContent = '';
     const nid = nidLatin(nidEl.value), pw = root.querySelector('#lg-pw').value;
@@ -298,7 +346,7 @@ async function logout() { try { await api('/api/logout', { body: {} }); } catch 
 async function renderAccount(root, me, onBack) {
   const bio = await bioAvailable();
   /* کدام کلید مال همین گوشی است؟ (گوشی‌هایی که پیش از این نسخه روشن شده‌اند شناسه را نگه نداشته‌اند) */
-  let mine = '', flag = false; try { mine = localStorage.getItem('hr-bio-id') || ''; flag = localStorage.getItem('hr-bio') === '1'; } catch (e) {}
+  let mine = '', flag = false; try { mine = sessionStorage.getItem('hr-bio-id') || ''; flag = sessionStorage.getItem('hr-bio') === '1'; } catch (e) {}
   const here = k => k.id === mine || (!mine && flag && me.passkeys.length === 1);
   const onHere = me.passkeys.some(here);
   root.innerHTML = `<div class="card"><div class="card-h"><h2>☝️ ورود با اثر انگشت</h2>${onHere ? '<span class="pill ok">روی این گوشی روشن است</span>' : ''}</div>
@@ -320,7 +368,7 @@ async function renderAccount(root, me, onBack) {
     if (!confirm(mineK ? 'ورود با اثر انگشت روی این گوشی خاموش شود؟\nاز این به بعد با کد ملی و رمز وارد می‌شوید و هر وقت خواستید دوباره روشنش می‌کنید.' : 'ورود با اثر انگشت روی «' + (k ? k.label : '') + '» خاموش شود؟')) return;
     x.disabled = true;
     try { await api('/api/passkeys/' + x.dataset.pk, { method: 'DELETE' }); } catch (e) { x.disabled = false; return toast(e.message, true); }
-    if (mineK) try { ['hr-bio', 'hr-bio-id', 'hr-bio-nid', 'hr-bio-name'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    if (mineK) try { ['hr-bio', 'hr-bio-id', 'hr-bio-nid', 'hr-bio-name'].forEach(k => { sessionStorage.removeItem(k); localStorage.removeItem(k); }); } catch (e) {}
     me.passkeys = me.passkeys.filter(p => p.id !== x.dataset.pk); toast('ورود با اثر انگشت خاموش شد.'); renderAccount(root, me, onBack);
   });
   root.querySelector('#ac-pw').onsubmit = async e => {
@@ -374,7 +422,7 @@ async function teamBoot() {
     /* from admin.html: the main owner's unlocked GitHub key makes them a system manager */
     history.replaceState(null, '', location.pathname);
     try { sessionStorage.setItem('hr-from-admin', '1'); } catch (e) {}
-    let gh = ''; try { gh = localStorage.getItem('caravan-admin-token') || ''; } catch (e) {}
+    let gh = ''; try { gh = sessionStorage.getItem('caravan-admin-token') || ''; } catch (e) {}
     if (gh) try { { const j = await api('/api/owner-login', { body: { gh } }); setToken(j.token, j.me); } } catch (e) { toast(e.message, true); }
   }
   if (!HR.token) return renderLogin(app, teamBoot);

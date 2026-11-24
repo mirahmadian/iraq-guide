@@ -71,7 +71,12 @@ const onPages = location.hostname.endsWith('.github.io');
 const REPO = (onPages ? location.hostname.split('.')[0] : 'mirahmadian') + '/' + (onPages ? (location.pathname.split('/')[1] || 'iraq-guide') : 'iraq-guide');
 const TK = 'nerkh-token';
 let token = null;
-try { token = localStorage.getItem(TK); } catch (e) {}
+try {
+  token = sessionStorage.getItem(TK);
+  if (!token) token = localStorage.getItem(TK);
+  if (token) sessionStorage.setItem(TK, token);
+  localStorage.removeItem(TK);
+} catch (e) {}
 
 const unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
 async function decrypt(blob, pass) {
@@ -97,11 +102,11 @@ async function login() {
     token = await decrypt(await r.json(), $('pass').value).catch(() => { throw new Error('رمز اشتباه است.'); });
     const t = await api('/actions/workflows/rate-market.yml');
     if (!t.ok) throw new Error('کلید ثبت نرخ کار نمی‌کند (' + t.status + ') — به مدیر برنامه خبر دهید.');
-    try { localStorage.setItem(TK, token); } catch (e) {}
+    try { sessionStorage.setItem(TK, token); localStorage.removeItem(TK); } catch (e) {}
     show();
   } catch (e) { token = null; err.textContent = e.message; err.className = 'msg err show'; }
 }
-function logout() { try { localStorage.removeItem(TK); } catch (e) {} token = null; show(); }
+function logout() { try { sessionStorage.removeItem(TK); localStorage.removeItem(TK); } catch (e) {} token = null; show(); }
 
 let lastTs = 0;
 async function loadLast() {

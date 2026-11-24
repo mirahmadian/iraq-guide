@@ -56,8 +56,24 @@ let mgrPoll = null, mgrCode = '', mgrErr = '';
   </style>`);
 })();
 
-function mgrLoad() { try { const o = JSON.parse(localStorage.getItem(MGR_KEY) || 'null'); return o && /^[0-9a-f]{64}$/.test(o.token || '') ? o : null; } catch (e) { return null; } }
-function mgrSave(o) { try { o ? localStorage.setItem(MGR_KEY, JSON.stringify(o)) : localStorage.removeItem(MGR_KEY); } catch (e) {} }
+function mgrLoad() {
+  try {
+    let raw = sessionStorage.getItem(MGR_KEY);
+    if (!raw) {
+      raw = localStorage.getItem(MGR_KEY);
+      if (raw) sessionStorage.setItem(MGR_KEY, raw);
+    }
+    localStorage.removeItem(MGR_KEY);
+    const o = JSON.parse(raw || 'null');
+    return o && /^[0-9a-f]{64}$/.test(o.token || '') ? o : null;
+  } catch (e) { return null; }
+}
+function mgrSave(o) {
+  try {
+    o ? sessionStorage.setItem(MGR_KEY, JSON.stringify(o)) : sessionStorage.removeItem(MGR_KEY);
+    localStorage.removeItem(MGR_KEY);
+  } catch (e) {}
+}
 const isMgr = () => !!mgrLoad();
 function mgrFetch(path, body) {
   const o = mgrLoad();

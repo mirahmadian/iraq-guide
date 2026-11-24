@@ -28,7 +28,7 @@ const MAX_LEN = 300, MAX_NAME = 30, REPORTS_TO_HIDE = 3;
 const H_RE = /^[\w-]{1,40}\/[\w.-]{1,80}$/;
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://mirahmadian.github.io',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-Dev, Authorization',
   'Access-Control-Max-Age': '86400'

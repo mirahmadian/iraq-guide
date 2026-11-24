@@ -8,7 +8,7 @@
 let APP_P = null;
 function loadAppHotels() {
   if (!APP_P) APP_P = fetch('data.js', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('اطلاعات اپ بار نشد.'); return r.text(); })
-    .then(t => new Function(t + ';return CARAVAN_DATA.cities;')()).catch(e => { APP_P = null; throw e; });
+    .then(t => parseCaravanDataJs(t).cities).catch(e => { APP_P = null; throw e; });
   return APP_P;
 }
 const HI_ITEMS = [['photos', '📸 عکس‌ها'], ['address', '📍 آدرس فارسی'], ['addressAr', '📍 آدرس عربی'], ['phone', '☎️ تلفن هتل'], ['geo', '🗺️ موقعیت دقیق روی نقشه'], ['nameEn', '🔤 نام انگلیسی']];

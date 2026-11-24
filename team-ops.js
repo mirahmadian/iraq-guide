@@ -100,7 +100,7 @@ async function renderEvalBuilder(m, key, keep) {
 let FOOD_P = null;
 function loadFood() {
   if (!FOOD_P) FOOD_P = fetch('data.js', { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error('برنامه‌ی غذایی بار نشد.'); return r.text(); })
-    .then(t => new Function(t + ';return CARAVAN_DATA.food;')()).catch(e => { FOOD_P = null; throw e; });
+    .then(t => parseCaravanDataJs(t).food).catch(e => { FOOD_P = null; throw e; });
   return FOOD_P;
 }
 const MEAL_L = { breakfast: '🌅 صبحانه', lunch: '☀️ ناهار', dinner: '🌙 شام' };

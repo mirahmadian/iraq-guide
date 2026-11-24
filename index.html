@@ -782,7 +782,13 @@
 ══════════════════════════════════════════ */
 const PREVIEW = new URLSearchParams(location.search).has('preview');
 let IS_ADMIN_DEVICE = false;
-try { IS_ADMIN_DEVICE = !!localStorage.getItem('caravan-admin-token'); } catch (e) {}
+try {
+  IS_ADMIN_DEVICE = !!(sessionStorage.getItem('caravan-admin-token') || localStorage.getItem('caravan-admin-token'));
+  if (!sessionStorage.getItem('caravan-admin-token') && localStorage.getItem('caravan-admin-token')) {
+    sessionStorage.setItem('caravan-admin-token', localStorage.getItem('caravan-admin-token'));
+  }
+  localStorage.removeItem('caravan-admin-token');
+} catch (e) {}
 const SHOW_HIDDEN = PREVIEW || IS_ADMIN_DEVICE;
 /* هتل‌های پنهان (مثلاً واردشده و هنوز تأییدنشده) فقط برای مدیر و پیش‌نمایش */
 if (!SHOW_HIDDEN) CARAVAN_DATA.cities.forEach(c => { if (c.hotels) c.hotels = c.hotels.filter(h => !h.hidden); });
